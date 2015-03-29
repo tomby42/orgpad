@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title>PiMind</title>
+    <link rel="stylesheet" href="pi-mind.css">
+    <script src="pi-mind.js" type="text/javascript"></script>
+  </head>
+
+<!-- Possible parameters to PimCreateInfrastruct:
+PimCreateInfrastruct  (name_of_element, width, height, mode)
+
+name_of_element - can be any html element where to insert canvas with pi-mind
+                  default is 'mind' 
+width - if zero it is browser window width - default 0
+height - if zero it is browser window height - default 0
+mode - 'edit' you can do averything with pi-mind
+       'read' you can manipulate with units
+       'fixed' you can just read units
+       default 'edit'
+
+If there is no parameters it takes all default values.
+-->
+  <body onload="window.PimCreateInfrastruct ('mind', 0, 0, {edit:true, editBuoyAttrs:true, menuBar: true, buoyMove: true,canvasMove: true, canvasZoom: true, buoyScroll: true, sendButton: true, menuBarShow: {mode: true, action: true, file: true, journal: true, find: true}, extract: '', showNameInPitch: false, centerPos: 0});">
+<!-- HERE YOU CAN INSERT YOUR HTML CODE -->
+<!-- BEGIN -->
+<!-- END -->
+    <div id="mind" style="border: 2px solid #00d014; border-radius: 2px; z-index: 1; position:
+    absolute; left: 0px; top: 0px"> </div>
+  </body>
+</html>

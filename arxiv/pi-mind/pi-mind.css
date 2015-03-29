@@ -1,0 +1,89 @@
+textarea { 
+  width: 350px;
+  height: 350px;
+  font-family:Verdana; font-size:10pt;
+ }
+
+textarea.Level0 { 
+  width: 350px;
+  height: 100px;
+  font-family:Verdana; font-size:10pt;
+ }
+
+textarea.Level1 { 
+  width: 350px;
+  height: 200px;
+  font-family:Verdana; font-size:10pt;
+ }
+
+textarea.Level2 { 
+  width: 350px;
+  height: 350px;
+  font-family:Verdana; font-size:10pt;
+ }
+
+.Form { 
+  font-family:Verdana; font-size:10pt;
+}
+
+div.Form { 
+  font-family:Verdana; font-size:10pt;
+  z-index: 2;
+  position: absolute;
+  border: 2px solid #ff6e00;
+  border-radius: 2px;
+  background-color: white;
+  top: 30px;
+  left: 30px;
+}
+
+.menu-bar {
+  top: 10px !important;
+  left: 10px !important;
+  z-index: 1 !important;
+}
+
+body, p, a, table, td, input, select, option { font-family:Verdana; font-size:10pt; }
+
+div.Observer {
+  z-index: 1;
+  position: absolute;
+  border: 2px solid #009cff;
+  width: 512px;
+  height: 512px;
+  left: 0px;
+  top: 60px;
+  background-color: white;
+}
+
+iframe.Observer {
+  width: 508px;
+  height: 508px;
+}
+
+.dropdown dd, .dropdown dt, .dropdown ul { margin:0px; padding:0px; }
+.dropdown dd { position:relative; }
+.dropdown a, .dropdown a:visited { color:#1f1f1f; text-decoration:none; 
+				   outline:none;}
+.dropdown a:hover { color:#000000; }
+.dropdown dt a:hover, .dropdown dt a:focus { color:#000000; 
+					     border: 2px solid #ff6e00;}
+.dropdown dt a {background:#ffffff url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A\
+/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB90EFg8vH3bOeXcAAACeSURBVDjL\
+7ZAxCsJAEEVfJAg2NsHOxhvY5gIGlpwhBzH1HsKDJOAJtrYUvEACtibdpFlhs+xqK8Hfzd/5b2cG\
+/vox5XX7vefczOrUe8/yur0AQygsIhtEKuD19pLAFFfgFBmgMVqVrrHyVzBaFcADEPdz4Ga0Kv01\
+k8gd1kAPbK3dAQdgNFp9BjiQnYWMwB54+uEowIEc7UHvofBCNAG1+SyAhkyzSAAAAABJRU5ErkJg\
+gg==') no-repeat scroll right center; 
+		display:block; padding-right:20px; 
+                border: 2px solid #ff6e00; }
+.dropdown dt a span {cursor:pointer; display:block; padding:5px; box-align: middle;}
+.dropdown dd ul { background:#ffffff none repeat scroll 0 0; 
+		  border:2px solid #ff6e00; color:#000000; display:none;
+                  left:0px; padding:5px 0px; position:absolute; 
+		  top:2px; width:auto; min-width:60px; list-style:none;}
+.dropdown span.value { display:none;}
+.dropdown dd ul li a { padding:5px; display:block;}
+.dropdown dd ul li a:hover { background-color:#aaaaaa;}
+
+.dropdown img { border:none; vertical-align:middle; margin-left:10px; }
+.flagvisibility { display:none;}
