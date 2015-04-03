@@ -1149,7 +1149,7 @@
     },
 
     setCurrentState: function (state, data) {
-      if (this.fixed) return;
+      // if (this.fixed) return;
       if (this.currentState === state) return;
       // if (!(state in this.states)) return;
 
@@ -1308,7 +1308,7 @@
 	  jattr [i] = this.states [i].attrs;
       }
 
-      return {data: jdata, attrs: jattr};
+      return {data: jdata, attrs: jattr, fixed: this.fixed || false};
     },
 
     fromJSON: function (json) {
@@ -1318,6 +1318,8 @@
 	this.insertState (i, {data: unescape (json.data [i])});
       for (i in json.attrs)
 	this.insertState (i, {attrs: json.attrs [i]}, true);
+
+      this.setFixed (json.fixed || false);
     }
   });
 
@@ -3733,18 +3735,19 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 
 	setLevelData (b, msg ['levelData']);
 	updateLevelData (b, nofLevels, msg.isImport);
-	updateAttrs (b, msg.state.attrs, initState, msg.isImport);
+	updateAttrs (b, msg.state.attrs, initState, msg.isImport, msg.state);
 	self.addWhileToArchive (b.getDID (), b);
 	b.setCurrentState (initState, msg.data);
 	self.sendEvent ('whileCreated', b);
 	self.setReturnContainer ({wid: b.getDID ()});
       };
 
-      var updateAttrs = function (b, attrs, st, isImport) {
+      var updateAttrs = function (b, attrs, st, isImport, importState) {
 	var i;
 
 	if (isImport) {
-	  b.fromJSON ({state: {attrs: attrs, data: {}}});
+	  b.fromJSON ({state: {attrs: attrs, data: {},
+                               fixed: importState ? importState.fixed : false}});
 	} else
 	  for (i in attrs)
 	    b.setStateAttrs (i, attrs [i]);
@@ -4770,7 +4773,8 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 
 	efs.addHandler ('componentChange', function (es, ev) {
           if (PimLocalState.lastActive &&
-              PimLocalState.lastActive !== b) {
+              PimLocalState.lastActive !== b &&
+              !PimLocalState.lastActive.getFixed ()) {
             buoyState0 (PimLocalState.lastActive);
           }
 	  if (efs.lastEventType === 'mouseover') {
