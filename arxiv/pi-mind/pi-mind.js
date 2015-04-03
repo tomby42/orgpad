@@ -2,7 +2,7 @@
  * Pi (personalised/pico) mind
  * (C) 2011-2015 Tomas 'tomby' Bily <tomby@ucw.cz>
  *
- * version: 0.5.2a- (Fri Mar 27 15:21:29 CET 2015)
+ * version: 0.5.3a- (Fri Apr  3 09:24:20 CEST 2015)
  */
 
 /*
@@ -998,10 +998,10 @@
 
 	ptr.time = ptr.future;
 	if (ptr.tqueue.isEmpty ()) {
-	  setTimeout (function () { ptr.thandler (); }, ptr.idleTime);
+	  window.setTimeout (function () { ptr.thandler (); }, ptr.idleTime);
 	} else {
 	  ptr.future = ptr.tqueue.top ().val;
-	  setTimeout (function () { ptr.thandler (); }, ptr.future - ptr.time);
+	  window.setTimeout (function () { ptr.thandler (); }, ptr.future - ptr.time);
 	}
       };
 
@@ -1014,7 +1014,7 @@
 	ft = this.tqueue.top ().obj.getTime () - this.time;
       if (ft < 0)
 	ft = 1;
-      this.tid = setTimeout (function () { ptr.thandler (); }, ft);
+      this.tid = window.setTimeout (function () { ptr.thandler (); }, ft);
       this.future = this.time + ft;
     },
 
@@ -1840,7 +1840,7 @@
 	msg = m;
 	if (!clicked) {
 	  clicked = true;
-	  setTimeout (function () {
+	  window.setTimeout (function () {
 	    if (dblclick) {
 	      cbDblClick (ptr, msg);
 	      dblclick = false;
@@ -5386,7 +5386,7 @@ reader.readAsBinaryString (f);
 	if (mode.menuBarShow && mode.menuBarShow.find) {
 	  var input = ptr.menuBar.addButton ("text", "find", "", null, function (ev) {
 			ev = ev || window.event;
-			ptr.extract (document.menuBar.find.value);
+			ptr.extractBounce (document.menuBar.find.value);
 		      });
 
 	  ptr.menuBar.addList ("extractAction", "ExtractAction",
@@ -5718,6 +5718,17 @@ AAAASUVORK5CYII=";
 	       }, false);
       };
 
+      this.extractBounce = function (str) {
+	var me = this;
+	if (this._extractTimeoutId) {
+	  window.clearTimeout (this._extractTimeoutId);
+	}
+	this._extractTimeoutId = window.setTimeout (function () {
+	  me._extractTimeoutId = null;
+	  me.extract (str);
+	}, 500);
+      };
+
       this.extract = function (str) {
         var pos;
         var txt = (ptr.extractAction !== 4)
@@ -5978,7 +5989,7 @@ AAAASUVORK5CYII=";
     elName = elName || "mind";
 
     // let browser time to initialize everything after loading
-    setTimeout (function () {
+    window.setTimeout (function () {
       var journalP = (window.location.hash === '#journal')
 		  || (typeof (mode) === 'object' && mode.journal);
 
