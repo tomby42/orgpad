@@ -7,14 +7,22 @@
                  [adzerk/boot-reload    "0.2.6"			:scope "test"]
                  [pandeiro/boot-http    "0.6.3-SNAPSHOT"	:scope "test"]
 		 [org.clojure/clojurescript "0.0-2814"		:scope "test"]
-		 [org.clojure/test.check "0.7.0"		:scope "test"]])
+		 [org.clojure/test.check "0.7.0"		:scope "test"]
+		 [cider/cider-nrepl      "0.8.2"		:scope "test"]])
 
 (require
  '[adzerk.boot-cljs      :refer [cljs]]
  '[adzerk.boot-cljs-repl :refer [cljs-repl start-repl]]
  '[adzerk.boot-reload    :refer [reload]]
  '[pandeiro.boot-http    :refer [serve]]
- '[clojure.java.shell    :as shell])
+ '[clojure.java.shell    :as shell]
+ '[boot.repl		 :as brepl])
+
+(swap! boot.repl/*default-dependencies*
+       concat '[[cider/cider-nrepl "0.8.2"]])
+
+(swap! boot.repl/*default-middleware*
+       conj 'cider.nrepl/cider-middleware)
 
 (deftask build []
   (comp (speak)
