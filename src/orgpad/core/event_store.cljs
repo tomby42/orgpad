@@ -72,7 +72,7 @@
 
 (defn- apply-cmd 
   [state cmd]
-  (println state cmd)
+
   (case (cmd 0)
     :conj (conjs state (cmd 1) (cmd 2))
     :pop (pops state (cmd 1))

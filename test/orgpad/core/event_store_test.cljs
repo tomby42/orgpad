@@ -64,19 +64,18 @@
 
 (defn gen-random-cmd
   [{:keys [state] :as es} pth]
-  (println "Random cmd" es pth)
   
   (if (-> state (get-in pth) map?)
     (if (< (rand-int 5) 3)
-      (do (println "assoces") (es/assoces es pth (gen-rnd-kw) (gen-random-col)))
+      (es/assoces es pth (gen-rnd-kw) (gen-random-col))
       (if (empty? (get-in state pth))
-        (do (println "assoces") (es/assoces es pth (gen-rnd-kw) (gen-random-col)))
-        (do (println "dissoces") (es/dissoces es pth (get-rnd-kw (get-in state pth))))))
+        (es/assoces es pth (gen-rnd-kw) (gen-random-col))
+        (es/dissoces es pth (get-rnd-kw (get-in state pth)))))
     (if (< (rand-int 5) 3)
-      (do (println "conjes") (es/conjes es pth (gen-random-col)))
+      (es/conjes es pth (gen-random-col))
       (if (empty? (get-in state pth))
-        (do (println "conjes") (es/conjes es pth (gen-random-col)))
-        (do (println "popes") (es/popes es pth))))))
+        (es/conjes es pth (gen-random-col))
+        (es/popes es pth)))))
 
 (defn gen-event-store
   [ev-store n]
@@ -97,8 +96,7 @@
       true
       (let [es (gen-event-store (es/new-event-store []) m)]
         (if (= (:state es) (es/state-from-to [] (:history es) 1 (-> es :history count)))
-          (do (println "ok" es)
-              (recur (inc i)))
+          (recur (inc i))
           (do
             (println "Wrong" es)
             false
@@ -166,5 +164,5 @@
           "should be dissoc too")))
 
   (testing "state from to"
-    (is (test-state-build 5 10) "should equal"))
+    (is (test-state-build 100 10) "should equal"))
   )
