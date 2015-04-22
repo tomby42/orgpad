@@ -3,7 +3,8 @@
 
     orgpad.core.event-store
 
-    (:require [orgpad.core.search :as search]))
+    (:require [orgpad.core.search :as search]
+              [wagjo.diff.core :as sdiff]))
 
 (defn- now
   "Returns current time"
@@ -66,20 +67,37 @@
 (defn dissoces
   "Event store dissoc"
   [{:keys [state history]} pth key]
-  
+
   {:state (dissocs state pth key)
    :history (conj history [:dissoc pth key (now)])})
 
-(defn- apply-cmd 
+(defn- patchs
+  [state pth patch]
+
+  (update-in state pth sdiff/patch patch))
+
+(defn patches
+  "String patch"
+  [{:keys [state history]} pth patch]
+
+  {:state (patchs state pth patch)
+   :history (conj history [:patch pth patch (now)])})
+
+
+(defn- apply-cmd
+  "Apply cmd on state and returns result."
   [state cmd]
 
   (case (cmd 0)
     :conj (conjs state (cmd 1) (cmd 2))
     :pop (pops state (cmd 1))
     :assoc (assocs state (cmd 1) (cmd 2) (cmd 3))
-    :dissoc (dissocs state (cmd 1) (cmd 2))))
+    :dissoc (dissocs state (cmd 1) (cmd 2))
+    :patch (patchs state (cmd 1) (cmd 2))))
 
 (defn state-from-to
+  "Apply history starting at 'from' and ending at 'to' to 'state' and
+  returns result."
   [state history from to]
 
   (reduce apply-cmd state (subvec history from to)))

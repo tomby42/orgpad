@@ -4,7 +4,8 @@
             [cljs.test.check.generators :as gen]
             [cljs.test.check.properties :as prop :refer-macros [for-all]]
             [cljs.test.check.cljs-test :refer-macros [defspec]]
-            [orgpad.core.event-store :as es]))
+            [orgpad.core.event-store :as es]
+            [wagjo.diff.core :as sdiff]))
 
 ;; (def gen-cmd (gen/elements [:conj :disj :assoc :dissoc]))
 ;; (def gen-idx (gen/not-empty (gen/vector (gen/one-of [gen/int gen/keyword]) 1 10)))
@@ -18,7 +19,6 @@
 ;;            (> (-> (es/update es1 e) :history count)
 ;;               (-> es1 :history count)))))
 
-
 (defn get-rnd-kw
   [state]
 
@@ -26,7 +26,7 @@
 
 (defn get-random-elem
   [state]
-  
+
   (if (vector? state)     ;; vector branch
     (let [idx (-> state count rand-int)]
       [(get state idx) idx])
@@ -42,7 +42,7 @@
 (defn gen-random-path
   [state pth]
 
-  (if (and (coll? state) (not= (rand-int 3) 0)) 
+  (if (and (coll? state) (not= (rand-int 3) 0))
     (let [[el idx] (get-random-elem state)]
       (if (and (coll? el) (empty? el))
         (conj pth idx)
@@ -64,7 +64,7 @@
 
 (defn gen-random-cmd
   [{:keys [state] :as es} pth]
-  
+
   (if (-> state (get-in pth) map?)
     (if (< (rand-int 5) 3)
       (es/assoces es pth (gen-rnd-kw) (gen-random-col))
@@ -162,6 +162,14 @@
           "should not contains :b")
       (is (= (-> e2 :history last first) :dissoc)
           "should be dissoc too")))
+
+  (testing "patches"
+    (let [e (es/new-event-store {:text "abcabba"})
+          e1 (es/patches e [:text] [[[3 "b"] [7 "c"]] [0 1 5]])]
+      (is (= (-> e1 :state :text) "cbabac")
+          "should be equal")
+      (is (= (-> e1 :history last first) :patch)
+          "should be patch")))
 
   (testing "state from to"
     (is (test-state-build 100 10) "should equal"))
