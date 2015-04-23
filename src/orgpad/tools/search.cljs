@@ -1,5 +1,5 @@
 (ns ^{:doc "Search algorithms"}
-  orgpad.core.search)
+  orgpad.tools.search)
 
 (defn binary-search [vec val cmp]
   "Binary serach. It will search sorted VEC for VAL. Comparison of

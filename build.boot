@@ -9,7 +9,8 @@
 		 [org.clojure/clojurescript "0.0-2814"		:scope "test"]
 		 [org.clojure/test.check "0.7.0"		:scope "test"]
 		 [cider/cider-nrepl      "0.8.2"		:scope "test"]
-		 [com.wagjo/cljs-diff    "0.1.0-SNAPSHOT"	:scope "test"]])
+		 [com.wagjo/cljs-diff    "0.1.0-SNAPSHOT"	:scope "test"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "test"]])
 
 (require
  '[adzerk.boot-cljs      :refer [cljs]]

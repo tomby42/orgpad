@@ -3,8 +3,8 @@
 
     orgpad.core.event-store
 
-    (:require [orgpad.core.search :as search]
-              [wagjo.diff.core :as sdiff]))
+    (:require [orgpad.tools.search :as search]
+              [wagjo.diff.core     :as sdiff]))
 
 (defn- now
   "Returns current time"
@@ -101,3 +101,33 @@
   [state history from to]
 
   (reduce apply-cmd state (subvec history from to)))
+
+(defn new-state-history
+  [step]
+
+  {:step step
+   :counts [0]
+   :states [[]]})
+
+(defn- propagate-state
+  [states counts step pos current-states]
+
+  (if (< (count current-states) step)
+    [states counts]
+    (let [state-to-prop    (current-states 0)
+          states'          (assoc states (dec pos) (subvec current-states 1))
+          counts'          (assoc counts (dec pos) step)]
+      (if (= (count states) pos)
+        [(conj states' [state-to-prop]) (conj counts' step)]
+        (if (zero? (counts pos))
+          (recur states' counts' step (inc pos) (conj (states pos) state-to-prop))
+          [states' (update-in counts' [pos] dec)])))))
+
+(defn add-state
+  [{:keys [step states counts] :as state-history} state stamp]
+
+  (let [[states' counts']       (propagate-state states counts step 1 (conj (states 0) state))]
+    {:step step
+     :counts counts'
+     :states states'}))
+        
