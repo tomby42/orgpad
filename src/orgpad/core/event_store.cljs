@@ -112,8 +112,8 @@
 (defn- propagate-state
   [states counts step pos current-states]
 
-  (if (< (count current-states) step)
-    [states counts]
+  (if (< (count current-states) (inc step))
+    [(assoc states (dec pos) current-states) counts]
     (let [state-to-prop    (current-states 0)
           states'          (assoc states (dec pos) (subvec current-states 1))
           counts'          (assoc counts (dec pos) step)]
@@ -130,4 +130,3 @@
     {:step step
      :counts counts'
      :states states'}))
-        
