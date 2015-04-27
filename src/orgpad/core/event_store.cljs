@@ -119,14 +119,14 @@
           counts'          (assoc counts (dec pos) step)]
       (if (= (count states) pos)
         [(conj states' [state-to-prop]) (conj counts' step)]
-        (if (zero? (counts pos))
-          (recur states' counts' step (inc pos) (conj (states pos) state-to-prop))
+        (if (zero? (counts' pos))
+          (recur states' (assoc counts' pos step) step (inc pos) (conj (states pos) state-to-prop))
           [states' (update-in counts' [pos] dec)])))))
 
 (defn add-state
   [{:keys [step states counts] :as state-history} state stamp]
 
-  (let [[states' counts']       (propagate-state states counts step 1 (conj (states 0) state))]
+  (let [[states' counts']       (propagate-state states counts step 1 (conj (states 0) [state stamp]))]
     {:step step
      :counts counts'
      :states states'}))
