@@ -2,7 +2,7 @@
  * Pi (personalised/pico) mind
  * (C) 2011-2015 Tomas 'tomby' Bily <tomby@ucw.cz>
  *
- * version: 0.5.3a- (Fri Apr  3 09:24:20 CEST 2015)
+ * version: 0.5.4a- (Fri May  1 16:16:23 CEST 2015)
  */
 
 /*
@@ -5391,7 +5391,8 @@ reader.readAsBinaryString (f);
 
 	  ptr.menuBar.addList ("extractAction", "ExtractAction",
 			       ["Hide others", "Select",
-				"Show focused", "Show active", "Center to"],
+				"Show focused", "Show active", "Center to first",
+                                "Center to last", "Center to random"],
 			       function () {
 				 ptr.extractAction = this.selectedIndex;
 			       });
@@ -5718,6 +5719,13 @@ AAAASUVORK5CYII=";
 	       }, false);
       };
 
+      var canUpdateSelectedBuoy = function (centerBuoy) {
+        var jump = Math.floor (10 *  Math.random ()) + 1;
+        return ((!centerBuoy && ptr.extractAction === 4)
+              || (ptr.extractAction === 5)
+              || ((ptr.extractAction === 6) && (!centerBuoy || !Math.floor (jump * Math.random ()))));
+      };
+
       this.extractBounce = function (str) {
 	var me = this;
 	if (this._extractTimeoutId) {
@@ -5731,7 +5739,7 @@ AAAASUVORK5CYII=";
 
       this.extract = function (str) {
         var pos;
-        var txt = (ptr.extractAction !== 4)
+        var txt = (ptr.extractAction < 4)
                 ? str
                 : (pos = str.indexOf ('@@@'),
                    pos === -1 ? str : str.substr (0, pos));
@@ -5747,16 +5755,18 @@ AAAASUVORK5CYII=";
 	    switch (ptr.extractAction) {
 	      case 0:
               case 4:
+              case 5:
+              case 6:
 	      buoyVisibility (b, inSet);
 
-              if (ptr.extractAction === 4) {
+              if (ptr.extractAction >= 4) {
                 if (inSet && txt) {
                   if (r1) {
-                    if (!centerBuoy[0] && isInMap (data, r1)) {
+                    if (canUpdateSelectedBuoy (centerBuoy [0]) && isInMap (data, r1)) {
                       centerBuoy[0] = b;
                     }
                   } else {
-                    if (!centerBuoy [1]) {
+                    if (canUpdateSelectedBuoy (centerBuoy [1])) {
                       centerBuoy [1] = b;
                     }
                   }
@@ -5792,7 +5802,7 @@ AAAASUVORK5CYII=";
 	    assocVisibility (a, !(bs [0].isHidden () || bs [1].isHidden ()));
 	  });
 
-        if (ptr.extractAction === 4
+        if (ptr.extractAction >= 4
           && (centerBuoy[0] || centerBuoy[1])) {
           centerViewToBuoy (centerBuoy[0] || centerBuoy[1]);
         }
