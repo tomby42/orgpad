@@ -1,2 +1,2 @@
 {:require  [orgpad.core.boot orgpad.render.metaball]
- :init-fns [orgpad.core.boot/init orgpad.render.metaball/debugTest]}
+ :init-fns [orgpad.core.boot/init]}

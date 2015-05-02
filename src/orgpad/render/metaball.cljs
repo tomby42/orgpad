@@ -1,121 +1,77 @@
 (ns ^{:doc "Blob calculation utilities"} orgpad.render.metaball ) ;blob utilities
 
-;tested
-(defn blobFcion [centre, pt, size] ^{:doc "Single blob function"}
-      (/ size
-         (+ (* (- (first pt) (first centre)) 
-               (- (first pt) (first centre)))
-            (* (- (last pt) (last centre)) 
-               (- (last pt) (last centre)))))
-)
-
-;TODO check
-(defn massBlobFcion [pt blobs]
-  (let [temp (first blobs)]
-    (if (first blobs))
-        (cons (blobFcion (get temp :centre) pt (get temp :size))
-              (massBlobFcion pt (rest blobs)))
-        (list))))
-
-;TODO check
-(defn resizeBlobs [size blobs]
-  (let [temp (first blobs)]
-    (if (first blobs))
-        (cons (assoc temp :size (* size (get temp :size)))
-              (resizeBlobs size (rest blobs)))
-        (list))))
+(defn norm-squared [pt1 pt2]
+  (+ (* (- (pt1 0) (pt2 0)) 
+        (- (pt1 0) (pt2 0)))
+     (* (- (pt1 1) (pt2 1)) 
+        (- (pt1 1) (pt2 1)))))
 
 ;tested
-(defn shift [centre1 centre2] ^{:doc "Shift vector of the length cca 20, perpendicular to the line between two points"}
-  (let [norm (js/Math.sqrt (+ (* (- (first centre1) (first centre2))
-                                 (- (first centre1) (first centre2)))
-                              (* (- (last centre1) (last centre2))
-                                 (- (last centre1) (last centre2)))))]
-    (list (- (/ (* 0 (- (first centre1) (first centre2)))
-                norm))
-          (/ (* 0 (- (last centre1) (last centre2)))
-             norm
-    ))
+(defn blob-fcion [centre, pt, size] "Single blob function."
+  (/ size (norm-squared pt centre)))
+
+;tested
+(defn total-blob-fcion [pt blobs]
+  (let [temp (peek blobs)]
+    (if (peek blobs)
+        (conj (total-blob-fcion pt (pop blobs))
+              (blob-fcion (get temp :centre) pt (get temp :size)))
+        (vector))))
+
+;tested
+(defn resize-blobs [size blobs]
+  (let [temp (peek blobs)]
+    (if (peek blobs)
+        (conj (resize-blobs size (pop blobs))
+              (assoc temp :size (* size (get temp :size))))
+        (vector))))
+
+;Cljs does not support macros - TODO move to external clj file
+;(defmacro transform [expression objects] "A macro applying expression to every element of a vector. Use \"x\" as a target of the expression"
+;  (let [x (peek objects)]
+;    (if (peek objects)
+;        (conj (transform expression (pop objects))
+;              expression
+;        (vector)))))
+
+;tested - TODO further fine-tuning required, postponed till commiting rendering functions
+(defn shift [centre1 centre2] "Shift vector of the length cca 20, perpendicular to the line between two points."
+  (let [norm (js/Math.sqrt (norm-squared centre1 centre2))]
+    (vector (- (/ (* 20 
+                     (- 
+                       (centre1 0) 
+                       (centre2 0)))
+                  norm))
+            (/ (* 20 
+                  (- (centre1 1)
+                     (centre2 1)))
+               norm))
   )
 )
 
-;TODO check
-(defn getCoef [i j blobs]
-  (let [correction (shift (get (nth blobs i) :centre) 
-                          (get (nth blobs j) :centre))
-        pt (list (+ (/ (+ (first (get (nth blobs i) :centre))
-                          (first (get (nth blobs j) :centre)))
+;tested
+(defn get-coef [i j blobs] "Calculates the minimal size coef. required by blob conectness."
+  (let [correction (shift (get (blobs i) :centre) 
+                          (get (blobs j) :centre))
+        pt (vector (+ (/ (+ (-> (blobs i) :centre first)
+                            (-> (blobs j) :centre first))
                        2)
-                    (first correction))
-                 (+ (/ (+ (last (get (nth blobs i) :centre))
-                          (last (get (nth blobs j) :centre)))
+                    (correction 0))
+                 (+ (/ (+ (-> (blobs i) :centre last)
+                          (-> (blobs j) :centre last))
                        2)
-                    (last correction)]
+                    (correction 1)))]
     (/ 1
-       (reduce + (massBlobFcion pt blobs)))
-)
+       (reduce + (total-blob-fcion pt blobs)))))
 
-;TODO check
-(defn calcBlob [& blobs]
-  (let [coef (reduce max (list (for [i (range 0 (- (length blobs) 1))
-                                     j (range 0 (- (length blobs) 1))
-                                     :when (> i j)]
-                                 (getCoef i j blobs)
-                                 )))]
-    (resizeBlobs (max 1 coef) blobs)))
+;tested
+(defn calc-blob [& blob-list] "Adjusts the size of given blobs to create a connected metaball."
+  (let [blobs (into [] blob-list)
+        coef (reduce max (for [i (range 0 (count blobs))
+                               j (range 0 (count blobs))
+                              :when (> i j)]
+                              (get-coef i j blobs)))]
+  (do (print coef blobs) 
+    (resize-blobs (max 1 coef) blobs)))
+  )
 
-;
-;;bad fcion
-;(defn getSizeCoef[blob1 blob2] ^{:doc "Calculates the size coeficient to satisfy the condition of connected blobs"}
-;    ( let [correction (shift (get blob1 :centre) (get blob2 :centre))
-;           pt (list (+ (/ (+ (first (get blob1 :centre)) 
-;                             (first (get blob2 :centre)))
-;                          2)
-;                       (first correction))
-;                    (+ (/ (+ (last (get blob1 :centre)) 
-;                             (last (get blob2 :centre)))
-;                          2)
-;                       (last correction)))]
-;              (/ 1 (+ (blobFcion (get blob1 :centre) pt (get blob1 :size))
-;                      (blobFcion (get blob2 :centre) pt (get blob2 :size))))
-;    )
-;)
-;
-;;bad fcion
-;(defn getBlobSize[blobList newBlobList mainBlob] ^{:doc "Return a list of chosen blob and a list of connected blobs with modyfied sizes to create connected blob."}
-;  (let [coef (getSizeCoef (peek blobList) mainBlob)
-;        mBlob (assoc mainBlob 
-;                     :size (* (get mainBlob :size) 
-;                              (max coef 1)))  ;does not allow blob to shrink, only to expand
-;        mList (concat (list (assoc (peek blobList)
-;                                   :size (* (get (peek blobList) :size) 
-;                                            (max 1 coef)))) ;does not allow blob to shrink, only to expand
-;                      newBlobList)]
-;    (if (= 1 (count blobList))
-;        (list mBlob mList)
-;        (recur (pop blobList) mList mBlob))
-;  )
-;)
-
-;outdated
-(def blobCheck {:size 1, :centre '(70 30)})
-(def blob1 {:size 1, :centre '(0 0)})
-(def blob2 {:size 1, :centre '(100 100)})
-(def blob3 {:size 1, :centre '(150 30)})
-(def bL (list blob1 blob2 blob3))
-
-(defn debugTest []
-    (do
-      (.log js/console "BLOB")
-      (let [result (getBlobSize bL '() blobCheck)
-            blobList (pop result) 
-            mainBlob (peek result)]
-        (do
-          (.log js/console (count blobList)) 
-          (.log js/console (get (nth blobList 0) :size))
-          (.log js/console (get (nth blobList 1) :size))
-          (.log js/console (get mainBlob :size))
-        )
-      )
-    )
-)
