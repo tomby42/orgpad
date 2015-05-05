@@ -1,8 +1,9 @@
-orgpad.render.bezier 
-m.xml
+*~
+/tmp/
+
+pom.xml
 pom.xml.asc
 *jar
-*swp
 /lib/
 /classes/
 /target/

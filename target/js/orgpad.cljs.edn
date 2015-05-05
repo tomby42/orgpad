@@ -1,1 +1,0 @@
-{:require [orgpad.core.boot orgpad.render.metaball orgpad.render.bezier adzerk.boot-reload adzerk.boot-cljs-repl], :init-fns [orgpad.core.boot/init]}
