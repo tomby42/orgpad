@@ -5,8 +5,8 @@ goog.require('goog.events.EventType');
 goog.require('goog.events.EventTarget');
 goog.require('goog.events');
 
-clojure.browser.event.IEventType = (function (){var obj5210 = {};
-return obj5210;
+clojure.browser.event.IEventType = (function (){var obj5222 = {};
+return obj5222;
 })();
 
 clojure.browser.event.event_types = (function event_types(this$){
@@ -40,10 +40,10 @@ goog.events.EventTarget.prototype.clojure$browser$event$IEventType$ = true;
 goog.events.EventTarget.prototype.clojure$browser$event$IEventType$event_types$arity$1 = (function (this$){
 var this$__$1 = this;
 return cljs.core.into.call(null,cljs.core.PersistentArrayMap.EMPTY,cljs.core.map.call(null,((function (this$__$1){
-return (function (p__5211){
-var vec__5212 = p__5211;
-var k = cljs.core.nth.call(null,vec__5212,(0),null);
-var v = cljs.core.nth.call(null,vec__5212,(1),null);
+return (function (p__5223){
+var vec__5224 = p__5223;
+var k = cljs.core.nth.call(null,vec__5224,(0),null);
+var v = cljs.core.nth.call(null,vec__5224,(1),null);
 return new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs.core.keyword.call(null,k.toLowerCase()),v], null);
 });})(this$__$1))
 ,cljs.core.merge.call(null,cljs.core.js__GT_clj.call(null,goog.events.EventType))));
@@ -54,10 +54,10 @@ Element.prototype.clojure$browser$event$IEventType$ = true;
 Element.prototype.clojure$browser$event$IEventType$event_types$arity$1 = (function (this$){
 var this$__$1 = this;
 return cljs.core.into.call(null,cljs.core.PersistentArrayMap.EMPTY,cljs.core.map.call(null,((function (this$__$1){
-return (function (p__5213){
-var vec__5214 = p__5213;
-var k = cljs.core.nth.call(null,vec__5214,(0),null);
-var v = cljs.core.nth.call(null,vec__5214,(1),null);
+return (function (p__5225){
+var vec__5226 = p__5225;
+var k = cljs.core.nth.call(null,vec__5226,(0),null);
+var v = cljs.core.nth.call(null,vec__5226,(1),null);
 return new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs.core.keyword.call(null,k.toLowerCase()),v], null);
 });})(this$__$1))
 ,cljs.core.merge.call(null,cljs.core.js__GT_clj.call(null,goog.events.EventType))));

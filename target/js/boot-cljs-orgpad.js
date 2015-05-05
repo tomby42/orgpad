@@ -8,9 +8,10 @@ goog.addDependency("../adzerk/boot_reload/websocket.js", ['adzerk.boot_reload.we
 goog.addDependency("../cljs/reader.js", ['cljs.reader'], ['goog.string', 'cljs.core', 'goog.string.StringBuffer']);
 goog.addDependency("../adzerk/boot_reload/client.js", ['adzerk.boot_reload.client'], ['adzerk.boot_reload.reload', 'goog.net.jsloader', 'cljs.core', 'adzerk.boot_reload.websocket', 'clojure.browser.net', 'cljs.reader', 'clojure.browser.event']);
 goog.addDependency("../adzerk/boot_reload.js", ['adzerk.boot_reload'], ['cljs.core', 'adzerk.boot_reload.client']);
+goog.addDependency("../orgpad/render/bezier.js", ['orgpad.render.bezier'], ['cljs.core']);
 goog.addDependency("../weasel/impls/websocket.js", ['weasel.impls.websocket'], ['cljs.core', 'clojure.browser.net', 'goog.net.WebSocket', 'clojure.browser.event']);
 goog.addDependency("../weasel/repl.js", ['weasel.repl'], ['weasel.impls.websocket', 'cljs.core', 'clojure.browser.net', 'cljs.reader', 'clojure.browser.event']);
 goog.addDependency("../adzerk/boot_cljs_repl.js", ['adzerk.boot_cljs_repl'], ['weasel.repl', 'cljs.core']);
 goog.addDependency("../orgpad/render/metaball.js", ['orgpad.render.metaball'], ['cljs.core']);
 goog.addDependency("../orgpad/core/boot.js", ['orgpad.core.boot'], ['cljs.core']);
-goog.addDependency("../boot/cljs/orgpad.js", ['boot.cljs.orgpad'], ['adzerk.boot_reload', 'cljs.core', 'adzerk.boot_cljs_repl', 'orgpad.render.metaball', 'orgpad.core.boot']);
+goog.addDependency("../boot/cljs/orgpad.js", ['boot.cljs.orgpad'], ['adzerk.boot_reload', 'cljs.core', 'orgpad.render.bezier', 'adzerk.boot_cljs_repl', 'orgpad.render.metaball', 'orgpad.core.boot']);

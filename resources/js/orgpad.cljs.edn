@@ -1,2 +1,4 @@
-{:require  [orgpad.core.boot orgpad.render.metaball]
+{:require  [orgpad.core.boot 
+            orgpad.render.metaball
+            orgpad.render.bezier]
  :init-fns [orgpad.core.boot/init]}
