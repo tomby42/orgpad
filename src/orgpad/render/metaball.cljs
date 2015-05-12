@@ -38,39 +38,34 @@
 (defn shift [centre1 centre2] "Shift vector of the length cca 20, perpendicular to the line between two points."
     (let [norm (js/Math.sqrt (norm-squared centre1 centre2))]
           (vector (- (/ (* 20 
-                                                (- 
-                                                                          (centre1 0) 
-                                                                                                 (centre2 0)))
-                                          norm))
-                              (/ (* 20 
-                                                      (- (centre1 1)
-                                                                              (centre2 1)))
-                                                norm))
-            )
-    )
+                           (- (centre1 0)
+                              (centre2 0)))
+                        norm))
+                  (/ (* 20
+                        (- (centre1 1)
+                           (centre2 1)))
+                     norm))))
 
 ;tested
 (defn get-coef [i j blobs] "Calculates the minimal size coef. required by blob conectness."
-    (let [correction (shift (get (blobs i) :centre) 
-                                                      (get (blobs j) :centre))
-                  pt (vector (+ (/ (+ (-> (blobs i) :centre first)
-                                                                  (-> (blobs j) :centre first))
-                                                          2)
-                                                    (correction 0))
-                                              (+ (/ (+ (-> (blobs i) :centre last)
-                                                                                 (-> (blobs j) :centre last))
-                                                                           2)
-                                                                     (correction 1)))]
-          (/ 1
-                    (reduce + (total-blob-fcion pt blobs)))))
+    (let [correction (shift (get (blobs i) :centre)
+                            (get (blobs j) :centre))
+          pt (vector (+ (/ (+ (-> (blobs i) :centre first)
+                              (-> (blobs j) :centre first))
+                           2)
+                        (correction 0))
+                     (+ (/ (+ (-> (blobs i) :centre last)
+                              (-> (blobs j) :centre last))
+                           2)
+                        (correction 1)))]
+      (/ 1
+         (reduce + (total-blob-fcion pt blobs)))))
 
 ;tested
 (defn calc-blob [& blob-list] "Adjusts the size of given blobs to create a connected metaball."
     (let [blobs (into [] blob-list)
-                  coef (reduce max (for [i (range 0 (count blobs))
-                                                                        j (range 0 (count blobs))
-                                                                                                      :when (> i j)]
-                                                                   (get-coef i j blobs)))]
-        (do (print coef blobs) 
-                (resize-blobs (max 1 coef) blobs)))
-      )
+          coef (reduce max (for [i (range 0 (count blobs))
+                                 j (range 0 (count blobs))
+                                 :when (> i j)]
+                             (get-coef i j blobs)))]
+      (resize-blobs (max 1 coef) blobs)))
