@@ -2,7 +2,7 @@
  * Pi (personalised/pico) mind
  * (C) 2011-2015 Tomas 'tomby' Bily <tomby@ucw.cz>
  *
- * version: 0.5.4a- (Fri May  1 16:16:23 CEST 2015)
+ * version: 0.5.4a- (Sun May 17 23:46:58 CEST 2015)
  */
 
 /*
@@ -3880,7 +3880,8 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	var as = json.herbartModel.associations;
 	for (i = as.length; i--;) {
 	  as [i].aid += ab;
-	  self.associateWhiles (as [i].swid + wb, as [i].ewid + wb, as [i], as [i].awid + wb);
+	  self.associateWhiles (as [i].swid + wb, as [i].ewid + wb, as [i],
+                                as [i].awid !== -1 ? as [i].awid + wb : -1);
 	}
       };
 
