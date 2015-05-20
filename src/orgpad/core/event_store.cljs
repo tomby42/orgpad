@@ -112,15 +112,16 @@
 (defn- propagate-state
   [states counts step pos current-states]
 
-  (if (< (count current-states) (inc step))
+  (if (<= (count current-states) step)
     [(assoc states (dec pos) current-states) counts]
-    (let [state-to-prop    (current-states 0)
+    (let [dstep            (dec step)
+          state-to-prop    (current-states 0)
           states'          (assoc states (dec pos) (subvec current-states 1))
-          counts'          (assoc counts (dec pos) step)]
+          counts'          (assoc counts (dec pos) dstep)]
       (if (= (count states) pos)
-        [(conj states' [state-to-prop]) (conj counts' step)]
+        [(conj states' [state-to-prop]) (conj counts' dstep)]
         (if (zero? (counts' pos))
-          (recur states' (assoc counts' pos step) step (inc pos) (conj (states pos) state-to-prop))
+          (recur states' (assoc counts' pos dstep) step (inc pos) (conj (states pos) state-to-prop))
           [states' (update-in counts' [pos] dec)])))))
 
 (defn add-state

@@ -102,6 +102,19 @@
             false
           ))))))
 
+(defn add-states
+  [state-history from to]
+  (reduce (fn [state-history num] 
+            (es/add-state state-history num num))
+          state-history (range from to)))
+
+(defn nei-diff-eq-step?
+  [row step]
+
+  (let [r   (mapv first row)
+        n   (count r)]
+    (->> (map - (subvec r 1) (subvec r 0 (dec n)))
+         (every? (partial = step)))))
 
 (deftest event-store
 
@@ -173,4 +186,13 @@
 
   (testing "state from to"
     (is (test-state-build 100 10) "should equal"))
+
+  (testing "state history"
+    (let [shistory      (es/new-state-history 4)
+          shistory1     (add-states shistory 0 4)
+          shistory2     (add-states shistory1 4 16)
+          shistory3     (add-states shistory2 16 64)]
+      (is (nei-diff-eq-step? (get-in shistory1 [:states 0]) 1)
+          "should has step 1")
+      ))
   )
