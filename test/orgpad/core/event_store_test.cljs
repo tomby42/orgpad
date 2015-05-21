@@ -108,6 +108,7 @@
             (es/add-state state-history num num))
           state-history (range from to)))
 
+
 (defn nei-diff-eq-step?
   [row step]
 
@@ -115,6 +116,21 @@
         n   (count r)]
     (->> (map - (subvec r 1) (subvec r 0 (dec n)))
          (every? (partial = step)))))
+
+(defn state-history-test-run
+  [step n-runs]
+  
+  (let [shistory      (es/new-state-history step)
+        shistory1     (add-states shistory 0 n-runs)]
+    (and (= (-> shistory1 :states count) (Math/round (/ (Math/log n-runs) (Math/log step))))
+         (first (reduce (fn [[state mult] row]
+                          (if state
+                            [(nei-diff-eq-step? row mult) (* mult step)]
+                            [false 0])) [true 1] (-> shistory1 :states)))
+
+         )))
+  
+
 
 (deftest event-store
 
@@ -195,4 +211,9 @@
       (is (nei-diff-eq-step? (get-in shistory1 [:states 0]) 1)
           "should has step 1")
       ))
+
+  (testing "state history 1"
+    (is (state-history-test-run 4 16)
+        "should be true")
+    )
   )
