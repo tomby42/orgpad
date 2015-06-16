@@ -146,11 +146,11 @@
           e2 (es/conjes e1 [0] 0)]
       (is (= (-> e1 :state count) 1)
           "should be 1")
-      (is (= (-> e1 :history last first) :conj)
+      (is (= (-> e1 :history last second) :conj)
           "should be conj")
       (is (= (-> e2 :state first count) 1)
           "should contain vector of length 1")
-      (is (= (-> e2 :history last first) :conj)
+      (is (= (-> e2 :history last second) :conj)
           "should be conj too")))
 
   (testing "popes"
@@ -159,11 +159,11 @@
           e2 (es/popes e1 [0])]
       (is (= (-> e1 :state count) 1)
           "should contain one element")
-      (is (= (-> e1 :history last first) :pop)
+      (is (= (-> e1 :history last second) :pop)
           "should be pop")
       (is (= (-> e2 :state first count) 0)
           "should be zero")
-      (is (= (-> e2 :history last first) :pop)
+      (is (= (-> e2 :history last second) :pop)
           "should be pop too")))
 
   (testing "assoces"
@@ -172,11 +172,11 @@
           e2 (es/assoces e1 [:a] :b {})]
       (is (contains? (-> e1 :state) :a)
           "should contain :a")
-      (is (= (-> e1 :history last first) :assoc)
+      (is (= (-> e1 :history last second) :assoc)
           "should be assoc")
       (is (contains? (-> e2 :state :a) :b)
           "should contains :b")
-      (is (= (-> e2 :history last first) :assoc)
+      (is (= (-> e2 :history last second) :assoc)
           "should be assoc too")))
 
   (testing "dissoces"
@@ -185,11 +185,11 @@
           e2 (es/dissoces e1 [:a] :b)]
       (is (not (contains? (-> e1 :state) :c))
           "should not contain :c")
-      (is (= (-> e1 :history last first) :dissoc)
+      (is (= (-> e1 :history last second) :dissoc)
           "should be dissoc")
       (is (not (contains? (-> e2 :state :a) :b))
           "should not contains :b")
-      (is (= (-> e2 :history last first) :dissoc)
+      (is (= (-> e2 :history last second) :dissoc)
           "should be dissoc too")))
 
   (testing "patches"
@@ -197,7 +197,7 @@
           e1 (es/patches e [:text] [[[3 "b"] [7 "c"]] [0 1 5]])]
       (is (= (-> e1 :state :text) "cbabac")
           "should be equal")
-      (is (= (-> e1 :history last first) :patch)
+      (is (= (-> e1 :history last second) :patch)
           "should be patch")))
 
   (testing "state from to"
