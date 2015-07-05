@@ -20,17 +20,18 @@
 
 (defn draw-cubic-bezier [pts] "Draws bezier curve defined by 4 control points."
   (let [ctx (.getContext (.getElementById js/document canvas) "2d")]
-    (do (.beginPath ctx)
-        (.moveTo ctx ((nth pts 0) 0) ((nth pts 0) 1))
-        (.bezierCurveTo ctx 
-                        ((nth pts 1) 0) 
-                        ((nth pts 1) 1) 
-                        ((nth pts 2) 0) 
-                        ((nth pts 2) 1) 
-                        ((nth pts 3) 0) 
-                        ((nth pts 3) 1))
-        (.stroke ctx))))
-
+    (doto ctx 
+      .beginPath
+      (.moveTo (get-in pts [0 0]) 
+               (get-in pts [0 1]))
+      (.bezierCurveTo (get-in [1 0])
+                      (get-in [1 1])
+                      (get-in [2 0])
+                      (get-in [2 1])
+                      (get-in [3 0])
+                      (get-in [3 1]))
+      .stroke)))
+    
 (defn get-cpts-3pts [sharpness start mid end direction] "Calculate two control points for cubic bezier from 3 points and sharpness factor, which affects the distance between control points."
   (let [shift (map - 
                    (midpoint start mid) 
@@ -45,25 +46,26 @@
                (for [x shift]
                (* x direction ratio sharpness))))))
 
-(defn ^{:private true} cpts-closed-curve [sharpness pts] "Get vector of all cpts approximating closed curve. Change sharpness to fine-tune the approximation."
-  (if (>= (count pts) 4)
-      (conj (cpts-closed-curve sharpness (pop pts))
-            (list (-> pts pop peek)
-                  (get-cpts-3pts sharpness 
-                                 (peek pts) 
-                                 (-> pts pop peek) 
-                                 (-> pts pop pop peek)
-                                 1)
-                  (get-cpts-3pts sharpness 
-                                 (-> pts pop peek) 
-                                 (-> pts pop pop peek) 
-                                 (-> pts pop pop pop peek)
-                                 -1)
-                  (-> pts pop pop peek)))
-      (vector)))
+(defn- cpts-closed-curve [sharpness pts] "Get vector of all cpts approximating closed curve. Change sharpness to fine-tune the approximation."
+  (let [n (count pts)]
+    (if (>= n 4)
+        (conj (cpts-closed-curve sharpness (pop pts))
+              (vector (pts (- n 1))
+                      (get-cpts-3pts sharpness 
+                                     (peek pts) 
+                                     (pts (- n 2)) 
+                                     (pts (- n 3))
+                                     1)
+                      (get-cpts-3pts sharpness 
+                                     (pts (- n 2)) 
+                                     (pts (- n 3))
+                                     (pts (- n 4))
+                                     -1)
+                      (pts (- n 3))))
+        (vector))))
 
-(defn ^{:private true} close-points [pts] "Prepends last two pts, appends first pts"
-  (conj (into (vector (-> pts pop peek) (peek pts))
+(defn- close-points [pts] "Prepends last two pts, appends first pts"
+  (conj (into (vector (pts (- (count pts) 2)) (peek pts))
               pts)
         (first pts) 
         (-> pts rest first)))
@@ -76,7 +78,7 @@
        (if (seq pts)
          (draw-closed-curve (pop pts))))))
 
-;test Bezier
+;test Bezier - move to separate file
 (defn test-pts-gen [] 
   (into [] 
         (for [x (range 0 5)]
