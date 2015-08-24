@@ -127,7 +127,6 @@
                           (if state
                             [(nei-diff-eq-step? row mult) (* mult step)]
                             [false 0])) [true 1] (-> shistory1 :states)))
-
          )))
   
 
@@ -215,5 +214,9 @@
   (testing "state history 1"
     (is (state-history-test-run 4 16)
         "should be true")
+    )
+
+  (testing "get nearest state"
+    
     )
   )

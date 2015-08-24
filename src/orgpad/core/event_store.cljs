@@ -12,95 +12,6 @@
 
   (js/Date.))
 
-(defn new-event-store
-  "Creates new event store with col as initial state"
-  [col]
-
-  {:state col
-   :history [[(now) :init col]]})
-
-(defn- conjs
-  [state pth val]
-  (if (empty? pth)
-    (conj state val)
-    (update-in state pth conj val)))
-
-(defn conjes
-  "Event store conj"
-  [{:keys [state history]} pth val]
-
-  {:state (conjs state pth val)
-   :history (conj history [(now) :conj pth val])})
-
-(defn- pops
-  [state pth]
-   (if (empty? pth)
-     (pop state)
-     (update-in state pth pop)))
-
-(defn popes
-  "Event store pop"
-  [{:keys [state history]} pth]
-
-  {:state (pops state pth)
-   :history (conj history [(now) :pop pth])})
-
-(defn- assocs
-  [state pth key val]
-  (if (empty? pth)
-    (assoc state key val)
-    (update-in state pth assoc key val)))
-
-(defn assoces
-  "Event store assoc"
-  [{:keys [state history]} pth key val]
-
-  {:state (assocs state pth key val)
-   :history (conj history [(now) :assoc pth key val])})
-
-(defn- dissocs
-  [state pth key]
-  (if (empty? pth)
-    (dissoc state key)
-    (update-in state pth dissoc key)))
-
-(defn dissoces
-  "Event store dissoc"
-  [{:keys [state history]} pth key]
-
-  {:state (dissocs state pth key)
-   :history (conj history [(now) :dissoc pth key])})
-
-(defn- patchs
-  [state pth patch]
-
-  (update-in state pth sdiff/patch patch))
-
-(defn patches
-  "String patch"
-  [{:keys [state history]} pth patch]
-
-  {:state (patchs state pth patch)
-   :history (conj history [(now) :patch pth patch])})
-
-
-(defn- apply-cmd
-  "Apply cmd on state and returns result."
-  [state cmd]
-
-  (case (cmd 1)
-    :conj (conjs state (cmd 2) (cmd 3))
-    :pop (pops state (cmd 2))
-    :assoc (assocs state (cmd 2) (cmd 3) (cmd 4))
-    :dissoc (dissocs state (cmd 2) (cmd 3))
-    :patch (patchs state (cmd 2) (cmd 3))))
-
-(defn state-from-to
-  "Apply history starting at 'from' and ending at 'to' to 'state' and
-  returns result."
-  [state history from to]
-
-  (reduce apply-cmd state (subvec history from to)))
 
 (defn new-state-history
   "Create new state history. State history is sparse representation of
@@ -143,6 +54,7 @@
      :states states'}))
 
 (defn- find-nearest-state
+  "Returns least nearest pair [state stamp] to 'stamp'. 'cmp-stamps' is custom comparator."
   [{:keys [states]} stamp cmp-stamps]
 
   (letfn [(cmp
@@ -162,3 +74,101 @@
         (s pos)
         (s (dec (- pos)))))))
 
+(defn new-event-store
+  "Creates new event store with col as initial state"
+  [col history-step]
+
+  {:state col
+   :state-history (new-state-history history-step)
+   :history [[(now) :init col]]})
+
+(defn- update-event-store
+  [state state-history history]
+  {:state state
+   :history history
+   :state-history (add-state state-history
+                             state
+                             (count history))})
+
+(defn- conjs
+  [state pth val]
+  (if (empty? pth)
+    (conj state val)
+    (update-in state pth conj val)))
+
+(defn conjes
+  "Event store conj"
+  [{:keys [state history state-history]} pth val]
+
+  (update-event-store (conjs state pth val) state-history
+                      (conj history [(now) :conj pth val])))
+
+(defn- pops
+  [state pth]
+   (if (empty? pth)
+     (pop state)
+     (update-in state pth pop)))
+
+(defn popes
+  "Event store pop"
+  [{:keys [state history state-history]} pth]
+
+  (update-event-store (pops state pth) state-history
+                      (conj history [(now) :pop pth])))
+
+(defn- assocs
+  [state pth key val]
+  (if (empty? pth)
+    (assoc state key val)
+    (update-in state pth assoc key val)))
+
+(defn assoces
+  "Event store assoc"
+  [{:keys [state history state-history]} pth key val]
+
+  (update-event-store (assocs state pth key val) state-history
+                      (conj history [(now) :assoc pth key val])))
+
+(defn- dissocs
+  [state pth key]
+  (if (empty? pth)
+    (dissoc state key)
+    (update-in state pth dissoc key)))
+
+(defn dissoces
+  "Event store dissoc"
+  [{:keys [state history state-history]} pth key]
+
+  (update-event-store (dissocs state pth key) state-history
+                      (conj history [(now) :dissoc pth key])))
+
+(defn- patchs
+  [state pth patch]
+
+  (update-in state pth sdiff/patch patch))
+
+(defn patches
+  "String patch"
+  [{:keys [state history state-history]} pth patch]
+
+  (update-event-store (patchs state pth patch) state-history
+                      (conj history [(now) :patch pth patch])))
+
+
+(defn- apply-cmd
+  "Apply cmd on state and returns result."
+  [state cmd]
+
+  (case (cmd 1)
+    :conj (conjs state (cmd 2) (cmd 3))
+    :pop (pops state (cmd 2))
+    :assoc (assocs state (cmd 2) (cmd 3) (cmd 4))
+    :dissoc (dissocs state (cmd 2) (cmd 3))
+    :patch (patchs state (cmd 2) (cmd 3))))
+
+(defn state-from-to
+  "Apply history starting at 'from' and ending at 'to' to 'state' and
+  returns result."
+  [state history from to]
+
+  (reduce apply-cmd state (subvec history from to)))

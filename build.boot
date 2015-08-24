@@ -1,16 +1,17 @@
 (set-env!
  :source-paths   #{"src"}
  :resource-paths #{"resources"}
- :dependencies '[
-		 [adzerk/boot-cljs      "0.0-2814-4"		:scope "test"]
-                 [adzerk/boot-cljs-repl "0.1.9"			:scope "test"]
-                 [adzerk/boot-reload    "0.2.6"			:scope "test"]
+ :dependencies '[[org.clojure/clojure   "1.7.0"                 :scope "test"]
+		 [adzerk/boot-cljs      "1.7.48-2"		:scope "test"]
+                 [adzerk/boot-cljs-repl "0.1.10-SNAPSHOT"	:scope "test"]
+                 [adzerk/boot-reload    "0.3.1"			:scope "test"]
                  [pandeiro/boot-http    "0.6.3-SNAPSHOT"	:scope "test"]
-		 [org.clojure/clojurescript "0.0-2814"		:scope "test"]
+		 [org.clojure/clojurescript "1.7.48"		:scope "test"]
 		 [org.clojure/test.check "0.7.0"		:scope "test"]
-		 [cider/cider-nrepl      "0.8.2"		:scope "test"]
+		 [cider/cider-nrepl      "0.9.1"		:scope "test"]
 		 [com.wagjo/cljs-diff    "0.1.0-SNAPSHOT"	:scope "test"]
-                 [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "test"]])
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "test"]
+                 [datascript             "0.11.6"               :Scope "test"]])
 
 (require
  '[adzerk.boot-cljs      :refer [cljs]]
@@ -21,7 +22,7 @@
  '[boot.repl		 :as brepl])
 
 (swap! boot.repl/*default-dependencies*
-       concat '[[cider/cider-nrepl "0.8.2"]])
+       concat '[[cider/cider-nrepl "0.9.1"]])
 
 (swap! boot.repl/*default-middleware*
        conj 'cider.nrepl/cider-middleware)
