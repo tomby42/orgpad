@@ -1,9 +1,8 @@
 (ns orgpad.core.event-store-test
-  (:require [cljs.test :refer-macros [deftest testing is] ]
-            [cljs.test.check :as tc]
-            [cljs.test.check.generators :as gen]
-            [cljs.test.check.properties :as prop :refer-macros [for-all]]
-            [cljs.test.check.cljs-test :refer-macros [defspec]]
+  (:require [cljs.test :as test :refer-macros [deftest testing is]]
+            [clojure.test.check :as tc]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop :include-macros true]
             [orgpad.core.event-store :as es]
             [wagjo.diff.core :as sdiff]))
 
@@ -131,7 +130,7 @@
   
 
 
-(deftest event-store
+(deftest event-store-test
 
   (testing "new"
     (let [e (es/new-event-store {})]

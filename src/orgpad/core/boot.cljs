@@ -4,3 +4,8 @@
 (defn init []
   (.log js/console "ORGPAD 2.0 BOOT."))
 
+(defn on-js-reload []
+  )
+
+
+(init)
