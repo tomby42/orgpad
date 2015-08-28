@@ -7,5 +7,4 @@
 
 (defn ^:export run
   []
-  (.log js/console "HUP")
   (run-all-tests #"orgpad.*-test"))
