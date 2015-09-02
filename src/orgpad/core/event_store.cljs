@@ -3,8 +3,10 @@
 
     orgpad.core.event-store
 
-    (:require [orgpad.tools.search :as search]
-              [wagjo.diff.core     :as sdiff]))
+    (:require
+     [datascript          :as d]
+     [orgpad.tools.search :as search]
+     [wagjo.diff.core     :as sdiff]))
 
 (defn- now
   "Returns current time"
@@ -75,100 +77,21 @@
         (s (dec (- pos)))))))
 
 (defn new-event-store
-  "Creates new event store with col as initial state"
-  [col history-step]
+  "Creates new event store connected to datascript db throught 'conn'
+  with history step 'history-step'"
+  [conn history-step]
 
-  {:state col
-   :state-history (new-state-history history-step)
-   :history [[(now) :init col]]})
+  (let [history (atom [])
+        state-history (atom (new-state-history history-step))]
+    (d/listen!
+     conn (fn [tx-report]
+            (println tx-report)
+            (swap! history conj [(now) (:tx-data tx-report)])
+            (swap! state-history add-state
+                   (:db-after tx-report)
+                   (count @history))))
+    {:state conn
+     :history history
+     :state-history state-history}))
 
-(defn- update-event-store
-  [state state-history history]
-  {:state state
-   :history history
-   :state-history (add-state state-history
-                             state
-                             (count history))})
-
-(defn- conjs
-  [state pth val]
-  (if (empty? pth)
-    (conj state val)
-    (update-in state pth conj val)))
-
-(defn conjes
-  "Event store conj"
-  [{:keys [state history state-history]} pth val]
-
-  (update-event-store (conjs state pth val) state-history
-                      (conj history [(now) :conj pth val])))
-
-(defn- pops
-  [state pth]
-   (if (empty? pth)
-     (pop state)
-     (update-in state pth pop)))
-
-(defn popes
-  "Event store pop"
-  [{:keys [state history state-history]} pth]
-
-  (update-event-store (pops state pth) state-history
-                      (conj history [(now) :pop pth])))
-
-(defn- assocs
-  [state pth key val]
-  (if (empty? pth)
-    (assoc state key val)
-    (update-in state pth assoc key val)))
-
-(defn assoces
-  "Event store assoc"
-  [{:keys [state history state-history]} pth key val]
-
-  (update-event-store (assocs state pth key val) state-history
-                      (conj history [(now) :assoc pth key val])))
-
-(defn- dissocs
-  [state pth key]
-  (if (empty? pth)
-    (dissoc state key)
-    (update-in state pth dissoc key)))
-
-(defn dissoces
-  "Event store dissoc"
-  [{:keys [state history state-history]} pth key]
-
-  (update-event-store (dissocs state pth key) state-history
-                      (conj history [(now) :dissoc pth key])))
-
-(defn- patchs
-  [state pth patch]
-
-  (update-in state pth sdiff/patch patch))
-
-(defn patches
-  "String patch"
-  [{:keys [state history state-history]} pth patch]
-
-  (update-event-store (patchs state pth patch) state-history
-                      (conj history [(now) :patch pth patch])))
-
-
-(defn- apply-cmd
-  "Apply cmd on state and returns result."
-  [state cmd]
-
-  (case (cmd 1)
-    :conj (conjs state (cmd 2) (cmd 3))
-    :pop (pops state (cmd 2))
-    :assoc (assocs state (cmd 2) (cmd 3) (cmd 4))
-    :dissoc (dissocs state (cmd 2) (cmd 3))
-    :patch (patchs state (cmd 2) (cmd 3))))
-
-(defn state-from-to
-  "Apply history starting at 'from' and ending at 'to' to 'state' and
-  returns result."
-  [state history from to]
-
-  (reduce apply-cmd state (subvec history from to)))
+;; (map (fn [{:keys [e a v t added]}] (d/Datom. e a v t (not added))) (:tx-data prev))
