@@ -2,7 +2,7 @@
  * Pi (personalised/pico) mind
  * (C) 2011-2015 Tomas 'tomby' Bily <tomby@ucw.cz>
  *
- * version: 0.5.4a- (Sun May 17 23:46:58 CEST 2015)
+ * version: 0.5.5a-Barcelona (Sat Aug 8 16:06:20 CEST 2015)
  */
 
 /*
@@ -2418,9 +2418,9 @@
       return this.getReturnContainer ();
     },
 
-    fromJSON: function (json, wbase, abase) {
+    fromJSON: function (json, wbase, abase, inplace) {
       this.sendEvent ('fromJSON',
-		      { json: json, wbase: wbase, abase: abase});
+		      { json: json, wbase: wbase, abase: abase, inplace: inplace});
     },
 
     clearMind: function () {
@@ -3826,7 +3826,7 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	  a.setAssocBuoy (msg.desc.annotation > -1 ? self.getWhileFromArchive (msg.desc.annotation) : null);
 
 	self.sendEvent ('associationUpdated', a);
-	     };
+      };
 
       var onToJSON = function (self, selection) {
 	var i, j = {};
@@ -3864,8 +3864,15 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	var json = args.json;
 	var wb = args.wbase || 0;
 	var ab = args.abase || 0;
+	var diffPos;
 
-	self.getDataView ().getCanvas ().fromJSON (json.canvas);
+	if (!args.inplace) {
+	    self.getDataView ().getCanvas ().fromJSON (json.canvas);
+	} else {
+	    var posOld = self.getDataView ().getCanvas ().getTransform ().getPos ();
+	    var posNew = new PimTransform (json.canvas).getPos ();
+	    diffPos = [posNew[0] - posOld[0], posNew[1] - posOld[1]];
+	}
 
 	self.getDataView ().getDataModel ().fromJSON (json.dataModel, wb);
 
@@ -3875,6 +3882,11 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	  ws [i].wid += wb;
 	  ws [i].isImport = true;
 	  self.addWhile (ws [i]);
+	  if (args.inplace) {
+	    var b = self.getWhileFromArchive (ws [i].wid);
+	    var pos = b.getPos ();
+	    b.setPos ([pos[0] + diffPos[0], pos[1] + diffPos[1]]);
+	  }
 	}
 
 	var as = json.herbartModel.associations;
@@ -4387,7 +4399,7 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 
 	if (!el.getElementsByTagName("iframe").length) {
 	  var iframe = $createHTMLElement ("iframe");
-	  $setAttrs (iframe, {'class': "Observer"});
+	  $setAttrs (iframe, {'class': "Observer", 'frameborder': '0px'});
 	  $addNode (el, iframe);
 	}
 
@@ -4481,7 +4493,7 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	b.hideComObject ();
 	b.updateStateAttrs (2);
 	b.setCurrentState (2, {operator: ptr, mind: mind});
-	if (ptr.mode === 2) {
+	if (ptr.mode === 2 || ptr.mode === 5) {
 	  // ptr.mindObserverEl.innerHTML = b.getLevelData (2);
 	  var ifr = ptr.mindObserverEl.getElementsByTagName("iframe") [0];
 	  ifr.contentDocument.body.innerHTML = b.getLevelData (2);
@@ -4806,6 +4818,7 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	      case 0:
 	      case 2:
 	      case 4:
+              case 5:
 	      if (!moved) {
 	        buoyState2 (b);
 	        ef.stop = false;
@@ -5202,7 +5215,11 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	var wb = mind.getDataView ().getDataModel ().getMaxDid ();
 	var ab = mind.getDataView ().getDataModel ().getMaxLid ();
 
-	mind.fromJSON (JSON.parse (strFile), wb, ab);
+	if (!ptr.importForm.inplace) {
+	    mind.fromJSON (JSON.parse (strFile), wb, ab);
+	} else {
+	    mind.fromJSON (JSON.parse (strFile), wb, ab, true);
+	}
 	ptr.importForm.hide ();
 	return false;
       };
@@ -5247,12 +5264,19 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 
 	unmarkAll ();
 	ptr.selectedBuoys = [];
-      }
+      };
 
       var setModeState = function (sel) {
 	ptr.mode = sel.selectedIndex;
-	if (ptr.mode === 2) {
+	if (ptr.mode === 2 || ptr.mode === 5) {
 	  ptr.mindObserverEl.style.display = "inline";
+          if (ptr.mode === 2) {
+            $setAttrs (ptr.mindObserverEl, {'class': "Observer"});
+            $setAttrs (ptr.mindObserverEl.getElementsByTagName("iframe")[0], {'class': "Observer"});
+          } else {
+            $setAttrs (ptr.mindObserverEl, {'class': "ObserverFloor"});
+            $setAttrs (ptr.mindObserverEl.getElementsByTagName("iframe")[0], {'class': "ObserverFloor"});
+          }
 	} else {
 	  ptr.mindObserverEl.style.display = "none";
 	}
@@ -5263,7 +5287,7 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	// ptr.menuBar.addButton ("checkbox", "mode", "Selection mode:", function () { ptr.mode ^= 1; });
 
 	if (mode.menuBarShow && mode.menuBarShow.mode) {
-	  ptr.menuBar.addList ("mode", "Mode", ["Edit", "Select", "Observe", "Pitch", "Explore"], function () {
+	  ptr.menuBar.addList ("mode", "Mode", ["Edit", "Select", "Observe", "Pitch", "Explore", "Observe Floor"], function () {
 	    setModeState (this);
 	  });
 	}
@@ -5311,7 +5335,7 @@ reader.readAsBinaryString (f);
 	 */
 
 	if (mode.menuBarShow && mode.menuBarShow.file) {
-	  ptr.menuBar.addList ("file", "File", ["Save", "Save deep", "Import", "Export"], emptyF, function () {
+	  ptr.menuBar.addList ("file", "File", ["Save", "Save deep", "Import", "Import inplace", "Export"], emptyF, function () {
 	    switch (this.selectedIndex) {
               case 0:
               PimSaver.prototype.saveByURI (JSON.stringify (ptr.toJSON ()));
@@ -5324,9 +5348,14 @@ reader.readAsBinaryString (f);
 	      w.focus ();
 	      break;
 	      case 2:
+	      ptr.importForm.inplace = false;
 	      ptr.importForm.show ();
 	      break;
 	      case 3:
+	      ptr.importForm.inplace = true;
+	      ptr.importForm.show ();
+	      break;
+	      case 4:
 	      document.exportForm.output.value = exportMind ();
 	      ptr.exportForm.show ();
 	      break;
