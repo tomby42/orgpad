@@ -1,6 +1,6 @@
 (ns orgpad.test
   (:require [cljs.test :refer-macros [run-all-tests]]
-            [orgpad.core.event-store-test]
+            [orgpad.core.store-test]
             ))
 
 (enable-console-print!)

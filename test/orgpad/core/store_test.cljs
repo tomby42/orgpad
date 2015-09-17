@@ -1,32 +1,17 @@
-(ns orgpad.core.event-store-test
+(ns orgpad.core.store-test
   (:require [cljs.test :as test :refer-macros [deftest testing is]]
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop :include-macros true]
             [datascript :as d]
-            [orgpad.core.event-store :as es]
+            [orgpad.core.store :as store]
             [wagjo.diff.core :as sdiff]))
 
 
-
-(defn test-state-build
-  [n m]
-
-  (loop [i 0]
-    (if (= i n)
-      true
-      (let [es (gen-event-store (es/new-event-store []) m)]
-        (if (= (:state es) (es/state-from-to [] (:history es) 1 (-> es :history count)))
-          (recur (inc i))
-          (do
-            (println "Wrong" es)
-            false
-          ))))))
-
 (defn add-states
   [state-history from to]
-  (reduce (fn [state-history num] 
-            (es/add-state state-history num num))
+  (reduce (fn [state-history num]
+            (store/add-state state-history num num))
           state-history (range from to)))
 
 
@@ -40,8 +25,8 @@
 
 (defn state-history-test-run
   [step n-runs]
-  
-  (let [shistory      (es/new-state-history step)
+
+  (let [shistory      (store/new-state-history step)
         shistory1     (add-states shistory 0 n-runs)]
     (and (= (-> shistory1 :states count) (Math/round (/ (Math/log n-runs) (Math/log step))))
          (first (reduce (fn [[state mult] row]
@@ -49,13 +34,13 @@
                             [(nei-diff-eq-step? row mult) (* mult step)]
                             [false 0])) [true 1] (-> shistory1 :states)))
          )))
-  
+
 
 
 (deftest event-store-test
 
   (testing "state history"
-    (let [shistory      (es/new-state-history 4)
+    (let [shistory      (store/new-state-history 4)
           shistory1     (add-states shistory 0 4)
           shistory2     (add-states shistory1 4 16)
           shistory3     (add-states shistory2 16 64)]
@@ -71,17 +56,17 @@
   (testing "new event store"
     (let [conn (d/create-conn {:friend {:db/cardinality :db.cardinality/many
                                         :db/valueType :db.type/ref}})
-          es1  (es/new-event-store conn 16)]
+          es1  (store/new-store conn 16)]
       (d/transact! conn [{:db/id 1
                           :name "Bozko"
                           :friend 2
                           }
                          {:db/id 2
-                          :name "Budko"                          
+                          :name "Budko"
                           }
                          ])
-      (.log js/console (-> es1 :history deref)) 
-      (is (not (= (-> es1 :history deref count) 0))
+      (.log js/console (-> es1 :history deref))
+      (is (not= (-> es1 :history deref count) 0)
           "should be non empty")
     ))
 

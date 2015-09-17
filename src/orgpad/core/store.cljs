@@ -1,19 +1,12 @@
-(ns ^{:doc "Event sourcing library. More doc see for example
-    http://docs.geteventstore.com/introduction/event-sourcing-basics/ "}
+(ns ^{:doc "Store with history"}
 
-    orgpad.core.event-store
+  orgpad.core.store
 
-    (:require
-     [datascript          :as d]
-     [orgpad.tools.search :as search]
-     [wagjo.diff.core     :as sdiff]))
-
-(defn- now
-  "Returns current time"
-  []
-
-  (js/Date.))
-
+  (:require
+   [datascript          :as d]
+   [orgpad.tools.search :as search]
+   [orgpad.tools.time   :as time]
+   [wagjo.diff.core     :as sdiff]))
 
 (defn new-state-history
   "Create new state history. State history is sparse representation of
@@ -76,8 +69,8 @@
         (s pos)
         (s (dec (- pos)))))))
 
-(defn new-event-store
-  "Creates new event store connected to datascript db throught 'conn'
+(defn new-store
+  "Creates new store connected to datascript db throught 'conn'
   with history step 'history-step'"
   [conn history-step]
 
@@ -86,12 +79,10 @@
     (d/listen!
      conn (fn [tx-report]
             (println tx-report)
-            (swap! history conj [(now) (:tx-data tx-report)])
+            (swap! history conj [(time/now) (:tx-data tx-report)])
             (swap! state-history add-state
                    (:db-after tx-report)
                    (count @history))))
     {:state conn
      :history history
      :state-history state-history}))
-
-;; (map (fn [{:keys [e a v t added]}] (d/Datom. e a v t (not added))) (:tx-data prev))
