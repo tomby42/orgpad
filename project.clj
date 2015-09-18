@@ -8,6 +8,7 @@
                  [org.clojure/test.check      "0.8.2"]
                  [com.wagjo/cljs-diff         "0.1.0-SNAPSHOT"]
                  [datascript                  "0.12.1"]
+                 [rum                         "0.3.0"]
                  ]
 
   :plugins [[lein-cljsbuild "1.0.6"]
