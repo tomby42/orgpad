@@ -76,7 +76,7 @@
 
       (store/undo! es1)
 
-      (.log js/console (-> es1 :history deref))
+      #_(.log js/console (-> es1 :history deref))
 
       (is (empty (d/q '[:find ?e :where [?e :name "Trubko"]] @conn))
           "should be empty")
@@ -96,12 +96,11 @@
                           :friend 2
                           }])
 
-
       (-> es1
         store/undo!
         store/redo!)
 
-      (.log js/console (-> es1 :history deref))
+      #_(.log js/console (-> es1 :history deref))
 
       (is (not-empty (d/q '[:find ?e :where [?e :name "Trubko"]] @conn))
           "should be present")
