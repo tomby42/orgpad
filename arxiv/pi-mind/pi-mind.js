@@ -2,7 +2,7 @@
  * Pi (personalised/pico) mind
  * (C) 2011-2015 Tomas 'tomby' Bily <tomby@ucw.cz>
  *
- * version: 0.5.5a-Barcelona (Sat Aug 8 16:06:20 CEST 2015)
+ * version: 0.5.5a-Barcelona (Wed Sep 23 23:48:16 CEST 2015)
  */
 
 /*
@@ -71,26 +71,42 @@
     }
   };
 
-  var updateMathJax = function (el) {
+  var updateMath = function (el) {
     if (window.MathJax) {
       if (el) {
         window.MathJax.Hub.Queue (["Typeset", window.MathJax.Hub, el]);
       } else {
         window.MathJax.Hub.Queue (["Typeset", window.MathJax.Hub]);
       }
+    } else if (window.katex) {
+      $each ($selectElements ('.math', el), function (mathEl) {
+        var texTxt = mathEl.textContent, addDisp;
+        if (mathEl.tagName === 'DIV') {
+          addDisp = '\\displaystyle ';
+        } else {
+          addDisp = '';
+        }
+        try {
+          katex.render(addDisp + texTxt, mathEl);
+        }
+        catch(err) {
+          mathEl.innerHTML = "<span class='err'>" + err;
+        }
+      });
     }
   };
 
   // create element with attrs in ns
   var $createElement = function (ns, el, attr) {
+    var key;
     if (attr) {
       if (ns) {
-	for (var key in attr)
+	for (key in attr)
 	  if (attr.hasOwnProperty(key)) {
 	    el.setAttributeNS (ns, key, String (attr[key]));
 	  }
       } else {
-	for (var key in attr)
+	for (key in attr)
 	  if (attr.hasOwnProperty(key)) {
 	    el.setAttribute(key, String (attr[key]));
 	  }
@@ -2612,7 +2628,7 @@
 	  $addNode (div, data);
 
 	this.dataUpdated [level] = true;
-        updateMathJax (div);
+        updateMath (div);
       }
     },
 
@@ -4518,9 +4534,15 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
       var buoyEdit = function (b) {
 	ptr.buoyEdited = b;
 	ptr.newBuoyForm.setMode ('edit');
-	document.newBuoyForm.level0.value = b.getLevelData (0);
-	document.newBuoyForm.level1.value = b.getLevelData (1);
-	document.newBuoyForm.level2.value = b.getLevelData (2);
+        if (window.tinymce) {
+          tinymce.EditorManager.get ('level0').setContent (b.getLevelData (0) || '');
+          tinymce.EditorManager.get ('level1').setContent (b.getLevelData (1) || '');
+          tinymce.EditorManager.get ('level2').setContent (b.getLevelData (2) || '');
+        } else {
+	  document.newBuoyForm.level0.value = b.getLevelData (0);
+	  document.newBuoyForm.level1.value = b.getLevelData (1);
+	  document.newBuoyForm.level2.value = b.getLevelData (2);
+        }
 
 	setFormBuoyAttrs (document.newBuoyForm, b);
 
@@ -4657,6 +4679,14 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	mind.removeWhile (b.getDID ());
       };
       PimLib.removeBuoy = removeBuoy;
+
+      var removeAssoc = function (a) {
+	ptr.newAssocForm.hide ();
+	ptr.newAssocForm.setMode ('new');
+	ptr.journal.addJournal ("removeAssoc", [a.getAID ()]);
+        mind.removeAssociation (a.getAID ());
+      };
+      PimLib.removeAssoc = removeAssoc;
 
       var buoyVisibility = function (b, v) {
         if (v)
@@ -5013,18 +5043,28 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
       };
 
       var addNewBuoy = function (es, msg) {
-	var p = screen2canvas (ptr.newBuoyPos);
+	var p = screen2canvas (ptr.newBuoyPos), levelData;
+
+        if (window.tinymce) {
+          levelData = {
+	    0: tinymce.EditorManager.get ('level0').getContent (),
+	    1: tinymce.EditorManager.get ('level1').getContent (),
+	    2: tinymce.EditorManager.get ('level2').getContent ()
+	  };
+        } else {
+          levelData = {
+	    0: document.newBuoyForm.level0.value,
+	    1: document.newBuoyForm.level1.value,
+	    2: document.newBuoyForm.level2.value
+	  };
+        }
 
 	buoyNew ({
 	  pos: { x: p [0],
 		 y: p [1]},
 	  nofLevels: 3,
 	  initState: 0,
-	  levelData : {
-	    0: document.newBuoyForm.level0.value,
-	    1: document.newBuoyForm.level1.value,
-	    2: document.newBuoyForm.level2.value
-	  },
+	  levelData : levelData,
 	  state: {
 	    attrs: makeFormBuoyAttrs (document.newBuoyForm)
 	  }
@@ -5034,12 +5074,24 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
       };
 
       var editBuoy = function (es, msg) {
-	buoyUpdate (ptr.buoyEdited, {
-	  levelData : {
+        var levelData;
+
+        if (window.tinymce) {
+          levelData = {
+	    0: tinymce.EditorManager.get ('level0').getContent (),
+	    1: tinymce.EditorManager.get ('level1').getContent (),
+	    2: tinymce.EditorManager.get ('level2').getContent ()
+	  };
+        } else {
+          levelData = {
 	    0: document.newBuoyForm.level0.value,
 	    1: document.newBuoyForm.level1.value,
 	    2: document.newBuoyForm.level2.value
-	  },
+	  };
+        }
+
+	buoyUpdate (ptr.buoyEdited, {
+	  levelData : levelData,
 	  state: {
 	    attrs: makeFormBuoyAttrs (document.newBuoyForm)
 	  }
@@ -5170,6 +5222,7 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	}
 
 	assocUpdate (ptr.assocEdited, desc);
+        ptr.assocEdited = null;
       };
 
       var addNewAssocForm = function () {
@@ -5200,6 +5253,12 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	ptr.newAssocForm.addModeHandlers ('new', {'submit': addNewAssoc });
 	ptr.newAssocForm.addModeHandlers ('edit', {'submit': editNewAssoc });
 	ptr.newAssocForm.setMode ('new');
+        ptr.newAssocForm.addButton ("button", "delete", "Delete", function () {
+          if (ptr.assocEdited) {
+            removeAssoc (ptr.assocEdited);
+          }
+        });
+
       };
 
       var addImportForm = function () {
@@ -5682,6 +5741,7 @@ AAAASUVORK5CYII=";
 	    'assocNew'  : assocNew,
 	    'assocUpdate': makeAssocFnWrapper (assocUpdate),
 	    'removeBuoy' : makeBuoyFnWrapper (removeBuoy),
+            'removeAssoc': makeAssocFnWrapper (removeAssoc),
 	    'buoyVisibility': makeBuoyFnWrapper (buoyVisibility),
 	    'buoyPich': makeBuoyFnWrapper (buoyPitch),
 	    'assocMoveToBuoy': makeAssocFnWrapper (assocMoveToBuoy),
@@ -5955,7 +6015,7 @@ AAAASUVORK5CYII=";
   var makePitch = function (params, elName) {
     // var dataModel = new PimDataModel ();
     var b = window.opener.PimContentToSave;
-    var dataModel = b.dataView.getDataModel ()
+    var dataModel = b.dataView.getDataModel ();
     var datas;
     var did = parseInt (params [0]);
     var showNameAttr = params[1];
@@ -6083,7 +6143,7 @@ AAAASUVORK5CYII=";
 	  hmv.playJournal ();
 	}
 
-        updateMathJax ();
+        updateMath ();
       }
     }, 200);
   };

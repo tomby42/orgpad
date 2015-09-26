@@ -43,7 +43,7 @@ div.Form {
   z-index: 1 !important;
 }
 
-body, p, a, table, td, input, select, option { font-family:Verdana; font-size:10pt; }
+body, p, a, table, td, input, select, option { font-family: Verdana; font-size:10pt; }
 
 div.Observer {
   z-index: 1;
