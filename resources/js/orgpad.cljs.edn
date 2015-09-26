@@ -1,2 +1,0 @@
-{:require  [orgpad.core.boot]
- :init-fns [orgpad.core.boot/init]}

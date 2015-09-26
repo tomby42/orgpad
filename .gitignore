@@ -8,8 +8,11 @@ pom.xml.asc
 /classes/
 /target/
 /checkouts/
+*compiled*
 .lein-deps-sum
 .lein-repl-history
 .lein-plugins/
 .lein-failures
 .nrepl-port
+.nrepl-history
+figwheel_server.log
