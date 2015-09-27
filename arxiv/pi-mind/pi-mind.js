@@ -219,7 +219,13 @@
     window.location.hash = "";
 
     prefix = window.location.toString ().replace ("#", "");
-    return window.open (prefix + hash, name, "top=10,left=10,width=800,height=800,resizable=yes,fullscreen");
+    var w = window.open (prefix + hash, name, "top=10,left=10,width=800,height=800,resizable=yes,fullscreen");
+
+    window.PimContentToSaveSender = function () {
+      w.postMessage(JSON.stringify (window.PimContentToSave), '*');
+    };
+
+    return w;
   };
 
   // stop propagation of event
@@ -4706,8 +4712,21 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
       };
       PimLib.assocVisibility = assocVisibility;
 
+      var preparePitchData = function (b, did) {
+        var dataModel = b.dataView.getDataModel ();
+        var datas = dataModel.getDatas (did, $range (0, 3));
+
+        var ret =
+              $foldMap (datas,
+	                function (text, level, ret) {
+                          ret.push ([b.getStateAttr (level, 'levelName'), text]);
+                          return ret;
+	                }, []);
+        return ret;
+      };
+
       var buoyPitch = function (b) {
-        window.PimContentToSave = b; // .dataView.getDataModel ().toJSON ();
+        window.PimContentToSave = preparePitchData (b, b.getDID ()); // b; // .dataView.getDataModel ().toJSON ();
         var w = $openWin ("#pitch=" + b.getDID () + (mode.showNameInPitch ? '&true' : ''), "_blank");
         w.focus ();
         ptr.journal.addJournal ("buoyPitch", [b.getDID ()]);
@@ -6013,34 +6032,29 @@ AAAASUVORK5CYII=";
   };
 
   var makePitch = function (params, elName) {
-    // var dataModel = new PimDataModel ();
-    var b = window.opener.PimContentToSave;
-    var dataModel = b.dataView.getDataModel ();
-    var datas;
+    var datas = window/*.opener*/.PimContentToSave;
     var did = parseInt (params [0]);
     var showNameAttr = params[1];
 
     $getElementById (elName).style.display = "none";
 
-    // dataModel.fromJSON (window.opener.PimContentToSave);
-    datas = dataModel.getDatas (did, $range (0, 3));
-    $foldMap (datas,
-	      function (text, level, ret) {
-                var div;
-		var hr = $createHTMLElement ("hr");
-                $addNode (document.body, hr);
+    $each (datas,
+	   function (textData) {
+             var div;
+	     var hr = $createHTMLElement ("hr");
+             $addNode (document.body, hr);
 
-                if (showNameAttr) {
-                  div = $createHTMLElement ("div");
-                  div.innerHTML = b.getStateAttr (level, 'levelName');
-                  $addNode (document.body, div);
-                }
+             if (showNameAttr) {
+               div = $createHTMLElement ("div");
+               div.innerHTML = textData[0];
+               $addNode (document.body, div);
+             }
 
-		div = $createHTMLElement ("div");
-		div.innerHTML = text;
+	     div = $createHTMLElement ("div");
+	     div.innerHTML = textData[1];
 
-		$addNode (document.body, div);
-	      }, null);
+	     $addNode (document.body, div);
+	   });
   };
 
   /// PimCreateInfrastruct
@@ -6062,12 +6076,37 @@ AAAASUVORK5CYII=";
    * elObserver - any html element where to insert observer buoy content default is 'mindObserver'
    */
   window.PimCreateInfrastruct = function (elName, width, height, mode, elObserver) {
+    var messageHandler;
+    if (window.opener) {
+      messageHandler = function (event) {
+        var response = JSON.parse (event.data);
+
+        console.log ('data received', response);
+
+        window.PimContentToSave = response;
+        window.PimCreateInfrastruct_ (elName, width, height, mode, elObserver);
+      };
+
+      window.addEventListener ("message", messageHandler, false);
+      window.opener.postMessage('send-data', '*');
+    } else {
+      messageHandler = function (event) {
+        window.PimContentToSaveSender (event);
+      };
+
+      window.addEventListener ("message", messageHandler, false);
+
+      window.PimCreateInfrastruct_ (elName, width, height, mode, elObserver);
+    }
+  };
+
+  window.PimCreateInfrastruct_ = function (elName, width, height, mode, elObserver) {
     var st = $getElementById ('saveText');
 
     window.PimInitHTML = document.documentElement.outerHTML;
 
     if (window.location.hash === '#save') {
-      PimSaver (window.opener.PimContentToSave);
+      PimSaver (window/*.opener*/.PimContentToSave);
       if (!$definedNonNull (st)) {
 	var div = $createHTMLElement ("div");
 	$setAttrs (div, {id: "saveText"});
@@ -6097,8 +6136,8 @@ AAAASUVORK5CYII=";
         var params = window.location.hash.substring (7).split ('&');
 	makePitch (params, elName);
       } else if (window.location.hash !== '#save') {
-	if (journalP && window.opener && window.opener.PimContentToSave)
-	  PimSaver (window.opener.PimContentToSave);
+	if (journalP && window.opener && window/*.opener*/.PimContentToSave)
+	  PimSaver (window/*.opener*/.PimContentToSave);
 
 	var c = new PimCanvas (elName, 0, 0, width, height);
 	var v = new PimDataView (c, {centerPosFn: getCenterPosFn (mode ? mode.centerPos : 0)});
