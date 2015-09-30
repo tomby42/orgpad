@@ -3,7 +3,7 @@
   orgpad.core.store
 
   (:require
-   [datascript          :as d]
+   [datascript.core     :as d]
    [orgpad.tools.search :as search]
    [orgpad.tools.time   :as time]
    [orgpad.tools.datom  :as dtool]))

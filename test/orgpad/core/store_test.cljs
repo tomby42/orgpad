@@ -4,7 +4,7 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop :include-macros true]
             [clojure.test.check.clojure-test :as tct :include-macros true]
-            [datascript :as d]
+            [datascript.core :as d]
             [orgpad.core.store :as store]))
 
 (defn- create-connection

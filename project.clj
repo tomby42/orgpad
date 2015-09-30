@@ -7,8 +7,8 @@
                  [org.clojure/core.async      "0.1.346.0-17112a-alpha"]
                  [org.clojure/test.check      "0.8.2"]
                  [com.wagjo/cljs-diff         "0.1.0-SNAPSHOT"]
-                 [datascript                  "0.12.1"]
-                 [rum                         "0.3.0"]
+                 [datascript                  "0.13.1"]
+                 [rum                         "0.4.1"]
                  ]
 
   :plugins [[lein-cljsbuild "1.0.6"]

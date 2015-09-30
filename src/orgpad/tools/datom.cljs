@@ -2,7 +2,7 @@
 
   orgpad.tools.datom
 
-  (:require    [datascript          :as ds]))
+  (:require    [datascript.core          :as ds]))
 
 
 (defn datoms->rev-tx
