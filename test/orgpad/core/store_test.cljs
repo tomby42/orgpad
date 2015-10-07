@@ -7,11 +7,10 @@
             [datascript.core :as d]
             [orgpad.core.store :as store]))
 
-(defn- create-connection
+(defn- create-db
   []
-  (d/create-conn {:friend {:db/cardinality :db.cardinality/many
-                           :db/valueType :db.type/ref}}))
-
+  (d/empty-db {:friend {:db/cardinality :db.cardinality/many
+                        :db/valueType :db.type/ref}}))
 
 (def gen-store-items
   (gen/fmap (partial map-indexed (fn [idx x] (vector idx x)))
@@ -20,11 +19,11 @@
 (def test-store-creation
   (prop/for-all
    [items gen-store-items]
-   (let [conn (create-connection)
-         es1  (store/new-store conn)
-         tx   (map (fn [[idx name]] {:db/id idx :name name}) items)]
-     (d/transact! conn tx)
-     (pos? (-> es1 :history deref count)))))
+   (let [db   (create-db)
+         es1  (store/new-datom-store db)
+         tx   (map (fn [[idx name]] {:db/id idx :name name}) items)
+         es2  (store/transact es1 tx)]
+     (pos? (count (.-history es2))))))
 
 (tct/defspec store-test-new-store 100 test-store-creation)
 
@@ -32,78 +31,97 @@
   (prop/for-all
    [items gen-store-items
     n     (gen/choose 1 (inc (count items)))]
-   (let [conn (create-connection)
-         es1  (store/new-store conn)
-         tx   (map (fn [[idx name]] {:db/id idx :name name}) items)]
-     (d/transact! conn tx)
-     (let [db @conn]
-       (dotimes [x n]
-         (store/undo! es1))
-       (dotimes [x n]
-         (store/redo! es1))
-       #_(println "1:" db)
-       #_(println "2" @conn)
-       (= db @conn)))))
+   (let [db   (create-db)
+         es1  (store/new-datom-store db)
+         tx   (map (fn [[idx name]] {:db/id idx :name name}) items)
+         es2  (store/transact es1 tx)
+         es3  (reduce (fn [es _] (store/undo es)) es2 (range n))
+         es4  (reduce (fn [es _] (store/redo es)) es3 (range n))]
+     (= (.-db es2) (.-db es4)))))
 
 (tct/defspec store-test-undo-redo 100 test-undo-redo)
 
 (deftest store-test
 
   (testing "new store"
-    (let [conn (create-connection)
-          es1  (store/new-store conn)]
-      (d/transact! conn [{:db/id 1
-                          :name "Bozko"
-                          :friend 2
-                          }
-                         {:db/id 2
-                          :name "Budko"
-                          }
-                         ])
-      #_(.log js/console (-> es1 :history deref))
-      (is (not= (-> es1 :history deref count) 0)
+    (let [db   (create-db)
+          es1  (store/new-datom-store db)
+          es2  (store/transact
+                es1
+                [{:db/id 1
+                  :name "Bozko"
+                  :friend 2
+                  }
+                 {:db/id 2
+                  :name "Budko"
+                  }
+                 ])]
+      (is (-> (.-history es2) count pos?)
           "should be non empty")
 
     ))
 
   (testing "undo"
-    (let [conn (create-connection)
-          es1  (store/new-store conn)]
-      (d/transact! conn [{:db/id 3
-                          :name "Trubko"
-                          :friend 2
-                          }])
+    (let [db   (create-db)
+          es1  (store/new-datom-store db)
+          es2  (store/transact
+                es1 [{:db/id 3
+                      :name "Trubko"
+                      :friend 2
+                      }])
+          es3  (store/undo es2)]
 
-      (store/undo! es1)
-
-      #_(.log js/console (-> es1 :history deref))
-
-      (is (empty (d/q '[:find ?e :where [?e :name "Trubko"]] @conn))
+      (is (empty? (store/query es3 '[:find ?e :where [?e :name "Trubko"]]))
           "should be empty")
 
       ))
 
   (testing "redo"
-    (let [conn (create-connection)
-          es1  (store/new-store conn)]
-      (d/transact! conn [{:db/id 3
-                          :name "Trubko"
-                          :friend 2
-                          }])
+    (let [db   (create-db)
+          es1  (store/new-datom-store db)
+          es2  (-> es1
+                   (store/transact
+                    [{:db/id 3
+                      :name "Trubko"
+                      :friend 2
+                      }])
+                   (store/transact
+                    [{:db/id 3
+                      :name "Trubko"
+                      :friend 2
+                      }]))
+          es3   (-> es2
+                    store/undo
+                    store/redo)]
 
-      (d/transact! conn [{:db/id 3
-                          :name "Trubko"
-                          :friend 2
-                          }])
+      (is (empty? (store/query (store/undo es2) '[:find ?e :where [?e :name "Trubko"]]))
+          "should be empty")
 
-      (-> es1
-        store/undo!
-        store/redo!)
-
-      #_(.log js/console (-> es1 :history deref))
-
-      (is (not-empty (d/q '[:find ?e :where [?e :name "Trubko"]] @conn))
+      (is (not (empty? (store/query es3 '[:find ?e :where [?e :name "Trubko"]])))
           "should be present")
 
       ))
+
+  (testing "changed?"
+    (let [db   (create-db)
+          es1  (store/new-datom-store db)
+          es2  (->
+                es1
+                (store/transact
+                 [{:db/id 1
+                   :name "Bozko"
+                   :friend 2
+                   }
+                  {:db/id 2
+                   :name "Budko"
+                   }
+                  ])
+                (store/reset-changes)
+                (store/transact
+                 [[:db/add 2 :friend 1]]))]
+
+      (is (store/changed? es2 '[:find ?a ?v
+                                :where [2 ?a ?v]])
+          "should match changed")))
+
   )
