@@ -23,7 +23,7 @@
          es1  (store/new-datom-store db)
          tx   (map (fn [[idx name]] {:db/id idx :name name}) items)
          es2  (store/transact es1 tx)]
-     (pos? (count (.-history es2))))))
+     (pos? (count (.-history (.-history-records es2)))))))
 
 (tct/defspec store-test-new-store 100 test-store-creation)
 
@@ -56,7 +56,7 @@
                   :name "Budko"
                   }
                  ])]
-      (is (-> (.-history es2) count pos?)
+      (is (-> (.-history (.-history-records es2)) count pos?)
           "should be non empty")
 
     ))

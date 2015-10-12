@@ -16,3 +16,4 @@ pom.xml.asc
 .nrepl-port
 .nrepl-history
 figwheel_server.log
+.cljs_rhino_repl

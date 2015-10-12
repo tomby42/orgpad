@@ -4,6 +4,7 @@
 
   (:require
    [datascript.core     :as d]
+   [com.rpl.specter     :as s]
    [orgpad.tools.datom  :as dtool]))
 
 (defprotocol IStore
@@ -28,6 +29,62 @@
   (redo [store]
     "Performs redo on store and returns new one."))
 
+(defprotocol IHistoryRecords
+
+  (push [this record] [this record meta]
+    "Returns new hitory record with 'record' and 'meta' added to history")
+
+  (undo-info [this]
+    "Returns info for performing undo")
+
+  (redo-info [this]
+    "Returns info for performing redo"))
+
+;;; History record
+
+(deftype HistoryRecords [history history-finger]
+
+  IHistoryRecords
+  (push
+    [this record]
+    (push this record nil))
+
+  (push
+    [this record meta]
+    (if (empty? record)
+      this
+      (HistoryRecords. (conj (.-history this) record)
+                       (or meta (.-history-finger this)))))
+
+  (undo-info [this]
+    (let [finger         (.-history-finger this)
+          history        (.-history this)
+          current-finger (if (nil? finger)
+                           (-> history count dec)
+                           finger)
+          record         (if (neg? current-finger)
+                           nil
+                           (history current-finger))]
+      (if (nil? record )
+        [nil nil]
+        [record (dec current-finger)])))
+
+  (redo-info [this]
+    (let [finger         (.-history-finger this)
+          history        (.-history this)
+          record         (if (or (nil? finger)
+                                 (= (-> history count dec)
+                                    finger))
+                           nil
+                           (history (inc finger)))]
+      (if (nil? record)
+        [nil nil]
+        [record (inc finger)]))))
+
+(defn- new-history-records
+  [& [history-records]]
+  (HistoryRecords. (or history-records []) nil))
+
 ;;; DatomStore
 
 (declare DatomStore)
@@ -38,15 +95,12 @@
   (let [tx-data (:tx-data tx-report)]
     ;; (println tx-data)
     (DatomStore. (:db-after tx-report)
-               (if (empty? tx-data)
-                 (.-history store)
-                 (conj (.-history store) tx-data))
-               (or finger (.-history-finger store))
-               (if (empty? tx-data)
-                 (.-cumulative-changes store)
-                 (concat (.-cumulative-changes store) tx-data)))))
+                 (push (.-history-records store) tx-data finger)
+                 (if (empty? tx-data)
+                   (.-cumulative-changes store)
+                   (concat (.-cumulative-changes store) tx-data)))))
 
-(deftype DatomStore [db history history-finger cumulative-changes]
+(deftype DatomStore [db history-records cumulative-changes]
 
   IStore
   (query
@@ -65,46 +119,31 @@
   (reset-changes
     [store]
     (DatomStore. (.-db store)
-                 (.-history store)
-                 (.-history-finger store)
+                 (.-history-records store)
                  []))
 
   IStoreHistory
   (undo
     [store]
-
-    (let [finger         (.-history-finger store)
-          history        (.-history store)
-          current-finger (if (nil? finger)
-                           (-> history count dec)
-                           finger)
-          tx             (if (neg? current-finger)
-                           nil
-                           (history current-finger))]
-      (if (-> tx nil? not)
+    (let [[tx finger] (undo-info (.-history-records store))]
+       (if (-> tx nil? not)
         (tx-report->store store (d/with (.-db store)
                                         (dtool/datoms->rev-tx tx))
-                          (dec current-finger))
+                          finger)
         store)))
 
   (redo
     [store]
-    (let [finger         (.-history-finger store)
-          history        (.-history store)
-          tx             (if (or (nil? finger)
-                                 (= (-> history count dec)
-                                    finger))
-                           nil
-                           (history (inc finger)))]
+    (let [[tx finger] (redo-info (.-history-records store))]
       (if (-> tx nil? not)
         (tx-report->store store (d/with (.-db store)
                                         (dtool/datoms->tx tx))
-                          (inc finger))
+                          finger)
         store)))
   )
 
 (defn new-datom-store
   "Creates new datom store with initial 'db'"
-  [db]
+  [db & [history-records]]
 
-  (DatomStore. db [] nil []))
+  (DatomStore. db (new-history-records history-records) []))
