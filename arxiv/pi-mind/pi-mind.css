@@ -43,7 +43,7 @@ div.Form {
   z-index: 1 !important;
 }
 
-body, p, a, table, td, input, select, option { font-family:Verdana; font-size:10pt; }
+body, p, a, table, td, input, select, option { font-family: Verdana; font-size:10pt; }
 
 div.Observer {
   z-index: 1;
@@ -51,7 +51,7 @@ div.Observer {
   border: 2px solid #009cff;
   width: 512px;
   height: 512px;
-  left: 0px;
+  left: 10px;
   top: 60px;
   background-color: white;
 }
@@ -60,6 +60,23 @@ iframe.Observer {
   width: 508px;
   height: 508px;
 }
+
+div.ObserverFloor {
+  z-index: -1;
+  position: absolute;
+  border: 0px solid #009cff;
+  width: 100%;
+  height: 100%;
+  left: 0px;
+  top: 0px;
+  background-color: white;
+}
+
+iframe.ObserverFloor {
+  width: 100%;
+  height: 100%;
+}
+
 
 .dropdown dd, .dropdown dt, .dropdown ul { margin:0px; padding:0px; }
 .dropdown dd { position:relative; }
