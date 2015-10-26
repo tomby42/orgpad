@@ -3,13 +3,13 @@
   :url "http://www.orgpad.org/"
 
   :dependencies [[org.clojure/clojure         "1.7.0"]
-                 [org.clojure/clojurescript   "1.7.122"]
+                 [org.clojure/clojurescript   "1.7.145"]
                  [org.clojure/core.async      "0.1.346.0-17112a-alpha"]
                  [org.clojure/test.check      "0.8.2"]
                  [com.wagjo/cljs-diff         "0.1.0-SNAPSHOT"]
                  [datascript                  "0.13.1"]
-                 [rum                         "0.4.1"]
-                 [com.rpl/specter             "0.7.1"]
+                 [rum                         "0.5.0"]
+                 [com.rpl/specter             "0.8.0"]
                  ]
 
   :plugins [[lein-cljsbuild "1.1.0"]
