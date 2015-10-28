@@ -7,8 +7,9 @@
                  [org.clojure/core.async      "0.1.346.0-17112a-alpha"]
                  [org.clojure/test.check      "0.8.2"]
                  [com.wagjo/cljs-diff         "0.1.0-SNAPSHOT"]
-                 [datascript                  "0.13.1"]
+                 [datascript                  "0.13.2"]
                  [rum                         "0.5.0"]
+                 [org.omcljs/om               "1.0.0-alpha11"]
                  [com.rpl/specter             "0.8.0"]
                  ]
 
