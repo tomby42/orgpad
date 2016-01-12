@@ -8,12 +8,11 @@
             [orgpad.core.store :as store]
             [orgpad.core.orgpad :as orgpad]))
 
-(deftest empty-orgpad
+(deftest empty-orgpad-db
 
   (testing "root unit presence"
-    (let [o (orgpad/empty-orgpad)]
-      (-> (store/query o '[:find ?e :where [0 :root-unit true]])
+    (let [o (orgpad/empty-orgpad-db)]
+      (-> (store/query o '[:find ?e :where [0 :orgpad/type :orgpad/root-unit]])
           empty? not)))
 
   )
-                       
