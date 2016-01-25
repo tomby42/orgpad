@@ -17,11 +17,18 @@
                  ]
 
   :plugins [[lein-cljsbuild "1.1.1"]
-            [lein-figwheel "0.5.0-2"]] ;; needs update to lein 2.5.3 at least
+            [lein-figwheel "0.5.0-2"] ;; needs update to lein 2.5.3 at least
+            [lein-less "1.7.5"]
+            ]
+
+  :hooks [leiningen.less]
 
   :source-paths ["src"]
 
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target" "resources/test/js/compiled"]
+
+  :less {:source-paths ["src/orgpad/styles"]
+         :target-path "resources/public/css"}
 
   :cljsbuild
   {

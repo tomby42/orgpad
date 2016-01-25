@@ -17,3 +17,4 @@ pom.xml.asc
 .nrepl-history
 figwheel_server.log
 .cljs_rhino_repl
+/resources/public/css/
