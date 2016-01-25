@@ -2,7 +2,7 @@
  * Pi (personalised/pico) mind
  * (C) 2011-2015 Tomas 'tomby' Bily <tomby@ucw.cz>
  *
- * version: 0.5.5a-Barcelona (Wed Sep 23 23:48:16 CEST 2015)
+ * version: 0.5.5a-Barcelona (Mon Dec 21 17:17:25 CET 2015)
  */
 
 /*
@@ -1992,10 +1992,12 @@
 
       this.onMouseDown = function (evFeeder, msg) {
 	setBtn (msg.event, true, false);
+        ptr.sendEvent ('mouseDown', msg.event);
       };
 
       this.onMouseUp = function (evFeeder, msg) {
 	setBtn (msg.event, false, false);
+        ptr.sendEvent ('mouseUp', msg.event);
       };
 
       this.onMouseMove = function (evFeeder, msg) {
@@ -2005,6 +2007,7 @@
 
       this.onMouseOver = function (evFeeder, msg) {
 	setMouseBasic (msg.event);
+        ptr.mouseButton = [false, false, false, false, false, false];
 	ptr.sendEvent ('componentChange', msg.event);
       };
 
@@ -2717,7 +2720,7 @@
       var cpos = tr.getCenterPos ();
       var pos = tr.getPos ();
       var cpFn = this.cfg.get ('centerPosFn')
-	      || function (w, h) { return [w/2, h/2]; };
+	    || function (w, h) { return [w/2, h/2]; };
       tr.set ({pos: [pos [0], pos [1]], centerPos: cpFn (w, h)});
       $createSVGElement (this.renderObject, {transform: tr.stringify ()});
 
@@ -4069,7 +4072,7 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
       return but;
     },
 
-    addList: function (name, title, lst, cbChange, cbClick) {
+    addList: function (name, title, lst, cbChange, cbClick, initIndex) {
       var hlist = $createHTMLElement ("select");
       $setAttrs (hlist, {name: name, title: title});
       $addNode (this.form, hlist);
@@ -4081,6 +4084,10 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
       }
       hlist.onchange = cbChange;
       hlist.onclick = cbClick;
+      if (initIndex) {
+        hlist.selectedIndex = initIndex;
+        cbChange.bind(hlist)();
+      }
 
       return hlist;
     }
@@ -4373,6 +4380,8 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 
       this.journal = null;
       this.mindObserverEl = null;
+
+      this.movingBuoy = null;
 
       if (typeof (mode) === 'string') {
 	if (mode === 'edit') {
@@ -4899,7 +4908,13 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	      $evtStop (ev);
 	    }
 	  });
-	}
+          efs.addHandler ('mouseDown', function (es, ev) {
+            ptr.movingBuoy = b;
+          });
+          efs.addHandler ('mouseUp', function (es, ev) {
+            ptr.movingBuoy = null;
+          });
+        }
 
 	if (mode.buoyScroll) {
 	  ef.addHandler ('mousewheel', function (es, msg) {
@@ -4948,10 +4963,17 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 
 	if (mode.canvasMove) {
 	  cefState.addHandler ('mouseMove', function (es, ev) {
+            if (ptr.movingBuoy) {
+              buoyMove (ptr.movingBuoy, [cefState.getDeltaX (), cefState.getDeltaY ()]);
+            } 
 	    if (cefState.mouseButton [MOUSE_BUTTON_LEFT]) {
 	      canvasMove ([cefState.getDeltaX (), cefState.getDeltaY ()]);
 	    }
 	  });
+
+          cefState.addHandler ('mouseUp', function (es, ev) {
+            ptr.movingBuoy = null;
+          });
 	}
 
 	if (mode.canvasZoom) {
@@ -5367,7 +5389,7 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 	if (mode.menuBarShow && mode.menuBarShow.mode) {
 	  ptr.menuBar.addList ("mode", "Mode", ["Edit", "Select", "Observe", "Pitch", "Explore", "Observe Floor"], function () {
 	    setModeState (this);
-	  });
+	  }, undefined, mode.menuBarDefaultIndex && mode.menuBarDefaultIndex.mode || 0);
 	}
 
 	if (mode.menuBarShow && mode.menuBarShow.action) {
@@ -5487,8 +5509,8 @@ reader.readAsBinaryString (f);
                                function () {
 			         journalCB (this.selectedIndex, true);
 		               }, function () {
-			            journalCB (this.selectedIndex, false);
-		                  });
+			         journalCB (this.selectedIndex, false);
+		               });
 	}
 
 	if (mode.menuBarShow && mode.menuBarShow.find) {
@@ -5503,7 +5525,7 @@ reader.readAsBinaryString (f);
                                 "Center to last", "Center to random"],
 			       function () {
 				 ptr.extractAction = this.selectedIndex;
-			       });
+			       }, undefined, mode.menuBarDefaultIndex && mode.menuBarDefaultIndex.find || 0);
 	}
 
 	// document.menuBar.mode [0].checked = true;
