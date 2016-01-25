@@ -9,8 +9,8 @@
 
 (defprotocol IStore
 
-  (query [store qry]
-    "Query store by 'qry' and returns result.")
+  (query [store qry] [store qry params]
+    "Query store by 'qry' with given params and returns result.")
   (transact [store qry]
     "Perform transaction on store and returns new one."))
 
@@ -106,6 +106,10 @@
   (query
     [store qry]
     (d/q qry (.-db store)))
+
+  (query
+    [store qry params]
+    (apply d/q qry (.-db store) params))
 
   (transact
     [store qry]

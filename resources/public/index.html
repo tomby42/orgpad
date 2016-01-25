@@ -5,6 +5,10 @@
     <link rel="stylesheet" type="text/css" href="css/orgpad.css">
   </head>
   <body>
+    <div id="orgpad"></div>
     <script type="text/javascript" src="js/compiled/orgpad.js"></script>
+    <script>
+      orgpad.core.boot.init(document.getElementById("orgpad"));
+    </script>
   </body>
 </html>

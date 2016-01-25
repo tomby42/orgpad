@@ -3,36 +3,41 @@
   :url "http://www.orgpad.org/"
 
   :dependencies [[org.clojure/clojure         "1.7.0"]
-                 [org.clojure/clojurescript   "1.7.145"]
-                 [org.clojure/core.async      "0.1.346.0-17112a-alpha"]
+                 [org.clojure/clojurescript   "1.7.170"]
+                 [org.clojure/core.async      "0.2.374"]
                  [org.clojure/test.check      "0.8.2"]
                  [com.wagjo/cljs-diff         "0.1.0-SNAPSHOT"]
-                 [datascript                  "0.13.1"]
+                 [datascript                  "0.13.3"]
                  [rum                         "0.5.0"]
-                 [com.rpl/specter             "0.8.0"]
+                 [org.omcljs/om               "1.0.0-alpha28"]
+                 [com.rpl/specter             "0.9.0"]
+                 [figwheel-sidecar            "0.5.0-2"]
+                 [cljsjs/react                "0.14.3-0"]
+                 [cljsjs/react-dom            "0.14.3-1"]
                  ]
 
-  :plugins [[lein-cljsbuild "1.1.0"]
-            [lein-figwheel "0.4.1-SNAPSHOT"]]
+  :plugins [[lein-cljsbuild "1.1.1"]
+            [lein-figwheel "0.5.0-2"]] ;; needs update to lein 2.5.3 at least
 
   :source-paths ["src"]
 
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target" "resources/test/js/compiled"]
 
-  :cljsbuild 
+  :cljsbuild
   {
    :builds [{:id "dev"
-             :source-paths ["src"]
-             
-             :figwheel { :on-jsload "orgpad.core.boot/on-js-reload" }
+             :source-paths ["src" "sandbox"]
+
+             :figwheel {:websocket-host "localhost"
+                        :on-jsload "orgpad.core.boot/on-js-reload" }
 
              :compiler {:main orgpad.core.boot
                         :asset-path "js/compiled/out"
                         :output-to "resources/public/js/compiled/orgpad.js"
                         :output-dir "resources/public/js/compiled/out"
                         :source-map-timestamp true }}
-            
-            {:id "test" 
+
+            {:id "test"
              :source-paths ["src" "test"]
              :compiler {:main orgpad.test
                         :output-to "resources/test/js/compiled/orgpad.js"
@@ -51,13 +56,13 @@
    :test-commands {"test" ["phantomjs"
                            "resources/test/test.js"
                            "resources/test/test.html"]}
-   
+
    }
 
   :figwheel {
-             ;; :http-server-root "public" ;; default and assumes "resources" 
+             ;; :http-server-root "public" ;; default and assumes "resources"
              ;; :server-port 3449 ;; default
-             ;; :server-ip "127.0.0.1" 
+             ;; :server-ip "127.0.0.1"
 
              :css-dirs ["resources/public/css"] ;; watch and update CSS
 
@@ -83,5 +88,5 @@
              ;; :repl false
 
              ;; to configure a different figwheel logfile path
-             ;; :server-logfile "tmp/logs/figwheel-logfile.log" 
+             ;; :server-logfile "tmp/logs/figwheel-logfile.log"
              })
