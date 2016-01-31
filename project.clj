@@ -3,21 +3,20 @@
   :url "http://www.orgpad.org/"
 
   :dependencies [[org.clojure/clojure         "1.7.0"]
-                 [org.clojure/clojurescript   "1.7.170"]
+                 [org.clojure/clojurescript   "1.7.228"]
                  [org.clojure/core.async      "0.2.374"]
-                 [org.clojure/test.check      "0.8.2"]
+                 [org.clojure/test.check      "0.9.0"]
                  [com.wagjo/cljs-diff         "0.1.0-SNAPSHOT"]
-                 [datascript                  "0.13.3"]
-                 [rum                         "0.5.0"]
-                 [org.omcljs/om               "1.0.0-alpha28"]
-                 [com.rpl/specter             "0.9.0"]
-                 [figwheel-sidecar            "0.5.0-2"]
+                 [datascript                  "0.15.0"]
+                 [org.omcljs/om               "1.0.0-alpha30"]
+                 [com.rpl/specter             "0.9.1"]
                  [cljsjs/react                "0.14.3-0"]
                  [cljsjs/react-dom            "0.14.3-1"]
+                 [cljsjs/react-sanfona        "0.0.8-0"]
                  ]
 
   :plugins [[lein-cljsbuild "1.1.1"]
-            [lein-figwheel "0.5.0-2"] ;; needs update to lein 2.5.3 at least
+            [lein-figwheel "0.5.0-6"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             ]
 
@@ -30,11 +29,23 @@
   :less {:source-paths ["src/orgpad/styles"]
          :target-path "resources/public/css"}
 
+  :profiles {:dev
+             {:dependencies [[com.cemerick/piggieback "0.2.1"]
+                             [org.clojure/tools.nrepl "0.2.12"]
+                             [figwheel-sidecar        "0.5.0-6"]]
+              }
+
+             :repl {:plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]] }
+
+             }
+
+  :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
+
   :cljsbuild
   {
    :builds [{:id "dev"
-             :source-paths ["src" "sandbox"]
 
+             :source-paths ["src" "sandbox"]
              :figwheel {:websocket-host "localhost"
                         :on-jsload "orgpad.core.boot/on-js-reload" }
 
