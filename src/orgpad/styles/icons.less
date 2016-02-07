@@ -1,0 +1,15 @@
+@import "config.less";
+
+// icon defaults
+.iconDefaults() {
+  display: block;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+// icon url mixin
+.iu(@url) {
+  background-image: url("@{icon-path}/@{url}");
+  .iconDefaults();
+}
+  

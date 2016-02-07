@@ -3,7 +3,8 @@
   (:require [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
             [orgpad.components.queries :as qs]
-            [orgpad.components.registry :as registry]))
+            [orgpad.components.registry :as registry]
+            [orgpad.components.sidebar.sidebar :as sidebar]))
 
 (defui RootComponent
   static om/IQuery
@@ -22,7 +23,8 @@
 
      (dom/div
       #js {:className "root-view"}
-      (child-factory root-view)
+      [(sidebar/sidebar-component)
+       (child-factory root-view)]
       ))))
 
 

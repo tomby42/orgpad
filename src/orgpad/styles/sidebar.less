@@ -1,0 +1,73 @@
+@import "config.less";
+@import "icons.less";
+@import "mixins.less";
+
+.sidebar {
+    display:block;
+    height:100%;
+    position:absolute;
+
+    >div {
+        position:relative;
+        z-index:2;
+        top:0;
+        width:@sidebar-width; 
+        height:100%; 
+        .border-box;
+        .transition(-webkit-transform ease 250ms); 
+        .transition(transform ease 250ms);
+
+        &.left {
+            background:#273D7A;
+            left:@sidebar-width*-1;
+        }
+
+        &.sidebar-visible.left {
+            .transform(translate3d(@sidebar-width, 0, 0));
+        }
+
+        &.right {
+            background:#6B1919;
+            right:@sidebar-width*-1;
+        }
+
+        &.sidebar-visible.right {
+            .transform(translate3d(@sidebar-width*-1, 0, 0));
+        }
+        
+        >div {
+            height:100%;
+            background:#273D7A;
+        }
+
+        .sidebar-btn {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            top: 40%;
+            left: @sidebar-width - 20px;
+            border-radius: 48px;
+            background-position: 7px center;
+            border-width: 0px;
+            box-shadow: none;
+            outline-width: 0px;
+            z-index:-1;
+        };
+
+        >.sidebar-button {
+            .sidebar-btn;
+            .iu("arrow-right.png");
+        }
+
+        >.sidebar-button:focus {
+            .sidebar-btn;
+            .iu("arrow-right.png");
+        }
+
+
+        &.sidebar-visible>.sidebar-button {
+            .sidebar-btn;
+            .iu("arrow-left.png");
+        }
+    }
+}
