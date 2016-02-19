@@ -1,9 +1,10 @@
 (ns ^{:doc "Atomic component"}
-  orgpad.components.atomic-component
+  orgpad.components.atomic.component
   (:require [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
             [orgpad.components.queries :as qs]
-            [orgpad.components.registry :as registry]))
+            [orgpad.components.registry :as registry]
+            [orgpad.components.atomic.atom-editor :as atom-editor]))
 
 (defui AtomicComponent
   static om/IQuery
@@ -16,12 +17,13 @@
   (render
    [this]
    (let [{:keys [orgpad/unit-view]} (om/props this)]
-     (dom/div
-      #js {:dangerouslySetInnerHTML
-           #js {:__html (-> unit-view :unit :orgpad/atom)}
-           :className "atomic-view"}
-      nil)
-     )))
+     (apply
+      dom/div
+      nil
+      [(atom-editor/atom-editor {:atom (-> unit-view :unit :orgpad/atom)
+                                 :id (-> unit-view :unit :db/id)})])))
+  )
+
 
 (registry/register-component-info
  :atomic-view

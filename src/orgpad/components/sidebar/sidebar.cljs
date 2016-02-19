@@ -22,7 +22,8 @@
    (let [classes (if (-> this om/get-state :visible) "sidebar-visible left" "left")]
      (dom/div
       #js {:className "sidebar"}
-      (dom/div
+      (apply
+       dom/div
        #js {:className classes}
        [(dom/button
          #js {:type "button"

@@ -9,10 +9,11 @@
                  [com.wagjo/cljs-diff         "0.1.0-SNAPSHOT"]
                  [datascript                  "0.15.0"]
                  [org.omcljs/om               "1.0.0-alpha30"]
-                 [com.rpl/specter             "0.9.1"]
+                 [com.rpl/specter             "0.9.2"]
                  [cljsjs/react                "0.14.3-0"]
                  [cljsjs/react-dom            "0.14.3-1"]
                  [cljsjs/react-sanfona        "0.0.8-0"]
+                 [cljsjs/react-tinymce        "0.4.1-0"]
                  ]
 
   :plugins [[lein-cljsbuild "1.1.1"]

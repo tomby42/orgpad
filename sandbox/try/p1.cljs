@@ -4,8 +4,8 @@
             [om.next :as om]
             [orgpad.parsers.default :as dp]
             [orgpad.components.queries :as qs]
-            [orgpad.parsers.default-root :as drp]
-            [orgpad.components.atomic-component :as ac]))
+            [orgpad.parsers.default.root :as drp]
+            [orgpad.components.atomic.component :as ac]))
 
 (def o1 (atom (o/empty-orgpad-db)))
 (def my-parser (om/parser {:read dp/read}))

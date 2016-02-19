@@ -8,6 +8,8 @@
   {
    :orgpad/type        {}
    :orgpad/atom        {}
+   :orgpad/tags        {:db/cardinality :db.cardinality/many}
+   :orgpad/desc        {}
    :orgpad/refs        {:db/valueType :db.type/ref
                         :db/cardinality :db.cardinality/many}
    :orgpad/view-path   {}

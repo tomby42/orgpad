@@ -6,7 +6,7 @@
   (with-meta q {:component x}))
 
 (def unit-query
-  (cmeta '[:db/id {:orgpad/refs ...} :orgpad/atom :orgpad/type] :unit))
+  (cmeta '[:db/id {:orgpad/refs ...} :orgpad/atom :orgpad/type :orgpad/tags :orgpad/desc] :unit))
 
 (def unit-view-query
   (cmeta '[:db/id {:orgpad/refs ...} :orgpad/view-type :orgpad/view-path] :view))

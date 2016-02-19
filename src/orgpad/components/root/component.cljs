@@ -1,5 +1,5 @@
 (ns ^{:doc "Root component"}
-  orgpad.components.root-component
+  orgpad.components.root.component
   (:require [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
             [orgpad.components.queries :as qs]
@@ -21,7 +21,8 @@
                         :orgpad/view-type registry/get-component-info)
          child-factory (child-info :orgpad/factory)]
 
-     (dom/div
+     (apply
+      dom/div
       #js {:className "root-view"}
       [(sidebar/sidebar-component)
        (child-factory root-view)]
