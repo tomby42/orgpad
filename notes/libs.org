@@ -1,0 +1,8 @@
+str diff
+* https://github.com/kpdecker/jsdiff
+
+compress
+* https://github.com/cscott/compressjs
+
+react tags
+* https://github.com/olahol/react-tagsinput
