@@ -12,9 +12,9 @@
   (let [empty-db (orgpad/empty-orgpad-db)]
     (lc/create-cycle empty-db
                      ps/read
-                     ps/write
+                     ps/mutate
                      root-el
-                     (-> :root-component registry/get-component-info :orgpad/class))
+                     (-> :orgpad/root-view registry/get-component-info :orgpad/class))
     (.log js/console "ORGPAD 2.0 BOOT.")))
 
 (defn on-js-reload []

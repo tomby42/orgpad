@@ -12,3 +12,8 @@
   [name]
 
   (get @component-register name :not-found))
+
+(defn get-registry
+  []
+
+  @component-register)

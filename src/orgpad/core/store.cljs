@@ -100,7 +100,13 @@
                    (.-cumulative-changes store)
                    (concat (.-cumulative-changes store) tx-data)))))
 
-(deftype DatomStore [db history-records cumulative-changes]
+(deftype DatomStore [db history-records cumulative-changes meta]
+
+  IWithMeta
+  (-with-meta [_ new-meta] (DatomStore. db history-records cumulative-changes new-meta))
+
+  IMeta
+  (-meta [_] meta)
 
   IStore
   (query
@@ -124,7 +130,8 @@
     [store]
     (DatomStore. (.-db store)
                  (.-history-records store)
-                 []))
+                 []
+                 (.-meta store)))
 
   IStoreHistory
   (undo
@@ -150,4 +157,4 @@
   "Creates new datom store with initial 'db'"
   [db & [history-records]]
 
-  (DatomStore. db (new-history-records history-records) []))
+  (DatomStore. db (new-history-records history-records) [] nil))

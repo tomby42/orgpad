@@ -10,13 +10,15 @@
                  [datascript                  "0.15.0"]
                  [org.omcljs/om               "1.0.0-alpha30"]
                  [com.rpl/specter             "0.9.2"]
+                 [rum                         "0.6.0"]
                  [cljsjs/react                "0.14.3-0"]
                  [cljsjs/react-dom            "0.14.3-1"]
                  [cljsjs/react-sanfona        "0.0.8-0"]
                  [cljsjs/react-tinymce        "0.4.1-0"]
+                 [cljsjs/react-tagsinput      "3.1.0-0"]
                  ]
 
-  :plugins [[lein-cljsbuild "1.1.1"]
+  :plugins [[lein-cljsbuild "1.1.2"]
             [lein-figwheel "0.5.0-6"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             ]

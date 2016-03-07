@@ -26,7 +26,7 @@
                         :orgpad/atom "root"
                         :orgpad/type :orgpad/root-unit}
                        {:db/id 1,
-                        :orgpad/type :orpad/root-unit-view,
+                        :orgpad/type :orgpad/root-unit-view,
                         :orgpad/refs 0,
-                        :orgpad/view-type :atomic-view}
+                        :orgpad/view-type :orgpad/atomic-view}
                        ])))
