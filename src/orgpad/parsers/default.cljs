@@ -1,74 +1,110 @@
 (ns ^{:doc "Definition of default parser"}
   orgpad.parsers.default
-  (:require [om.next :as om :refer-macros [defui]]
-            [orgpad.core.store :as store]
-            [orgpad.components.node :as node]
+  (:require [orgpad.core.store :as store]
             [orgpad.components.registry :as registry]))
 
-(declare read)
 
-(defn- dispatch
+;;; Dispatch definitions
+
+(declare read)
+(declare mutate)
+(declare updated?)
+
+(defn- dispatch3
   "Helper function for implementing :read and :mutate as multimethods. Use this
    as the dispatch-fn."
   [_ key _]
-  (if (get-method read key)
-    key
-    :orgpad/unit-view))
+  key)
 
-(defmulti read dispatch)
+(defn- dispatch2
+  "Helper function for implementing :update? as multimethod. Use this
+   as the dispatch-fn."
+  [{ :keys [key] } _]
+  key)
 
-(defmulti mutate om/dispatch)
 
-(defn get-sub-query
-  [query tag]
-  (->> query (drop-while #(= (tag %) nil)) first tag))
+;;; General method dclaration
+
+(defmulti read dispatch3)
+(defmulti mutate dispatch3)
+(defmulti updated? dispatch2)
+
+
+;;; default read method
 
 (defmethod read :orgpad/unit-view
-  [{:keys [state parser query-root view-path unit-id view-type] :as env} k _]
-  (println "read :orgpad/unit-view" query-root view-path unit-id view-type k)
-  (if (not= k (first query-root))
-    {:value nil}
-    (let [qry (second query-root)
-          db  @state
-          [unit]
-          (store/query db '[:find [(pull ?e ?selector) ...]
-                            :in $ ?selector ?e
-                            :where [?e :orgpad/type]] [(get-sub-query qry :unit) unit-id])
+  [{ :keys [state props view-path unit-id view-type] :as env } k params]
+  (println "read :orgpad/unit-view" view-path unit-id view-type k)
 
-          view-info
-          (registry/get-component-info view-type)
+  (let [db  state
 
-          [view-unit-local]
-          (store/query db '[:find [(pull ?v ?selector) ...]
-                            :in $ ?selector ?e ?t ?p
-                            :where
-                            [?v :orgpad/refs ?e]
-                            [?v :orgpad/view-type ?t]
-                            [?v :orgpad/view-path ?p]]
-                       [(get-sub-query qry :view) unit-id view-type view-path])
+        view-info
+        (registry/get-component-info view-type)
 
-          view-unit
-          (or view-unit-local (:orgpad/default-view-info view-info))
+        query
+        (view-info :orgpad/query)
 
-          view-unit-info
-          (registry/get-component-info (:orgpad/view-type view-unit))
+        [unit]
+        (store/query db '[:find [(pull ?e ?selector) ...]
+                          :in $ ?selector ?e
+                          :where [?e :orgpad/type]] [(query :unit) unit-id])
 
-          view-query
-          ;; (-> view-unit-info :orgpad/class om/get-query)
-          (om/get-query node/Node)
 
-          parser'
-          (fn [u]
-            (parser (merge env {:view-path  (conj view-path (:db/id unit))
-                                :unit-id    (:db/id u)
-                                :view-type  (:orgpad/view-type view-unit)}) view-query))
+        [view-unit-local]
+        (store/query db '[:find [(pull ?v ?selector) ...]
+                          :in $ ?selector ?e ?t ?p
+                          :where
+                          [?v :orgpad/refs ?e]
+                          [?v :orgpad/view-type ?t]
+                          [?v :orgpad/view-path ?p]]
+                     [(query :view) unit-id view-type view-path])
 
-          unit'
-          (if (:orgpad/needs-children-info view-unit-info)
-            (update-in unit [:orgpad/refs] #(map parser' %))
-            unit)
-          ]
+        view-unit
+        (or view-unit-local (:orgpad/default-view-info view-info))
 
-      (println "result" {:value {:unit unit' :view view-unit}})
+        view-unit-info
+        (registry/get-component-info (:orgpad/view-type view-unit))
 
-      {:value {:unit unit' :view view-unit}})))
+        parser'
+        (fn [u]
+          (props (merge env
+                        { :view-path  (conj view-path (:db/id unit))
+                          :unit-id    (:db/id u)
+                          :view-type  (:orgpad/view-type view-unit) })
+                 :orgpad/unit-view params))
+
+        unit'
+        (if (:orgpad/needs-children-info view-unit-info)
+          (update-in unit [:orgpad/refs] #(doall (mapv parser' %)))
+          unit)
+        ]
+
+    (println { :unit unit'
+               :view view-unit })
+
+    { :unit unit'
+      :view view-unit }))
+
+
+;;; Default updated? definition
+
+(defmethod updated? :default
+  [_ _]
+  false)
+
+(defmethod updated? :orgpad/unit-view
+  [{:keys [value]} { :keys [state] }]
+
+  (or
+   (store/changed? state
+                   '[ :find [?k ?v]
+                      :in $ ?e
+                      :where
+                      [?e ?k ?v] ]
+                   [(-> value :unit :db/id)] )
+   (store/changed? state
+                   '[ :find [?k ?v]
+                      :in $ ?e
+                      :where
+                      [?e ?k ?v] ]
+                   [(-> value :view :db/id)] ) ) )

@@ -7,15 +7,15 @@
             [orgpad.components.registry :as registry]))
 
 (defmethod read :orgpad/root-view
-  [{:keys [state parser query] :as env} k params]
-  (let [db @state
+  [{ :keys [state props] :as env } k params]
+  (let [db state
         [root-view-info]
-        (store/query db '[:find [(pull ?e [:db/id :orgpad/refs :orgpad/view-type]) ...]
-                          :where [?e :orgpad/type :orgpad/root-unit-view]])]
+        (store/query db '[ :find [(pull ?e [:db/id :orgpad/refs :orgpad/view-type]) ...]
+                           :where [?e :orgpad/type :orgpad/root-unit-view ]])]
 
-    (println "root parser" query root-view-info)
+    (println "root parser" root-view-info)
 
-    {:value (parser (merge env {:view-path []
-                                :unit-id (get-in root-view-info [:orgpad/refs 0 :db/id])
-                                :view-type (:orgpad/view-type root-view-info)})
-                    query)}))
+    (props (merge env { :view-path []
+                        :unit-id (get-in root-view-info [:orgpad/refs 0 :db/id])
+                        :view-type (:orgpad/view-type root-view-info) })
+           :orgpad/unit-view params) ))

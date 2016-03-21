@@ -1,44 +1,16 @@
 (ns ^{:doc "Sidebar component"}
   orgpad.components.sidebar.sidebar
-  (:require [om.next :as om :refer-macros [defui]]
-            [om.dom :as dom]))
+  (:require [rum.core :as rum]))
 
-(defn- show
-  [this]
-  (om/set-state! this {:visible true}))
-
-(defn- hide
-  [this]
-  (om/set-state! this {:visible false}))
-
-(defui SidebarComponent
-  Object
-  (initLocalState
-   [this]
-   {:visible false})
-
-  (render
-   [this]
-   (let [classes (if (-> this om/get-state :visible) "sidebar-visible left" "left")]
-     (dom/div
-      #js {:className "sidebar"}
-      (apply
-       dom/div
-       #js {:className classes}
-       [(dom/button
-         #js {:type "button"
-              :className "sidebar-button"
-              :onClick
-              (fn [_]
-                (if (om/get-state this :visible)
-                  (hide this)
-                  (show this)))}
-         nil)
-        (dom/div
-         nil
-         (-> this .-props .-childrens))]
-       ))))
-
-  )
-
-(def sidebar-component (om/factory SidebarComponent))
+(rum/defcs sidebar-component < (rum/local false) [{:keys [rum/react-component rum/local]}]
+  (let [classes (if @local "sidebar-visible left" "left")]
+    [ :div { :className "sidebar" }
+     [ :div { :className classes }
+      [ :button { :type "button"
+                  :className "sidebar-button"
+                  :key "sidebar-button"
+                  :onClick
+                    (fn [_]
+                      (swap! local not) ) } ]
+      [ :div { :key "sidebar-childrens" }
+        (-> react-component .-props .-childrens) ] ] ] ) )

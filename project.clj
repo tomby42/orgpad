@@ -8,7 +8,7 @@
                  [org.clojure/test.check      "0.9.0"]
                  [com.wagjo/cljs-diff         "0.1.0-SNAPSHOT"]
                  [datascript                  "0.15.0"]
-                 [org.omcljs/om               "1.0.0-alpha30"]
+                 [org.omcljs/om               "1.0.0-alpha31"]
                  [com.rpl/specter             "0.9.2"]
                  [rum                         "0.6.0"]
                  [cljsjs/react                "0.14.3-0"]

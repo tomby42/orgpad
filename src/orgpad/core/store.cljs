@@ -16,7 +16,7 @@
 
 (defprotocol IStoreChanges
 
-  (changed? [store qry]
+  (changed? [store qry] [store qry params]
     "Returns true if 'qry' matches store parts that were changed from
     last call of reset-changes")
   (reset-changes [store]
@@ -125,6 +125,10 @@
   (changed?
     [store qry]
     (-> qry (d/q (.-cumulative-changes store)) empty? not))
+
+  (changed?
+    [store qry params]
+    (-> (apply d/q qry (.-cumulative-changes store) params) empty? not))
 
   (reset-changes
     [store]

@@ -4,7 +4,9 @@
             [orgpad.cycle.life :as lc]
             [orgpad.core.orgpad :as orgpad]
             [orgpad.parsers.default :as ps]
-            [orgpad.config]))
+            [orgpad.config]
+            [try.p2]
+            ))
 
 (enable-console-print!)
 
@@ -13,6 +15,7 @@
     (lc/create-cycle empty-db
                      ps/read
                      ps/mutate
+                     ps/updated?
                      root-el
                      (-> :orgpad/root-view registry/get-component-info :orgpad/class))
     (.log js/console "ORGPAD 2.0 BOOT.")))
