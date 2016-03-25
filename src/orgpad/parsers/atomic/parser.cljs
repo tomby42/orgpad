@@ -5,13 +5,12 @@
 
 (defmethod mutate :tags/remove
   [{:keys [state]} _ {:keys [db/id orgpad/tags]}]
-  (reduce (fn [new-db tag]
-            (store/transact new-db [[:db/retract id :orgpad/tags tag]]))
-          state tags ) )
+  { :state (reduce (fn [new-db tag]
+                     (store/transact new-db [[:db/retract id :orgpad/tags tag]]))
+                   state tags ) } )
 
 (defmethod mutate :tags/add
   [{:keys [state]} _ {:keys [db/id orgpad/tags]}]
-  (reduce (fn [new-db tag]
-            (store/transact new-db [[:db/add id :orgpad/tags tag]]))
-          state tags ) )
-        
+  { :state (reduce (fn [new-db tag]
+                     (store/transact new-db [[:db/add id :orgpad/tags tag]]))
+                   state tags ) } )
