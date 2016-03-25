@@ -5,9 +5,9 @@
 
 
 (rum/defcc desc-editor < rum/static lc/parser-type-mixin-context [component id desc]
-  [ :div { :className "react-tagsinput" }
+  [ :div { :className "react-tagsinput desc-editor" }
    [ :input { :value desc
+              :placeholder "Write a description"
               :onChange (fn [e]
                           (lc/transact! component [[:desc/update { :db/id id
-                                                                   :orgpad/desc (-> e .-target .-value) } ] ] ) )
-              :className "react-tagsinput-input" } ] ] )
+                                                                   :orgpad/desc (-> e .-target .-value) } ] ] ) ) } ] ] )

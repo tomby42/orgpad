@@ -7,14 +7,18 @@
 
 
 (rum/defcc tags-editor < rum/static lc/parser-type-mixin-context [component id tags]
-  [ :div {}
+  [ :div { :className "tags-editor" }
     (.createElement js/React
                     js/ReactTagsInput
                     #js { :value (clj->js (or tags []))
                           :onlyUnique true
+                          :inputProps #js { :className "react-tagsinput-input"
+                                            :placeholder "Write a tag" }
                           :onChange (fn [new-tags] 
-                                      (let [removed-tags       (s/difference tags new-tags)
-                                            added-tags         (s/difference new-tags tags)]
+                                      (let [new-tags-set       (set new-tags)
+                                            old-tags-set       (set tags)
+                                            removed-tags       (s/difference old-tags-set new-tags-set)
+                                            added-tags         (s/difference new-tags-set old-tags-set)]
                                         (if (-> removed-tags empty? not)
                                           (lc/transact! component [[ :tags/remove { :db/id id :orgpad/tags removed-tags } ] ] )
                                           (if (-> added-tags empty? not)

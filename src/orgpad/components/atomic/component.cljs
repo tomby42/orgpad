@@ -11,7 +11,7 @@
 
 (rum/defc atomic-component < rum/static lc/parser-type-mixin-context [unit-tree]
   (let [{:keys [unit]} unit-tree]
-    [ :div {}
+    [ :div { :className "atomic-view" }
       ( desc-editor/desc-editor (unit :db/id) (unit :orgpad/desc) )
       ( tags-editor/tags-editor (unit :db/id) (unit :orgpad/tags) )
       ( atom-editor/atom-editor (unit :db/id) (unit :orgpad/atom) ) ] ) )
