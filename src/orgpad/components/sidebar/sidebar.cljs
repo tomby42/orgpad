@@ -3,7 +3,7 @@
   (:require [rum.core :as rum]))
 
 (rum/defcs sidebar-component < (rum/local false) [{:keys [rum/react-component rum/local]}]
-  (let [classes (if @local "sidebar-visible left" "left")]
+  (let [classes (if @local "sidebar-visible right" "right")]
     [ :div { :className "sidebar" }
      [ :div { :className classes }
       [ :button { :type "button"
