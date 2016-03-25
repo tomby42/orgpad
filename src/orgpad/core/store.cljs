@@ -158,7 +158,99 @@
   )
 
 (defn new-datom-store
-  "Creates new datom store with initial 'db'"
+  "Creates new datom store with initial 'db' and optional history 'history-records'"
   [db & [history-records]]
 
   (DatomStore. db (new-history-records history-records) [] nil))
+
+;;; DatomAtomStore - datom remembers history but atom not
+
+(defn- datom-query?
+  "Returns true if 'qry' is datascript query"
+  [qry]
+  (= :find (first qry)) )
+
+(defn- datom-transact-query?
+  "Returns true if 'qry' is datascript transaction query"
+  [qry]
+  (let [f (first qry)
+        fnamespace (fnil namespace :none)]
+    (or (contains? f :db/id)
+        (= (-> f first fnamespace) "db")) ))
+
+(defn- stransact
+  "specter transact"
+  [store [path action]]
+  (if (fn? action)
+    (s/transform path action store)
+    (s/setval path action store) ))
+
+(deftype DatomAtomStore [datom atom meta]
+
+  IWithMeta
+  (-with-meta [_ new-meta] (DatomAtomStore. datom atom new-meta))
+
+  IMeta
+  (-meta [_] meta)
+
+  IStore
+  (query
+    [store qry]
+    (if (datom-query? qry)
+      (query (.-datom store) qry)
+      (s/select qry (.-atom store) )) )
+
+  (query
+    [store qry params]
+    (if (datom-query? qry)
+      (query (.-datom store) qry params)
+      (s/select qry (.-atom store)) ))
+
+  (transact
+    [store qry]
+    (if (datom-transact-query? qry)
+      (DatomAtomStore. (transact (.-datom store) qry) (.-atom store) (.-meta store))
+      (DatomAtomStore. (.-datom store) (stransact (.-atom store) qry) (.-meta store)) ))
+
+  IStoreChanges
+  (changed?
+    [store qry]
+    (if (datom-query? qry)
+      (changed? (.-datom store) qry)
+      true))
+
+  (changed?
+    [store qry params]
+    (if (datom-query? qry)
+      (changed? (.-datom store) qry params)
+      true))
+
+  (reset-changes
+    [store]
+    (DatomStore. (reset-changes store)
+                 (.-atom store)
+                 (.-meta store)))
+
+
+  IStoreHistory
+  (undo
+    [store]
+    (DatomStore. (undo store)
+                 (.-atom store)
+                 (.-meta store)))
+
+  (redo
+    [store]
+    (DatomStore. (undo store)
+                 (.-atom store)
+                 (.-meta store)))
+  )
+
+(defn new-datom-atom-store
+  "Creates new datom-atom store with initial value 'init-value',
+  database 'db' and optional history 'history-records'"
+  [init-value db & [history-records]]
+
+  (DatomAtomStore. (DatomStore. db (new-history-records history-records) [] nil)
+                   init-value
+                   nil))

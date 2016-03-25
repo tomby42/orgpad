@@ -19,14 +19,12 @@
 (defn empty-orgpad-db
   []
 
-  (-> orgpad-db-schema
-      d/empty-db
-      store/new-datom-store
-      (store/transact [{:db/id 0,
-                        :orgpad/atom "root"
-                        :orgpad/type :orgpad/root-unit}
-                       {:db/id 1,
-                        :orgpad/type :orgpad/root-unit-view,
-                        :orgpad/refs 0,
-                        :orgpad/view-type :orgpad/atomic-view}
+  (-> (store/new-datom-atom-store {} (d/empty-db orgpad-db-schema))
+      (store/transact [{ :db/id 0,
+                         :orgpad/atom "root"
+                         :orgpad/type :orgpad/root-unit }
+                       { :db/id 1,
+                         :orgpad/type :orgpad/root-unit-view,
+                         :orgpad/refs 0,
+                         :orgpad/view-type :orgpad/atomic-view }
                        ])))
