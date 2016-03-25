@@ -227,23 +227,23 @@
 
   (reset-changes
     [store]
-    (DatomStore. (reset-changes store)
-                 (.-atom store)
-                 (.-meta store)))
+    (DatomAtomStore. (reset-changes store)
+                     (.-atom store)
+                     (.-meta store)))
 
 
   IStoreHistory
   (undo
     [store]
-    (DatomStore. (undo store)
-                 (.-atom store)
-                 (.-meta store)))
+    (DatomAtomStore. (undo store)
+                     (.-atom store)
+                     (.-meta store)))
 
   (redo
     [store]
-    (DatomStore. (undo store)
-                 (.-atom store)
-                 (.-meta store)))
+    (DatomAtomStore. (redo store)
+                     (.-atom store)
+                     (.-meta store)))
   )
 
 (defn new-datom-atom-store
