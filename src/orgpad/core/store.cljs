@@ -227,7 +227,7 @@
 
   (reset-changes
     [store]
-    (DatomAtomStore. (reset-changes store)
+    (DatomAtomStore. (reset-changes (.-datom store))
                      (.-atom store)
                      (.-meta store)))
 
@@ -235,13 +235,13 @@
   IStoreHistory
   (undo
     [store]
-    (DatomAtomStore. (undo store)
+    (DatomAtomStore. (undo (.-datom store))
                      (.-atom store)
                      (.-meta store)))
 
   (redo
     [store]
-    (DatomAtomStore. (redo store)
+    (DatomAtomStore. (redo (.-datom store))
                      (.-atom store)
                      (.-meta store)))
   )
