@@ -4,7 +4,7 @@
   (:require [rum.core :as rum]
             [cljs.core.async :refer [chan <! >! tap untap close! put! timeout]]))
 
-(def ^:private effect-chan (chan))
+(def ^:private effect-chan (chan 10))
 
 (def ^:private effect-task
   (go-loop []

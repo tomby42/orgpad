@@ -9,5 +9,8 @@
    [ :input { :value desc
               :placeholder "Write a description"
               :onChange (fn [e]
-                          (lc/transact! component [[:desc/update { :db/id id
-                                                                   :orgpad/desc (-> e .-target .-value) } ] ] ) ) } ] ] )
+                          (lc/transact!
+                           component
+                           [[:orgpad.desc/update
+                             { :db/id id
+                               :orgpad/desc (-> e .-target .-value) } ] ] ) ) } ] ] )

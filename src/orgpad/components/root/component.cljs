@@ -9,8 +9,8 @@
 (rum/defcc root-component < lc/parser-type-mixin-context [component]
   (let [unit-tree (lc/props component :orgpad/root-view [])]
     [ :div { :className "root-view" }
-      (sidebar/sidebar-component)
-      (node/node unit-tree) ] ) )
+      (rum/with-key (sidebar/sidebar-component) 0)
+      (rum/with-key (node/node unit-tree) 1) ] ) )
 
 (registry/register-component-info
  :orgpad/root-view
