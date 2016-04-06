@@ -1,14 +1,8 @@
-(ns ^{:doc "Bezier rendering utilities"} orgpad.render.bezier )
+(ns ^{:doc "Bezier rendering utilities"} orgpad.render.bezier
+  (:require [orgpad.render.graph]))
 
 ;drawing canvas ID
 (def canvas "mainCanvas")
-
-(defn norm [pt1 pt2] "Euclidian norm"
-  (js/Math.sqrt
-    (+ (* (- (pt1 0) (pt2 0))
-                  (- (pt1 0) (pt2 0)))
-            (* (- (pt1 1) (pt2 1))
-                       (- (pt1 1) (pt2 1))))))
 
 (defn midpoint [pt1 pt2]
   (vector (/ (+ (pt1 0)
@@ -24,45 +18,45 @@
       .beginPath
       (.moveTo (get-in pts [0 0]) 
                (get-in pts [0 1]))
-      (.bezierCurveTo (get-in [1 0])
-                      (get-in [1 1])
-                      (get-in [2 0])
-                      (get-in [2 1])
-                      (get-in [3 0])
-                      (get-in [3 1]))
+      (.bezierCurveTo (get-in pts [1 0])
+                      (get-in pts [1 1])
+                      (get-in pts [2 0])
+                      (get-in pts [2 1])
+                      (get-in pts [3 0])
+                      (get-in pts [3 1]))
       .stroke)))
-    
+
 (defn get-cpts-3pts [sharpness start mid end direction] "Calculate two control points for cubic bezier from 3 points and sharpness factor, which affects the distance between control points."
   (let [shift (map - 
                    (midpoint start mid) 
                    (midpoint mid end))
         ratio (/ 1
                  (+ 1
-                    (/ (norm start mid)
-                       (norm mid end))))]
+                    (/ (orgpad.render.graph/norm start mid)
+                       (orgpad.render.graph/norm mid end))))]
     (into []
           (map -
                mid
                (for [x shift]
-               (* x direction ratio sharpness))))))
+                 (* x direction ratio sharpness))))))
 
 (defn- cpts-closed-curve [sharpness pts] "Get vector of all cpts approximating closed curve. Change sharpness to fine-tune the approximation."
   (let [n (count pts)]
     (if (>= n 4)
-        (conj (cpts-closed-curve sharpness (pop pts))
-              (vector (pts (- n 1))
-                      (get-cpts-3pts sharpness 
-                                     (peek pts) 
-                                     (pts (- n 2)) 
-                                     (pts (- n 3))
-                                     1)
-                      (get-cpts-3pts sharpness 
-                                     (pts (- n 2)) 
-                                     (pts (- n 3))
-                                     (pts (- n 4))
-                                     -1)
-                      (pts (- n 3))))
-        (vector))))
+      (conj (cpts-closed-curve sharpness (pop pts))
+            (vector (pts (- n 1))
+                    (get-cpts-3pts sharpness 
+                                   (peek pts) 
+                                   (pts (- n 2)) 
+                                   (pts (- n 3))
+                                   1)
+                    (get-cpts-3pts sharpness 
+                                   (pts (- n 2)) 
+                                   (pts (- n 3))
+                                   (pts (- n 4))
+                                   -1)
+                    (pts (- n 3))))
+      (vector))))
 
 (defn- close-points [pts] "Prepends last two pts, appends first pts"
   (conj (into (vector (pts (- (count pts) 2)) (peek pts))
@@ -87,12 +81,12 @@
   (let [ctx (.getContext (.getElementById js/document canvas) "2d")
         test-pts (test-pts-gen)]
     (do
-      (.log js/console "Debug Bezier")
       (.fillRect ctx ((test-pts 0) 0) ((test-pts 0) 1) 5 5)
       (.fillRect ctx ((test-pts 1) 0) ((test-pts 1) 1) 5 5)
       (.fillRect ctx ((test-pts 2) 0) ((test-pts 2) 1) 5 5)
       (.fillRect ctx ((test-pts 3) 0) ((test-pts 3) 1) 5 5)
       (.fillRect ctx ((test-pts 4) 0) ((test-pts 4) 1) 5 5)
-;      (for [x (range 1 (count test-pts))]
-;        (.fillRect ctx ((test-pts x) 0) ((test-pts x) 1) 5 5))
+      ;      (for [x (range 1 (count test-pts))]
+      ;        (.fillRect ctx ((test-pts x) 0) ((test-pts x) 1) 5 5))
       (draw-closed-curve 1 test-pts))))
+
