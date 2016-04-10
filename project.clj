@@ -16,6 +16,7 @@
                  [cljsjs/react-sanfona        "0.0.8-0"]
                  [cljsjs/react-tinymce        "0.4.1-0"]
                  [cljsjs/react-tagsinput      "3.1.0-0"]
+                 [cljsjs/react-motion         "0.3.1-0"]
                  ]
 
   :plugins [[lein-cljsbuild "1.1.2"]

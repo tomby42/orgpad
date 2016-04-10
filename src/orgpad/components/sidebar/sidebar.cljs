@@ -13,4 +13,4 @@
                     (fn [_]
                       (swap! local not) ) } ]
       [ :div { :key "sidebar-childrens" }
-        (-> react-component .-props .-childrens) ] ] ] ) )
+        (-> react-component .-props .-children) ] ] ] ) )
