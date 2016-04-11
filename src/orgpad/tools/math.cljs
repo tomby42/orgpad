@@ -9,3 +9,7 @@
 (defn deg->rads
   [deg]
   (-> deg (* pi) (/ 180)))
+
+(defn psum
+  [seq from to]
+  (reduce + (subvec seq from to)))

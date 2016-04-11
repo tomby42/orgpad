@@ -1,0 +1,27 @@
++-----------------------------------------------------+
+| X -> a b c                                          |
+| M (r/w)                                             |
+|                                                     |
+|                                                     |
+|                                                     |
+|                                                     |
+|                                                     |
+|                                                     |
+|                                                     |
+|                                                     |
+|                                                     |
+|                                                     |
++-----------------------------------------------------+
+
+X rozbalovaci menu z akcema
+M toggle read/write mode
+
+|-------------------------------+---------------------------+---------------------|
+| akce                          | write mode                | read mode           |
+|-------------------------------+---------------------------+---------------------|
+| klik na plochu                | otevre se menu            | otevre se menu      |
+| mouse down na plose + tahnuti | select region             | move canvas         |
+| klik na jednotku              | objevi se editacni butony | prejde na dalsi tab |
+|                               |                           |                     |
+
+--------------------------
