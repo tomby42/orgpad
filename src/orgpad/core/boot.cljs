@@ -5,7 +5,6 @@
             [orgpad.core.orgpad :as orgpad]
             [orgpad.parsers.default :as ps]
             [orgpad.config]
-            [try.p2]
             ))
 
 (enable-console-print!)

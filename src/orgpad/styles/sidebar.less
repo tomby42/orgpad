@@ -1,6 +1,7 @@
 @import "config.less";
 @import "icons.less";
 @import "mixins.less";
+@import "circle_button.less";
 
 .sidebar {
     display:block;
@@ -30,31 +31,17 @@
             background:@sidebar-color;
         }
 
-        .sidebar-btn {
-            position: absolute;
-            width: 50px;
-            height: 50px;
+        >.sidebar-button {
+            .circle-button;
             top: 50%;
             left: -30px;
-            border-radius: 48px;
-            background-position: -7px center;
-            border-width: 0px;
             box-shadow: none;
-            outline-width: 0px;
             z-index:-1;
-        };
 
-        >.sidebar-button {
-          .sidebar-btn;
-          .iu("arrow-left.png");
-          &:hover {
-            background-color:@sidebar-color-active;
-          }
-        }
-
-        &.sidebar-visible>.sidebar-button {
-          background-position: -7px center;
-          .iu("arrow-right.png");
+           >i {
+               position: relative;
+               left: -10px;
+            }
         }
     }
 }

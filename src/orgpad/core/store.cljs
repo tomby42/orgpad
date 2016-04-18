@@ -174,7 +174,9 @@
   "Returns true if 'qry' is datascript transaction query"
   [qry]
   (let [f (first qry)
-        fnamespace (fnil namespace :none)]
+        fnamespace #(when (and (-> % nil? not)
+                               (keyword? %))
+                      (namespace %))]
     (or (contains? f :db/id)
         (= (-> f first fnamespace) "db")) ))
 

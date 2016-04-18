@@ -33,8 +33,8 @@
 ;;; default read method
 
 (defmethod read :orgpad/unit-view
-  [{ :keys [state props view-path unit-id view-type] :as env } k params]
-  (println "read :orgpad/unit-view" view-path unit-id view-type k)
+  [{ :keys [state props view-name unit-id view-type] :as env } k params]
+  (println "read :orgpad/unit-view" view-name unit-id view-type k)
 
   (let [db  state
 
@@ -49,15 +49,14 @@
                           :in $ ?selector ?e
                           :where [?e :orgpad/type]] [(query :unit) unit-id])
 
-
         [view-unit-local]
         (store/query db '[:find [(pull ?v ?selector) ...]
-                          :in $ ?selector ?e ?t ?p
+                          :in $ ?selector ?e ?t ?n
                           :where
                           [?v :orgpad/refs ?e]
                           [?v :orgpad/view-type ?t]
-                          [?v :orgpad/view-path ?p]]
-                     [(query :view) unit-id view-type view-path])
+                          [?v :orgpad/view-name ?n]]
+                     [(query :view) unit-id view-type view-name])
 
         view-unit
         (or view-unit-local (:orgpad/default-view-info view-info))
@@ -68,7 +67,7 @@
         parser'
         (fn [u]
           (props (merge env
-                        { :view-path  (conj view-path (:db/id unit))
+                        { :view-name  (:orgpad/view-name view-unit)
                           :unit-id    (:db/id u)
                           :view-type  (:orgpad/view-type view-unit) })
                  :orgpad/unit-view params))

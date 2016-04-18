@@ -12,7 +12,7 @@
    :orgpad/desc        {}
    :orgpad/refs        {:db/valueType :db.type/ref
                         :db/cardinality :db.cardinality/many}
-   :orgpad/view-path   {}
+   :orgpad/view-name   {}
    :orgpad/view-type   {}
    })
 
@@ -26,5 +26,7 @@
                        { :db/id 1,
                          :orgpad/type :orgpad/root-unit-view,
                          :orgpad/refs 0,
-                         :orgpad/view-type :orgpad/atomic-view }
-                       ])))
+                         :orgpad/view-type :orgpad/atomic-view,
+                         :orgpad/view-name "default" }
+                       ])
+      (store/transact [[:mode] :write])))

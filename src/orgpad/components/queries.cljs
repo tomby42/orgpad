@@ -9,4 +9,4 @@
   (cmeta '[:db/id {:orgpad/refs ...} :orgpad/atom :orgpad/type :orgpad/tags :orgpad/desc] c))
 
 (defn unit-view-query[c]
-  (cmeta '[:db/id {:orgpad/refs ...} :orgpad/view-type :orgpad/view-path] c))
+  (cmeta '[:db/id {:orgpad/refs ...} :orgpad/view-type :orgpad/view-name] c))

@@ -2,7 +2,7 @@
   orgpad.parsers.default-root
   (:require [om.next :as om]
             [orgpad.core.store :as store]
-            [orgpad.parsers.default :as dp :refer [read mutate]]
+            [orgpad.parsers.default :as dp :refer [read mutate updated?]]
             [orgpad.components.queries :as qs]
             [orgpad.components.registry :as registry]))
 
@@ -15,7 +15,19 @@
 
     (println "root parser" root-view-info)
 
-    (props (merge env { :view-path []
+    (props (merge env { :view-name (:orgpad/view-name root-view-info)
                         :unit-id (get-in root-view-info [:orgpad/refs 0 :db/id])
                         :view-type (:orgpad/view-type root-view-info) })
            :orgpad/unit-view params) ))
+
+(defmethod read :orgpad/app-state
+  [{ :keys [state] :as env } _ _]
+  (-> state (store/query []) first))
+
+(defmethod mutate :orgpad/app-state
+  [{:keys [state transact!]} _ [path val]]
+  { :state (store/transact state [path val]) })
+
+(defmethod updated? :orgpad/app-state
+  [_ { :keys [state] }]
+  (store/changed? state []))
