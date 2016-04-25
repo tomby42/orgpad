@@ -14,6 +14,7 @@
                         :db/cardinality :db.cardinality/many}
    :orgpad/view-name   {}
    :orgpad/view-type   {}
+   :orgpad/view-path   {}
    })
 
 (defn empty-orgpad-db
@@ -25,8 +26,6 @@
                          :orgpad/type :orgpad/root-unit }
                        { :db/id 1,
                          :orgpad/type :orgpad/root-unit-view,
-                         :orgpad/refs 0,
-                         :orgpad/view-type :orgpad/atomic-view,
-                         :orgpad/view-name "default" }
+                         :orgpad/refs 0 }
                        ])
       (store/transact [[:mode] :write])))

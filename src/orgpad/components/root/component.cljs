@@ -18,7 +18,8 @@
 
 (registry/register-component-info
  :orgpad/root-view
- {:orgpad/default-view-info   {:orgpad/view-type :orgpad/atomic-view}
+ {:orgpad/default-view-info   { :orgpad/view-type :orgpad/map-view
+                                :orgpad/view-name "default" }
   :orgpad/class               root-component
   :orgpad/needs-children-info true
   })

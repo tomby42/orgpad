@@ -1,6 +1,7 @@
 (ns ^{:doc "Atom editor"}
   orgpad.components.atomic.atom-editor
   (:require [rum.core :as rum]
+            [orgpad.tools.rum :as trum]
             [orgpad.cycle.life :as lc]
             [cljsjs.react-tinymce]))
 
@@ -42,7 +43,7 @@
                         }
            :onChange (fn [e]
                        (let [val (-> e .-target .getContent)]
-                         (vreset! (-> component rum/state deref :rum/local) val)
+                         (vreset! (trum/comp->local-state component) val)
                          (lc/transact!
                           component
                           [[:orgpad.atom/update

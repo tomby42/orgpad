@@ -10,14 +10,18 @@
   [{ :keys [state props] :as env } k params]
   (let [db state
         [root-view-info]
-        (store/query db '[ :find [(pull ?e [:db/id :orgpad/refs :orgpad/view-type]) ...]
-                           :where [?e :orgpad/type :orgpad/root-unit-view ]])]
+        (store/query db '[ :find [(pull ?e [:orgpad/refs]) ...]
+                           :where [?e :orgpad/type :orgpad/root-unit-view] ])
+
+        root-info
+        (registry/get-component-info :orgpad/root-view)]
 
     (println "root parser" root-view-info)
 
-    (props (merge env { :view-name (:orgpad/view-name root-view-info)
+    (props (merge env { :view-name (-> root-info :orgpad/default-view-info :orgpad/view-name)
                         :unit-id (get-in root-view-info [:orgpad/refs 0 :db/id])
-                        :view-type (:orgpad/view-type root-view-info) })
+                        :view-type (-> root-info :orgpad/default-view-info :orgpad/view-type)
+                        :view-path [] })
            :orgpad/unit-view params) ))
 
 (defmethod read :orgpad/app-state

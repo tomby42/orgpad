@@ -32,14 +32,39 @@
 
 ;;; default read method
 
+(defn- get-view-props
+  [db query unit-id info unit-type]
+  (store/query db '[:find [(pull ?v ?selector) ...]
+                          :in $ ?selector ?e ?t ?n ?vt
+                          :where
+                          [?v :orgpad/refs ?e]
+                          [?v :orgpad/view-type ?t]
+                          [?v :orgpad/view-name ?n]
+                          [?v :orgpad/type ?vt]]
+               [query unit-id (info :orgpad/view-type) (info :orgpad/view-name) unit-type]))
+
 (defmethod read :orgpad/unit-view
-  [{ :keys [state props view-name unit-id view-type] :as env } k params]
-  (println "read :orgpad/unit-view" view-name unit-id view-type k)
+  [{ :keys [state props unit-id view-name view-type view-path view-contexts] :as env } k params]
+  (println "read :orgpad/unit-view" unit-id view-name view-type view-path view-contexts k)
 
   (let [db  state
 
+        [path-info]
+        (store/query db '[:find [(pull ?v [ :db/id :orgpad/view-name
+                                            :orgpad/view-type :orgpad/view-path ]) ...]
+                          :in $ ?e ?p
+                          :where
+                          [?v :orgpad/type :orgpad/unit-path-info]
+                          [?v :orgpad/refs ?e]
+                          [?v :orgpad/view-path ?p]] [unit-id view-path])
+
+        path-info'
+        (or path-info { :orgpad/view-name view-name
+                        :orgpad/view-type view-type
+                        :orgpad/view-path view-path })
+
         view-info
-        (registry/get-component-info view-type)
+        (registry/get-component-info (path-info' :orgpad/view-type))
 
         query
         (view-info :orgpad/query)
@@ -50,39 +75,57 @@
                           :where [?e :orgpad/type]] [(query :unit) unit-id])
 
         [view-unit-local]
-        (store/query db '[:find [(pull ?v ?selector) ...]
-                          :in $ ?selector ?e ?t ?n
-                          :where
-                          [?v :orgpad/refs ?e]
-                          [?v :orgpad/view-type ?t]
-                          [?v :orgpad/view-name ?n]]
-                     [(query :view) unit-id view-type view-name])
+        (get-view-props db (query :view) unit-id path-info' :orgpad/unit-view)
 
         view-unit
         (or view-unit-local (:orgpad/default-view-info view-info))
 
-        view-unit-info
-        (registry/get-component-info (:orgpad/view-type view-unit))
+        props-info
+        (when (:orgpad/child-props-type view-info)
+          { :orgpad/view-type (:orgpad/child-props-type view-info)
+            :orgpad/view-name (:orgpad/view-name path-info')
+            :orgpad/query     (-> view-info :orgpad/query :child-props) })
+
+        view-contexts'
+        (if (:orgpad/propagated-props-from-childs view-info)
+          (if props-info
+            (conj view-contexts props-info)
+            view-contexts)
+          (when props-info
+            [props-info]))
 
         parser'
         (fn [u]
           (props (merge env
-                        { :view-name  (:orgpad/view-name view-unit)
-                          :unit-id    (:db/id u)
-                          :view-type  (:orgpad/view-type view-unit) })
+                        { :unit-id    (:db/id u)
+                          :view-path  (conj view-path unit-id)
+                          :view-name  (-> view-info :child-default-view-info :orgpad/view-name)
+                          :view-type  (-> view-info :child-default-view-info :orgpad/view-type)
+                          :view-contexts view-contexts' })
                  :orgpad/unit-view params))
 
-        unit'
-        (if (:orgpad/needs-children-info view-unit-info)
+         unit'
+        (if (:orgpad/needs-children-info view-info)
           (update-in unit [:orgpad/refs] #(doall (mapv parser' %)))
           unit)
+
+         props
+         (when view-contexts
+           (doall (mapv (fn [context]
+                          (get-view-props db (context :orgpad/query) unit-id
+                                          context :orgpad/unit-view-child))
+                        view-contexts)))
         ]
 
     (println { :unit unit'
-               :view view-unit })
+               :path-info path-info'
+               :view view-unit
+               :props props })
 
     { :unit unit'
-      :view view-unit }))
+      :path-info path-info'
+      :view view-unit
+      :props props }))
 
 
 ;;; Default updated? definition

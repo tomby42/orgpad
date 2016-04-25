@@ -31,7 +31,7 @@
    #js { :width main-diam
          :height main-diam
          :top (- center-y (/ main-diam 2))
-         :left (+ center-x (/ main-diam 2))
+         :left (- center-x (/ main-diam 2))
         })
 
 (defn- init-child-style
@@ -39,7 +39,7 @@
   #js { :width child-diam
         :height child-diam
         :top (js/ReactMotion.spring (- center-y (/ (- main-diam child-diam) 2)) child-spring-config)
-        :left (js/ReactMotion.spring (+ center-x (/ (+ main-diam child-diam) 2)) child-spring-config)
+        :left (js/ReactMotion.spring (- center-x (/ (+ main-diam child-diam) 2)) child-spring-config)
         :rotate (js/ReactMotion.spring child-init-rotation child-spring-config)
         :scale (js/ReactMotion.spring child-init-scale child-spring-config)
        })
@@ -50,7 +50,7 @@
     #js { :width child-diam
           :height child-diam
           :top (js/ReactMotion.spring (- center-y dy) child-spring-config)
-          :left (js/ReactMotion.spring (+ center-x dx) child-spring-config)
+          :left (js/ReactMotion.spring (- center-x dx) child-spring-config)
           :rotate (js/ReactMotion.spring 0 child-spring-config)
           :scale (js/ReactMotion.spring 1 child-spring-config)
          }))
