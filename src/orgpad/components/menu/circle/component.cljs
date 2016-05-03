@@ -113,6 +113,9 @@
                                    :width (aget props "width")
                                    :transform (transform props)
                                   }
+                      :onMouseDown (:onMouseDown cfg)
+                      :onMouseUp (:onMouseUp cfg)
+                      :onClick (:onClick cfg)
                      }
                     (get children idx)
                    ])
@@ -150,7 +153,12 @@
                    :style (let [style (main-style config)]
                             (doto style
                               (aset "transform" (transform props)) ))
-                   :onClick (fn [] (when-not (and always-open? @local) (swap! local not))) }
+                   :onMouseDown (:onMouseDown config)
+                   :onMouseUp (:onMouseUp config)
+                   :onClick (fn [ev]
+                              (when-not (and always-open? @local) (swap! local not))
+                              (when (:onCLick config) ((:onCLick config) ev))
+                              ) }
            (first children) ] ) ) ) ]
     ))
 

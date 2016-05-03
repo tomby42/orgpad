@@ -33,7 +33,7 @@
 ;;; default read method
 
 (defn- get-view-props
-  [db query unit-id info unit-type]
+  [db query unit-id info]
   (store/query db '[:find [(pull ?v ?selector) ...]
                           :in $ ?selector ?e ?t ?n ?vt
                           :where
@@ -41,7 +41,7 @@
                           [?v :orgpad/view-type ?t]
                           [?v :orgpad/view-name ?n]
                           [?v :orgpad/type ?vt]]
-               [query unit-id (info :orgpad/view-type) (info :orgpad/view-name) unit-type]))
+               [query unit-id (info :orgpad/view-type) (info :orgpad/view-name) (info :orgpad/type)]))
 
 (defmethod read :orgpad/unit-view
   [{ :keys [state props unit-id view-name view-type view-path view-contexts] :as env } k params]
@@ -61,7 +61,8 @@
         path-info'
         (or path-info { :orgpad/view-name view-name
                         :orgpad/view-type view-type
-                        :orgpad/view-path view-path })
+                        :orgpad/view-path view-path
+                        :orgpad/type      :orgpad/unit-view})
 
         view-info
         (registry/get-component-info (path-info' :orgpad/view-type))
@@ -75,7 +76,7 @@
                           :where [?e :orgpad/type]] [(query :unit) unit-id])
 
         [view-unit-local]
-        (get-view-props db (query :view) unit-id path-info' :orgpad/unit-view)
+        (get-view-props db (query :view) unit-id path-info')
 
         view-unit
         (or view-unit-local (:orgpad/default-view-info view-info))
@@ -84,13 +85,16 @@
         (when (:orgpad/child-props-type view-info)
           { :orgpad/view-type (:orgpad/child-props-type view-info)
             :orgpad/view-name (:orgpad/view-name path-info')
-            :orgpad/query     (-> view-info :orgpad/query :child-props) })
+            :orgpad/query     (-> view-info :orgpad/query :child-props)
+            :orgpad/type      :orgpad/unit-view-child })
 
         view-contexts'
-        (if (:orgpad/propagated-props-from-childs view-info)
-          (if props-info
-            (conj view-contexts props-info)
-            view-contexts)
+        (if (:orgpad/propagate-props-from-childs view-info)
+          (let [view-contexts'' (mapv #(assoc % :orgpad/type :orgpad/unit-view-child-propagated)
+                                      view-contexts)]
+            (if props-info
+              (conj view-contexts'' props-info)
+              view-contexts''))
           (when props-info
             [props-info]))
 
@@ -99,12 +103,12 @@
           (props (merge env
                         { :unit-id    (:db/id u)
                           :view-path  (conj view-path unit-id)
-                          :view-name  (-> view-info :child-default-view-info :orgpad/view-name)
-                          :view-type  (-> view-info :child-default-view-info :orgpad/view-type)
+                          :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
+                          :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
                           :view-contexts view-contexts' })
                  :orgpad/unit-view params))
 
-         unit'
+        unit'
         (if (:orgpad/needs-children-info view-info)
           (update-in unit [:orgpad/refs] #(doall (mapv parser' %)))
           unit)
@@ -113,7 +117,7 @@
          (when view-contexts
            (doall (mapv (fn [context]
                           (get-view-props db (context :orgpad/query) unit-id
-                                          context :orgpad/unit-view-child))
+                                          context))
                         view-contexts)))
         ]
 
