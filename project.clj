@@ -2,25 +2,23 @@
   :description "Orgpad - universal tool for thoughts managing and co-sharing."
   :url "http://www.orgpad.org/"
 
-  :dependencies [[org.clojure/clojure         "1.7.0"]
-                 [org.clojure/clojurescript   "1.7.228"]
+  :dependencies [[org.clojure/clojure         "1.8.0"]
+                 [org.clojure/clojurescript   "1.8.51"]
                  [org.clojure/core.async      "0.2.374"]
                  [org.clojure/test.check      "0.9.0"]
-                 [com.wagjo/cljs-diff         "0.1.0-SNAPSHOT"]
                  [datascript                  "0.15.0"]
-                 [org.omcljs/om               "1.0.0-alpha31"]
-                 [com.rpl/specter             "0.9.2"]
-                 [rum                         "0.6.0"]
-                 [cljsjs/react                "0.14.3-0"]
-                 [cljsjs/react-dom            "0.14.3-1"]
+                 [com.rpl/specter             "0.10.0"]
+                 [rum                         "0.8.3"]
+                 [cljsjs/react                "15.0.1-1"]
+                 [cljsjs/react-dom            "15.0.1-1"]
                  [cljsjs/react-sanfona        "0.0.8-0"]
                  [cljsjs/react-tinymce        "0.4.1-0"]
                  [cljsjs/react-tagsinput      "3.1.0-0"]
                  [cljsjs/react-motion         "0.3.1-0"]
                  ]
 
-  :plugins [[lein-cljsbuild "1.1.2"]
-            [lein-figwheel "0.5.0-6"] ;; needs update to lein 2.5.3 at least
+  :plugins [[lein-cljsbuild "1.1.3"]
+            [lein-figwheel "0.5.3-1"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             ]
 

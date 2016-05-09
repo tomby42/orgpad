@@ -12,7 +12,7 @@
   (let [unit-tree (lc/props component :orgpad/root-view [])
         app-state (lc/props component :orgpad/app-state [])]
     [ :div { :className "root-view" }
-      (rum/with-key (sidebar/sidebar-component) 0)
+      ;; (rum/with-key (sidebar/sidebar-component) 0)
       (rum/with-key (node/node unit-tree app-state) 1)
       (rum/with-key (ms/mode-selector app-state) 2) ] ) )
 

@@ -111,7 +111,9 @@
   IStore
   (query
     [store qry]
-    (d/q qry (.-db store)))
+    (if (= (first qry) :entity)
+      (d/entity (.-db store) (second qry))
+      (d/q qry (.-db store))))
 
   (query
     [store qry params]
@@ -168,7 +170,8 @@
 (defn- datom-query?
   "Returns true if 'qry' is datascript query"
   [qry]
-  (= :find (first qry)) )
+  (let [f (first qry)]
+    (or (= :find f) (= :entity f))))
 
 (defn- datom-transact-query?
   "Returns true if 'qry' is datascript transaction query"

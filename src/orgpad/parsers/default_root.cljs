@@ -1,7 +1,6 @@
 (ns ^{:doc "Default root read/write parser"}
   orgpad.parsers.default-root
-  (:require [om.next :as om]
-            [orgpad.core.store :as store]
+  (:require [orgpad.core.store :as store]
             [orgpad.parsers.default :as dp :refer [read mutate updated?]]
             [orgpad.components.queries :as qs]
             [orgpad.components.registry :as registry]))
@@ -16,7 +15,7 @@
         root-info
         (registry/get-component-info :orgpad/root-view)]
 
-    (println "root parser" root-view-info)
+    ;; (println "root parser" root-view-info)
 
     (props (merge env { :view-name (-> root-info :orgpad/default-view-info :orgpad/view-name)
                         :unit-id (get-in root-view-info [:orgpad/refs 0 :db/id])

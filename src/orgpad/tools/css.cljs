@@ -29,13 +29,11 @@
 
 (defn- style
   [s]
-  #js {
-    :WebkitTransform s
+  { :WebkitTransform s
     :MozTransform s
     :OTransform s
     :msTransform s
-    :transform s
-  })
+    :transform s })
 
 (defn translate
   [p]
@@ -57,4 +55,4 @@
                           :rotate (rotate-str v)
                           :translate (translate-str v)
                           :scale (scale-str v))))
-                 t)))
+                 "" t)))

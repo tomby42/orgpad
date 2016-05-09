@@ -2,12 +2,14 @@
   width: 100%;
   height: 100%;
 
-  overflow-x: hidden;
-  overflow-y: hidden;
+  overflow-x: scroll;
+  overflow-y: scroll;
 
   .map-view-canvas {
-    width: 99999px;
-    height: 99999px;
     position: relative;
+
+    .map-view-child {
+       position: absolute;
+    }
   }
 }

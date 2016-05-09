@@ -34,18 +34,19 @@
 
 (defn- get-view-props
   [db query unit-id info]
-  (store/query db '[:find [(pull ?v ?selector) ...]
-                          :in $ ?selector ?e ?t ?n ?vt
-                          :where
-                          [?v :orgpad/refs ?e]
-                          [?v :orgpad/view-type ?t]
-                          [?v :orgpad/view-name ?n]
-                          [?v :orgpad/type ?vt]]
-               [query unit-id (info :orgpad/view-type) (info :orgpad/view-name) (info :orgpad/type)]))
+  (first 
+   (store/query db '[:find [(pull ?v ?selector) ...]
+                     :in $ ?selector ?e ?t ?n ?vt
+                     :where
+                     [?v :orgpad/refs ?e]
+                     [?v :orgpad/view-type ?t]
+                     [?v :orgpad/view-name ?n]
+                     [?v :orgpad/type ?vt]]
+                [query unit-id (info :orgpad/view-type) (info :orgpad/view-name) (info :orgpad/type)])))
 
 (defmethod read :orgpad/unit-view
   [{ :keys [state props unit-id view-name view-type view-path view-contexts] :as env } k params]
-  (println "read :orgpad/unit-view" unit-id view-name view-type view-path view-contexts k)
+  ;; (println "read :orgpad/unit-view" unit-id view-name view-type view-path view-contexts k)
 
   (let [db  state
 
@@ -75,7 +76,7 @@
                           :in $ ?selector ?e
                           :where [?e :orgpad/type]] [(query :unit) unit-id])
 
-        [view-unit-local]
+        view-unit-local
         (get-view-props db (query :view) unit-id path-info')
 
         view-unit
@@ -121,10 +122,10 @@
                         view-contexts)))
         ]
 
-    (println { :unit unit'
-               :path-info path-info'
-               :view view-unit
-               :props props })
+    ;; (println { :unit unit'
+    ;;            :path-info path-info'
+    ;;            :view view-unit
+    ;;            :props props })
 
     { :unit unit'
       :path-info path-info'
@@ -148,9 +149,14 @@
                       :where
                       [?e ?k ?v] ]
                    [(-> value :unit :db/id)] )
-   (store/changed? state
-                   '[ :find [?k ?v]
-                      :in $ ?e
-                      :where
-                      [?e ?k ?v] ]
-                   [(-> value :view :db/id)] ) ) )
+   (let [refs (store/query state '[ :find [?v ...]
+                                    :in $ ?e
+                                    :where
+                                    [?v :orgpad/refs ?e] ])]
+     (some (fn [id]
+             (store/changed? state
+                             '[ :find [?k ?v]
+                                :in $ ?e
+                                :where
+                                [?e ?k ?v] ]
+                             [id])) refs))))
