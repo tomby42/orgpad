@@ -15,6 +15,7 @@
               state (into
                      [ { :db/id -1
                          :orgpad/type :orgpad/unit
+                         :orgpad/props-refs -2
                          :orgpad/refs -3 }
 
                        (merge { :db/id -2
@@ -23,6 +24,7 @@
                                 :orgpad/unit-position pos } (:orgpad/child-props-default info))
 
                        { :db/id -3
+                         :orgpad/props-refs -4
                          :orgpad/type :orgpad/unit }
 
                        (merge { :db/id -4
@@ -44,9 +46,11 @@
         new-translate [(+ (translate 0) (/ (- (new-pos 0) (old-pos 0)) scale))
                        (+ (translate 1) (/ (- (new-pos 1) (old-pos 1)) scale))]
         new-transformation (merge transform { :translate new-translate })]
+;;    (println id view transform new-translate new-transformation old-pos new-pos)
     { :state (if (nil? id)
                (store/transact state [(merge view { :db/id -1
                                                     :orgpad/refs unit-id
                                                     :orgpad/transform new-transformation
-                                                    :orgpad/type :orgpad/unit-view })])
+                                                    :orgpad/type :orgpad/unit-view })
+                                      [:db/add unit-id :orgpad/props-refs -1]])
                (store/transact state [[:db/add id :orgpad/transform new-transformation]])) } ))

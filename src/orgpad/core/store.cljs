@@ -98,12 +98,16 @@
                  (push (.-history-records store) tx-data finger)
                  (if (empty? tx-data)
                    (.-cumulative-changes store)
-                   (concat (.-cumulative-changes store) tx-data)))))
+                   (concat (.-cumulative-changes store) tx-data))
+                 (if (empty? tx-data)
+                   (.-changed-entities store)
+                   (reduce (fn [ens d] (conj ens (.-e d))) (.-changed-entities store) tx-data))
+                 (.-meta store))))
 
-(deftype DatomStore [db history-records cumulative-changes meta]
+(deftype DatomStore [db history-records cumulative-changes changed-entities meta]
 
   IWithMeta
-  (-with-meta [_ new-meta] (DatomStore. db history-records cumulative-changes new-meta))
+  (-with-meta [_ new-meta] (DatomStore. db history-records cumulative-changes changed-entities new-meta))
 
   IMeta
   (-meta [_] meta)
@@ -126,7 +130,14 @@
   IStoreChanges
   (changed?
     [store qry]
-    (-> qry (d/q (.-cumulative-changes store)) empty? not))
+    (if (= (first qry) :entities)
+      (loop [ents (second qry)]
+        (if (empty? ents)
+          false
+          (if (contains? (.-changed-entities store) ((first ents) :db/id))
+            true
+            (recur (rest ents)))))
+      (-> qry (d/q (.-cumulative-changes store)) empty? not)))
 
   (changed?
     [store qry params]
@@ -137,6 +148,7 @@
     (DatomStore. (.-db store)
                  (.-history-records store)
                  []
+                 #{}
                  (.-meta store)))
 
   IStoreHistory
@@ -163,7 +175,7 @@
   "Creates new datom store with initial 'db' and optional history 'history-records'"
   [db & [history-records]]
 
-  (DatomStore. db (new-history-records history-records) [] nil))
+  (DatomStore. db (new-history-records history-records) [] #{} nil))
 
 ;;; DatomAtomStore - datom remembers history but atom not
 
@@ -171,7 +183,7 @@
   "Returns true if 'qry' is datascript query"
   [qry]
   (let [f (first qry)]
-    (or (= :find f) (= :entity f))))
+    (or (= :find f) (= :entity f) (= :entities f))))
 
 (defn- datom-transact-query?
   "Returns true if 'qry' is datascript transaction query"
@@ -180,7 +192,8 @@
         fnamespace #(when (and (-> % nil? not)
                                (keyword? %))
                       (namespace %))]
-    (or (contains? f :db/id)
+    (or (= f :entities)
+        (contains? f :db/id)
         (= (-> f first fnamespace) "db")) ))
 
 (defn- stransact
@@ -256,6 +269,6 @@
   database 'db' and optional history 'history-records'"
   [init-value db & [history-records]]
 
-  (DatomAtomStore. (DatomStore. db (new-history-records history-records) [] nil)
+  (DatomAtomStore. (DatomStore. db (new-history-records history-records) [] #{} nil)
                    init-value
                    nil))

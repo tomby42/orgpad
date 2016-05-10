@@ -44,7 +44,7 @@
     (if (:me-changed? node)
       (do
         (vreset! tree [])
-        (let [val (parse-props- (assoc env :props parse-props-)
+        (let [val (parse-props- (merge env { :props parse-props- :old-node node })
                                 (node :key) (node :params))]
           (vreset! tree [(rest old-tree) (concat tree' @tree)])
           val))

@@ -1,6 +1,7 @@
 (ns ^{:doc "Definition of default parser"}
   orgpad.parsers.default
   (:require [orgpad.core.store :as store]
+            [orgpad.tools.dscript :as ds]
             [orgpad.components.registry :as registry]))
 
 
@@ -33,31 +34,29 @@
 ;;; default read method
 
 (defn- get-view-props
-  [db query unit-id info]
-  (first 
-   (store/query db '[:find [(pull ?v ?selector) ...]
-                     :in $ ?selector ?e ?t ?n ?vt
-                     :where
-                     [?v :orgpad/refs ?e]
-                     [?v :orgpad/view-type ?t]
-                     [?v :orgpad/view-name ?n]
-                     [?v :orgpad/type ?vt]]
-                [query unit-id (info :orgpad/view-type) (info :orgpad/view-name) (info :orgpad/type)])))
+  [unit {:keys [orgpad/view-type orgpad/view-name orgpad/type]}]
+  (ds/find-props unit (fn [u]
+                        (and (= (u :orgpad/view-type) view-type)
+                             (= (u :orgpad/type) type)
+                             (= (u :orgpad/view-name view-name))))))
+
+(defn- get-path-info
+  [unit view-path]
+  (ds/find-props unit (fn [u]
+                        (and (= (u :orgpad/view-path) view-path)
+                             (= (u :orgpad/type) :orgpad/unit-path-info)))))
 
 (defmethod read :orgpad/unit-view
-  [{ :keys [state props unit-id view-name view-type view-path view-contexts] :as env } k params]
-  ;; (println "read :orgpad/unit-view" unit-id view-name view-type view-path view-contexts k)
+  [{ :keys [state props old-node tree unit-id view-name view-type view-path view-contexts] :as env } k params]
+;;  (println "read :orgpad/unit-view" unit-id view-name view-type view-path view-contexts k)
 
   (let [db  state
 
-        [path-info]
-        (store/query db '[:find [(pull ?v [ :db/id :orgpad/view-name
-                                            :orgpad/view-type :orgpad/view-path ]) ...]
-                          :in $ ?e ?p
-                          :where
-                          [?v :orgpad/type :orgpad/unit-path-info]
-                          [?v :orgpad/refs ?e]
-                          [?v :orgpad/view-path ?p]] [unit-id view-path])
+        unit
+        (store/query db [:entity unit-id])
+
+        path-info
+        (get-path-info unit view-path)
 
         path-info'
         (or path-info { :orgpad/view-name view-name
@@ -68,16 +67,8 @@
         view-info
         (registry/get-component-info (path-info' :orgpad/view-type))
 
-        query
-        (view-info :orgpad/query)
-
-        [unit]
-        (store/query db '[:find [(pull ?e ?selector) ...]
-                          :in $ ?selector ?e
-                          :where [?e :orgpad/type]] [(query :unit) unit-id])
-
         view-unit-local
-        (get-view-props db (query :view) unit-id path-info')
+        (get-view-props unit path-info')
 
         view-unit
         (or view-unit-local (:orgpad/default-view-info view-info))
@@ -100,38 +91,50 @@
             [props-info]))
 
         parser'
-        (fn [u]
-          (props (merge env
-                        { :unit-id    (:db/id u)
-                          :view-path  (conj view-path unit-id)
-                          :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
-                          :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
-                          :view-contexts view-contexts' })
-                 :orgpad/unit-view params))
+        (fn [u old-node]
+          (if (and old-node
+                   (not (or (old-node :changed?)
+                            (old-node :me-changed?))))
+            (do
+              (println "skipping" old-node u)
+              (vswap! tree conj old-node)
+              (old-node :value))
+            (props (merge env
+                          { :unit-id    (u :db/id)
+                            :view-path  (conj view-path unit-id)
+                            :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
+                            :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
+                            :view-contexts view-contexts' })
+                   :orgpad/unit-view params)))
 
         unit'
         (if (:orgpad/needs-children-info view-info)
-          (update-in unit [:orgpad/refs] #(doall (mapv parser' %)))
+          (let [old-children-nodes (and old-node (old-node :children))
+                use-children-nodes? (= (count old-children-nodes) (count (unit :orgpad/refs)))]
+            (update-in (ds/entity->map unit) [:orgpad/refs]
+                       (if use-children-nodes?
+                         #(into [] (map parser' % old-children-nodes))
+                         #(into [] (map parser' %)))))
           unit)
 
-         props
-         (when view-contexts
-           (doall (mapv (fn [context]
-                          (get-view-props db (context :orgpad/query) unit-id
-                                          context))
-                        view-contexts)))
+        props
+        (when view-contexts
+          (doall (mapv (fn [context]
+                         (get-view-props unit context))
+                       view-contexts)))
         ]
 
-    ;; (println { :unit unit'
-    ;;            :path-info path-info'
-    ;;            :view view-unit
-    ;;            :props props })
+;;     (println { :unit unit'
+;;                :path-info path-info'
+;;                :view view-unit
+;;                :props props })
+;;
+;;     (println (view-unit :orgpad/transform) (view-unit :db/id))
 
     { :unit unit'
-      :path-info path-info'
-      :view view-unit
-      :props props }))
-
+     :path-info path-info'
+     :view view-unit
+     :props props }))
 
 ;;; Default updated? definition
 
@@ -142,21 +145,4 @@
 (defmethod updated? :orgpad/unit-view
   [{:keys [value]} { :keys [state] }]
 
-  (or
-   (store/changed? state
-                   '[ :find [?k ?v]
-                      :in $ ?e
-                      :where
-                      [?e ?k ?v] ]
-                   [(-> value :unit :db/id)] )
-   (let [refs (store/query state '[ :find [?v ...]
-                                    :in $ ?e
-                                    :where
-                                    [?v :orgpad/refs ?e] ])]
-     (some (fn [id]
-             (store/changed? state
-                             '[ :find [?k ?v]
-                                :in $ ?e
-                                :where
-                                [?e ?k ?v] ]
-                             [id])) refs))))
+  (store/changed? state [:entities (concat [(value :unit)] (-> value :unit :orgpad/props-refs))]))

@@ -189,10 +189,10 @@
 
 (rum/defcc map-component < rum/static lc/parser-type-mixin-context (rum/local init-state)
   [component unit-tree app-state]
+
   (if (= (:mode app-state) :write)
     (render-write-mode component unit-tree app-state)
     (render-read-mode component unit-tree app-state)))
-
 
 
 (registry/register-component-info
