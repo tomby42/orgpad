@@ -26,6 +26,10 @@
     { :dx (+ (/ main-diam 2) (/ child-diam 2))
       :dy dy} ))
 
+(defn final-child-delta-fix-pos
+  [idx {:keys [children-positions]}]
+  (children-positions idx))
+
 (defn- main-style
   [{:keys [center-x center-y main-diam]}]
    #js { :width main-diam
@@ -149,7 +153,7 @@
        #js { :style main-transf :key 1 }
        (fn [props]
          (html
-          [ :div { :className "circle-menu-main"
+          [ :div { :className (or (config :main-class) "circle-menu-main")
                    :style (let [style (main-style config)]
                             (doto style
                               (aset "transform" (transform props)) ))

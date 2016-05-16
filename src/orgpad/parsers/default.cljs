@@ -96,7 +96,7 @@
                    (not (or (old-node :changed?)
                             (old-node :me-changed?))))
             (do
-              (println "skipping" old-node u)
+;;              (println "skipping" old-node u)
               (vswap! tree conj old-node)
               (old-node :value))
             (props (merge env
@@ -128,13 +128,12 @@
 ;;                :path-info path-info'
 ;;                :view view-unit
 ;;                :props props })
-;;
-;;     (println (view-unit :orgpad/transform) (view-unit :db/id))
+
 
     { :unit unit'
-     :path-info path-info'
-     :view view-unit
-     :props props }))
+      :path-info path-info'
+      :view view-unit
+      :props props }))
 
 ;;; Default updated? definition
 

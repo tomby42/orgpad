@@ -54,3 +54,20 @@
                                                     :orgpad/type :orgpad/unit-view })
                                       [:db/add unit-id :orgpad/props-refs -1]])
                (store/transact state [[:db/add id :orgpad/transform new-transformation]])) } ))
+
+
+(defmethod mutate :orgpad.units/map-view-unit-move
+  [{:keys [state]} _ {:keys [prop parent-view unit-id old-pos new-pos]}]
+  (let [id (prop :db/id)
+        scale (-> parent-view :orgpad/transform :scale)
+        translate (prop :orgpad/unit-position)
+        new-translate [(+ (translate 0) (/ (- (new-pos 0) (old-pos 0)) scale))
+                       (+ (translate 1) (/ (- (new-pos 1) (old-pos 1)) scale))]]
+;;    (println id prop translate new-translate old-pos new-pos)
+    { :state (if (nil? id)
+               (store/transact state [(merge prop { :db/id -1
+                                                    :orgpad/refs unit-id
+                                                    :orgpad/unit-position new-translate
+                                                    :orgpad/type :orgpad/unit-view-child })
+                                      [:db/add unit-id :orgpad/props-refs -1]])
+               (store/transact state [[:db/add id :orgpad/unit-position new-translate]])) } ))

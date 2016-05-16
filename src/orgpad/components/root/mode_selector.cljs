@@ -19,7 +19,8 @@
 
 (rum/defcc mode-selector < lc/parser-type-mixin-context [component app-state]
   [ :div { :className "mode-button" }
-    [ :i { :className (str "fa "  (mode-icons (:mode app-state)) " fa-2x")
+    [ :i { :className (str "fa "  (mode-icons (:mode app-state)) " fa-lg")
+           :title (if (= (:mode app-state) :read) "Read mode" "Write mode")
            :onClick #(lc/transact!
                       component
                       [[:orgpad/app-state

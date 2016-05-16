@@ -46,7 +46,7 @@
         (vreset! tree [])
         (let [val (parse-props- (merge env { :props parse-props- :old-node node })
                                 (node :key) (node :params))]
-          (vreset! tree [(rest old-tree) (concat tree' @tree)])
+          (vreset! tree [(rest old-tree) (into tree' @tree)])
           val))
       (if (:changed? node)
         (do
