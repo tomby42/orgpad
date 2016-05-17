@@ -11,20 +11,20 @@
 (declare mutate)
 (declare updated?)
 
-(defn- dispatch3
+(defn dispatch3
   "Helper function for implementing :read and :mutate as multimethods. Use this
    as the dispatch-fn."
   [_ key _]
   key)
 
-(defn- dispatch2
+(defn dispatch2
   "Helper function for implementing :update? as multimethod. Use this
    as the dispatch-fn."
   [{ :keys [key] } _]
   key)
 
 
-;;; General method dclaration
+;;; General method declaration
 
 (defmulti read dispatch3)
 (defmulti mutate dispatch3)
@@ -81,7 +81,7 @@
             :orgpad/type      :orgpad/unit-view-child })
 
         view-contexts'
-        (if (:orgpad/propagate-props-from-childs view-info)
+        (if (:orgpad/propagate-props-from-children? view-info)
           (let [view-contexts'' (mapv #(assoc % :orgpad/type :orgpad/unit-view-child-propagated)
                                       view-contexts)]
             (if props-info

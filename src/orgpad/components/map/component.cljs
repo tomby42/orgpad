@@ -119,19 +119,18 @@
                                (.-clientY ev)] }]])
   (update-mouse-position local-state ev))
 
-(defn- unit-move
-  [component local-state ev]
-  (let [[unit-tree prop parent-view] (@local-state :selected-unit)
-        { :keys [unit view] } unit-tree]
+(defn- unit-change
+  [component local-state ev action]
+  (let [[unit-tree prop parent-view] (@local-state :selected-unit)]
     (lc/transact! component
-                  [[ :orgpad.units/map-view-unit-move
-                     { :prop prop
-                       :parent-view parent-view
-                       :unit-id (unit :db/id)
-                       :old-pos [(@local-state :mouse-x)
-                                 (@local-state :mouse-y)]
-                       :new-pos [(.-clientX ev)
-                                 (.-clientY ev)] }]])
+                  [[ action
+                    { :prop prop
+                      :parent-view parent-view
+                      :unit-tree unit-tree
+                      :old-pos [(@local-state :mouse-x)
+                                (@local-state :mouse-y)]
+                     :new-pos [(.-clientX ev)
+                               (.-clientY ev)] }]])
     (update-mouse-position local-state ev)))
 
 (defn- handle-mouse-move
@@ -139,7 +138,8 @@
   (let [local-state (trum/comp->local-state component)]
     (case (@local-state :local-mode)
       :canvas-move (canvas-move component unit-tree app-state local-state ev)
-      :unit-move (unit-move component local-state ev)
+      :unit-move (unit-change component local-state ev :orgpad.units/map-view-unit-move)
+      :unit-resize (unit-change component local-state ev :orgpad.units/map-view-unit-resize)
       nil)))
 
 (defn- handle-blur
@@ -181,9 +181,6 @@
    :orgpad/child-default-view-info     { :orgpad/view-type :orgpad/map-tuple-view
                                          :orgpad/view-name "default" }
    :orgpad/class               map-component
-   :orgpad/query               { :unit (qs/unit-query nil)
-                                 :view (qs/unit-map-view-query nil)
-                                 :child-props (qs/unit-map-child-view-query nil) }
    :orgpad/child-props-type    :orgpad.map-view/props
    :orgpad/child-props-default { :orgpad/view-type :orgpad.map-view/props
                                  :orgpad/view-name "default"
@@ -213,10 +210,12 @@
    :orgpad/child-default-view-info   { :orgpad/view-type :orgpad/atomic-view
                                        :orgpad/view-name "default" }
    :orgpad/class               map-tuple-component
-   :orgpad/query               { :unit (qs/unit-query nil)
-                                 :view (qs/unit-map-tuple-view-query nil) }
    :orgpad/needs-children-info true
    :orgpad/view-name           "Map Tuple View"
 
-   :orgpad/propagate-props-from-childs true
+   :orgpad/propagate-props-from-children? true
+   :orgpad/propagated-props-from-children { :orgpad.map-view/props
+                                             [:orgpad/unit-width :orgpad/unit-height :orgpad/unit-border-color
+                                              :orgpad/unit-bg-color :orgpad/unit-border-width :orgpad/unit-corner-x
+                                              :orgpad/unit-corner-y :orgpad/unit-border-style] }
   })

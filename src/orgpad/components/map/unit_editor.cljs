@@ -87,7 +87,12 @@
                  :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
           [ :i { :title "Edit" :className "fa fa-pencil-square-o fa-lg" } ]
           [ :i { :title "Properties" :className "fa fa-cogs fa-lg" } ]
-          [ :i { :title "Resize" :className "fa fa-arrows-alt fa-lg" } ]
+          [ :i { :title "Resize"
+                 :className "fa fa-arrows-alt fa-lg"
+                 :onMouseDown #(swap! local-state merge { :local-mode :unit-resize
+                                                          :mouse-x (.-clientX %)
+                                                          :mouse-y (.-clientY %) })
+                 :onMouseUp #(swap! local-state merge { :local-mode :none })} ]
           [ :i { :title "Link" :className "fa fa-link fa-lg" } ]
           )
          ]

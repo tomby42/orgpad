@@ -17,4 +17,3 @@
        (filter pred)
        first
        entity->map))
-  

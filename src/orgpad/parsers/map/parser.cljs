@@ -38,13 +38,18 @@
                              []
                              [[:db/add parent :orgpad/refs -1]])) )) } ))
 
+(defn- compute-translate
+  [translate scale new-pos old-pos]
+  [(+ (translate 0) (/ (- (new-pos 0) (old-pos 0)) scale))
+   (+ (translate 1) (/ (- (new-pos 1) (old-pos 1)) scale))])
+
 (defmethod mutate :orgpad.units/map-view-canvas-move
   [{:keys [state]} _ {:keys [view unit-id old-pos new-pos]}]
   (let [id (view :db/id)
         transform (view :orgpad/transform)
-        {:keys [translate scale]} transform
-        new-translate [(+ (translate 0) (/ (- (new-pos 0) (old-pos 0)) scale))
-                       (+ (translate 1) (/ (- (new-pos 1) (old-pos 1)) scale))]
+        new-translate (compute-translate (transform :translate)
+                                         (transform :scale)
+                                         new-pos old-pos)
         new-transformation (merge transform { :translate new-translate })]
 ;;    (println id view transform new-translate new-transformation old-pos new-pos)
     { :state (if (nil? id)
@@ -57,12 +62,12 @@
 
 
 (defmethod mutate :orgpad.units/map-view-unit-move
-  [{:keys [state]} _ {:keys [prop parent-view unit-id old-pos new-pos]}]
+  [{:keys [state]} _ {:keys [prop parent-view unit-tree old-pos new-pos]}]
   (let [id (prop :db/id)
-        scale (-> parent-view :orgpad/transform :scale)
-        translate (prop :orgpad/unit-position)
-        new-translate [(+ (translate 0) (/ (- (new-pos 0) (old-pos 0)) scale))
-                       (+ (translate 1) (/ (- (new-pos 1) (old-pos 1)) scale))]]
+        unit-id (-> unit-tree :unit :db/id)
+        new-translate (compute-translate (prop :orgpad/unit-position)
+                                         (-> parent-view :orgpad/transform :scale)
+                                         new-pos old-pos)]
 ;;    (println id prop translate new-translate old-pos new-pos)
     { :state (if (nil? id)
                (store/transact state [(merge prop { :db/id -1
@@ -71,3 +76,40 @@
                                                     :orgpad/type :orgpad/unit-view-child })
                                       [:db/add unit-id :orgpad/props-refs -1]])
                (store/transact state [[:db/add id :orgpad/unit-position new-translate]])) } ))
+
+(defn- propagated-prop
+  [{:keys [unit view props]} prop]
+  (let [child-unit (-> unit :orgpad/refs (nth (view :orgpad/active-unit)))
+        prop (filter (fn [p] (and p
+                                  (= (p :orgpad/view-type) (view :orgpad/view-type))
+                                  (= (p :orgpad/view-name) (view :orgpad/view-name))
+                                  (= (p :orgpad/type) :orgpad/unit-view-child-propagated)))
+                     (child-unit :props))]
+    [child-unit prop]))
+
+(defn- update-size
+  [state id unit-id new-size type]
+  (if (nil? id)
+    (store/transact state [(merge prop { :db/id -1
+                                         :orgpad/refs unit-id
+                                         :orgpad/unit-width (new-size 0)
+                                         :orgpad/unit-height (new-size 1)
+                                         :orgpad/type type })
+                           [:db/add unit-id :orgpad/props-refs -1]])
+    (store/transact state [[:db/add id :orgpad/unit-width (new-size 0)]
+                           [:db/add id :orgpad/unit-height (new-size 1)]])))
+
+(defmethod mutate :orgpad.units/map-view-unit-resize
+  [{:keys [state]} _ {:keys [prop parent-view unit-tree old-pos new-pos]}]
+  (let [id (prop :db/id)
+        info (registry/get-component-info (-> unit-tree :view :orgpad/view-type))
+        [propagated-unit propagated-prop] (propagated-prop unit-tree prop)
+        new-size (compute-translate [(prop :orgpad/unit-width) (prop :orgpad/unit-height)]
+                                    (-> parent-view :orgpad/transform :scale)
+                                    new-pos old-pos)]
+;;    (println id prop translate new-translate old-pos new-pos)
+    { :state (cond-> state
+               true
+                (update-size id (-> unit-tree :unit :db/id) new-size :orgpad/unit-view-child)
+               (info :orgpad/propagate-props-from-children?)
+                (update-size (:db/id propagated-prop) (-> propagated-unit :unit :db/id) new-size :orgpad/unit-view-child)) } ))

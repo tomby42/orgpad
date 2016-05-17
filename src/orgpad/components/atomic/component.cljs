@@ -23,8 +23,6 @@
  { :orgpad/default-view-info   { :orgpad/view-type :orgpad/atomic-view
                                  :orgpad/view-name "default" }
    :orgpad/class               atomic-component
-   :orgpad/query               { :unit (qs/unit-query nil)
-                                 :view (qs/unit-view-query nil) }
    :orgpad/needs-children-info false
    :orgpad/view-name           "Atomic View"
   })
