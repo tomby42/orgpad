@@ -3,4 +3,6 @@
 
 (defn block-propagation
   [ev]
-  (.stopPropagation ev))
+  (doto ev
+    .preventDefault
+    .stopPropagation))

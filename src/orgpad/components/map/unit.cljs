@@ -22,6 +22,7 @@
   [view-name view-type v]
   (and v
        (= (v :orgpad/view-type) view-type)
+       (= (v :orgpad/type) :orgpad/unit-view-child)
        (= (v :orgpad/view-name) view-name)))
 
 (defn- get-props

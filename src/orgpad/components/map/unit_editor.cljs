@@ -28,7 +28,7 @@
   :child-class "circle-menu-child"
   :main-class "circle-menu-child"
   :final-child-pos-fn mc/final-child-delta-fix-pos
-  :child-spring-config #js [400 28]
+  :child-spring-config #js [800 50]
 })
 
 (defn- compute-children-position
@@ -45,7 +45,7 @@
        :dy (- (+ h padding)) }
      ]))
 
-(defn selected-unit-prop
+(defn- selected-unit-prop
   [{:keys [unit] :as unit-tree} unit-id prop-id]
   (let [sel-unit
         (->> unit
@@ -59,8 +59,15 @@
              first)]
     [sel-unit sel-prop]))
 
-(rum/defcc unit-editor
-  [component {:keys [unit view props] :as unit-tree} app-state local-state]
+(defn- open-unit
+  [component { :keys [unit view] }]
+  (let [{ :keys [orgpad/view-name orgpad/view-type] } view]
+    (lc/transact! component [[ :orgpad/root-view-stack { :db/id (unit :db/id)
+                                                         :orgpad/view-name view-name
+                                                         :orgpad/view-type view-type } ]])))
+
+(rum/defcc unit-editor < lc/parser-type-mixin-context
+  [component {:keys [view] :as unit-tree} app-state local-state]
   (let [select-unit (@local-state :selected-unit)]
     (when select-unit
       (let [[old-unit old-prop] select-unit
@@ -85,7 +92,10 @@
                                                           :mouse-x (.-clientX %)
                                                           :mouse-y (.-clientY %) })
                  :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
-          [ :i { :title "Edit" :className "fa fa-pencil-square-o fa-lg" } ]
+          [ :i { :title "Edit"
+                 :className "fa fa-pencil-square-o fa-lg"
+                 :onMouseUp #(open-unit component unit)
+                 } ]
           [ :i { :title "Properties" :className "fa fa-cogs fa-lg" } ]
           [ :i { :title "Resize"
                  :className "fa fa-arrows-alt fa-lg"

@@ -115,7 +115,7 @@
                        (if use-children-nodes?
                          #(into [] (map parser' % old-children-nodes))
                          #(into [] (map parser' %)))))
-          unit)
+          (ds/entity->map unit))
 
         props
         (when view-contexts

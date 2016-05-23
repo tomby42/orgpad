@@ -18,19 +18,21 @@
                          :orgpad/props-refs -2
                          :orgpad/refs -3 }
 
-                       (merge { :db/id -2
+                       (merge (:orgpad/child-props-default info)
+                              { :db/id -2
                                 :orgpad/refs -1
                                 :orgpad/type :orgpad/unit-view-child
-                                :orgpad/unit-position pos } (:orgpad/child-props-default info))
+                                :orgpad/unit-position pos } )
 
                        { :db/id -3
                          :orgpad/props-refs -4
                          :orgpad/type :orgpad/unit }
 
-                       (merge { :db/id -4
+                       (merge (:orgpad/child-props-default info)
+                              { :db/id -4
                                 :orgpad/refs -3
                                 :orgpad/type :orgpad/unit-view-child-propagated
-                                :orgpad/unit-position pos } (:orgpad/child-props-default info)) ]
+                                :orgpad/unit-position pos } ) ]
 
                      (into [[:db/add 0 :orgpad/refs -1]
                             [:db/add 0 :orgpad/refs -3]]
@@ -79,16 +81,18 @@
 
 (defn- propagated-prop
   [{:keys [unit view props]} prop]
-  (let [child-unit (-> unit :orgpad/refs (nth (view :orgpad/active-unit)))
-        prop (filter (fn [p] (and p
-                                  (= (p :orgpad/view-type) (view :orgpad/view-type))
-                                  (= (p :orgpad/view-name) (view :orgpad/view-name))
-                                  (= (p :orgpad/type) :orgpad/unit-view-child-propagated)))
-                     (child-unit :props))]
-    [child-unit prop]))
+  (if (-> unit :orgpad/refs empty? not)
+    (let [child-unit (-> unit :orgpad/refs (nth (view :orgpad/active-unit)))
+          prop (filter (fn [p] (and p
+                                    (= (p :orgpad/view-type) (view :orgpad/view-type))
+                                    (= (p :orgpad/view-name) (view :orgpad/view-name))
+                                    (= (p :orgpad/type) :orgpad/unit-view-child-propagated)))
+                       (child-unit :props))]
+      [child-unit prop])
+    [nil nil]))
 
 (defn- update-size
-  [state id unit-id new-size type]
+  [state id unit-id new-size type prop]
   (if (nil? id)
     (store/transact state [(merge prop { :db/id -1
                                          :orgpad/refs unit-id
@@ -110,6 +114,7 @@
 ;;    (println id prop translate new-translate old-pos new-pos)
     { :state (cond-> state
                true
-                (update-size id (-> unit-tree :unit :db/id) new-size :orgpad/unit-view-child)
-               (info :orgpad/propagate-props-from-children?)
-                (update-size (:db/id propagated-prop) (-> propagated-unit :unit :db/id) new-size :orgpad/unit-view-child)) } ))
+                (update-size id (-> unit-tree :unit :db/id) new-size :orgpad/unit-view-child prop)
+               (and propagated-prop propagated-unit (info :orgpad/propagate-props-from-children?))
+                (update-size (:db/id propagated-prop) (-> propagated-unit :unit :db/id) new-size
+                             :orgpad/unit-view-child-propagated prop)) } ))
