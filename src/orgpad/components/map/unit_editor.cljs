@@ -60,11 +60,13 @@
     [sel-unit sel-prop]))
 
 (defn- open-unit
-  [component { :keys [unit view] }]
-  (let [{ :keys [orgpad/view-name orgpad/view-type] } view]
+  [component { :keys [unit view path-info] }]
+  (let [{ :keys [orgpad/view-name orgpad/view-type] } view
+        view-path (path-info :orgpad/view-path)]
     (lc/transact! component [[ :orgpad/root-view-stack { :db/id (unit :db/id)
                                                          :orgpad/view-name view-name
-                                                         :orgpad/view-type view-type } ]])))
+                                                         :orgpad/view-type view-type
+                                                         :orgpad/view-path view-path } ]])))
 
 (rum/defcc unit-editor < lc/parser-type-mixin-context
   [component {:keys [view] :as unit-tree} app-state local-state]
