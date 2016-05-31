@@ -71,6 +71,7 @@
                                          (-> parent-view :orgpad/transform :scale)
                                          new-pos old-pos)]
 ;;    (println id prop translate new-translate old-pos new-pos)
+    (println "unit move" id)
     { :state (if (nil? id)
                (store/transact state [(merge prop { :db/id -1
                                                     :orgpad/refs unit-id
@@ -83,11 +84,12 @@
   [{:keys [unit view props]} prop]
   (if (-> unit :orgpad/refs empty? not)
     (let [child-unit (-> unit :orgpad/refs (nth (view :orgpad/active-unit)))
-          prop (filter (fn [p] (and p
-                                    (= (p :orgpad/view-type) (view :orgpad/view-type))
-                                    (= (p :orgpad/view-name) (view :orgpad/view-name))
-                                    (= (p :orgpad/type) :orgpad/unit-view-child-propagated)))
-                       (child-unit :props))]
+          prop (first
+                (filter (fn [p]
+                          (and p
+                               (= (p :orgpad/view-name) (view :orgpad/view-name))
+                               (= (p :orgpad/type) :orgpad/unit-view-child-propagated)))
+                       (child-unit :props)))]
       [child-unit prop])
     [nil nil]))
 

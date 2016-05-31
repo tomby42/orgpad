@@ -94,13 +94,16 @@
         (fn [u old-node]
           (if (and old-node
                    (not (or (old-node :changed?)
-                            (old-node :me-changed?))))
+                            (old-node :me-changed?)))
+                   (= (u :db/id) (-> old-node :value :unit :db/id)))
+
             (do
 ;;              (println "skipping" old-node u)
               (vswap! tree conj old-node)
               (old-node :value))
             (props (merge env
                           { :unit-id    (u :db/id)
+                            :old-node   nil
                             :view-path  (conj view-path unit-id)
                             :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
                             :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)

@@ -156,7 +156,7 @@
               :onMouseUp #(handle-mouse-up component unit-tree app-state %)
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
               :onBlur #(handle-blur component unit-tree app-state %) }
-       (munit/render-mapped-children-units component unit-tree app-state local-state)
+       (munit/render-mapped-children-units component unit-tree (assoc app-state :mode :read) local-state)
        (render-local-menu component unit-tree app-state local-state)
       ])))
 
