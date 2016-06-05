@@ -27,7 +27,7 @@
 
      (when (not= id 0)
        [ :div { :className "close-root-unit-button" }
-        [ :i { :className "fa fa-close fa-lg"
+        [ :i { :className "fa fa-check-square-o fa-lg"
                :title "Close"
                :onClick #(lc/transact!
                           component
