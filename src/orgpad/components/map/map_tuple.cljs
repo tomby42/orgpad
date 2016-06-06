@@ -18,15 +18,25 @@
    [ :div {}
     ]))
 
-(rum/defcc map-tuple-component < rum/static lc/parser-type-mixin-context
+(defn- render-write-mode
   [component { :keys [unit view props] :as unit-tree } app-state]
   (let [active-child (-> view :orgpad/active-unit)
         child-tree (-> unit :orgpad/refs (get active-child))]
-  [ :div { :className "map-tuple" }
-    (rum/with-key (render-local-menu unit-tree app-state) 0)
-    (when child-tree
-      (rum/with-key (node/node child-tree app-state) 1))
-   ]))
+    [ :div { :className "map-tuple" }
+      (rum/with-key (render-local-menu unit-tree app-state) 0)
+      (when child-tree
+        (rum/with-key (node/node child-tree app-state) 1))
+     ]))
+
+(defn- render-read-mode
+  [component { :keys [unit view props] :as unit-tree } app-state]
+  )
+
+(rum/defcc map-tuple-component < rum/static lc/parser-type-mixin-context
+  [component unit-tree app-state]
+  (if (= (app-state :mode) :write)
+    (render-write-mode component unit-tree app-state)
+    (render-read-mode component unit-tree app-state)))
 
 (registry/register-component-info
  :orgpad/map-tuple-view

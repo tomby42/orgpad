@@ -71,7 +71,6 @@
                                          (-> parent-view :orgpad/transform :scale)
                                          new-pos old-pos)]
 ;;    (println id prop translate new-translate old-pos new-pos)
-    (println "unit move" id)
     { :state (if (nil? id)
                (store/transact state [(merge prop { :db/id -1
                                                     :orgpad/refs unit-id

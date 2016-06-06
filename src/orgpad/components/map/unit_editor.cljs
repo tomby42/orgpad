@@ -75,9 +75,9 @@
       (let [[old-unit old-prop] select-unit
             [unit prop] (selected-unit-prop unit-tree (-> old-unit :unit :db/id) (old-prop :db/id))
             pos (prop :orgpad/unit-position)
-            style (merge { :width (prop :orgpad/unit-width)
-                           :height (prop :orgpad/unit-height) }
-                         (css/transform { :translate pos }))]
+            style (merge { :width (+ (prop :orgpad/unit-width) 4)
+                           :height (+ (prop :orgpad/unit-height) 4) }
+                         (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
         (when (or (not= old-unit unit) (not= old-prop prop))
           (swap! local-state merge { :selected-unit [unit prop view] }))
         [:div {}
