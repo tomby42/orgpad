@@ -3,7 +3,51 @@
   (:require [orgpad.core.store :as store]
             [orgpad.effects.core :as eff]
             [orgpad.components.registry :as registry]
+            [orgpad.tools.colls :as colls]
             [orgpad.parsers.default :as dp :refer [read mutate]]))
+
+(defn- prepare-propagated-props
+  [db unit-id props-from-children]
+  (let [indexer (volatile! 2)
+        props-units-transducer
+        (comp
+         (mapcat (fn [[type props]]
+                   (store/query db  '[:find [(pull ?p ?selector) ...]
+                                      :in $ ?e ?type ?selector
+                                      :where
+                                      [?p :orgpad/view-type ?type]
+                                      [?p :orgpad/refs ?e]]
+                                [unit-id type props])))
+         (map (fn [prop-unit]
+                (merge prop-unit
+                       { :db/id (- (vswap! indexer inc))
+                         :orgpad/type :orgpad/unit-view-child-propagated
+                         :orgpad/refs -1 }))))]
+    (into [] props-units-transducer props-from-children)))
+
+(defmethod mutate :orgpad.units/new-sheet
+  [{:keys [state]} _ {:keys [unit view params]}]
+  (let [unit-id (unit :db/id)
+        info (registry/get-component-info (view :orgpad/view-type))
+        propagated-refs (prepare-propagated-props
+                         state unit-id
+                         (info :orgpad/propagated-props-from-children))
+        t (colls/minto
+           [{ :db/id -1
+              :orgpad/type :orgpad/unit
+              :orgpad/props-refs (into [] (map :db/id) propagated-refs) }
+            (if (-> :db/id view nil?)
+              (merge view
+                     { :db/id -2
+                       :orgpad/type :orgpad/unit-view
+                       :orgpad/refs unit-id
+                       :orgpad/active-unit (count (unit :orgpad/refs)) })
+              [:db/add (view :db/id) :orgpad/active-unit (count (unit :orgpad/refs))])
+            [:db/add 0 :orgpad/refs -1]]
+           propagated-refs
+           (if (-> :db/id view nil?) [[:db/add unit-id :orgpad/props-refs -2]] [])
+           (if (zero? unit-id) [] [[:db/add unit-id :orgpad/refs -1]]))]
+          { :state (store/transact state t) }))
 
 (defmethod mutate :orgpad.units/new-pair-unit
   [{:keys [state]} _ {:keys [parent position transform]}]
@@ -32,13 +76,13 @@
                               { :db/id -4
                                 :orgpad/refs -3
                                 :orgpad/type :orgpad/unit-view-child-propagated
-                                :orgpad/unit-position pos } ) ]
+                                :orgpad/unit-position pos } )
 
-                     (into [[:db/add 0 :orgpad/refs -1]
-                            [:db/add 0 :orgpad/refs -3]]
-                           (if (zero? parent)
-                             []
-                             [[:db/add parent :orgpad/refs -1]])) )) } ))
+                      [:db/add 0 :orgpad/refs -1]
+                      [:db/add 0 :orgpad/refs -3]]
+                     (if (zero? parent)
+                       []
+                       [[:db/add parent :orgpad/refs -1]]))) } ))
 
 (defn- compute-translate
   [translate scale new-pos old-pos]
