@@ -11,23 +11,23 @@
             [orgpad.components.atomic.desc-editor :as desc-editor]))
 
 (defn- render-write-mode
-  [{:keys [unit]} app-state]
+  [{:keys [unit view]} app-state]
   [ :div { :className "atomic-view" }
-    (rum/with-key ( desc-editor/desc-editor (unit :db/id) (unit :orgpad/desc) ) 0)
-    (rum/with-key ( tags-editor/tags-editor (unit :db/id) (unit :orgpad/tags) ) 1)
-    (rum/with-key ( atom-editor/atom-editor (unit :db/id) (unit :orgpad/atom) ) 2)
+    (rum/with-key ( desc-editor/desc-editor (unit :db/id) view (view :orgpad/desc) ) 0)
+    (rum/with-key ( tags-editor/tags-editor (unit :db/id) view (view :orgpad/tags) ) 1)
+    (rum/with-key ( atom-editor/atom-editor (unit :db/id) view (view :orgpad/atom) ) 2)
    ] )
 
 (defn- render-read-mode
-  [{:keys [unit]} app-state]
+  [{:keys [view]} app-state]
     [ :div { :className "atomic-view" }
-      (when (and (unit :orgpad/desc) (not= (unit :orgpad/desc) ""))
-        [ :div { :key 0 } (unit :orgpad/desc)])
-      (when (and (unit :orgpad/tags) (not= (unit :orgpad/tags) []))
-        [ :div { :key 1} [ :div {} (html (into [] (map-indexed (fn [idx tag] (html [ :span { :key idx :className "react-tagsinput-tag" } tag ])) (unit :orgpad/tags)))) ] ])
-      (when (and (unit :orgpad/atom) (not= (unit :orgpad/atom) ""))
+      (when (and (view :orgpad/desc) (not= (view :orgpad/desc) ""))
+        [ :div { :key 0 } (view :orgpad/desc)])
+      (when (and (view :orgpad/tags) (not= (view :orgpad/tags) []))
+        [ :div { :key 1} [ :div {} (html (into [] (map-indexed (fn [idx tag] (html [ :span { :key idx :className "react-tagsinput-tag" } tag ])) (view :orgpad/tags)))) ] ])
+      (when (and (view :orgpad/atom) (not= (view :orgpad/atom) ""))
         [ :div  {:dangerouslySetInnerHTML
-                 {:__html (unit :orgpad/atom)} } ])
+                 {:__html (view :orgpad/atom)} } ])
      ])
 
 (rum/defc atomic-component < rum/static lc/parser-type-mixin-context

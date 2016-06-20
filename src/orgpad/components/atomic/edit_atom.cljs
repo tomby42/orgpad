@@ -31,7 +31,8 @@
            (not= (-> new-state :rum/local deref) (last (:rum/args new-state)) )) ))
    })
 
-(rum/defcc atom-editor < local-static (local nil) lc/parser-type-mixin-context [component id atom]
+(rum/defcc atom-editor < local-static (local nil) lc/parser-type-mixin-context
+  [component id view atom]
   [ :div {}
     (.createElement
      js/React
@@ -48,6 +49,7 @@
                           component
                           [[:orgpad.atom/update
                             { :db/id id
+                              :orgpad/view view
                               :orgpad/atom val } ]] )))
           }
      nil) ] )

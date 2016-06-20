@@ -34,7 +34,8 @@
       [ :div { :className "tools-button" :title "New sheet"
                :onClick #(new-sheet component unit-tree) }
        [ :i { :className "fa fa-plus-square-o fa-lg" } ] ]
-      [ :div { :className "tools-button" :title "Previous" }
+      [ :div { :className "tools-button" :title "Previous"
+               :onClick #(switch-active-sheet component unit-tree -1) }
        [ :i { :className "fa fa-caret-left fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Next"
                :onClick #(switch-active-sheet component unit-tree 1) }
@@ -52,10 +53,14 @@
     ]
   ))
 
+(defn- active-child-tree
+  [unit view]
+  (let [active-child (-> view :orgpad/active-unit)]
+    (-> unit :orgpad/refs (get active-child))))
+
 (defn- render-write-mode
   [component { :keys [unit view props] :as unit-tree } app-state local-state]
-  (let [active-child (-> view :orgpad/active-unit)
-        child-tree (-> unit :orgpad/refs (get active-child))]
+  (let [child-tree (active-child-tree unit view)]
     [ :div { :className "map-tuple" }
       (render-local-menu component unit-tree app-state local-state)
       (render-sheet-number unit-tree)
@@ -64,8 +69,12 @@
      ]))
 
 (defn- render-read-mode
-  [component { :keys [unit view props] :as unit-tree } app-state]
-  )
+  [component { :keys [unit view] :as unit-tree } app-state]
+  (let [child-tree (active-child-tree unit view)]
+    [ :div { :className "map-tuple" }
+     (when child-tree
+       (rum/with-key (node/node child-tree app-state) 2))
+     ]))
 
 (rum/defcc map-tuple-component < rum/static lc/parser-type-mixin-context (rum/local false)
   [component unit-tree app-state]

@@ -6,7 +6,8 @@
             [cljsjs.react-tagsinput]))
 
 
-(rum/defcc tags-editor < rum/static lc/parser-type-mixin-context [component id tags]
+(rum/defcc tags-editor < rum/static lc/parser-type-mixin-context
+  [component id view tags]
   [ :div { :className "tags-editor" }
     (.createElement js/React
                     js/ReactTagsInput
@@ -24,12 +25,14 @@
                                            component
                                            [[ :orgpad.tags/remove
                                              { :db/id id
+                                               :orgpad/view view
                                                :orgpad/tags removed-tags } ] ] )
                                           (if (-> added-tags empty? not)
                                             (lc/transact!
                                              component
                                              [[ :orgpad.tags/add
                                                { :db/id id
+                                                 :orgpad/view view
                                                  :orgpad/tags added-tags } ] ] ) ) ) ) )
                          }
                     nil) ] )
