@@ -16,6 +16,13 @@
   [component unit-tree]
   (lc/transact! component [[ :orgpad.units/new-sheet unit-tree ]]))
 
+(defn- switch-active-sheet
+  [component {:keys [unit view]} dir]
+  (lc/transact! component [[ :orgpad.sheet/switch-active { :db/id (view :db/id)
+                                                           :active (view :orgpad/active-unit)
+                                                           :direction dir
+                                                           :nof-sheets (-> unit :orgpad/refs count) } ]]))
+
 (defn- render-local-menu
   [component unit-tree app-state local-state]
   (html
@@ -29,7 +36,8 @@
        [ :i { :className "fa fa-plus-square-o fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Previous" }
        [ :i { :className "fa fa-caret-left fa-lg" } ] ]
-      [ :div { :className "tools-button" :title "Next" }
+      [ :div { :className "tools-button" :title "Next"
+               :onClick #(switch-active-sheet component unit-tree 1) }
        [ :i { :className "fa fa-caret-right fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Remove" }
        [ :i { :className "fa fa-remove fa-lg" } ] ]

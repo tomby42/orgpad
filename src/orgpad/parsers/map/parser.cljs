@@ -163,3 +163,7 @@
                (and propagated-prop propagated-unit (info :orgpad/propagate-props-from-children?))
                 (update-size (:db/id propagated-prop) (-> propagated-unit :unit :db/id) new-size
                              :orgpad/unit-view-child-propagated prop)) } ))
+
+(defmethod mutate :orgpad.sheet/switch-active
+  [{:keys [state]} _ {:keys [db/id active direction nof-sheets]}]
+  { :state (store/transact state [[:db/add id :orgpad/active-unit (mod (+ active direction) nof-sheets)]]) })
