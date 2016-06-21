@@ -18,8 +18,8 @@
 
 (defn- switch-active-sheet
   [component {:keys [unit view]} dir]
-  (lc/transact! component [[ :orgpad.sheet/switch-active { :db/id (view :db/id)
-                                                           :active (view :orgpad/active-unit)
+  (lc/transact! component [[ :orgpad.sheet/switch-active { :unit unit
+                                                           :view view
                                                            :direction dir
                                                            :nof-sheets (-> unit :orgpad/refs count) } ]]))
 
@@ -97,7 +97,8 @@
 
    :orgpad/propagate-props-from-children? true
    :orgpad/propagated-props-from-children { :orgpad.map-view/props
-                                             [:orgpad/view-type :orgpad/unit-width :orgpad/unit-height
+                                             [:orgpad/view-type :orgpad/view-name
+                                              :orgpad/unit-width :orgpad/unit-height
                                               :orgpad/unit-border-color :orgpad/unit-bg-color
                                               :orgpad/unit-border-width :orgpad/unit-corner-x
                                               :orgpad/unit-corner-y :orgpad/unit-border-style] }

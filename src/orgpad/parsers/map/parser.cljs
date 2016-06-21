@@ -6,17 +6,20 @@
             [orgpad.tools.colls :as colls]
             [orgpad.parsers.default :as dp :refer [read mutate]]))
 
+(def ^:private propagated-query
+  '[:find [(pull ?p ?selector) ...]
+    :in $ ?e ?type ?selector
+    :where
+    [?p :orgpad/view-type ?type]
+    [?p :orgpad/refs ?e]])
+
 (defn- prepare-propagated-props
   [db unit-id props-from-children]
   (let [indexer (volatile! 2)
         props-units-transducer
         (comp
          (mapcat (fn [[type props]]
-                   (store/query db  '[:find [(pull ?p ?selector) ...]
-                                      :in $ ?e ?type ?selector
-                                      :where
-                                      [?p :orgpad/view-type ?type]
-                                      [?p :orgpad/refs ?e]]
+                   (store/query db propagated-query
                                 [unit-id type props])))
          (map (fn [prop-unit]
                 (merge prop-unit
@@ -164,6 +167,29 @@
                 (update-size (:db/id propagated-prop) (-> propagated-unit :unit :db/id) new-size
                              :orgpad/unit-view-child-propagated prop)) } ))
 
+(defn- child-propagated-props
+  [db unit-id child-id props-from-children]
+  (let [xform
+        (comp
+         (mapcat (fn [[type props]]
+                   (store/query db (conj propagated-query '[?p :orgpad/type :orgpad/unit-view-child-propagated])
+                                [child-id type props])))
+         (map (fn [prop-unit]
+                (merge (first
+                        (store/query db (conj propagated-query `[?p :orgpad/view-name ~(prop-unit :view-name)])
+                                     [unit-id (prop-unit :orgpad/view-type) [:db/id]]))
+                       prop-unit))))]
+    (into [] xform props-from-children)))
+
 (defmethod mutate :orgpad.sheet/switch-active
-  [{:keys [state]} _ {:keys [db/id active direction nof-sheets]}]
-  { :state (store/transact state [[:db/add id :orgpad/active-unit (mod (+ active direction) nof-sheets)]]) })
+  [{:keys [state]} _ {:keys [unit view direction nof-sheets]}]
+  (let [info (registry/get-component-info (view :orgpad/view-type))
+        new-active-unit (mod (+ (view :orgpad/active-unit) direction) nof-sheets)]
+    { :state
+     (store/transact
+      state
+      (into (child-propagated-props state
+                                    (unit :db/id)
+                                    (-> unit :orgpad/refs (get new-active-unit) :unit :db/id)
+                                    (info :orgpad/propagated-props-from-children))
+                                    [[:db/add (view :db/id) :orgpad/active-unit new-active-unit]])) }))
