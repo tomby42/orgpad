@@ -2,7 +2,10 @@
   orgpad.components.root.status
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
+            [cljsjs.react-select]
             [orgpad.cycle.life :as lc]
+            [orgpad.tools.dscript :as ds]
+            [orgpad.components.registry :as registry]
             [orgpad.tools.rum :as trum]))
 
 (def ^:private mode-icons
@@ -15,6 +18,26 @@
     :read  :write
     :write :read))
 
+(defn- list-of-view-names
+  [unit]
+  (->> unit
+       :orgpad/props-refs
+       (filter :orgpad/view-name)
+       (map :orgpad/view-name)
+       (cons "default")
+       set
+       (map (fn [n] #js { :value n :label n }))
+       into-array))
+
+(defn- render-view-names
+  [unit view]
+  (let [current-name (view :orgpad/view-name)
+        list-of-view-names (list-of-view-names unit)]
+    (js/React.createElement js/Select
+                            #js { :value current-name
+                                  :options list-of-view-names
+                                 })))
+
 (rum/defcc status < (rum/local false) lc/parser-type-mixin-context
   [component { :keys [unit view path-info] } app-state]
   (let [id (unit :db/id)
@@ -24,8 +47,8 @@
       [ :div { :className "tools-button" :onClick #(swap! local-state not) }
        [ :i { :className "fa fa-navicon fa-lg" } ] ]
       [ :div { :className (str "tools" (when @local-state " more-3")) }
-       [ :div { :className "tools-button" }
-        [ :i { :className "fa fa-leaf fa-lg" } ] ]
+       [ :div { :className "view-name" }
+        (render-view-names unit view) ]
        [ :div { :className "tools-button" }
         [ :i { :className "fa fa-leaf fa-lg" } ] ]
        [ :div { :className "tools-button" }

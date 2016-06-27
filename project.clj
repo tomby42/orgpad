@@ -3,18 +3,19 @@
   :url "http://www.orgpad.org/"
 
   :dependencies [[org.clojure/clojure         "1.8.0"]
-                 [org.clojure/clojurescript   "1.9.36"]
-                 [org.clojure/core.async      "0.2.374"]
+                 [org.clojure/clojurescript   "1.9.89"]
+                 [org.clojure/core.async      "0.2.385"]
                  [org.clojure/test.check      "0.9.0"]
                  [datascript                  "0.15.0"]
                  [com.rpl/specter             "0.10.0"]
-                 [rum                         "0.9.0"]
+                 [rum                         "0.9.1"]
                  [cljsjs/react                "15.1.0-0"]
                  [cljsjs/react-dom            "15.1.0-0"]
                  [cljsjs/react-sanfona        "0.0.8-0"]
                  [cljsjs/react-tinymce        "0.5.1-0"]
                  [cljsjs/react-tagsinput      "3.7.0-0"]
                  [cljsjs/react-motion         "0.3.1-0"]
+                 [cljsjs/react-select         "1.0.0-beta13-0"]
                  ]
 
   :plugins [[lein-cljsbuild "1.1.3"]

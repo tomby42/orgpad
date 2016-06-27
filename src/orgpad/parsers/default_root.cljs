@@ -9,7 +9,7 @@
 (defn- find-root-view-info
   [db]
   (let [root-unit (store/query db [:entity 0])]
-    (ds/find-props root-unit (fn [u] (u :orgpad/type) :orgpad/root-unit-view))))
+    (ds/find-props root-unit (fn [u] (= (u :orgpad/type) :orgpad/root-unit-view)))))
 
 (defmethod read :orgpad/root-view
   [{ :keys [state props] :as env } k params]
@@ -31,12 +31,15 @@
 
         view-path
         (or (-> root-view-info :orgpad/view-paths last)
-            [])]
+            [])
 
-    ;; (println "root parser" root-view-info)
+        current-root-id
+        (-> root-view-info :orgpad/refs last :db/id)]
+
+;;    (println "root parser" current-root-id view-name view-type view-path)
 
     (props (merge env { :view-name view-name
-                        :unit-id (-> root-view-info :orgpad/refs last :db/id)
+                        :unit-id current-root-id
                         :view-type view-type
                         :view-path view-path })
            :orgpad/unit-view params) ))
