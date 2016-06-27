@@ -1,0 +1,7 @@
+* reader mode pro mapu
+* reader mode pro sheety
+* dodelat writer mode pro sheety
+* dodelat writer mode pro mapy
+* prepinani typu a pojmenovani top level view
+* save/load
+* build (custom cljsjs moduly nekde zverejnit)
