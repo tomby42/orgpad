@@ -30,7 +30,7 @@
        into-array))
 
 (defn- render-view-names
-  [unit view]
+  [component {:keys [unit view] :as unit-tree}]
   (let [current-name (view :orgpad/view-name)
         list-of-view-names (list-of-view-names unit)]
     (js/React.createElement js/Select
@@ -38,19 +38,43 @@
                                   :options list-of-view-names
                                  })))
 
+(defn- list-of-view-types
+  []
+  (->> (dissoc (registry/get-registry) :orgpad/root-view)
+       (map (fn [[view-type info]] #js { :key view-type
+                                         :value (info :orgpad/view-name)
+                                         :label (info :orgpad/view-name) }))
+       into-array))
+
+(defn- render-view-types
+  [component {:keys [view] :as unit-tree}]
+  (let [list-of-view-types (list-of-view-types)
+        current-type (-> view :orgpad/view-type registry/get-component-info :orgpad/view-name)]
+    (js/React.createElement js/Select
+                            #js { :value current-type
+                                  :options list-of-view-types
+                                  :clearable false
+                                  :searchable false
+                                  :onChange (fn [ev]
+                                              (lc/transact! component
+                                                            [[:orgpad/root-view-conf [unit-tree
+                                                                                      { :attr :orgpad/view-type
+                                                                                       :value (.-key ev) }]]]))
+                                 })))
+
 (rum/defcc status < (rum/local false) lc/parser-type-mixin-context
-  [component { :keys [unit view path-info] } app-state]
+  [component { :keys [unit view path-info] :as unit-tree } app-state]
   (let [id (unit :db/id)
         local-state (trum/comp->local-state component)]
     [ :div { :className "status-menu" }
      [ :div { :className "tools-menu" :title "Actions" }
       [ :div { :className "tools-button" :onClick #(swap! local-state not) }
        [ :i { :className "fa fa-navicon fa-lg" } ] ]
-      [ :div { :className (str "tools" (when @local-state " more-3")) }
+      [ :div { :className (str "tools" (when @local-state " more-current")) }
        [ :div { :className "view-name" }
-        (render-view-names unit view) ]
-       [ :div { :className "tools-button" }
-        [ :i { :className "fa fa-leaf fa-lg" } ] ]
+        (render-view-names component unit-tree) ]
+       [ :div { :className "view-type" }
+         (render-view-types component unit-tree) ]
        [ :div { :className "tools-button" }
         [ :i { :className "fa fa-leaf fa-lg" } ] ]
 

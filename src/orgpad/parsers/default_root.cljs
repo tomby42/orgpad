@@ -22,15 +22,15 @@
         (registry/get-component-info :orgpad/root-view)
 
         view-name
-        (or (-> root-view-info :orgpad/view-names last)
+        (or (-> root-view-info :orgpad/view-names last first)
             (-> root-info :orgpad/default-view-info :orgpad/view-name))
 
         view-type
-        (or (-> root-view-info :orgpad/view-types last)
+        (or (-> root-view-info :orgpad/view-types last first)
             (-> root-info :orgpad/default-view-info :orgpad/view-type))
 
         view-path
-        (or (-> root-view-info :orgpad/view-paths last)
+        (or (-> root-view-info :orgpad/view-paths last first)
             [])
 
         current-root-id
@@ -68,15 +68,29 @@
   (let [root-view-info (find-root-view-info state)
         rvi-id (root-view-info :db/id)]
     { :state (store/transact state [[:db/add rvi-id :orgpad/refs id]
-                                    [:db/add rvi-id :orgpad/view-names view-name]
-                                    [:db/add rvi-id :orgpad/view-types view-type]
-                                    [:db/add rvi-id :orgpad/view-paths view-path]]) }))
+                                    [:db/add rvi-id :orgpad/view-names [view-name id]]
+                                    [:db/add rvi-id :orgpad/view-types [view-type id]]
+                                    [:db/add rvi-id :orgpad/view-paths [view-path id]]]) }))
 
 (defmethod mutate :orgpad/root-unit-close
   [{ :keys [state] } _ {:keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
   (let [root-view-info (find-root-view-info state)
         rvi-id (root-view-info :db/id)]
     { :state (store/transact state [[:db/retract rvi-id :orgpad/refs id]
-                                    [:db/retract rvi-id :orgpad/view-names view-name]
-                                    [:db/retract rvi-id :orgpad/view-types view-type]
-                                    [:db/retract rvi-id :orgpad/view-paths view-path] ]) }))
+                                    [:db/retract rvi-id :orgpad/view-names [view-name id]]
+                                    [:db/retract rvi-id :orgpad/view-types [view-type id]]
+                                    [:db/retract rvi-id :orgpad/view-paths [view-path id]] ]) }))
+
+(defmethod mutate :orgpad/root-view-conf
+  [{ :keys [state] } _ [{:keys [unit view path-info] } {:keys [attr value]}]]
+  (let [path-info-id (path-info :db/id)]
+    { :state
+      (if path-info-id
+        (store/transact state [[:db/add path-info-id attr value]])
+        (store/transact state [(merge path-info { :db/id -1
+                                                  :orgpad/refs (unit :db/id)
+                                                  :orgpad/type :orgpad/unit-path-info
+                                                  attr value })
+                               [:db/add (unit :db/id) :orgpad/props-refs -1]
+                               ]))
+     }))

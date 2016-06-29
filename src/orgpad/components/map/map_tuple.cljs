@@ -93,7 +93,7 @@
                                        :orgpad/view-name "default" }
    :orgpad/class               map-tuple-component
    :orgpad/needs-children-info true
-   :orgpad/view-name           "Map Tuple View"
+   :orgpad/view-name           "Sheet View"
 
    :orgpad/propagate-props-from-children? true
    :orgpad/propagated-props-from-children { :orgpad.map-view/props
