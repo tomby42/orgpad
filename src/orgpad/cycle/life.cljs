@@ -49,6 +49,7 @@
                        [store (conj key-params-read kp) effects]
                        (let [{:keys [state effect]}
                              (mutate-fn { :state store
+                                          :force-update! parser/force-update!
                                           :transact! parser-mutate } key params)]
                          [state key-params-read
                           (if (nil? effect)

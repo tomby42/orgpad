@@ -1,9 +1,8 @@
 (ns ^{:doc "Default root read/write parser"}
   orgpad.parsers.default-root
   (:require [orgpad.core.store :as store]
-            [orgpad.parsers.default :as dp :refer [read mutate updated?]]
+            [orgpad.parsers.default-unit :as dp :refer [read mutate updated?]]
             [orgpad.tools.dscript :as ds]
-            [orgpad.components.queries :as qs]
             [orgpad.components.registry :as registry]))
 
 (defn- find-root-view-info
@@ -82,8 +81,9 @@
                                     [:db/retract rvi-id :orgpad/view-paths [view-path id]] ]) }))
 
 (defmethod mutate :orgpad/root-view-conf
-  [{ :keys [state] } _ [{:keys [unit view path-info] } {:keys [attr value]}]]
+  [{ :keys [state :force-update!] } _ [{:keys [unit view path-info] } {:keys [attr value]}]]
   (let [path-info-id (path-info :db/id)]
+    (force-update!)
     { :state
       (if path-info-id
         (store/transact state [[:db/add path-info-id attr value]])
@@ -94,3 +94,10 @@
                                [:db/add (unit :db/id) :orgpad/props-refs -1]
                                ]))
      }))
+
+(defmethod mutate :orgpad/root-new-view
+  [env _ [unit-tree attr]]
+  (-> env
+      (mutate :orgpad.units/clone-view [unit-tree (attr :value)])
+      (->> (merge env))
+      (mutate :orgpad/root-view-conf [unit-tree attr])))

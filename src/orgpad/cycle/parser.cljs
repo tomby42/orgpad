@@ -1,6 +1,8 @@
 (ns ^{:doc "Definition of property parser"}
   orgpad.cycle.parser)
 
+(def ^:private force-update (volatile! false))
+
 (defn- parse-props-
   [{:keys [tree read] :as env} k params]
 
@@ -29,7 +31,7 @@
   [{:keys [props-changed?] :as env} node]
   (let [mark-changed' (partial mark-changed env)
         node'         (assoc node :children (doall (mapv mark-changed' (node :children))))
-        me-changed?   (props-changed? node' env)]
+        me-changed?   (or (props-changed? node' env) @force-update)]
 
     (-> node'
         (assoc :me-changed? me-changed?)
@@ -66,8 +68,13 @@
   [state read old-tree changed?]
   (let [tree (volatile! [[(mark-changed { :props-changed? changed?
                                           :state state } old-tree)] []])]
+    (vreset! force-update false)
     (update-parsed-props- { :state state
                             :props update-parsed-props-
                             :read read
                             :tree tree })
     (-> tree deref second first)))
+
+(defn force-update!
+  []
+  (vreset! force-update true))

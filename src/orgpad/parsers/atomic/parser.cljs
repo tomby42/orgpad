@@ -2,7 +2,7 @@
   orgpad.parsers.atomic.parser
   (:require [orgpad.core.store :as store]
             [orgpad.effects.core :as eff]
-            [orgpad.parsers.default :as dp :refer [read mutate]]))
+            [orgpad.parsers.default-unit :as dp :refer [read mutate]]))
 
 (defn- update-view-unit
   [db unit-id view key val]

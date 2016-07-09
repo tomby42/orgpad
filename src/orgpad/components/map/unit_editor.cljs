@@ -3,7 +3,6 @@
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
             [orgpad.cycle.life :as lc]
-            [orgpad.components.queries :as qs]
             [orgpad.components.registry :as registry]
             [orgpad.components.menu.circle :as mc]
             [orgpad.components.node :as node]
@@ -73,11 +72,12 @@
   (let [select-unit (@local-state :selected-unit)]
     (when select-unit
       (let [[old-unit old-prop] select-unit
-            [unit prop] (selected-unit-prop unit-tree (-> old-unit :unit :db/id) (old-prop :db/id))
-            pos (prop :orgpad/unit-position)
-            style (merge { :width (+ (prop :orgpad/unit-width) 4)
-                           :height (+ (prop :orgpad/unit-height) 4) }
-                         (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
+            [unit prop] (selected-unit-prop unit-tree (-> old-unit :unit :db/id) (old-prop :db/id))]
+        (when (and prop unit)
+          (let [pos (prop :orgpad/unit-position)
+                style (merge { :width (+ (prop :orgpad/unit-width) 4)
+                              :height (+ (prop :orgpad/unit-height) 4) }
+                             (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
         (when (or (not= old-unit unit) (not= old-prop prop))
           (swap! local-state merge { :selected-unit [unit prop view] }))
         [:div {}
@@ -108,4 +108,4 @@
           [ :i { :title "Link" :className "fa fa-link fa-lg" } ]
           )
          ]
-      ))))
+      ))))))

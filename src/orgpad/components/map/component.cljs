@@ -3,7 +3,6 @@
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
             [orgpad.cycle.life :as lc]
-            [orgpad.components.queries :as qs]
             [orgpad.components.registry :as registry]
             [orgpad.components.menu.circle :as mc]
             [orgpad.components.node :as node]
@@ -53,6 +52,7 @@
   (lc/transact! component
                 [[ :orgpad.units/new-pair-unit
                    { :parent (unit :db/id)
+                     :view-name (view :orgpad/view-name)
                      :transform (view :orgpad/transform)
                      :position pos } ]] ))
 

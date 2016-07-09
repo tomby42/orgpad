@@ -4,7 +4,7 @@
             [orgpad.effects.core :as eff]
             [orgpad.components.registry :as registry]
             [orgpad.tools.colls :as colls]
-            [orgpad.parsers.default :as dp :refer [read mutate]]))
+            [orgpad.parsers.default-unit :as dp :refer [read mutate]]))
 
 (def ^:private propagated-query
   '[:find [(pull ?p ?selector) ...]
@@ -15,7 +15,7 @@
 
 (defn- prepare-propagated-props
   [db unit-id props-from-children]
-  (let [indexer (volatile! 2)
+  (let [indexer (volatile! -2)
         props-units-transducer
         (comp
          (mapcat (fn [[type props]]
@@ -23,7 +23,7 @@
                                 [unit-id type props])))
          (map (fn [prop-unit]
                 (merge prop-unit
-                       { :db/id (- (vswap! indexer inc))
+                       { :db/id (vswap! indexer dec)
                          :orgpad/type :orgpad/unit-view-child-propagated
                          :orgpad/refs -1 }))))]
     (into [] props-units-transducer props-from-children)))
@@ -53,7 +53,7 @@
           { :state (store/transact state t) }))
 
 (defmethod mutate :orgpad.units/new-pair-unit
-  [{:keys [state]} _ {:keys [parent position transform]}]
+  [{:keys [state]} _ {:keys [parent position transform view-name]}]
   (let [info (registry/get-component-info :orgpad/map-view)
         {:keys [translate scale]} transform
         pos  [(- (* (:center-x position) scale) (translate 0))
@@ -69,6 +69,7 @@
                               { :db/id -2
                                 :orgpad/refs -1
                                 :orgpad/type :orgpad/unit-view-child
+                                :orgpad/view-name view-name
                                 :orgpad/unit-position pos } )
 
                        { :db/id -3
@@ -79,6 +80,7 @@
                               { :db/id -4
                                 :orgpad/refs -3
                                 :orgpad/type :orgpad/unit-view-child-propagated
+                                :orgpad/view-name view-name
                                 :orgpad/unit-position pos } )
 
                       [:db/add 0 :orgpad/refs -1]
@@ -168,28 +170,54 @@
                              :orgpad/unit-view-child-propagated prop)) } ))
 
 (defn- child-propagated-props
-  [db unit-id child-id props-from-children]
+  [db unit-id child-id props-from-children view-name]
   (let [xform
         (comp
          (mapcat (fn [[type props]]
-                   (store/query db (conj propagated-query '[?p :orgpad/type :orgpad/unit-view-child-propagated])
+                   (store/query db
+                                (conj propagated-query '[?p :orgpad/type :orgpad/unit-view-child-propagated])
                                 [child-id type props])))
          (map (fn [prop-unit]
                 (merge (first
-                        (store/query db (conj propagated-query `[?p :orgpad/view-name ~(prop-unit :view-name)])
+                        (store/query db (conj propagated-query
+                                              `[~'?p :orgpad/view-name ~(prop-unit :orgpad/view-name)])
                                      [unit-id (prop-unit :orgpad/view-type) [:db/id]]))
-                       prop-unit))))]
+                       prop-unit)))
+         (filter :db/id))]
     (into [] xform props-from-children)))
+
+(defn- view-units
+  [db unit view]
+  (store/query db (conj propagated-query '[?p :orgpad/type :orgpad/unit-view])
+               [(unit :db/id) (view :orgpad/view-type) [:db/id :orgpad/view-name :orgpad/active-unit]]))
+
+(defn- update-current-active-unit
+  [view-units view new-active-unit]
+  (let [vid (view :db/id)]
+    (map (fn [vu] (if (= (vu :db/id) vid) (assoc vu :orgpad/active-unit new-active-unit) vu)) view-units)))
+
+(defn- update-all-propagated-props
+  [db unit props-from-children view-units]
+  (let [id (unit :db/id)
+        refs (unit :orgpad/refs)]
+    (into [] (mapcat (fn [vu]
+                       (child-propagated-props db id
+                                               (-> refs (get (vu :orgpad/active-unit)) :unit :db/id)
+                                               props-from-children (vu :orgpad/view-name))))
+                     view-units)))
 
 (defmethod mutate :orgpad.sheet/switch-active
   [{:keys [state]} _ {:keys [unit view direction nof-sheets]}]
   (let [info (registry/get-component-info (view :orgpad/view-type))
-        new-active-unit (mod (+ (view :orgpad/active-unit) direction) nof-sheets)]
+        new-active-unit (mod (+ (view :orgpad/active-unit) direction) nof-sheets)
+        view-units (-> (view-units state unit view)
+                       (update-current-active-unit view new-active-unit))
+        update-trans (update-all-propagated-props state
+                                                  unit
+                                                  (info :orgpad/propagated-props-from-children)
+                                                  view-units)]
     { :state
      (store/transact
       state
-      (into (child-propagated-props state
-                                    (unit :db/id)
-                                    (-> unit :orgpad/refs (get new-active-unit) :unit :db/id)
-                                    (info :orgpad/propagated-props-from-children))
-                                    [[:db/add (view :db/id) :orgpad/active-unit new-active-unit]])) }))
+      (into update-trans
+            [[:db/add (view :db/id) :orgpad/active-unit new-active-unit]])) }))

@@ -3,7 +3,7 @@
   (:require [orgpad.components.registry :as registry]
             [orgpad.cycle.life :as lc]
             [orgpad.core.orgpad :as orgpad]
-            [orgpad.parsers.default :as ps]
+            [orgpad.parsers.default-unit :as ps]
             [orgpad.config]
             ))
 

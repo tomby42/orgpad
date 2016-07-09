@@ -19,10 +19,11 @@
     :write :read))
 
 (defn- list-of-view-names
-  [unit]
+  [unit view-type]
   (->> unit
        :orgpad/props-refs
        (filter :orgpad/view-name)
+       (filter #(= (% :orgpad/view-type) view-type))
        (map :orgpad/view-name)
        (cons "default")
        set
@@ -30,12 +31,18 @@
        into-array))
 
 (defn- render-view-names
-  [component {:keys [unit view] :as unit-tree}]
+  [component {:keys [unit view] :as unit-tree} local-state]
   (let [current-name (view :orgpad/view-name)
-        list-of-view-names (list-of-view-names unit)]
+        list-of-view-names (list-of-view-names unit (view :orgpad/view-type))]
     (js/React.createElement js/Select
                             #js { :value current-name
                                   :options list-of-view-names
+                                  :onInputChange #(do (swap! local-state merge { :typed % }) %)
+                                  :onChange (fn [ev]
+                                              (lc/transact! component
+                                                            [[:orgpad/root-view-conf [unit-tree
+                                                                                      { :attr :orgpad/view-name
+                                                                                        :value (.-value ev) }]]]))
                                  })))
 
 (defn- list-of-view-types
@@ -59,20 +66,26 @@
                                               (lc/transact! component
                                                             [[:orgpad/root-view-conf [unit-tree
                                                                                       { :attr :orgpad/view-type
-                                                                                       :value (.-key ev) }]]]))
+                                                                                        :value (.-key ev) }]]]))
                                  })))
 
-(rum/defcc status < (rum/local false) lc/parser-type-mixin-context
+(rum/defcc status < (rum/local { :unroll false :typed "" } ) lc/parser-type-mixin-context
   [component { :keys [unit view path-info] :as unit-tree } app-state]
   (let [id (unit :db/id)
         local-state (trum/comp->local-state component)]
     [ :div { :className "status-menu" }
      [ :div { :className "tools-menu" :title "Actions" }
-      [ :div { :className "tools-button" :onClick #(swap! local-state not) }
+      [ :div { :className "tools-button" :onClick #(swap! local-state update-in [:unroll] not) }
        [ :i { :className "fa fa-navicon fa-lg" } ] ]
-      [ :div { :className (str "tools" (when @local-state " more-current")) }
+      [ :div { :className (str "tools" (when (@local-state :unroll) " more-current")) }
        [ :div { :className "view-name" }
-        (render-view-names component unit-tree) ]
+        (render-view-names component unit-tree local-state)
+        [ :span { :className "fa fa-plus-circle view-name-add"
+                  :title "New view"
+                  :onClick #(lc/transact! component
+                                          [[:orgpad/root-new-view [unit-tree
+                                                                   { :attr :orgpad/view-name
+                                                                     :value (@local-state :typed) }]]]) } ] ]
        [ :div { :className "view-type" }
          (render-view-types component unit-tree) ]
        [ :div { :className "tools-button" }
