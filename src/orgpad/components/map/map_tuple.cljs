@@ -32,7 +32,7 @@
      [ :div { :className (str "tools" (when @local-state " more-4")) }
       [ :div { :className "tools-button" :title "New sheet"
                :onClick #(new-sheet component unit-tree) }
-       [ :i { :className "fa fa-plus-square-o fa-lg" } ] ]
+       [ :i { :className "fa fa-plus-circle fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Previous"
                :onClick #(switch-active-sheet component unit-tree -1) }
        [ :i { :className "fa fa-caret-left fa-lg" } ] ]
