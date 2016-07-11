@@ -111,7 +111,7 @@
             (props (merge env
                           { :unit-id    (u :db/id)
                             :old-node   nil
-                            :view-path  (conj view-path unit-id)
+                            :view-path  (-> view-path (conj unit-id) (conj (view-unit :orgpad/view-name))) 
                             :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
                             :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
                             :view-contexts view-contexts' })
