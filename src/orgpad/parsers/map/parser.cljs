@@ -214,7 +214,12 @@
                                                   (info :orgpad/propagated-props-from-children)
                                                   view-units)]
     { :state
-     (store/transact
-      state
-      (into update-trans
-            [[:db/add (view :db/id) :orgpad/active-unit new-active-unit]])) }))
+      (store/transact
+       state
+       (into update-trans
+             (if (view :db/id)
+               [[:db/add (view :db/id) :orgpad/active-unit new-active-unit]]
+               (conj [[:db/add (unit :db/id) :orgpad/props-refs -1]]
+                     (merge view { :db/id -1
+                                   :orgpad/type :orgpad/unit-view
+                                   :orgpad/active-unit new-active-unit }))) )) }))
