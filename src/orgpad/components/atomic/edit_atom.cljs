@@ -9,8 +9,10 @@
   { :should-update
    (fn [old-state new-state]
      (or
-      (not= (-> old-state :rum/args first) (-> new-state :rum/args first))
-      (not= (-> old-state :rum/args second :orgpad/view-name) (-> new-state :rum/args second :orgpad/view-name))
+      (not= (-> old-state :rum/args first)
+            (-> new-state :rum/args first))
+      (not= (-> old-state :rum/args second :orgpad/view-name)
+            (-> new-state :rum/args second :orgpad/view-name))
       )) })
 
 (rum/defcc atom-editor < unit-change lc/parser-type-mixin-context
