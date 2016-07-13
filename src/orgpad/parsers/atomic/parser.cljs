@@ -42,16 +42,6 @@
   [{:keys [state transact!]} _ {:keys [db/id orgpad/view orgpad/desc]}]
   { :state (update-view-unit state id view :orgpad/desc desc) } )
 
-(def ^:private atom-update
-  (eff/debounce (fn [transact! unit]
-                  (transact! [[:orgpad.atom/set unit]])) 500 false) )
-
 (defmethod mutate :orgpad.atom/update
-  [{:keys [state transact!]} _ unit]
-  { :state state
-    :effect (fn []
-              (atom-update transact! unit)) } )
-
-(defmethod mutate :orgpad.atom/set
   [{:keys [state transact!]} _ {:keys [db/id orgpad/view orgpad/atom]}]
   { :state (update-view-unit state id view :orgpad/atom atom) } )
