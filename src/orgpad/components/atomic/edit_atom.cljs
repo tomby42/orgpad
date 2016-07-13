@@ -7,13 +7,13 @@
 
 (def unit-change
   { :should-update
-   (fn [old-state new-state]
-     (or
-      (not= (-> old-state :rum/args first)
-            (-> new-state :rum/args first))
-      (not= (-> old-state :rum/args second :orgpad/view-name)
-            (-> new-state :rum/args second :orgpad/view-name))
-      )) })
+    (fn [old-state new-state]
+      (or
+       (not= (-> old-state :rum/args first)
+             (-> new-state :rum/args first))
+       (not= (-> old-state :rum/args second :orgpad/view-name)
+             (-> new-state :rum/args second :orgpad/view-name))
+       )) })
 
 (rum/defcc atom-editor < unit-change lc/parser-type-mixin-context
   [component unit-id view atom]
