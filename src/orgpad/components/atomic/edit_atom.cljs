@@ -8,11 +8,14 @@
 (def unit-change
   { :should-update
    (fn [old-state new-state]
-     (not= (-> old-state :rum/args first) (-> new-state :rum/args first))) })
+     (or
+      (not= (-> old-state :rum/args first) (-> new-state :rum/args first))
+      (not= (-> old-state :rum/args second :orgpad/view-name) (-> new-state :rum/args second :orgpad/view-name))
+      )) })
 
 (rum/defcc atom-editor < unit-change lc/parser-type-mixin-context
   [component unit-id view atom]
-  [ :div { :key unit-id }
+  [ :div { :key (str unit-id (view :orgpad/view-name)) }
     (.createElement
      js/React
      js/ReactTinymce
