@@ -48,12 +48,21 @@
                                           (prop :orgpad/unit-corner-y) "px")
                        :backgroundColor (prop :orgpad/unit-bg-color) }
                      (css/transform { :translate pos })) ]
+    (when (= (unit :db/id) (-> local-state deref :selected-unit first :unit :db/id))
+      (select-unit unit-tree prop parent-view local-state))
     (html
      [ :div { :style style :className "map-view-child" :key (unit :db/id)
-              :onMouseDown #(do
-                              (select-unit unit-tree prop parent-view local-state)
-                              (.stopPropagation %)) }
-       (node/node unit-tree app-state)])))
+              :onMouseDown (if (= (app-state :mode) :write)
+                             #(do
+                                (select-unit unit-tree prop parent-view local-state)
+                                (.stopPropagation %))
+                             #(do
+                                (swap! local-state merge { :local-mode :unit-move
+                                                           :selected-unit [unit-tree prop parent-view]
+                                                           :mouse-x (.-clientX %)
+                                                           :mouse-y (.-clientY %) })
+                                (.stopPropagation %))) }
+       (node/node unit-tree (assoc app-state :mode :read))])))
 
 (defn render-mapped-children-units
   [component {:keys [unit view props] :as unit-tree} app-state local-state]
@@ -63,5 +72,5 @@
         m-children (mapped-children unit view)]
     (html
      (into [ :div { :className "map-view-canvas" :style style :key 0 } 
-             (uedit/unit-editor unit-tree app-state local-state) ]
-           (map #(mapped-unit % app-state view local-state) m-children)))))
+             (when (= (app-state :mode) :write) (uedit/unit-editor unit-tree app-state local-state)) ]
+           (map #(mapped-unit % app-state view local-state)) m-children))))

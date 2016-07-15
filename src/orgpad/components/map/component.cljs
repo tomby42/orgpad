@@ -129,8 +129,8 @@
                       :unit-tree unit-tree
                       :old-pos [(@local-state :mouse-x)
                                 (@local-state :mouse-y)]
-                     :new-pos [(.-clientX ev)
-                               (.-clientY ev)] }]])
+                      :new-pos [(.-clientX ev)
+                                (.-clientY ev)] }]])
     (update-mouse-position local-state ev)))
 
 (defn- handle-mouse-move
@@ -156,13 +156,22 @@
               :onMouseUp #(handle-mouse-up component unit-tree app-state %)
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
               :onBlur #(handle-blur component unit-tree app-state %) }
-       (munit/render-mapped-children-units component unit-tree (assoc app-state :mode :read) local-state)
+       (munit/render-mapped-children-units component unit-tree app-state local-state)
        (render-local-menu component unit-tree app-state local-state)
       ])))
 
 (defn- render-read-mode
   [component unit-tree app-state]
-  )
+  (let [local-state (trum/comp->local-state component)]
+    (html
+     [ :div { :className "map-view"
+              :onMouseDown #(handle-mouse-down component unit-tree app-state %)
+              :onMouseUp #(handle-mouse-up component unit-tree app-state %)
+              :onMouseMove #(handle-mouse-move component unit-tree app-state %)
+              :onBlur #(handle-blur component unit-tree app-state %) }
+       (munit/render-mapped-children-units component unit-tree app-state local-state)
+      ])))
+
 
 (rum/defcc map-component < rum/static lc/parser-type-mixin-context (rum/local init-state)
   [component unit-tree app-state]

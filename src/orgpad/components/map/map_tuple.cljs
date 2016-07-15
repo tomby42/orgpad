@@ -67,10 +67,17 @@
         (rum/with-key (node/node child-tree app-state) 2))
      ]))
 
+(defn- comp-dir
+  [e]
+  (println e)
+  1)
+
 (defn- render-read-mode
   [component { :keys [unit view] :as unit-tree } app-state]
   (let [child-tree (active-child-tree unit view)]
-    [ :div { :className "map-tuple" }
+    [ :div { :className "map-tuple"
+             :onClick (fn [e]
+                        (switch-active-sheet component unit-tree (comp-dir e))) }
      (when child-tree
        (rum/with-key (node/node child-tree app-state) 2))
      ]))

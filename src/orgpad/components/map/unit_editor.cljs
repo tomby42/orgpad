@@ -76,36 +76,36 @@
         (when (and prop unit)
           (let [pos (prop :orgpad/unit-position)
                 style (merge { :width (+ (prop :orgpad/unit-width) 4)
-                              :height (+ (prop :orgpad/unit-height) 4) }
-                             (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
-        (when (or (not= old-unit unit) (not= old-prop prop))
-          (swap! local-state merge { :selected-unit [unit prop view] }))
-        [:div {}
-         [ :div { :className "map-view-unit-selected" :style style :key 0 } ]
-         (mc/circle-menu
-          (merge menu-conf { :center-x (- (pos 0) padding)
-                             :center-y (- (pos 1) padding)
-                             :children-positions (compute-children-position prop)
-                             :onMouseDown jev/block-propagation
-                             :onMouseUp jev/block-propagation })
-          [ :i { :title "Move"
-                 :className "fa fa-arrows fa-lg"
-                 :onMouseDown #(swap! local-state merge { :local-mode :unit-move
-                                                          :mouse-x (.-clientX %)
-                                                          :mouse-y (.-clientY %) })
-                 :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
-          [ :i { :title "Edit"
-                 :className "fa fa-pencil-square-o fa-lg"
-                 :onMouseUp #(open-unit component unit)
-                 } ]
-          [ :i { :title "Properties" :className "fa fa-cogs fa-lg" } ]
-          [ :i { :title "Resize"
-                 :className "fa fa-arrows-alt fa-lg"
-                 :onMouseDown #(swap! local-state merge { :local-mode :unit-resize
-                                                          :mouse-x (.-clientX %)
-                                                          :mouse-y (.-clientY %) })
-                 :onMouseUp #(swap! local-state merge { :local-mode :none })} ]
-          [ :i { :title "Link" :className "fa fa-link fa-lg" } ]
-          )
-         ]
-      ))))))
+                               :height (+ (prop :orgpad/unit-height) 4) }
+                               (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
+;;            (when (or (not= old-unit unit) (not= old-prop prop))
+;;              (swap! local-state merge { :selected-unit [unit prop view] }))
+            [:div {}
+             [ :div { :className "map-view-unit-selected" :style style :key 0 } ]
+             (mc/circle-menu
+              (merge menu-conf { :center-x (- (pos 0) padding)
+                                 :center-y (- (pos 1) padding)
+                                 :children-positions (compute-children-position prop)
+                                 :onMouseDown jev/block-propagation
+                                 :onMouseUp jev/block-propagation })
+              [ :i { :title "Move"
+                     :className "fa fa-arrows fa-lg"
+                     :onMouseDown #(swap! local-state merge { :local-mode :unit-move
+                                                              :mouse-x (.-clientX %)
+                                                              :mouse-y (.-clientY %) })
+                     :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
+              [ :i { :title "Edit"
+                     :className "fa fa-pencil-square-o fa-lg"
+                     :onMouseUp #(open-unit component unit)
+                    } ]
+              [ :i { :title "Properties" :className "fa fa-cogs fa-lg" } ]
+              [ :i { :title "Resize"
+                     :className "fa fa-arrows-alt fa-lg"
+                     :onMouseDown #(swap! local-state merge { :local-mode :unit-resize
+                                                              :mouse-x (.-clientX %)
+                                                              :mouse-y (.-clientY %) })
+                     :onMouseUp #(swap! local-state merge { :local-mode :none })} ]
+              [ :i { :title "Link" :className "fa fa-link fa-lg" } ]
+              )
+             ]
+            ))))))
