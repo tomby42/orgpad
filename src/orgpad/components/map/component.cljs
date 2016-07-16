@@ -140,7 +140,8 @@
       :canvas-move (canvas-move component unit-tree app-state local-state ev)
       :unit-move (unit-change component local-state ev :orgpad.units/map-view-unit-move)
       :unit-resize (unit-change component local-state ev :orgpad.units/map-view-unit-resize)
-      nil)))
+      nil))
+  (.preventDefault ev))
 
 (defn- handle-blur
   [component unit-tree app-state ev]

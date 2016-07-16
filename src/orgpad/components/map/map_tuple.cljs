@@ -7,9 +7,12 @@
             [orgpad.components.menu.circle :as mc]
             [orgpad.components.node :as node]
             [orgpad.components.map.unit :as munit]
+            [orgpad.tools.time :as t]
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.rum :as trum]))
+
+(def ^:private CLICK-DELTA 250)
 
 (defn- new-sheet
   [component unit-tree]
@@ -27,9 +30,9 @@
   (html
    [ :div { :className "map-tuple-menu" }
     [ :div { :className "tools-menu" :title "Actions" }
-     [ :div { :className "tools-button" :onClick #(swap! local-state not) }
+     [ :div { :className "tools-button" :onClick #(swap! local-state update-in [:unroll] not) }
       [ :i { :className "fa fa-cogs fa-lg" } ] ]
-     [ :div { :className (str "tools" (when @local-state " more-4")) }
+     [ :div { :className (str "tools" (when (@local-state :unroll) " more-4")) }
       [ :div { :className "tools-button" :title "New sheet"
                :onClick #(new-sheet component unit-tree) }
        [ :i { :className "fa fa-plus-circle fa-lg" } ] ]
@@ -69,25 +72,33 @@
 
 (defn- comp-dir
   [e]
-  (println e)
-  1)
+  (let [bb (->> e .-target .getBoundingClientRect)
+        x (.-clientX e)
+        dist->left (- x (.-left bb))
+        dist->right (- (.-right bb) x)]
+    (if (< dist->right dist->left)
+      1
+      -1)))
 
 (defn- render-read-mode
-  [component { :keys [unit view] :as unit-tree } app-state]
+  [component { :keys [unit view] :as unit-tree } app-state local-state]
   (let [child-tree (active-child-tree unit view)]
     [ :div { :className "map-tuple"
-             :onClick (fn [e]
-                        (switch-active-sheet component unit-tree (comp-dir e))) }
+             :onMouseDown #(swap! local-state merge { :time-stamp (t/now) })
+             :onMouseUp (fn [e]
+                          (when (< (- (t/now) (@local-state :time-stamp)) CLICK-DELTA)
+                            (switch-active-sheet component unit-tree (comp-dir e)))) }
      (when child-tree
        (rum/with-key (node/node child-tree app-state) 2))
      ]))
 
-(rum/defcc map-tuple-component < rum/static lc/parser-type-mixin-context (rum/local false)
+(rum/defcc map-tuple-component < rum/static lc/parser-type-mixin-context
+  (rum/local { :unroll false :time-stamp 0} )
   [component unit-tree app-state]
   (let [local-state (trum/comp->local-state component)]
     (if (= (app-state :mode) :write)
       (render-write-mode component unit-tree app-state local-state)
-      (render-read-mode component unit-tree app-state))))
+      (render-read-mode component unit-tree app-state local-state))))
 
 (registry/register-component-info
  :orgpad/map-tuple-view
