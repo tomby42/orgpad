@@ -69,7 +69,7 @@
                                                                                         :value (.-key ev) }]]]))
                                  })))
 
-(rum/defcc status < (rum/local { :unroll false :typed "" } ) lc/parser-type-mixin-context
+(rum/defcc status < (rum/local { :unroll false :view-menu-unroll false :typed "" } ) lc/parser-type-mixin-context
   [component { :keys [unit view path-info] :as unit-tree } app-state]
   (let [id (unit :db/id)
         local-state (trum/comp->local-state component)]
@@ -78,19 +78,26 @@
       [ :div { :className "tools-button" :onClick #(swap! local-state update-in [:unroll] not) }
        [ :i { :className "fa fa-navicon fa-lg" } ] ]
       [ :div { :className (str "tools" (when (@local-state :unroll) " more-current")) }
-       [ :div { :className "view-name" }
-        (render-view-names component unit-tree local-state)
-        [ :span { :className "fa fa-plus-circle view-name-add"
-                  :title "New view"
-                  :onClick #(lc/transact! component
-                                          [[:orgpad/root-new-view [unit-tree
-                                                                   { :attr :orgpad/view-name
-                                                                     :value (@local-state :typed) }]]]) } ] ]
-       [ :div { :className "view-type" }
-         (render-view-types component unit-tree) ]
-       [ :div { :className "tools-button" }
-        [ :i { :className "fa fa-leaf fa-lg" } ] ]
+       [ :div { :className "view-menu" }
+        [ :span { :className "menu-header"
+                  :onClick #(swap! local-state update-in [:view-menu-unroll] not) }
+         [ :span {} "View " [ :i {:className (str "fa " (if (@local-state :view-menu-unroll) "fa-caret-up" "fa-caret-down")) }] ] ]
+        [ :ul { :className (str "menu-body " (when (@local-state :view-menu-unroll) "open")) }
+         [ :li
+          [ :div { :className "view-name" }
+           (render-view-names component unit-tree local-state)
+           [ :span { :className "fa fa-plus-circle view-name-add"
+                     :title "New view"
+                     :onClick #(lc/transact! component
+                                             [[:orgpad/root-new-view [unit-tree
+                                                                      { :attr :orgpad/view-name
+                                                                        :value (@local-state :typed) }]]]) } ] ] ]
+         [ :li
+          [ :div { :className "view-type" }
+           (render-view-types component unit-tree) ] ] ] ]
 
+        [ :div { :className "mode-button" }
+          [ :i { :className (str "fa fa-leaf fa-lg") } ] ]
        ]
       ]
 
