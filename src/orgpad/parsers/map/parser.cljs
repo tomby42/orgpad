@@ -97,7 +97,8 @@
 (defmethod mutate :orgpad.units/map-view-canvas-move
   [{:keys [state]} _ {:keys [view unit-id old-pos new-pos]}]
   (let [id (view :db/id)
-        transform (view :orgpad/transform)
+        view' (if id (store/query state [:entity id]) view)
+        transform (view' :orgpad/transform)
         new-translate (compute-translate (transform :translate)
                                          (transform :scale)
                                          new-pos old-pos)

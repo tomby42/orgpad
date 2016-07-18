@@ -88,7 +88,7 @@
   (let [local-state (trum/comp->local-state component)]
     (swap! local-state merge { :mouse-x (.-clientX ev)
                                :mouse-y (.-clientY ev)
-                               :local-mode :mouse-down
+                               :local-mode (if (= (app-state :mode) :write) :mouse-down :canvas-move)
                                :show-local-menu false })
     ))
 
