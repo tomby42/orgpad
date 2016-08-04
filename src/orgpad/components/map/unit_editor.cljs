@@ -115,6 +115,6 @@
               )
              (when (= (@local-state :local-mode) :make-link)
                (g/line [(@local-state :link-start-x) (@local-state :link-start-y)]
-                       [(@local-state :mouse-x) (@local-state :mouse-y)]))
+                       [(@local-state :mouse-x) (@local-state :mouse-y)] {}))
              ]
             ))))))

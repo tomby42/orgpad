@@ -1,5 +1,6 @@
 (ns ^{:doc "Graphics componets"}
   orgpad.components.graphics.primitives
+  (:require-macros [orgpad.tools.colls :refer [>-]])
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
             [orgpad.tools.css :as css]))
@@ -20,15 +21,36 @@
   [style]
   (or (-> style :canvas :lineWidth) 0))
 
+(defn- proj
+  [i p]
+  (nth p i))
+
+(defn- proj-x
+  [f pts idx]
+  (apply f (map (partial proj idx) pts)))
+
+(defn- proj-min
+  [pts idx]
+  (proj-x min pts idx))
+
+(defn- proj-max
+  [pts idx]
+  (proj-x max pts idx))
+
+(defn- comp-bb
+  [border-width pts]
+  [[(- (proj-min pts 0) border-width) (- (proj-min pts 1) border-width)]
+   [(+ (proj-max pts 0) border-width) (+ (proj-max pts 1) border-width)]])
+
 (defn- dims
-  [start end border-width]
-  (let [border-width2 (* 2 border-width)]
-    [(+ (inc (js/Math.abs (- (end 0) (start 0)))) border-width2)
-     (+ (inc (js/Math.abs (- (end 1) (start 1)))) border-width2)]))
+  [border-width pts]
+  (let [bb (comp-bb border-width pts)]
+    [(inc (- (>- bb 1 0) (>- bb 0 0)))
+     (inc (- (>- bb 1 1) (>- bb 0 1))) ]))
 
 (defn- left-top-corner
-  [start end]
-  [(js/Math.min (start 0) (end 0)) (js/Math.min (start 1) (end 1))])
+  [pts]
+  [(proj-min pts 0) (proj-min pts 1)])
 
 (defn- set-style!
   [ctx style]
@@ -36,30 +58,68 @@
     (aset ctx (name attr) val)))
 
 (defn- lp
-  "compute local point coordinate"
+  "Compute local point coordinate"
   [p c idx border-width]
   (+ (- (nth p idx) c) border-width))
 
-(defn- draw-line
+(defn- pt-lp
+  [p l t border-width]
+  [(lp p l 0 border-width) (lp p t 1 border-width)])
+
+(defn- get-context
   [state]
-  (let [ctx (-> state :rum/react-component (aget "refs") (aget "canvas") (.getContext "2d"))
-        [start end style] (state :rum/args)
+  (-> state :rum/react-component (aget "refs") (aget "canvas") (.getContext "2d")))
+
+(defn- draw-curve
+  [state f]
+  (let [ctx (get-context state)
+        args (state :rum/args)
+        style (last args)
         border-width (comp-border-width style)
-        [l t] (left-top-corner start end)
-        [w h] (dims start end border-width)]
+        pts (subvec args 0 (dec (count args)))
+        [l t] (left-top-corner pts)
+        [w h] (dims border-width pts)]
     (.clearRect ctx 0 0 w h)
     (set-style! ctx (:canvas style))
     (doto ctx
       (.setLineDash (or (-> style :canvas :lineDash) #js []))
-      .beginPath
-      (.moveTo (lp start l 0 border-width) (lp start t 1 border-width))
-      (.lineTo (lp end l 0 border-width) (lp end t 1 border-width))
-      .stroke)))
+      .beginPath)
+    (f ctx pts border-width l t)
+    (.stroke ctx)))
+
+(defn- draw-line
+  [state]
+  (draw-curve state
+              (fn [ctx [start end] border-width l t]
+                (let [s (pt-lp start l t border-width)
+                      e (pt-lp end l t border-width)]
+                  (doto ctx
+                    (.moveTo (s 0) (s 1))
+                    (.lineTo (e 0) (e 1)))))))
+
+(defn- render-curve
+  [style & pts]
+  (let [border-width (comp-border-width style)
+        [w h] (dims border-width pts)
+        [l t] (left-top-corner pts)
+        style (merge (or (:css style) {}) (css/transform { :translate [l t] }))]
+    [ :canvas { :className "graphics primitive" :width w  :height h :style style :ref "canvas"} ]))
 
 (rum/defc line < rum/static (gen-canvas-mixin draw-line)
   [start end style]
-  (let [border-width (comp-border-width style)
-        [w h] (dims start end border-width)
-        [l t] (left-top-corner start end)
-        style (merge (or (:css style) {}) (css/transform { :translate [l t] }))]
-    [ :canvas { :className "graphics primitive" :width w  :height h :style style :ref "canvas"} ]))
+  (render-curve style start end))
+
+(defn- draw-quadratic-curve
+  [state]
+  (fn [ctx [start end ctl-pt] border-width l t]
+    (let [s (pt-lp start l t border-width)
+          e (pt-lp end l t border-width)
+          c (pt-lp ctl-pt l t border-width)]
+      (doto ctx
+        (.moveTo (s 0) (s 1))
+        (.quadraticCurveTo (c 0) (c 1) (e 0) (e 1))))))
+
+
+(rum/defc quadratic-curve < rum/static (gen-canvas-mixin draw-quadratic-curve)
+  [start end ctl-pt style]
+  (render-curve style start end ctl-pt))

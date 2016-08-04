@@ -1,5 +1,5 @@
 (ns orgpad.tools.geom
-  (:require-macros orgpad.tools.geom))
+  (:require-macros orgpad.tools.geom orgpad.tools.colls))
   
 (defn screen->canvas
   [transform p]
@@ -13,5 +13,5 @@
 
 (defn insideBB
   [bb p]
-  (and (orgpad.tools.geom/insideInterval (orgpad.tools.geom/>- bb 0 0) (orgpad.tools.geom/>- bb 1 0) (p 0))
-       (orgpad.tools.geom/insideInterval (orgpad.tools.geom/>- bb 0 1) (orgpad.tools.geom/>- bb 1 1) (p 1))))
+  (and (orgpad.tools.geom/insideInterval (orgpad.tools.colls/>- bb 0 0) (orgpad.tools.colls/>- bb 1 0) (p 0))
+       (orgpad.tools.geom/insideInterval (orgpad.tools.colls/>- bb 0 1) (orgpad.tools.colls/>- bb 1 1) (p 1))))

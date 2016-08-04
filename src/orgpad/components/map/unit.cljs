@@ -82,6 +82,10 @@
                                 (.stopPropagation %))) }
        (node/node unit-tree (assoc app-state :mode :read))])))
 
+(defn- middle-coord
+  [start end idx r]
+  (- (/ (+ (start idx) (end idx)) 2) r))
+
 (rum/defcc map-link < rum/static lc/parser-type-mixin-context
   [component {:keys [props unit start-pos end-pos] :as unit-tree} app-state parent-view local-state]
   (let [prop (get-props props parent-view :orgpad.map-view/link-props)
@@ -89,8 +93,15 @@
                 :canvas { :strokeStyle (prop :orgpad/link-color)
                           :lineWidth (prop :orgpad/link-width)
                           :lineCap "round"
-                          :lineDash (prop :orgpad/link-dash) } }]
-    (g/line start-pos end-pos style)))
+                          :lineDash (prop :orgpad/link-dash) } }
+        ctl-style (css/transform {:translate [(middle-coord start-pos end-pos 0 10)
+                                              (middle-coord start-pos end-pos 1 10)]})
+        ]
+    (html
+     [ :div {}
+       (g/line start-pos end-pos style)
+       (when (= (app-state :mode) :write)
+         [ :div { :className "map-view-child link-control" :style ctl-style } ]) ])))
 
 (defn render-mapped-children-units
   [component {:keys [unit view props] :as unit-tree} app-state local-state]
@@ -100,8 +111,9 @@
         m-units (mapped-children unit view)
         m-links (mapped-links unit view m-units)]
     (html
-     (colls/minto
-      [ :div { :className "map-view-canvas" :style style :key 0 } 
-        (when (= (app-state :mode) :write) (uedit/unit-editor unit-tree app-state local-state)) ]
-      (map #(map-link % app-state view local-state) m-links)
-      (map #(map-unit % app-state view local-state) m-units)))))
+     (conj
+      (colls/minto [ :div { :className "map-view-canvas" :style style } ]
+                   (map #(map-link % app-state view local-state) m-links)
+                   (map #(map-unit % app-state view local-state) m-units))
+      (when (= (app-state :mode) :write)
+        (uedit/unit-editor unit-tree app-state local-state)))) ))
