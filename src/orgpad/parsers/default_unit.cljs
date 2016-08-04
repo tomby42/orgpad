@@ -82,20 +82,22 @@
         (or view-unit-local (:orgpad/default-view-info view-info))
 
         props-info
-        (when (:orgpad/child-props-type view-info)
-          { :orgpad/view-type (:orgpad/child-props-type view-info)
-            :orgpad/view-name (:orgpad/view-name path-info')
-            :orgpad/type      :orgpad/unit-view-child })
+        (when (:orgpad/child-props-types view-info)
+          (into [] (map (fn [type]
+                          { :orgpad/view-type type
+                            :orgpad/view-name (:orgpad/view-name path-info')
+                            :orgpad/type      :orgpad/unit-view-child }))
+                (:orgpad/child-props-types view-info)))
 
         view-contexts'
         (if (:orgpad/propagate-props-from-children? view-info)
           (let [view-contexts'' (mapv #(assoc % :orgpad/type :orgpad/unit-view-child-propagated)
                                       view-contexts)]
             (if props-info
-              (conj view-contexts'' props-info)
+              (into view-contexts'' props-info)
               view-contexts''))
           (when props-info
-            [props-info]))
+            props-info))
 
         parser'
         (fn [u old-node]
@@ -141,7 +143,7 @@
     { :unit unit'
       :path-info path-info'
       :view view-unit
-      :props props }))
+     :props props }))
 
 ;;; Default updated? definition
 
@@ -179,8 +181,12 @@
 (defn- clone-child-props
   [info {:keys [unit view]} new-view-name indexer]
   (if (info :orgpad/needs-children-info)
-    (clone-props (unit :orgpad/refs) (view :orgpad/view-name) (info :orgpad/child-props-type)
-                 :orgpad/unit-view-child indexer new-view-name)
+    (into []
+          (mapcat
+           (fn [type]
+             (clone-props (unit :orgpad/refs) (view :orgpad/view-name) type
+                          :orgpad/unit-view-child indexer new-view-name)))
+          (info :orgpad/child-props-types))
     []))
 
 (defn- clone-propagated-child-props
@@ -188,9 +194,13 @@
   (if (info :orgpad/needs-children-info)
     (into []
           (mapcat (fn [u-tree]
-                    (clone-props (-> u-tree :unit :orgpad/refs) (view :orgpad/view-name)
-                                 (info :orgpad/child-props-type)
-                                 :orgpad/unit-view-child-propagated indexer new-view-name)))
+                    (into []
+                          (mapcat
+                           (fn [type]
+                             (clone-props (-> u-tree :unit :orgpad/refs) (view :orgpad/view-name)
+                                          type
+                                          :orgpad/unit-view-child-propagated indexer new-view-name)))
+                          (info :orgpad/child-props-types))))
           (unit :orgpad/refs))
     []))
 

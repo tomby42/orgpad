@@ -113,7 +113,7 @@
    :orgpad/view-name           "Sheet View"
 
    :orgpad/propagate-props-from-children? true
-   :orgpad/propagated-props-from-children { :orgpad.map-view/props
+   :orgpad/propagated-props-from-children { :orgpad.map-view/vertex-props
                                              [:orgpad/view-type :orgpad/view-name
                                               :orgpad/unit-width :orgpad/unit-height
                                               :orgpad/unit-border-color :orgpad/unit-bg-color

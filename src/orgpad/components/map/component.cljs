@@ -92,6 +92,13 @@
                                :show-local-menu false })
     ))
 
+(defn- make-link
+  [component unit-tree local-state pos]
+  (lc/transact! component [[ :orgpad.units/try-make-new-link-unit
+                            { :map-unit-tree unit-tree
+                              :begin-unit-id (-> @local-state :selected-unit (nth 0) :unit :db/id)
+                              :position pos }]]))
+
 (defn- handle-mouse-up
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
@@ -99,6 +106,7 @@
     (case (:local-mode @local-state)
       :mouse-down (swap! local-state merge { :show-local-menu true })
       :canvas-move (swap! local-state merge { :show-local-menu true })
+      :make-link (make-link component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
       nil)
     (swap! local-state merge { :local-mode :none })))
 
@@ -140,6 +148,7 @@
       :canvas-move (canvas-move component unit-tree app-state local-state ev)
       :unit-move (unit-change component local-state ev :orgpad.units/map-view-unit-move)
       :unit-resize (unit-change component local-state ev :orgpad.units/map-view-unit-resize)
+      :make-link (update-mouse-position local-state ev)
       nil))
   (.preventDefault ev))
 
@@ -190,17 +199,27 @@
    :orgpad/child-default-view-info     { :orgpad/view-type :orgpad/map-tuple-view
                                          :orgpad/view-name "default" }
    :orgpad/class               map-component
-   :orgpad/child-props-type    :orgpad.map-view/props
-   :orgpad/child-props-default { :orgpad/view-type :orgpad.map-view/props
-                                 :orgpad/view-name "default"
-                                 :orgpad/unit-width 250
-                                 :orgpad/unit-height 60
-                                 :orgpad/unit-border-color "#009cff"
-                                 :orgpad/unit-bg-color "#ffffff"
-                                 :orgpad/unit-border-width 2
-                                 :orgpad/unit-corner-x 5
-                                 :orgpad/unit-corner-y 5
-                                 :orgpad/unit-border-style "solid" }
+   :orgpad/child-props-types   [:orgpad.map-view/vertex-props :orgpad.map-view/link-props]
+   :orgpad/child-props-default { :orgpad.map-view/vertex-props
+                                 { :orgpad/view-type :orgpad.map-view/vertex-props
+                                   :orgpad/view-name "default"
+                                   :orgpad/unit-width 250
+                                   :orgpad/unit-height 60
+                                   :orgpad/unit-border-color "#009cff"
+                                   :orgpad/unit-bg-color "#ffffff"
+                                   :orgpad/unit-border-width 2
+                                   :orgpad/unit-corner-x 5
+                                   :orgpad/unit-corner-y 5
+                                   :orgpad/unit-border-style "solid" }
+
+                                :orgpad.map-view/link-props
+                                 { :orgpad/view-type :orgpad.map-view/link-props
+                                   :orgpad/view-name "default"
+                                   :orgpad/link-color "#000000"
+                                   :orgpad/link-width 2
+                                   :orgpad/link-dash #js []
+                                  }
+                                }
    :orgpad/needs-children-info true
    :orgpad/view-name           "Map View"
   })

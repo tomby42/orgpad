@@ -6,7 +6,7 @@
                  [org.clojure/clojurescript   "1.9.89"]
                  [org.clojure/core.async      "0.2.385"]
                  [org.clojure/test.check      "0.9.0"]
-                 [datascript                  "0.15.0"]
+                 [datascript                  "0.15.2"]
                  [com.rpl/specter             "0.10.0"]
                  [rum                         "0.9.1"]
                  [cljsjs/react                "15.1.0-0"]

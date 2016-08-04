@@ -4,6 +4,7 @@
             [orgpad.effects.core :as eff]
             [orgpad.components.registry :as registry]
             [orgpad.tools.colls :as colls]
+            [orgpad.tools.geom :as geom]
             [orgpad.parsers.default-unit :as dp :refer [read mutate]]))
 
 (def ^:private propagated-query
@@ -65,7 +66,7 @@
                          :orgpad/props-refs -2
                          :orgpad/refs -3 }
 
-                       (merge (:orgpad/child-props-default info)
+                       (merge (-> info :orgpad/child-props-default :orgpad.map-view/vertex-props)
                               { :db/id -2
                                 :orgpad/refs -1
                                 :orgpad/type :orgpad/unit-view-child
@@ -76,7 +77,7 @@
                          :orgpad/props-refs -4
                          :orgpad/type :orgpad/unit }
 
-                       (merge (:orgpad/child-props-default info)
+                       (merge (-> info :orgpad/child-props-default :orgpad.map-view/vertex-props)
                               { :db/id -4
                                 :orgpad/refs -3
                                 :orgpad/type :orgpad/unit-view-child-propagated
@@ -226,3 +227,46 @@
                 (merge view { :db/id -1
                               :orgpad/type :orgpad/unit-view
                               :orgpad/active-unit new-active-unit })]) )) }))
+
+(defn- find-closest-unit
+  [map-unit-tree begin-unit-id position]
+  (let [view-name (-> map-unit-tree :view :orgpad/view-name)
+        pos (geom/screen->canvas (-> map-unit-tree :view :orgpad/transform) position)
+        xform (comp
+               (filter (fn [prop]
+                         (and prop
+                              (= (prop :orgpad/view-name) view-name)
+                              (= (prop :orgpad/view-type) :orgpad.map-view/vertex-props)
+                              (= (prop :orgpad/type) :orgpad/unit-view-child))))
+               (filter (fn [prop]
+                         (let [u-pos (prop :orgpad/unit-position)
+                               w     (prop :orgpad/unit-width)
+                               h     (prop :orgpad/unit-height)]
+                           (geom/insideBB [u-pos (geom/++ u-pos [w h])] pos)))))]
+    (->> map-unit-tree
+         :unit
+         :orgpad/refs
+         (filter (fn [u] (first (sequence xform (u :props)))))
+         first)))
+
+(defmethod mutate :orgpad.units/try-make-new-link-unit
+  [{:keys [state]} _ {:keys [map-unit-tree begin-unit-id position]}]
+  (let [info (registry/get-component-info :orgpad/map-view)
+        closest-unit (find-closest-unit map-unit-tree begin-unit-id position)
+        new-state (if closest-unit
+                    (store/transact
+                     state
+                     [{ :db/id -1
+                        :orgpad/refs [begin-unit-id (-> closest-unit :unit :db/id)]
+                        :orgpad/type :orgpad/unit
+                        :orgpad/props-refs -2 }
+                      (merge (-> info :orgpad/child-props-default :orgpad.map-view/link-props)
+                       { :db/id -2
+                         :orgpad/refs -1
+                         :orgpad/type :orgpad/unit-view-child
+                         :orgpad/view-name (-> map-unit-tree :view :orgpad/view-name)
+                        })
+                      [:db/add 0 :orgpad/refs -1]
+                      ])
+                    state)]
+    { :state new-state }))

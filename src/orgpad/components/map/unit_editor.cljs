@@ -8,7 +8,8 @@
             [orgpad.components.node :as node]
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
-            [orgpad.tools.rum :as trum]))
+            [orgpad.tools.rum :as trum]
+            [orgpad.components.graphics.primitives :as g]))
 
 (def ^:private padding 20)
 (def ^:private diam (- (* padding 2) 5))
@@ -54,7 +55,7 @@
         sel-prop
         (->> sel-unit
              :props
-             (filter (fn [prop] (= (prop :db/id) prop-id)))
+             (filter (fn [prop] (and prop (= (prop :db/id) prop-id))))
              first)]
     [sel-unit sel-prop]))
 
@@ -105,7 +106,15 @@
                                                               :mouse-x (.-clientX %)
                                                               :mouse-y (.-clientY %) })
                      :onMouseUp #(swap! local-state merge { :local-mode :none })} ]
-              [ :i { :title "Link" :className "fa fa-link fa-lg" } ]
+              [ :i { :title "Link" :className "fa fa-link fa-lg"
+                     :onMouseDown #(swap! local-state merge { :local-mode :make-link
+                                                              :link-start-x (.-clientX %)
+                                                              :link-start-y (.-clientY %)
+                                                              :mouse-x (.-clientX %)
+                                                              :mouse-y (.-clientY %) }) } ]
               )
+             (when (= (@local-state :local-mode) :make-link)
+               (g/line [(@local-state :link-start-x) (@local-state :link-start-y)]
+                       [(@local-state :mouse-x) (@local-state :mouse-y)]))
              ]
             ))))))
