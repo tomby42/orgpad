@@ -141,6 +141,20 @@
                                 (.-clientY ev)] }]])
     (update-mouse-position local-state ev)))
 
+(defn- update-link-shape
+  [component local-state ev]
+  (let [[unit-tree prop parent-view start-pos end-pos] (@local-state :selected-link)]
+    (lc/transact! component
+                  [[ :orgpad.units/map-view-link-shape
+                    { :prop prop
+                      :parent-view parent-view
+                      :unit-tree unit-tree
+                      :start-pos start-pos
+                      :end-pos end-pos
+                      :pos [(.-clientX ev)
+                            (.-clientY ev)] }]])
+    (update-mouse-position local-state ev)))
+
 (defn- handle-mouse-move
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
@@ -149,6 +163,7 @@
       :unit-move (unit-change component local-state ev :orgpad.units/map-view-unit-move)
       :unit-resize (unit-change component local-state ev :orgpad.units/map-view-unit-resize)
       :make-link (update-mouse-position local-state ev)
+      :link-shape (update-link-shape component local-state ev)
       nil))
   (.preventDefault ev))
 
@@ -193,7 +208,7 @@
 (registry/register-component-info
  :orgpad/map-view
  { :orgpad/default-view-info   { :orgpad/view-type :orgpad/map-view
-                                 :orgpad/view-name "default" 
+                                 :orgpad/view-name "default"
                                  :orgpad/transform { :translate [0 0]
                                                      :scale     1.0 } }
    :orgpad/child-default-view-info     { :orgpad/view-type :orgpad/map-tuple-view
@@ -218,7 +233,7 @@
                                    :orgpad/link-color "#000000"
                                    :orgpad/link-width 2
                                    :orgpad/link-dash #js []
-                                  }
+                                   :orgpad/link-mid-pt [0 0] }
                                 }
    :orgpad/needs-children-info true
    :orgpad/view-name           "Map View"

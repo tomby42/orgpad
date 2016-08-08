@@ -10,6 +10,7 @@
             [orgpad.tools.css :as css]
             [orgpad.tools.colls :as colls]
             [orgpad.tools.rum :as trum]
+            [orgpad.tools.geom :as geom]
             [orgpad.components.graphics.primitives :as g]))
 
 ;; TODO configure ??
@@ -82,26 +83,28 @@
                                 (.stopPropagation %))) }
        (node/node unit-tree (assoc app-state :mode :read))])))
 
-(defn- middle-coord
-  [start end idx r]
-  (- (/ (+ (start idx) (end idx)) 2) r))
-
 (rum/defcc map-link < rum/static lc/parser-type-mixin-context
   [component {:keys [props unit start-pos end-pos] :as unit-tree} app-state parent-view local-state]
   (let [prop (get-props props parent-view :orgpad.map-view/link-props)
+        mid-pt (geom/++ (geom/*c (geom/++ start-pos end-pos) 0.5) (prop :orgpad/link-mid-pt))
         style { :css { :zIndex -1 }
                 :canvas { :strokeStyle (prop :orgpad/link-color)
                           :lineWidth (prop :orgpad/link-width)
                           :lineCap "round"
                           :lineDash (prop :orgpad/link-dash) } }
-        ctl-style (css/transform {:translate [(middle-coord start-pos end-pos 0 10)
-                                              (middle-coord start-pos end-pos 1 10)]})
-        ]
+        ctl-style (css/transform {:translate (geom/-- mid-pt [10 10])})
+        ctl-pt (geom/*c (geom/-- mid-pt (geom/*c start-pos 0.25) (geom/*c end-pos 0.25)) 2)]
     (html
      [ :div {}
-       (g/line start-pos end-pos style)
+       (g/quadratic-curve start-pos end-pos ctl-pt style)
        (when (= (app-state :mode) :write)
-         [ :div { :className "map-view-child link-control" :style ctl-style } ]) ])))
+         [ :div { :className "map-view-child link-control" :style ctl-style
+                  :onMouseDown #(do
+                                  (swap! local-state merge { :local-mode :link-shape
+                                                             :selected-link [unit-tree prop parent-view start-pos end-pos]
+                                                             :mouse-x (.-clientX %)
+                                                             :mouse-y (.-clientY %) })
+                                  (.stopPropagation %)) } ]) ])))
 
 (defn render-mapped-children-units
   [component {:keys [unit view props] :as unit-tree} app-state local-state]

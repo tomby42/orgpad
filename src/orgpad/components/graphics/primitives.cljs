@@ -111,14 +111,14 @@
 
 (defn- draw-quadratic-curve
   [state]
-  (fn [ctx [start end ctl-pt] border-width l t]
-    (let [s (pt-lp start l t border-width)
-          e (pt-lp end l t border-width)
-          c (pt-lp ctl-pt l t border-width)]
-      (doto ctx
-        (.moveTo (s 0) (s 1))
-        (.quadraticCurveTo (c 0) (c 1) (e 0) (e 1))))))
-
+  (draw-curve state
+              (fn [ctx [start end ctl-pt] border-width l t]
+                (let [s (pt-lp start l t border-width)
+                      e (pt-lp end l t border-width)
+                      c (pt-lp ctl-pt l t border-width)]
+                  (doto ctx
+                    (.moveTo (s 0) (s 1))
+                    (.quadraticCurveTo (c 0) (c 1) (e 0) (e 1)))))))
 
 (rum/defc quadratic-curve < rum/static (gen-canvas-mixin draw-quadratic-curve)
   [start end ctl-pt style]

@@ -270,3 +270,12 @@
                       ])
                     state)]
     { :state new-state }))
+
+(defmethod mutate :orgpad.units/map-view-link-shape
+  [{:keys [state]} _ {:keys [prop parent-view unit-tree pos start-pos end-pos]}]
+  (let [id (prop :db/id)
+        tr (parent-view :orgpad/transform)
+        sp (geom/canvas->screen tr start-pos)
+        ep (geom/canvas->screen tr end-pos)
+        mid-pt (geom/-- pos (geom/*c (geom/++ sp ep) 0.5))]
+    { :state (store/transact state [[:db/add id :orgpad/link-mid-pt mid-pt]]) }))
