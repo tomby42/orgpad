@@ -3,19 +3,8 @@
   (:require-macros [orgpad.tools.colls :refer [>-]])
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
+            [orgpad.tools.rum :as trum]
             [orgpad.tools.css :as css]))
-
-(defn gen-canvas-mixin
-  [update-fn]
-  { :did-mount
-     (fn [state]
-       (update-fn state)
-       state)
-
-    :did-update
-      (fn [state]
-        (update-fn state)
-        state) })
 
 (defn- comp-border-width
   [style]
@@ -68,7 +57,7 @@
 
 (defn- get-context
   [state]
-  (-> state :rum/react-component (aget "refs") (aget "canvas") (.getContext "2d")))
+  (-> state (trum/ref :canvas) (.getContext "2d")))
 
 (defn- draw-curve
   [state f]
@@ -105,7 +94,7 @@
         style (merge (or (:css style) {}) (css/transform { :translate [l t] }))]
     [ :canvas { :className "graphics primitive" :width w  :height h :style style :ref "canvas"} ]))
 
-(rum/defc line < rum/static (gen-canvas-mixin draw-line)
+(rum/defc line < rum/static (trum/gen-update-mixin draw-line)
   [start end style]
   (render-curve style start end))
 
@@ -120,6 +109,6 @@
                     (.moveTo (s 0) (s 1))
                     (.quadraticCurveTo (c 0) (c 1) (e 0) (e 1)))))))
 
-(rum/defc quadratic-curve < rum/static (gen-canvas-mixin draw-quadratic-curve)
+(rum/defc quadratic-curve < rum/static (trum/gen-update-mixin draw-quadratic-curve)
   [start end ctl-pt style]
   (render-curve style start end ctl-pt))

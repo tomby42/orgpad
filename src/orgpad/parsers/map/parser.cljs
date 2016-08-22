@@ -279,3 +279,34 @@
         ep (geom/canvas->screen tr end-pos)
         mid-pt (geom/-- pos (geom/*c (geom/++ sp ep) 0.5))]
     { :state (store/transact state [[:db/add id :orgpad/link-mid-pt mid-pt]]) }))
+
+(defn- update-color
+  [state id unit-id type prop [color-type color]]
+  (if (nil? id)
+    (store/transact state [(merge prop { :db/id -1
+                                         :orgpad/refs unit-id
+                                         color-type color
+                                         :orgpad/type type })
+                           [:db/add unit-id :orgpad/props-refs -1]])
+    (store/transact state [[:db/add id color-type color]])))
+
+(defn- update-propagated-prop
+  [{:keys [state]} {:keys [prop parent-view unit-tree]} update-fn & args]
+  (let [id (prop :db/id)
+        prop' (if id (store/query state [:entity id]) prop)
+        info (registry/get-component-info (-> unit-tree :view :orgpad/view-type))
+        [propagated-unit propagated-prop] (propagated-prop unit-tree prop parent-view)]
+    { :state (cond-> state
+               true
+                (update-fn id (-> unit-tree :unit :db/id) :orgpad/unit-view-child prop' args)
+               (and propagated-prop propagated-unit (info :orgpad/propagate-props-from-children?))
+                (update-fn (:db/id propagated-prop) (-> propagated-unit :unit :db/id)
+                           :orgpad/unit-view-child-propagated prop' args)) } ))
+
+(defmethod mutate :orgpad.units/map-view-unit-border-color
+  [env _ {:keys [color] :as payload}]
+  (update-propagated-prop env payload update-color :orgpad/unit-border-color color))
+
+(defmethod mutate :orgpad.units/map-view-unit-bg-color
+  [env _ {:keys [color] :as payload}]
+  (update-propagated-prop env payload update-color :orgpad/unit-bg-color color))
