@@ -142,33 +142,40 @@
       [child-unit prop])
     [nil nil]))
 
-(defn- update-size
-  [state id unit-id new-size type prop]
+(defn- update-props
+  [state id unit-id type prop attrs]
   (if (nil? id)
     (store/transact state [(merge prop { :db/id -1
                                          :orgpad/refs unit-id
-                                         :orgpad/unit-width (new-size 0)
-                                         :orgpad/unit-height (new-size 1)
-                                         :orgpad/type type })
+                                         :orgpad/type type } attrs)
                            [:db/add unit-id :orgpad/props-refs -1]])
-    (store/transact state [[:db/add id :orgpad/unit-width (new-size 0)]
-                           [:db/add id :orgpad/unit-height (new-size 1)]])))
+    (store/transact state (into [] (map #(into [:db/add id] %)) attrs))))
 
-(defmethod mutate :orgpad.units/map-view-unit-resize
-  [{:keys [state]} _ {:keys [prop parent-view unit-tree old-pos new-pos]}]
+(defn- update-propagated-prop
+  [{:keys [state]} {:keys [prop parent-view unit-tree] :as payload} comp-val-fn args]
   (let [id (prop :db/id)
         prop' (if id (store/query state [:entity id]) prop)
         info (registry/get-component-info (-> unit-tree :view :orgpad/view-type))
         [propagated-unit propagated-prop] (propagated-prop unit-tree prop parent-view)
-        new-size (compute-translate [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
-                                    (-> parent-view :orgpad/transform :scale)
-                                    new-pos old-pos)]
+        new-val (if comp-val-fn (comp-val-fn payload prop' args) args)]
     { :state (cond-> state
                true
-                (update-size id (-> unit-tree :unit :db/id) new-size :orgpad/unit-view-child prop')
+                (update-props id (-> unit-tree :unit :db/id) :orgpad/unit-view-child prop' new-val)
                (and propagated-prop propagated-unit (info :orgpad/propagate-props-from-children?))
-                (update-size (:db/id propagated-prop) (-> propagated-unit :unit :db/id) new-size
-                             :orgpad/unit-view-child-propagated prop')) } ))
+                (update-props (:db/id propagated-prop) (-> propagated-unit :unit :db/id)
+                              :orgpad/unit-view-child-propagated prop' new-val)) } ))
+
+(defn- comp-new-size
+  [{:keys [parent-view old-pos new-pos]} prop' _]
+  (let [new-size (compute-translate [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
+                                    (-> parent-view :orgpad/transform :scale)
+                                    new-pos old-pos)]
+    { :orgpad/unit-width (new-size 0)
+      :orgpad/unit-height (new-size 1) }))
+
+(defmethod mutate :orgpad.units/map-view-unit-resize
+  [env _ payload]
+  (update-propagated-prop env payload comp-new-size nil))
 
 (defn- child-propagated-props
   [db unit-id child-id props-from-children view-name]
@@ -280,33 +287,10 @@
         mid-pt (geom/-- pos (geom/*c (geom/++ sp ep) 0.5))]
     { :state (store/transact state [[:db/add id :orgpad/link-mid-pt mid-pt]]) }))
 
-(defn- update-color
-  [state id unit-id type prop [color-type color]]
-  (if (nil? id)
-    (store/transact state [(merge prop { :db/id -1
-                                         :orgpad/refs unit-id
-                                         color-type color
-                                         :orgpad/type type })
-                           [:db/add unit-id :orgpad/props-refs -1]])
-    (store/transact state [[:db/add id color-type color]])))
-
-(defn- update-propagated-prop
-  [{:keys [state]} {:keys [prop parent-view unit-tree]} update-fn & args]
-  (let [id (prop :db/id)
-        prop' (if id (store/query state [:entity id]) prop)
-        info (registry/get-component-info (-> unit-tree :view :orgpad/view-type))
-        [propagated-unit propagated-prop] (propagated-prop unit-tree prop parent-view)]
-    { :state (cond-> state
-               true
-                (update-fn id (-> unit-tree :unit :db/id) :orgpad/unit-view-child prop' args)
-               (and propagated-prop propagated-unit (info :orgpad/propagate-props-from-children?))
-                (update-fn (:db/id propagated-prop) (-> propagated-unit :unit :db/id)
-                           :orgpad/unit-view-child-propagated prop' args)) } ))
-
 (defmethod mutate :orgpad.units/map-view-unit-border-color
   [env _ {:keys [color] :as payload}]
-  (update-propagated-prop env payload update-color :orgpad/unit-border-color color))
+  (update-propagated-prop env payload nil { :orgpad/unit-border-color color }))
 
 (defmethod mutate :orgpad.units/map-view-unit-bg-color
   [env _ {:keys [color] :as payload}]
-  (update-propagated-prop env payload update-color :orgpad/unit-bg-color color))
+  (update-propagated-prop env payload nil { :orgpad/unit-bg-color color }))
