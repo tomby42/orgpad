@@ -6,3 +6,7 @@
   (doto ev
     .preventDefault
     .stopPropagation))
+
+(defn stop-propagation
+  [ev]
+  (.stopPropagation ev))

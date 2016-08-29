@@ -294,3 +294,7 @@
 (defmethod mutate :orgpad.units/map-view-unit-bg-color
   [env _ {:keys [color] :as payload}]
   (update-propagated-prop env payload nil { :orgpad/unit-bg-color color }))
+
+(defmethod mutate :orgpad.units/map-view-unit-border-width
+  [env _ {:keys [border-width] :as payload}]
+  (update-propagated-prop env payload nil { :orgpad/unit-border-width border-width }))

@@ -54,15 +54,17 @@
 (defn- compute-children-position
   [prop]
   (let [w (prop :orgpad/unit-width)
-        h (prop :orgpad/unit-height)]
-    [{ :dx (- (/ w 2))
+        h (prop :orgpad/unit-height)
+        bw (prop :orgpad/unit-border-width)
+        bw2 (* 2 bw)]
+    [{ :dx (- (+ (/ w 2) bw))
        :dy padding }
-     { :dx (- (+ w padding))
+     { :dx (- (+ w padding bw2))
        :dy padding }
-     { :dx (- (+ w padding))
-       :dy (- (+ h padding)) }
+     { :dx (- (+ w padding bw2))
+       :dy (- (+ h padding bw2)) }
      { :dx padding
-       :dy (- (+ h padding)) }
+       :dy (- (+ h padding bw2)) }
      ]))
 
 (defn- selected-unit-prop
@@ -91,7 +93,8 @@
 (defn- close-props-menu
   [local-state]
   (js/setTimeout #(swap! local-state merge { :show-props-menu false
-                                             :show-color-picker false }) 200))
+                                             :show-color-picker false
+                                             :show-border-width false }) 200))
 
 (defn- toggle-color-picker
   [local-state action]
@@ -99,12 +102,17 @@
     (swap! local-state merge { :show-color-picker (if (= action color-picker-action) (not show-color-picker) true)
                                :color-picker-action action })))
 
+(defn- toggle-border-width
+  [local-state]
+  (swap! local-state update-in [:show-border-width] not))
+
 (defn- render-props-menu
   [unit prop local-state]
   (let [pos (prop :orgpad/unit-position)
-        h   (prop :orgpad/unit-width)]
+        h   (prop :orgpad/unit-width)
+        bw  (* 2(prop :orgpad/unit-border-width))]
     (mc/circle-menu
-     (merge prop-menu-conf { :center-x (+ (pos 0) padding h)
+     (merge prop-menu-conf { :center-x (+ (pos 0) padding h bw)
                              :center-y (- (pos 1) padding)
                              :onMouseDown jev/block-propagation
                              :onMouseUp jev/block-propagation })
@@ -115,6 +123,10 @@
      [ :span { :title "Background color" :onMouseDown #(toggle-color-picker local-state :orgpad.units/map-view-unit-bg-color) }
       [ :i { :className "fa fa-square" :style { :position "absolute" :top 15 :left 10 } } ]
       [ :i { :className "fa fa-paint-brush" :style { :position "absolute" :top 10 :left 10 :color "#030303" } } ] ]
+     [ :span { :title "Border width" :onMouseDown #(toggle-border-width local-state) }
+      [ :i { :className "fa fa-minus" :style { :position "absolute" :top 20 :left 11 } } ]
+      [ :i { :className "fa fa-minus fa-lg" :style { :position "absolute" :top 15 :left 9 } } ]
+      [ :i { :className "fa fa-minus fa-2x" :style { :position "absolute" :top 0 :left 5 } } ] ]
      )))
 
 (defn- render-color-picker
@@ -124,10 +136,27 @@
         action (@local-state :color-picker-action)
         color (if (= action :orgpad.units/map-view-unit-border-color) (prop :orgpad/unit-border-color) (prop :orgpad/unit-bg-color))]
     [ :div { :style { :position "absolute" :top (- (pos 1) 300) :left (+ (pos 0) h -200) :width 200 :height 200 } }
-     (cpicker/color-picker color {} (fn [c] (lc/transact! component [[ action { :prop prop
-                                                                                :parent-view parent-view
-                                                                                :unit-tree unit
-                                                                                :color c } ]]))) ] ))
+     (cpicker/color-picker color {} (fn [c]
+                                      (lc/transact! component [[ action { :prop prop
+                                                                          :parent-view parent-view
+                                                                          :unit-tree unit
+                                                                          :color c } ]]))) ] ))
+
+(defn- render-border-width
+  [component unit prop parent-view local-state]
+  (let [pos (prop :orgpad/unit-position)
+        h   (prop :orgpad/unit-width)]
+    [ :div { :style { :position "absolute" :top (- (pos 1) 120) :left (+ (pos 0) h) :width 200 :height 20 } }
+      [ :input { :type "range" :min 0 :max 20 :step 1 :value (prop :orgpad/unit-border-width)
+                 :onMouseDown #(do
+                                 (swap! local-state assoc :local-mode :default-mode)
+                                 (.stopPropagation %))
+                 :onChange (fn [ev]
+                             (lc/transact! component [[ :orgpad.units/map-view-unit-border-width
+                                                       { :prop prop
+                                                         :parent-view parent-view
+                                                         :unit-tree unit
+                                                         :border-width (js/parseInt (-> ev .-target .-value)) } ]])) } ] ]))
 
 (rum/defcc unit-editor < lc/parser-type-mixin-context
   [component {:keys [view] :as unit-tree} app-state local-state]
@@ -137,8 +166,9 @@
             [unit prop] (selected-unit-prop unit-tree (-> old-unit :unit :db/id) (old-prop :db/id))]
         (when (and prop unit)
           (let [pos (prop :orgpad/unit-position)
-                style (merge { :width (+ (prop :orgpad/unit-width) 4)
-                               :height (+ (prop :orgpad/unit-height) 4) }
+                bw (prop :orgpad/unit-border-width)
+                style (merge { :width (+ (prop :orgpad/unit-width) (* 2 bw))
+                               :height (+ (prop :orgpad/unit-height) (* 2 bw)) }
                                (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
             [:div {}
              [ :div { :className "map-view-unit-selected" :style style :key 0 } ]
@@ -180,5 +210,7 @@
                (render-props-menu unit prop local-state))
              (when (@local-state :show-color-picker)
                (render-color-picker component unit prop view local-state))
+             (when (@local-state :show-border-width)
+               (render-border-width component unit prop view local-state))
              ]
             ))))))

@@ -164,8 +164,8 @@
       :unit-resize (unit-change component local-state ev :orgpad.units/map-view-unit-resize)
       :make-link (update-mouse-position local-state ev)
       :link-shape (update-link-shape component local-state ev)
-      nil))
-  (.preventDefault ev))
+      nil)
+    (when (not= (@local-state :local-mode) :default-mode) (.preventDefault ev))))
 
 (defn- handle-blur
   [component unit-tree app-state ev]
