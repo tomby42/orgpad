@@ -159,7 +159,7 @@
              :onMouseDown #(do
                              (swap! local-state assoc :local-mode :default-mode)
                              (.stopPropagation %))
-             :onBlur #(do (.stopPropagation %))
+             :onBlur #(.stopPropagation %)
              :onChange (fn [ev]
                          (lc/transact! component [[ action
                                                    { :prop prop
