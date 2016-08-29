@@ -94,17 +94,29 @@
   [local-state]
   (js/setTimeout #(swap! local-state merge { :show-props-menu false
                                              :show-color-picker false
-                                             :show-border-width false }) 200))
+                                             :show-border-width false
+                                             :show-border-radius false
+                                            }) 200))
 
 (defn- toggle-color-picker
   [local-state action]
   (let [{:keys [show-color-picker color-picker-action]} @local-state]
     (swap! local-state merge { :show-color-picker (if (= action color-picker-action) (not show-color-picker) true)
+                               :show-border-width false
+                               :show-border-radius false
                                :color-picker-action action })))
 
 (defn- toggle-border-width
   [local-state]
-  (swap! local-state update-in [:show-border-width] not))
+  (swap! local-state merge { :show-border-width (not (@local-state :show-border-width))
+                             :show-color-picker false
+                             :show-border-radius false }))
+
+(defn- toggle-border-radius
+  [local-state]
+  (swap! local-state merge { :show-border-width false
+                             :show-color-picker false
+                             :show-border-radius (not (@local-state :show-border-radius)) }))
 
 (defn- render-props-menu
   [unit prop local-state]
@@ -127,6 +139,7 @@
       [ :i { :className "fa fa-minus" :style { :position "absolute" :top 20 :left 11 } } ]
       [ :i { :className "fa fa-minus fa-lg" :style { :position "absolute" :top 15 :left 9 } } ]
       [ :i { :className "fa fa-minus fa-2x" :style { :position "absolute" :top 0 :left 5 } } ] ]
+     [ :i { :title "Border radius" :className "fa fa-square-o fa-lg" :onMouseDown #(toggle-border-radius local-state) } ]
      )))
 
 (defn- render-color-picker
@@ -142,21 +155,42 @@
                                                                           :unit-tree unit
                                                                           :color c } ]]))) ] ))
 
+(defn- render-slider
+  [component unit prop parent-view local-state {:keys [max prop-name action]}]
+  [ :input { :type "range" :min 0 :max max :step 1 :value (prop prop-name)
+             :onMouseDown #(do
+                             (swap! local-state assoc :local-mode :default-mode)
+                             (.stopPropagation %))
+             :onBlur #(do (.stopPropagation %))
+             :onChange (fn [ev]
+                         (lc/transact! component [[ action
+                                                   { :prop prop
+                                                     :parent-view parent-view
+                                                     :unit-tree unit
+                                                     prop-name (js/parseInt (-> ev .-target .-value)) } ]])) } ])
+
 (defn- render-border-width
   [component unit prop parent-view local-state]
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)]
     [ :div { :style { :position "absolute" :top (- (pos 1) 120) :left (+ (pos 0) h) :width 200 :height 20 } }
-      [ :input { :type "range" :min 0 :max 20 :step 1 :value (prop :orgpad/unit-border-width)
-                 :onMouseDown #(do
-                                 (swap! local-state assoc :local-mode :default-mode)
-                                 (.stopPropagation %))
-                 :onChange (fn [ev]
-                             (lc/transact! component [[ :orgpad.units/map-view-unit-border-width
-                                                       { :prop prop
-                                                         :parent-view parent-view
-                                                         :unit-tree unit
-                                                         :border-width (js/parseInt (-> ev .-target .-value)) } ]])) } ] ]))
+     (render-slider component unit prop parent-view local-state { :max 20
+                                                                  :prop-name :orgpad/unit-border-width
+                                                                  :action :orgpad.units/map-view-unit-border-width }) ]))
+
+(defn- render-border-radius
+  [component unit prop parent-view local-state]
+  (let [pos (prop :orgpad/unit-position)
+        h   (prop :orgpad/unit-width)]
+    [ :div { :style { :position "absolute" :top (- (pos 1) 150) :left (+ (pos 0) h) :width 200 :height 20 } }
+     (render-slider component unit prop parent-view local-state
+                    { :max 50
+                      :prop-name :orgpad/unit-corner-x
+                      :action :orgpad.units/map-view-unit-border-radius })
+     (render-slider component unit prop parent-view local-state
+                    { :max 50
+                      :prop-name :orgpad/unit-corner-y
+                      :action :orgpad.units/map-view-unit-border-radius }) ]))
 
 (rum/defcc unit-editor < lc/parser-type-mixin-context
   [component {:keys [view] :as unit-tree} app-state local-state]
@@ -212,5 +246,7 @@
                (render-color-picker component unit prop view local-state))
              (when (@local-state :show-border-width)
                (render-border-width component unit prop view local-state))
+             (when (@local-state :show-border-radius)
+               (render-border-radius component unit prop view local-state))
              ]
             ))))))

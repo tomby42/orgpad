@@ -296,5 +296,11 @@
   (update-propagated-prop env payload nil { :orgpad/unit-bg-color color }))
 
 (defmethod mutate :orgpad.units/map-view-unit-border-width
-  [env _ {:keys [border-width] :as payload}]
-  (update-propagated-prop env payload nil { :orgpad/unit-border-width border-width }))
+  [env _ {:keys [orgpad/unit-border-width] :as payload}]
+  (update-propagated-prop env payload nil { :orgpad/unit-border-width unit-border-width }))
+
+(defmethod mutate :orgpad.units/map-view-unit-border-radius
+  [env _ {:keys [orgpad/unit-corner-x orgpad/unit-corner-y] :as payload}]
+  (update-propagated-prop env payload nil (cond-> {}
+                                            unit-corner-x (assoc :orgpad/unit-corner-x unit-corner-x)
+                                            unit-corner-y (assoc :orgpad/unit-corner-y unit-corner-y) )))
