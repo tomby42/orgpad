@@ -90,33 +90,31 @@
                                                          :orgpad/view-type view-type
                                                          :orgpad/view-path view-path } ]])))
 
+(def ^:private closed-editors { :show-color-picker false
+                                :show-border-width false
+                                :show-border-radius false })
+
 (defn- close-props-menu
   [local-state]
-  (js/setTimeout #(swap! local-state merge { :show-props-menu false
-                                             :show-color-picker false
-                                             :show-border-width false
-                                             :show-border-radius false
-                                            }) 200))
+  (js/setTimeout #(swap! local-state merge closed-editors 
+                         { :show-props-menu false }) 200))
 
 (defn- toggle-color-picker
   [local-state action]
   (let [{:keys [show-color-picker color-picker-action]} @local-state]
-    (swap! local-state merge { :show-color-picker (if (= action color-picker-action) (not show-color-picker) true)
-                               :show-border-width false
-                               :show-border-radius false
-                               :color-picker-action action })))
+    (swap! local-state merge closed-editors 
+           { :show-color-picker (if (= action color-picker-action) (not show-color-picker) true)
+             :color-picker-action action })))
 
 (defn- toggle-border-width
   [local-state]
-  (swap! local-state merge { :show-border-width (not (@local-state :show-border-width))
-                             :show-color-picker false
-                             :show-border-radius false }))
+  (swap! local-state merge closed-editors
+         { :show-border-width (not (@local-state :show-border-width)) }))
 
 (defn- toggle-border-radius
   [local-state]
-  (swap! local-state merge { :show-border-width false
-                             :show-color-picker false
-                             :show-border-radius (not (@local-state :show-border-radius)) }))
+  (swap! local-state merge closed-editors
+         { :show-border-radius (not (@local-state :show-border-radius)) }))
 
 (defn- render-props-menu
   [unit prop local-state]
