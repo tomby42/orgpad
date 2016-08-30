@@ -304,3 +304,7 @@
   (update-propagated-prop env payload nil (cond-> {}
                                             unit-corner-x (assoc :orgpad/unit-corner-x unit-corner-x)
                                             unit-corner-y (assoc :orgpad/unit-corner-y unit-corner-y) )))
+
+(defmethod mutate :orgpad.units/map-view-unit-border-style
+  [env _ {:keys [orgpad/unit-border-style] :as payload}]
+  (update-propagated-prop env payload nil { :orgpad/unit-border-style unit-border-style }))
