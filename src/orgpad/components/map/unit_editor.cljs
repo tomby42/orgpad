@@ -143,7 +143,10 @@
         h   (prop :orgpad/unit-width)
         action (@local-state :color-picker-action)
         color (if (= action :orgpad.units/map-view-unit-border-color) (prop :orgpad/unit-border-color) (prop :orgpad/unit-bg-color))]
-    [ :div { :style { :position "absolute" :top (- (pos 1) 300) :left (+ (pos 0) h -200) :width 200 :height 200 } }
+    [ :div.map-view-border-edit { :style { :width 210 :position "absolute" :top (- (pos 1) 300) :left (+ (pos 0) h -235)  } }
+     [ :div.center (if (= action :orgpad.units/map-view-unit-border-color)
+                     "Border Color"
+                     "Background Color") ]
      (cpicker/color-picker color {} (fn [c]
                                       (lc/transact! component [[ action { :prop prop
                                                                           :parent-view parent-view
@@ -155,23 +158,38 @@
   (swap! local-state assoc :local-mode :default-mode)
   (.stopPropagation ev))
 
+(defn- normalize-range
+  [min max val]
+  (-> val
+      js/parseInt
+      (js/Math.max min)
+      (js/Math.min max)))
+
 (defn- render-slider
   [component unit prop parent-view local-state {:keys [max prop-name action]}]
-  [ :input { :type "range" :min 0 :max max :step 1 :value (prop prop-name)
-             :onMouseDown (partial mouse-down-default local-state)
-             :onBlur jev/stop-propagation
-             :onChange (fn [ev]
-                         (lc/transact! component [[ action
-                                                   { :prop prop
-                                                     :parent-view parent-view
-                                                     :unit-tree unit
-                                                     prop-name (js/parseInt (-> ev .-target .-value)) } ]])) } ])
+  (letfn [(on-change [ev]
+            (lc/transact! component [[ action
+                                      { :prop prop
+                                        :parent-view parent-view
+                                        :unit-tree unit
+                                        prop-name (normalize-range 0 max (-> ev .-target .-value)) } ]]))]
+    [ :div.slider
+     [ :input { :type "range" :min 0 :max max :step 1 :value (prop prop-name)
+                :onMouseDown (partial mouse-down-default local-state)
+                :onBlur jev/stop-propagation
+                :onChange on-change } ]
+     [ :input.val { :type "text" :value (prop prop-name)
+                    :onBlur jev/stop-propagation
+                    :onMouseDown jev/stop-propagation
+                    :onChange on-change
+ } ] ] ) )
 
 (defn- render-border-width
   [component unit prop parent-view local-state]
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)]
-    [ :div { :style { :position "absolute" :top (- (pos 1) 120) :left (+ (pos 0) h) :width 200 :height 20 } }
+    [ :div.map-view-border-edit { :style { :position "absolute" :top (- (pos 1) 170) :left (+ (pos 0) h) } }
+     [:div.center "Border Width"]
      (render-slider component unit prop parent-view local-state { :max 20
                                                                   :prop-name :orgpad/unit-border-width
                                                                   :action :orgpad.units/map-view-unit-border-width }) ]))
@@ -180,7 +198,8 @@
   [component unit prop parent-view local-state]
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)]
-    [ :div { :style { :position "absolute" :top (- (pos 1) 150) :left (+ (pos 0) h) :width 200 :height 20 } }
+    [ :div.map-view-border-edit { :style { :position "absolute" :top (- (pos 1) 210) :left (+ (pos 0) h)  } }
+     [ :div.center "Border Radius" ]
      (render-slider component unit prop parent-view local-state
                     { :max 50
                       :prop-name :orgpad/unit-corner-x
@@ -198,17 +217,19 @@
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)
         style (prop :orgpad/unit-border-style)]
-    [ :div { :style { :position "absolute" :top (- (pos 1) 130) :left (+ (pos 0) h) :width 200 :height 20 } }
+    [ :div.-100.map-view-border-edit { :style { :width 100 :position "absolute" :top (- (pos 1) 155) :left (+ (pos 0) h) } }
+      [ :div.center "Border Style" ]
      (into
-      [ :select { :onMouseDown (partial mouse-down-default local-state)
-                  :onBlur jev/stop-propagation
-                  :onChange (fn [ev]
-                              (lc/transact! component
-                                            [[ :orgpad.units/map-view-unit-border-style
-                                              { :prop prop
-                                                :parent-view parent-view
-                                                :unit-tree unit
-                                                :orgpad/unit-border-style (-> ev .-target .-value) } ]]))
+      [ :select.fake-center
+       { :onMouseDown (partial mouse-down-default local-state)
+         :onBlur jev/stop-propagation
+         :onChange (fn [ev]
+                     (lc/transact! component
+                                   [[ :orgpad.units/map-view-unit-border-style
+                                     { :prop prop
+                                       :parent-view parent-view
+                                       :unit-tree unit
+                                       :orgpad/unit-border-style (-> ev .-target .-value) } ]]))
                  } ]
       (map (fn [s]
              [ :option (if (= s style) { :selected true } {}) s ])
