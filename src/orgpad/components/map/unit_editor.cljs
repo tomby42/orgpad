@@ -210,7 +210,7 @@
                       :action :orgpad.units/map-view-unit-border-radius }) ]))
 
 (def ^:private border-styles
-  [ "none" "solid" "dotted" "dashed" "double" "groove" "ridge" "inset"  "outset" ])
+  [ "none" "solid" "dotted" "dashed" "double" "groove" "ridge" "inset" "outset" ])
 
 (defn- render-border-style
   [component unit prop parent-view local-state]
