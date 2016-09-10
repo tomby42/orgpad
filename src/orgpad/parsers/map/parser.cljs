@@ -1,6 +1,7 @@
 (ns ^{:doc "Definition of map view parser"}
   orgpad.parsers.map.parser
-  (:require [orgpad.core.store :as store]
+  (:require [clojure.set :as set]
+            [orgpad.core.store :as store]
             [orgpad.effects.core :as eff]
             [orgpad.components.registry :as registry]
             [orgpad.tools.colls :as colls]
@@ -308,3 +309,75 @@
 (defmethod mutate :orgpad.units/map-view-unit-border-style
   [env _ {:keys [orgpad/unit-border-style] :as payload}]
   (update-propagated-prop env payload nil { :orgpad/unit-border-style unit-border-style }))
+
+;; 'not' and 'or' is not properly supported in ds query yet
+(def ^:private parents-props-query
+  '[:find ?parent ?t
+    :in $ ?e
+    :where
+    [?parent :orgpad/refs ?e]
+    [?parent :orgpad/type ?t]])
+
+(defn- find-relative
+  [db id qry]
+  (store/query db qry [id]))
+
+(defn- find-parents-or-props
+  [db id pred]
+  (into []
+        (comp
+         (filter pred)
+         (map first)) (find-relative db id parents-props-query)))
+
+(defn- parent?
+  [[_ type]]
+  (or (= type :orgpad/unit)
+      (= type :orgpad/root-unit)))
+
+(defn- find-parents
+  [db id]
+  (find-parents-or-props db id parent?))
+
+(defn- find-props
+  [db id]
+  (find-parents-or-props db id (comp not parent?)))
+
+(def ^:private child-query
+  '[:find [?child ...]
+    :in $ ?e
+    :where
+    [?e :orgpad/refs ?child]])
+
+(def ^:private edge-query
+  '[:find [?edge ...]
+    :in $ ?e
+    :where
+    [?parent :orgpad/refs ?e]
+    [?parent :orgpad/refs ?edge]
+    [?edge :orgpad/refs ?e]])
+
+(def ^:private edge-check-query
+  '[:find ?edge (count ?child)
+    :in $ ?edge
+    :where
+    [?edge :orgpad/refs ?child]])
+
+(defn- find-children-deep
+  [db ids]
+  (mapcat (fn [id]
+            (concat [id]
+                    (find-props db id)
+                    (find-children-deep db (find-relative db id child-query)))) ids))
+
+(defmethod mutate :orgpad.units/remove-unit
+  [{:keys [state]} _ id]
+  (let [units-to-remove (find-children-deep state [id])
+        parents (find-parents state id)
+        edges (mapcat #(find-relative state % edge-check-query) (find-relative state id edge-query))
+        edges-to-remove (into [] (comp (filter (fn [[_ cnt]] (= cnt 2))) (map first)) edges)
+        edges-props-to-remove (mapcat (fn [eid] (find-props state eid)) edges-to-remove)
+        final-qry (colls/minto []
+                               (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents)
+                               (map (fn [eid] [:db.fn/retractEntity eid])
+                                    (concat units-to-remove edges-to-remove edges-props-to-remove)))]
+    { :state (store/transact state final-qry) }))

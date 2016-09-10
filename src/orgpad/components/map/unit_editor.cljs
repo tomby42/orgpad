@@ -62,9 +62,11 @@
      { :dx (- (+ w padding bw2))
        :dy padding }
      { :dx (- (+ w padding bw2))
-       :dy (- (+ h padding bw2)) }
+       :dy (- (+ h (* 1.2 padding) bw2)) }
      { :dx padding
-       :dy (- (+ h padding bw2)) }
+       :dy (- (+ h (* 1.2 padding) bw2)) }
+     { :dx (- (+ (/ w 2) bw))
+       :dy (- (+ h (* 1.2 padding) bw2)) }
      ]))
 
 (defn- selected-unit-prop
@@ -134,8 +136,9 @@
       [ :i { :className "fa fa-minus fa-lg" :style { :position "absolute" :top 15 :left 9 } } ]
       [ :i { :className "fa fa-minus fa-2x" :style { :position "absolute" :top 0 :left 5 } } ] ]
      [ :i { :title "Border radius" :className "fa fa-square-o fa-lg" :onMouseDown #(toggle-border-editor local-state :show-border-radius) } ]
-     [ :i { :title "Border style" :className "fa fa-square-o fa-lg" :onMouseDown #(toggle-border-editor local-state :show-border-style) } ]
-     )))
+     [ :span { :title "Border style" :onMouseDown #(toggle-border-editor local-state :show-border-style) } 
+      [ :i.fa.fa-square-o.fa-lg { :style { :position "absolute" :left 10 :top 10 } } ]
+      [ :i.fa.fa-tint { :style { :position "absolute" } } ] ] )))
 
 (defn- render-color-picker
   [component unit prop parent-view local-state]
@@ -235,6 +238,11 @@
              [ :option (if (= s style) { :selected true } {}) s ])
            border-styles) ) ] ))
 
+(defn- remove-unit
+  [component id]
+  (lc/transact! component [[ :orgpad.units/remove-unit
+                             id ]]))
+
 (def ^:private prop-editors
   { :show-color-picker render-color-picker
     :show-border-width render-border-width
@@ -286,6 +294,8 @@
                                                                :link-start-y (.-clientY %)
                                                                :mouse-x (.-clientX %)
                                                                :mouse-y (.-clientY %) }) } ]
+               [ :i { :title "Remove" :className "fa fa-remove fa-lg"
+                      :onMouseDown #(remove-unit component (-> unit :unit :db/id))  } ]
               )
               (when (= (@local-state :local-mode) :make-link)
                 (g/line [(@local-state :link-start-x) (@local-state :link-start-y)]
