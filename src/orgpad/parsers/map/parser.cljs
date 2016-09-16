@@ -1,7 +1,6 @@
 (ns ^{:doc "Definition of map view parser"}
   orgpad.parsers.map.parser
-  (:require [clojure.set :as set]
-            [orgpad.core.store :as store]
+  (:require [orgpad.core.store :as store]
             [orgpad.effects.core :as eff]
             [orgpad.components.registry :as registry]
             [orgpad.tools.colls :as colls]
@@ -381,3 +380,29 @@
                                (map (fn [eid] [:db.fn/retractEntity eid])
                                     (concat units-to-remove edges-to-remove edges-props-to-remove)))]
     { :state (store/transact state final-qry) }))
+
+(defn- update-link-props
+  [{:keys [state]} {:keys [prop parent-view unit-tree]} val]
+  (let [id (prop :db/id)
+        prop' (if id (store/query state [:entity id]) prop)]
+    { :state (update-props state id (-> unit-tree :unit :db/id) :orgpad/unit-view-child prop' val) } ))
+
+(defmethod mutate :orgpad.units/map-view-link-color
+  [env _ {:keys [color] :as payload}]
+  (update-link-props env payload { :orgpad/link-color color }))
+
+(defmethod mutate :orgpad.units/map-view-line-width
+  [env _ {:keys [orgpad/link-width] :as payload}]
+  (update-link-props env payload { :orgpad/link-width link-width }))
+
+(defmethod mutate :orgpad.units/map-view-link-style
+  [{:keys [state]} _ {:keys [prop parent-view unit-tree orgpad/link-style-1 orgpad/link-style-2]}]
+  (let [id (prop :db/id)
+        prop' (if id
+                (store/query state [:entity id])
+                (-> prop (dissoc :orgpad/link-style-2) (dissoc :orgpad/link-style-1)))
+        val (aclone (prop' :orgpad/link-dash))]
+    (if link-style-1
+      (aset val 0 link-style-1)
+      (aset val 1 link-style-2 0))
+    { :state (update-props state id (-> unit-tree :unit :db/id) :orgpad/unit-view-child prop' { :orgpad/link-dash val }) } ))

@@ -51,6 +51,25 @@
   :child-spring-config #js [400 28]
 })
 
+(def ^:private edge-menu-conf {
+  :always-open? false
+  :init-state true
+  :init-rotate -135
+  :init-scale 0.5
+  :main-spring-config #js [500 30]
+  :fly-out-radius 50
+  :base-angle 30
+  :separation-angle 50
+  :child-diam 35
+  :child-init-scale 0.2
+  :child-init-rotation -180
+  :main-diam 40
+  :offset 0.4
+  :child-class "circle-menu-child"
+  :final-child-pos-fn mc/final-child-delta-pos-rot
+  :child-spring-config #js [400 28]
+})
+
 (defn- compute-children-position
   [prop]
   (let [w (prop :orgpad/unit-width)
@@ -136,7 +155,7 @@
       [ :i { :className "fa fa-minus fa-lg" :style { :position "absolute" :top 15 :left 9 } } ]
       [ :i { :className "fa fa-minus fa-2x" :style { :position "absolute" :top 0 :left 5 } } ] ]
      [ :i { :title "Border radius" :className "fa fa-square-o fa-lg" :onMouseDown #(toggle-border-editor local-state :show-border-radius) } ]
-     [ :span { :title "Border style" :onMouseDown #(toggle-border-editor local-state :show-border-style) } 
+     [ :span { :title "Border style" :onMouseDown #(toggle-border-editor local-state :show-border-style) }
       [ :i.fa.fa-square-o.fa-lg { :style { :position "absolute" :left 10 :top 10 } } ]
       [ :i.fa.fa-tint { :style { :position "absolute" } } ] ] )))
 
@@ -163,7 +182,7 @@
 
 (defn- normalize-range
   [min max val]
-  (-> val
+  (-> (if (= val "") "0" val)
       js/parseInt
       (js/Math.max min)
       (js/Math.min max)))
@@ -249,62 +268,155 @@
     :show-border-radius render-border-radius
     :show-border-style render-border-style })
 
+(defn- node-unit-editor
+  [component {:keys [view] :as unit-tree} app-state local-state]
+  (let [[old-unit old-prop] (@local-state :selected-unit)
+        [unit prop] (selected-unit-prop unit-tree (-> old-unit :unit :db/id) (old-prop :db/id))]
+    (when (and prop unit)
+      (let [pos (prop :orgpad/unit-position)
+            bw (prop :orgpad/unit-border-width)
+            style (merge { :width (+ (prop :orgpad/unit-width) (* 2 bw))
+                           :height (+ (prop :orgpad/unit-height) (* 2 bw)) }
+                         (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
+        (into
+         [:div {}
+          [ :div { :className "map-view-unit-selected" :style style :key 0 } ]
+          (mc/circle-menu
+           (merge menu-conf { :center-x (- (pos 0) padding)
+                              :center-y (- (pos 1) padding)
+                              :children-positions (compute-children-position prop)
+                              :onMouseDown jev/block-propagation
+                              :onMouseUp jev/block-propagation })
+           [ :i { :title "Move"
+                  :className "fa fa-arrows fa-lg"
+                  :onMouseDown #(swap! local-state merge { :local-mode :unit-move
+                                                           :mouse-x (.-clientX %)
+                                                           :mouse-y (.-clientY %) })
+                  :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
+           [ :i { :title "Edit"
+                  :className "fa fa-pencil-square-o fa-lg"
+                  :onMouseUp #(open-unit component unit)
+                 } ]
+           [ :i { :title "Properties" :className "fa fa-cogs fa-lg"
+                  :onMouseUp #(swap! local-state assoc :show-props-menu true) } ]
+           [ :i { :title "Resize"
+                  :className "fa fa-arrows-alt fa-lg"
+                  :onMouseDown #(swap! local-state merge { :local-mode :unit-resize
+                                                           :mouse-x (.-clientX %)
+                                                           :mouse-y (.-clientY %) })
+                  :onMouseUp #(swap! local-state merge { :local-mode :none })} ]
+           [ :i { :title "Link" :className "fa fa-link fa-lg"
+                  :onMouseDown #(swap! local-state merge { :local-mode :make-link
+                                                           :link-start-x (.-clientX %)
+                                                           :link-start-y (.-clientY %)
+                                                           :mouse-x (.-clientX %)
+                                                           :mouse-y (.-clientY %) }) } ]
+           [ :i { :title "Remove" :className "fa fa-remove fa-lg"
+                  :onMouseDown #(remove-unit component (-> unit :unit :db/id))  } ]
+           )
+          (when (= (@local-state :local-mode) :make-link)
+            (g/line [(@local-state :link-start-x) (@local-state :link-start-y)]
+                    [(@local-state :mouse-x) (@local-state :mouse-y)] {}))
+          (when (@local-state :show-props-menu)
+            (render-props-menu unit prop local-state))]
+
+         (map (fn [[key render-fn]]
+                (when (@local-state key)
+                  (render-fn component unit prop view local-state))) prop-editors)
+         )))))
+
+(def ^:private link-closed-editors { :show-link-color-picker false
+                                     :show-link-width false
+                                     :show-link-style false })
+
+(defn- close-link-menu
+  [local-state]
+  (js/setTimeout
+   #(swap! local-state merge { :link-menu-show :none } link-closed-editors) 200))
+
+(defn- render-link-color-picker
+  [component unit prop parent-view local-state mid-pt]
+  (let [color (prop :orgpad/link-color)]
+    [ :div.map-view-border-edit { :style { :width 210 :position "absolute" :top (- (mid-pt 1) 300) :left (- (mid-pt 0) 235) } }
+     [ :div.center "Line Color" ]
+     (cpicker/color-picker color {} (fn [c]
+                                      (lc/transact! component [[ :orgpad.units/map-view-link-color
+                                                                { :prop prop
+                                                                  :parent-view parent-view
+                                                                  :unit-tree unit
+                                                                  :color c } ]]))) ] ))
+
+(defn- render-link-width
+  [component unit prop parent-view local-state mid-pt]
+  [ :div.map-view-border-edit { :style { :position "absolute" :top (- (mid-pt 1) 170) :left (mid-pt 0) } }
+   [:div.center "Line Width"]
+   (render-slider component unit prop parent-view local-state { :max 20
+                                                                :prop-name :orgpad/link-width
+                                                                :action :orgpad.units/map-view-line-width }) ])
+
+(defn- render-link-style
+  [component unit prop parent-view local-state mid-pt]
+  [ :div.map-view-border-edit { :style { :position "absolute" :top (- (mid-pt 1) 210) :left (mid-pt 0) } }
+   [ :div.center "Line style" ]
+   (render-slider component unit (assoc prop :orgpad/link-style-1
+                                        (or (-> prop :orgpad/link-dash (aget 0)) 0)) parent-view local-state
+                  { :max 50
+                    :prop-name :orgpad/link-style-1
+                    :action :orgpad.units/map-view-link-style })
+   (render-slider component unit (assoc prop :orgpad/link-style-2
+                                        (or (-> prop :orgpad/link-dash (aget 1)) 0)) parent-view local-state
+                  { :max 50
+                    :prop-name :orgpad/link-style-2
+                    :action :orgpad.units/map-view-link-style }) ])
+
+(def ^:private link-prop-editors
+  { :show-link-color-picker render-link-color-picker
+    :show-link-width render-link-width
+    :show-link-style render-link-style })
+
+(defn- toggle-link-editor
+  [local-state type]
+  (swap! local-state merge link-closed-editors
+         { type (not (@local-state type)) }))
+
+(defn- edge-unit-editor
+  [component {:keys [view] :as unit-tree} app-state local-state]
+  (let [select-link (@local-state :selected-link)]
+    (when (and select-link (= (@local-state :link-menu-show) :yes))
+      (let [[old-unit old-prop _ _ _ mid-pt] select-link
+            [unit prop] (selected-unit-prop unit-tree (-> old-unit :unit :db/id) (old-prop :db/id))]
+        (when (and prop unit)
+          (into
+           [:div {}
+            (mc/circle-menu
+             (merge edge-menu-conf { :center-x (mid-pt 0)
+                                     :center-y (mid-pt 1)
+                                     :onMouseDown jev/block-propagation
+                                     ;; :onMouseUp jev/block-propagation
+                                    })
+             [ :i.fa.fa-cogs.fa-lg { :title "Properties" :onMouseDown #(close-link-menu local-state) } ]
+             [ :span { :title "Line Color" :onMouseDown #(toggle-link-editor local-state :show-link-color-picker) }
+              [ :i.fa.fa-minus { :style { :position "absolute" :top 20 } } ]
+              [ :i.fa.fa-paint-brush]
+              ]
+             [ :span { :title "Line Width" :onMouseDown #(toggle-link-editor local-state :show-link-width) }
+              [ :i { :className "fa fa-minus" :style { :position "absolute" :top 20 :left 11 } } ]
+              [ :i { :className "fa fa-minus fa-lg" :style { :position "absolute" :top 15 :left 9 } } ]
+              [ :i { :className "fa fa-minus fa-2x" :style { :position "absolute" :top 0 :left 5 } } ] ]
+             [ :span { :title "Line Style" :onMouseDown #(toggle-link-editor local-state :show-link-style) }
+              [ :i.fa.fa-minus. { :style { :position "absolute" :top 19 } } ]
+              [ :i.fa.fa-tint {} ]
+              ]
+           )]
+
+           (map (fn [[key render-fn]]
+                  (when (@local-state key)
+                    (render-fn component unit prop view local-state mid-pt))) link-prop-editors)
+      ))))))
+
 (rum/defcc unit-editor < lc/parser-type-mixin-context
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [select-unit (@local-state :selected-unit)]
-    (when select-unit
-      (let [[old-unit old-prop] select-unit
-            [unit prop] (selected-unit-prop unit-tree (-> old-unit :unit :db/id) (old-prop :db/id))]
-        (when (and prop unit)
-          (let [pos (prop :orgpad/unit-position)
-                bw (prop :orgpad/unit-border-width)
-                style (merge { :width (+ (prop :orgpad/unit-width) (* 2 bw))
-                               :height (+ (prop :orgpad/unit-height) (* 2 bw)) }
-                               (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
-            (into
-             [:div {}
-              [ :div { :className "map-view-unit-selected" :style style :key 0 } ]
-              (mc/circle-menu
-               (merge menu-conf { :center-x (- (pos 0) padding)
-                                  :center-y (- (pos 1) padding)
-                                  :children-positions (compute-children-position prop)
-                                  :onMouseDown jev/block-propagation
-                                  :onMouseUp jev/block-propagation })
-               [ :i { :title "Move"
-                      :className "fa fa-arrows fa-lg"
-                      :onMouseDown #(swap! local-state merge { :local-mode :unit-move
-                                                               :mouse-x (.-clientX %)
-                                                               :mouse-y (.-clientY %) })
-                      :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
-               [ :i { :title "Edit"
-                      :className "fa fa-pencil-square-o fa-lg"
-                      :onMouseUp #(open-unit component unit)
-                     } ]
-               [ :i { :title "Properties" :className "fa fa-cogs fa-lg"
-                      :onMouseUp #(swap! local-state assoc :show-props-menu true) } ]
-               [ :i { :title "Resize"
-                      :className "fa fa-arrows-alt fa-lg"
-                      :onMouseDown #(swap! local-state merge { :local-mode :unit-resize
-                                                               :mouse-x (.-clientX %)
-                                                               :mouse-y (.-clientY %) })
-                      :onMouseUp #(swap! local-state merge { :local-mode :none })} ]
-               [ :i { :title "Link" :className "fa fa-link fa-lg"
-                      :onMouseDown #(swap! local-state merge { :local-mode :make-link
-                                                               :link-start-x (.-clientX %)
-                                                               :link-start-y (.-clientY %)
-                                                               :mouse-x (.-clientX %)
-                                                               :mouse-y (.-clientY %) }) } ]
-               [ :i { :title "Remove" :className "fa fa-remove fa-lg"
-                      :onMouseDown #(remove-unit component (-> unit :unit :db/id))  } ]
-              )
-              (when (= (@local-state :local-mode) :make-link)
-                (g/line [(@local-state :link-start-x) (@local-state :link-start-y)]
-                        [(@local-state :mouse-x) (@local-state :mouse-y)] {}))
-              (when (@local-state :show-props-menu)
-                (render-props-menu unit prop local-state))]
-
-             (map (fn [[key render-fn]]
-                    (when (@local-state key)
-                      (render-fn component unit prop view local-state))) prop-editors)
-             )
-            ))))))
+    (if select-unit
+      (node-unit-editor component unit-tree app-state local-state)
+      (edge-unit-editor component unit-tree app-state local-state))))

@@ -101,7 +101,9 @@
          [ :div { :className "map-view-child link-control" :style ctl-style
                   :onMouseDown #(do
                                   (swap! local-state merge { :local-mode :link-shape
-                                                             :selected-link [unit-tree prop parent-view start-pos end-pos]
+                                                             :selected-link [unit-tree prop parent-view start-pos end-pos mid-pt]
+                                                             :link-menu-show :maybe
+                                                             :selected-unit nil
                                                              :mouse-x (.-clientX %)
                                                              :mouse-y (.-clientY %) })
                                   (.stopPropagation %)) } ]) ])))

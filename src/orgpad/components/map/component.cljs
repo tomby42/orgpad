@@ -107,6 +107,7 @@
       :mouse-down (swap! local-state merge { :show-local-menu true })
       :canvas-move (swap! local-state merge { :show-local-menu true })
       :make-link (make-link component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
+      :link-shape (when (= (@local-state :link-menu-show) :maybe) (swap! local-state assoc :link-menu-show :yes))
       nil)
     (swap! local-state merge { :local-mode :none })))
 
@@ -144,6 +145,7 @@
 (defn- update-link-shape
   [component local-state ev]
   (let [[unit-tree prop parent-view start-pos end-pos] (@local-state :selected-link)]
+    (swap! local-state assoc :link-menu-show :none)
     (lc/transact! component
                   [[ :orgpad.units/map-view-link-shape
                     { :prop prop
@@ -232,7 +234,7 @@
                                    :orgpad/view-name "default"
                                    :orgpad/link-color "#000000"
                                    :orgpad/link-width 2
-                                   :orgpad/link-dash #js []
+                                   :orgpad/link-dash #js [0 0]
                                    :orgpad/link-mid-pt [0 0] }
                                 }
    :orgpad/needs-children-info true
