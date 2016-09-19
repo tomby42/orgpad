@@ -12,7 +12,7 @@
 
   (testing "root unit presence"
     (let [o (orgpad/empty-orgpad-db)]
-      (-> (store/query o '[:find ?e :where [0 :orgpad/type :orgpad/root-unit]])
-          empty? not)))
+      (= (store/query o '[:find ?e . :where [?e :orgpad/type :orgpad/root-unit]])
+         0)))
 
   )

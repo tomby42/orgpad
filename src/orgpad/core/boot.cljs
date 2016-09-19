@@ -2,6 +2,7 @@
   orgpad.core.boot
   (:require [orgpad.components.registry :as registry]
             [orgpad.cycle.life :as lc]
+            [orgpad.core.store :as store]
             [orgpad.core.orgpad :as orgpad]
             [orgpad.parsers.default-unit :as ps]
             [orgpad.config]
@@ -22,3 +23,7 @@
 (defn on-js-reload []
   )
 
+(def data-readers {'orgpad/DatomStore store/datom-store-from-reader
+                   'orgpad/DatomAtomStore store/datom-atom-store-from-reader})
+
+(doseq [[tag cb] data-readers] (cljs.reader/register-tag-parser! tag cb))

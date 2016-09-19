@@ -30,6 +30,10 @@
    :orgpad/unit-corner-x {}
    :orgpad/unit-corner-y {}
    :orgpad/unit-border-style {}
+   :orgpad/link-color {}
+   :orgpad/link-width {}
+   :orgpad/link-dash {}
+   :orgpad/link-mid-pt {}
    })
 
 (defn empty-orgpad-db

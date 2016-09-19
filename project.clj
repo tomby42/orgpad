@@ -6,7 +6,7 @@
                  [org.clojure/clojurescript   "1.9.227"]
                  [org.clojure/core.async      "0.2.385"]
                  [org.clojure/test.check      "0.9.0"]
-                 [datascript                  "0.15.2"]
+                 [datascript                  "0.15.3"]
                  [com.rpl/specter             "0.10.0"]
                  [rum                         "0.9.1"]
                  [cljsjs/react                "15.3.0-0"]
@@ -15,7 +15,7 @@
                  [cljsjs/react-tinymce        "0.5.1-0"]
                  [cljsjs/react-tagsinput      "3.7.0-0"]
                  [cljsjs/react-motion         "0.3.1-0"]
-                 [cljsjs/react-select         "1.0.0-beta13-0"]
+                 [cljsjs/react-select         "1.0.0-rc.1"]
                  ]
 
   :plugins [[lein-cljsbuild "1.1.3"]

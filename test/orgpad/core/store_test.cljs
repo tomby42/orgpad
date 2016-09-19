@@ -4,6 +4,7 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop :include-macros true]
             [clojure.test.check.clojure-test :as tct :include-macros true]
+            [cljs.reader :as reader]
             [datascript.core :as d]
             [orgpad.core.store :as store]))
 
@@ -123,5 +124,93 @@
       (is (store/changed? es2 '[:find ?a ?v
                                 :where [2 ?a ?v]])
           "should match changed")))
+
+  (testing "serialization of DatomStore"
+    (let [es1  (store/new-datom-store (create-db))]
+      (is (= (pr-str es1) (str "#orgpad/DatomStore {:db "
+                               "#datascript/DB {"
+                               ":schema {:friend {:db/cardinality :db.cardinality/many, "
+                               ":db/valueType :db.type/ref}}, "
+                               ":datoms ["
+                               "]}"
+                               "}"))
+          "should serialize empty db")
+      (is (= (cljs.reader/read-string (pr-str es1)) es1)
+          "should read empty db"))
+
+    (let [es1  (-> (store/new-datom-store (create-db))
+                   (store/transact
+                    [{:db/id 1
+                      :name "Bozko"
+                      :friend 2
+                      }
+                     {:db/id 2
+                      :name "Budko"
+                      }
+                     ]))]
+      (is (= (pr-str es1) (str "#orgpad/DatomStore {:db "
+                               "#datascript/DB {"
+                               ":schema {:friend {:db/cardinality :db.cardinality/many, "
+                               ":db/valueType :db.type/ref}}, "
+                               ":datoms ["
+                               "[1 :friend 2 536870913] "
+                               "[1 :name \"Bozko\" 536870913] "
+                               "[2 :name \"Budko\" 536870913]"
+                               "]}"
+                               "}"))
+          "should serialize non empty db")
+      (is (= (.-db (cljs.reader/read-string (pr-str es1))) (.-db es1))
+          "should read non empty db"))
+    )
+
+  (testing "serialization of DatomAtomStore"
+    (let [es1  (store/new-datom-atom-store {} (create-db))]
+      (is (= (pr-str es1) (str "#orgpad/DatomAtomStore {"
+                               ":datom "
+                               "#orgpad/DatomStore {:db "
+                               "#datascript/DB {"
+                               ":schema {:friend {:db/cardinality :db.cardinality/many, "
+                               ":db/valueType :db.type/ref}}, "
+                               ":datoms ["
+                               "]}"
+                               "}"
+                               " :atom "
+                               "{}"
+                               "}"
+                               ))
+          "should serialize empty db")
+      (is (= (cljs.reader/read-string (pr-str es1)) es1)
+          "should read empty db"))
+
+    (let [es1  (-> (store/new-datom-atom-store {:a 1} (create-db))
+                   (store/transact
+                    [{:db/id 1
+                      :name "Bozko"
+                      :friend 2
+                      }
+                     {:db/id 2
+                      :name "Budko"
+                      }
+                     ]))]
+      (is (= (pr-str es1) (str "#orgpad/DatomAtomStore {"
+                               ":datom "
+                               "#orgpad/DatomStore {:db "
+                               "#datascript/DB {"
+                               ":schema {:friend {:db/cardinality :db.cardinality/many, "
+                               ":db/valueType :db.type/ref}}, "
+                               ":datoms ["
+                               "[1 :friend 2 536870913] "
+                               "[1 :name \"Bozko\" 536870913] "
+                               "[2 :name \"Budko\" 536870913]"
+                               "]}"
+                               "}"
+                               " :atom "
+                               "{:a 1}"
+                               "}"
+                               ))
+          "should serialize non empty db")
+      (is (= (-> (cljs.reader/read-string (pr-str es1)) .-datom .-db) (-> es1 .-datom .-db))
+             "should read non empty db"))
+    )
 
   )

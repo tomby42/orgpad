@@ -79,7 +79,13 @@
                            (history (inc finger)))]
       (if (nil? record)
         [nil nil]
-        [record (inc finger)]))))
+        [record (inc finger)])))
+
+  IEquiv
+  (-equiv [record other]
+    (and (= (.-history record) (.-history other))
+         (= (.-history-finger record) (.-history-finger other))))
+)
 
 (defn- new-history-records
   [& [history-records]]
@@ -169,6 +175,23 @@
                                         (dtool/datoms->tx tx))
                           finger)
         store)))
+
+  IPrintWithWriter
+  (-pr-writer
+    [store writer opts]
+    (-write writer "#orgpad/DatomStore {")
+    (-write writer ":db ")
+    (pr-writer (.-db store) writer opts)
+    (-write writer "}"))
+
+  IEquiv
+  (-equiv
+      [store other]
+    (and (= (.-db store) (.-db other))
+         (= (.-history-records store) (.-history-records other))
+         (= (.-cumulative-changes store) (.-cumulative-changes other))
+         (= (.-changed-entities store) (.-changed-entities other))
+         (= (.-meta store) (.-meta other))))
   )
 
 (defn new-datom-store
@@ -176,6 +199,11 @@
   [db & [history-records]]
 
   (DatomStore. db (new-history-records history-records) [] #{} nil))
+
+(defn datom-store-from-reader
+  "Creates new datom store from reader value"
+  [{:keys [db]}]
+  (new-datom-store db))
 
 ;;; DatomAtomStore - datom remembers history but atom not
 
@@ -262,6 +290,23 @@
     (DatomAtomStore. (redo (.-datom store))
                      (.-atom store)
                      (.-meta store)))
+
+  IPrintWithWriter
+  (-pr-writer
+    [store writer opts]
+    (-write writer "#orgpad/DatomAtomStore {")
+    (-write writer ":datom ")
+    (pr-writer (.-datom store) writer opts)
+    (-write writer " :atom ")
+    (pr-writer (.-atom store) writer opts)
+    (-write writer "}"))
+
+  IEquiv
+  (-equiv
+      [store other]
+    (and (= (.-datom store) (.-datom other))
+         (= (.-atom store) (.-atom other))
+         (= (.-meta store) (.-meta other))))
   )
 
 (defn new-datom-atom-store
@@ -269,6 +314,11 @@
   database 'db' and optional history 'history-records'"
   [init-value db & [history-records]]
 
-  (DatomAtomStore. (DatomStore. db (new-history-records history-records) [] #{} nil)
+  (DatomAtomStore. (new-datom-store db history-records)
                    init-value
                    nil))
+
+(defn datom-atom-store-from-reader
+  "Creates new datom-atom store from reader value"
+  [{:keys [datom atom]}]
+  (DatomAtomStore. datom atom nil))
