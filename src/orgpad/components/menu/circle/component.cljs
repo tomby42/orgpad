@@ -1,5 +1,5 @@
 (ns ^{:doc "Circle menu"}
-  orgpad.components.menu.circle
+  orgpad.components.menu.circle.component
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
             [cljsjs.react-motion]
@@ -72,8 +72,8 @@
                             (final-child-style idx cfg)
                             (init-child-style cfg)))
                         children))
-        scale-min (-> cfg init-child-style .-scale .-val)
-        scale-max (->> cfg (final-child-style 0) .-scale .-val)
+        scale-min (aget (init-child-style cfg) "scale" "val")
+        scale-max (aget (final-child-style 0 cfg) "scale" "val")
 
         calculate-styles-for-next-frame
         (fn [prev-styles]
@@ -84,7 +84,7 @@
                       (fn [style-in-prev-frame i]
                         (if (== i 0)
                           (aget target-styles i)
-                          (let [prev-scale (.-scale (aget prev-frame-styles (dec i)))
+                          (let [prev-scale (aget prev-frame-styles (dec i) "scale")
                                 apply-target-style?
                                 (if open?
                                   (>= prev-scale (+ scale-min offset))
@@ -97,7 +97,7 @@
               (.reverse next-frame-target-styles)) )) ]
     (js/React.createElement
      js/ReactMotion.StaggeredMotion
-     #js { :defaultStyles  target-styles
+     #js { :defaultStyles target-styles
            :key 0
            :styles calculate-styles-for-next-frame }
      (fn [interpolated-styles]

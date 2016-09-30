@@ -69,6 +69,50 @@
                                                                                         :value (.-key ev) }]]]))
                                  })))
 
+(defn- render-menu
+  [local-state menu-key label styles & items]
+  [ :div { :className (str "menu " (styles :all)) }
+   [ :span { :className (str "menu-header " (styles :header))
+             :onClick #(swap! local-state update menu-key not) }
+    [ :span (str label " ")
+     [ :i {:className (str "fa " (if (@local-state menu-key) "fa-caret-up" "fa-caret-down")) }] ] ]
+   (into
+    [ :ul { :className (str "menu-body " (styles :body) " " (when (@local-state menu-key) (styles :open))) } ]
+    (map (fn [item] [ :li item ]) items)) ])
+
+(defn- render-view-menu
+  [component unit-tree local-state]
+  (render-menu
+   local-state :view-menu-unroll "View" { :body "view-menu-body"
+                                          :all "view-menu-all"
+                                          :header "view-menu-header"
+                                          :open "open-view" }
+        [ :div { :className "view-name" }
+         (render-view-names component unit-tree local-state)
+         [ :span { :className "fa fa-plus-circle view-name-add"
+                   :title "New view"
+                   :onClick #(lc/transact! component
+                                           [[:orgpad/root-new-view [unit-tree
+                                                                    { :attr :orgpad/view-name
+                                                                      :value (@local-state :typed) }]]]) } ] ]
+        [ :div { :className "view-type" }
+         (render-view-types component unit-tree) ]))
+
+(defn- render-file-menu
+  [component unit-tree local-state]
+  (render-menu
+   local-state :file-menu-unroll "File" { :body "file-menu-body"
+                                          :all "file-menu-all"
+                                          :header "file-menu-header"
+                                          :open "open-file" }
+   [ :div.file-item
+    { :onClick #(lc/transact! component [[ :orgpad/save ((lc/global-conf component) :storage-el) ]]) }
+    [ :span "Save" ]]
+   [ :div.file-item
+    [ :span "Import" ]]
+   [ :div.file-item
+    [ :span "Export" ]]))
+
 (rum/defcc status < (rum/local { :unroll false :view-menu-unroll false :typed "" } ) lc/parser-type-mixin-context
   [component { :keys [unit view path-info] :as unit-tree } app-state]
   (let [id (unit :db/id)
@@ -78,26 +122,11 @@
       [ :div { :className "tools-button" :onClick #(swap! local-state update-in [:unroll] not) }
        [ :i { :className "fa fa-navicon fa-lg" } ] ]
       [ :div { :className (str "tools" (when (@local-state :unroll) " more-current")) }
-       [ :div { :className "view-menu" }
-        [ :span { :className "menu-header"
-                  :onClick #(swap! local-state update-in [:view-menu-unroll] not) }
-         [ :span {} "View " [ :i {:className (str "fa " (if (@local-state :view-menu-unroll) "fa-caret-up" "fa-caret-down")) }] ] ]
-        [ :ul { :className (str "menu-body " (when (@local-state :view-menu-unroll) "open")) }
-         [ :li
-          [ :div { :className "view-name" }
-           (render-view-names component unit-tree local-state)
-           [ :span { :className "fa fa-plus-circle view-name-add"
-                     :title "New view"
-                     :onClick #(lc/transact! component
-                                             [[:orgpad/root-new-view [unit-tree
-                                                                      { :attr :orgpad/view-name
-                                                                        :value (@local-state :typed) }]]]) } ] ] ]
-         [ :li
-          [ :div { :className "view-type" }
-           (render-view-types component unit-tree) ] ] ] ]
+       (render-file-menu component unit-tree local-state)
+       (render-view-menu component unit-tree local-state)
 
-        [ :div { :className "mode-button" }
-          [ :i { :className (str "fa fa-leaf fa-lg") } ] ]
+;;       [ :div { :className "mode-button" }
+;;        [ :i { :className (str "fa fa-leaf fa-lg") } ] ]
        ]
       ]
 

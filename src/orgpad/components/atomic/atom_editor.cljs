@@ -27,12 +27,12 @@
                          :toolbar "undo redo | bold italic | alignleft aligncenter alignright"
                         }
            :onChange (fn [e]
-                       (let [val (-> e .-target .getContent)]
+                       (let [target (aget e "target")]
                          (lc/transact!
                           component
                           [[:orgpad.atom/update
                             { :db/id unit-id
                               :orgpad/view (-> component rum/state deref :rum/args second)
-                              :orgpad/atom val } ]] )))
+                              :orgpad/atom (.call (aget target "getContent") target) } ]] )))
           }
      nil) ] )

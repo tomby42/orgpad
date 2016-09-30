@@ -52,7 +52,7 @@
 
         .more-current {
             .more;
-            width: 250px;
+            width: 360px;
         }
 
         .more-4 {
@@ -76,8 +76,41 @@
             width: 150px;
         }
 
-        .view-menu {
+        .file-item {
+            text-align: center;
+            &:hover {
+                color: #78BEFF;
+            }
+        }
+
+        .view-menu-all {
             width: 180px;
+        }
+
+        .view-menu-header {
+            .view-menu-all;
+        }
+
+        .view-menu-body {
+            padding-left: 1em;
+            width: 164px;
+        }
+
+        .file-menu-all {
+            width: 100px;
+        }
+
+        .file-menu-header {
+            .file-menu-all;
+        }
+
+        .file-menu-body {
+            padding-left: 0px;
+            width: 100px;
+        }
+
+        .menu {
+            height: 50px;
             text-align: center;
             background-color: #e4f5ff;
 
@@ -86,7 +119,6 @@
             }
 
             .menu-header {
-                width: 180px;
                 height: 50px;
                 display: block;
                 text-align: center;
@@ -101,9 +133,10 @@
                 text-align: left;
                 list-style-type: none;
                 margin-left: 0;
-                padding-left: 1em;
-                position:relative;
-                top: 30px;
+                position:absolute;
+                top: 34px;
+                padding-top: 10px;
+                background-color: #e4f5ff;
 
                 -webkit-transform: scaleY(0);
                 transform: scaleY(0);
@@ -112,15 +145,22 @@
                 -webkit-transition: -webkit-transform 0.2s, width 0.2s;
                 transition: transform 0.2s, width 0.2s;
 
-                &.open {
+                .transformY {
                     -webkit-transform: scaleY(1);
                     transform: scaleY(1);
+                }
+
+                &.open-view {
+                    .transformY;
                     height: 115px;
+                }
+
+                &.open-file {
+                    .transformY;
+                    height: 74px;
                 }
             }
         }
-
-
     }
 
     .status-menu {

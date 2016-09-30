@@ -4,7 +4,6 @@
             [sablono.core :as html :refer-macros [html]]
             [orgpad.cycle.life :as lc]
             [orgpad.components.registry :as registry]
-            [orgpad.components.menu.circle :as mc]
             [orgpad.components.node :as node]
             [orgpad.components.map.unit :as munit]
             [orgpad.tools.time :as t]

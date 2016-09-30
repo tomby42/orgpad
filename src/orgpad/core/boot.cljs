@@ -10,14 +10,17 @@
 
 (enable-console-print!)
 
-(defn init [root-el]
-  (let [empty-db (orgpad/empty-orgpad-db)]
-    (lc/create-cycle empty-db
+(defn ^:export init [cfg]
+  (let [global-cfg (into {} (map (fn [[k v]] [(keyword k) v])) (js->clj cfg))
+        init-data (-> global-cfg :storage-el .-text)
+        db (orgpad/orgpad-db init-data)]
+    (lc/create-cycle db
                      ps/read
                      ps/mutate
                      ps/updated?
-                     root-el
-                     (-> :orgpad/root-view registry/get-component-info :orgpad/class))
+                     (global-cfg :root-el)
+                     (-> :orgpad/root-view registry/get-component-info :orgpad/class)
+                     global-cfg)
     (.log js/console "ORGPAD 2.0 BOOT.")))
 
 (defn on-js-reload []

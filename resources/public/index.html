@@ -5,12 +5,15 @@
     <title>ORGPAD</title>
     <link rel="stylesheet" type="text/css" href="css/orgpad.css">
     <script src="js/tinymce/tinymce.min.js"></script>
+    <script src="js/lz-string.min.js"></script>
   </head>
   <body>
+    <script id="store" type="text/plain; charset=utf-8"></script>
     <div id="orgpad"></div>
     <script type="text/javascript" src="js/compiled/orgpad.js"></script>
     <script>
-      orgpad.core.boot.init(document.getElementById("orgpad"));
+      orgpad.core.boot.init({'root-el': document.getElementById("orgpad"),
+                             'storage-el': document.getElementById("store")});
     </script>
   </body>
 </html>

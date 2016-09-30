@@ -24,14 +24,16 @@
 
 (def parser-type-mixin
   { :class-properties { :childContextTypes { :parser-read js/React.PropTypes.func
-                                             :parser-mutate js/React.PropTypes.func } } })
+                                             :parser-mutate js/React.PropTypes.func
+                                             :global-conf js/React.PropTypes.array } } })
 
 (def parser-type-mixin-context
   { :class-properties { :contextTypes { :parser-read js/React.PropTypes.func
-                                        :parser-mutate js/React.PropTypes.func } } })
+                                        :parser-mutate js/React.PropTypes.func
+                                        :global-conf js/React.PropTypes.array } } })
 
 (defn- parser-mixin
-  [state parser-state read-fn mutate-fn update-fn]
+  [state parser-state read-fn mutate-fn update-fn global-cfg]
 
   (letfn [(parser-read [key params]
             (let [pstate-cur (@parser-state [key params])]
@@ -77,33 +79,36 @@
           parser-read
 
           :parser-mutate
-          parser-mutate }) }))
+          parser-mutate
+
+          :global-conf
+          #js [global-cfg] }) }))
 
 (defn- container-mixin
   [component]
   { :render (fn [state] [(component) state]) })
 
 (defn- create-root-class
-  [init-store read-fn mutate-fn update-fn root-component]
+  [init-store read-fn mutate-fn update-fn root-component global-cfg]
   (let [state (atom init-store)
         parser-state (volatile! {})
         class (rum/build-class [(container-mixin root-component)
                                 (bind-atom state)
-                                (parser-mixin state parser-state read-fn mutate-fn update-fn)
+                                (parser-mixin state parser-state read-fn mutate-fn update-fn global-cfg)
                                 parser-type-mixin]
                                "Orgpad root component")]
     class))
 
 (defn create-cycle
   "Creates app life cycle infrastrucure "
-  [initial-store read-fn mutate-fn update-fn root-el root-component]
+  [initial-store read-fn mutate-fn update-fn root-el root-component global-cfg]
 
-  (let [class (create-root-class initial-store read-fn mutate-fn update-fn root-component)
+  (let [class (create-root-class initial-store read-fn mutate-fn update-fn root-component global-cfg)
         el    (rum/element class {} nil)]
     (rum/mount el root-el)))
 
 (defn props
-  "Returns unvinded value for given 'component', 'key' and 'params'"
+  "Returns unwinded value for given 'component', 'key' and 'params'"
   [component key params]
   (let [parser-read (aget (.. component -context) "parser-read")]
     (assert (-> parser-read nil? not))
@@ -115,3 +120,8 @@
   (let [parser-mutate (aget (.. component -context) "parser-mutate")]
     (assert (-> parser-mutate nil? not))
     (parser-mutate key-params-tuple)))
+
+(defn global-conf
+  "Returns global configuration binded to this life cycle"
+  [component]
+  (aget (.. component -context) "global-conf" 0))

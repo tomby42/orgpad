@@ -1,6 +1,7 @@
 (ns ^{:doc "Default root read/write parser"}
   orgpad.parsers.default-root
   (:require [orgpad.core.store :as store]
+            [orgpad.core.orgpad :as orgpad]
             [orgpad.parsers.default-unit :as dp :refer [read mutate updated?]]
             [orgpad.tools.dscript :as ds]
             [orgpad.components.registry :as registry]))
@@ -101,3 +102,8 @@
       (mutate :orgpad.units/clone-view [unit-tree (attr :value)])
       (->> (merge env))
       (mutate :orgpad/root-view-conf [unit-tree attr])))
+
+(defmethod mutate :orgpad/save
+  [{ :keys [state] } _ storage-el]
+  { :state state
+    :effect #(orgpad/save-file-by-uri state storage-el) })

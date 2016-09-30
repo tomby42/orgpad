@@ -4,7 +4,6 @@
             [sablono.core :as html :refer-macros [html]]
             [orgpad.cycle.life :as lc]
             [orgpad.components.registry :as registry]
-            [orgpad.components.menu.circle :as mc]
             [orgpad.components.atomic.atom-editor :as atom-editor]
             [orgpad.components.atomic.tags-editor :as tags-editor]
             [orgpad.components.atomic.desc-editor :as desc-editor]))
