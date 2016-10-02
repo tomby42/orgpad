@@ -57,8 +57,8 @@
   [{:keys [state]} _ {:keys [parent position transform view-name]}]
   (let [info (registry/get-component-info :orgpad/map-view)
         {:keys [translate scale]} transform
-        pos  [(- (* (:center-x position) scale) (translate 0))
-              (- (* (:center-y position) scale) (translate 1))]]
+        pos  [(/ (- (:center-x position) (translate 0)) scale)
+              (/ (- (:center-y position) (translate 1)) scale)]]
     { :state (store/transact
               state (into
                      [ { :db/id -1
@@ -101,7 +101,7 @@
         view' (if id (store/query state [:entity id]) view)
         transform (view' :orgpad/transform)
         new-translate (compute-translate (transform :translate)
-                                         (transform :scale)
+                                         1 ;; (transform :scale)
                                          new-pos old-pos)
         new-transformation (merge transform { :translate new-translate })]
     { :state (if (nil? id)
@@ -282,9 +282,8 @@
   [{:keys [state]} _ {:keys [prop parent-view unit-tree pos start-pos end-pos]}]
   (let [id (prop :db/id)
         tr (parent-view :orgpad/transform)
-        sp (geom/canvas->screen tr start-pos)
-        ep (geom/canvas->screen tr end-pos)
-        mid-pt (geom/-- pos (geom/*c (geom/++ sp ep) 0.5))]
+        pos' (geom/screen->canvas tr pos)
+        mid-pt (geom/-- pos' (geom/*c (geom/++ start-pos end-pos) 0.5))]
     { :state (store/transact state [[:db/add id :orgpad/link-mid-pt mid-pt]]) }))
 
 (defmethod mutate :orgpad.units/map-view-unit-border-color

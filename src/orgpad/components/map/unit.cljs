@@ -110,8 +110,9 @@
 (defn render-mapped-children-units
   [component {:keys [unit view props] :as unit-tree} app-state local-state]
   (let [style (merge (css/transform (:orgpad/transform view))
-                     { :width default-canvas-size
-                       :height default-canvas-size })
+                     { ;; :width default-canvas-size
+                       ;; :height default-canvas-size
+                      })
         m-units (mapped-children unit view)
         m-links (mapped-links unit view m-units)]
     (html

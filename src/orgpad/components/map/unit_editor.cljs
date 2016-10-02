@@ -9,6 +9,7 @@
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.rum :as trum]
+            [orgpad.tools.geom :as geom]
             [orgpad.components.graphics.primitives :as g]
             [orgpad.components.menu.color.picker :as cpicker]))
 
@@ -270,7 +271,7 @@
 
 (defn- node-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
-  (let [[old-unit old-prop] (@local-state :selected-unit)
+  (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
         [unit prop] (selected-unit-prop unit-tree (-> old-unit :unit :db/id) (old-prop :db/id))]
     (when (and prop unit)
       (let [pos (prop :orgpad/unit-position)
@@ -315,8 +316,9 @@
                   :onMouseDown #(remove-unit component (-> unit :unit :db/id))  } ]
            )
           (when (= (@local-state :local-mode) :make-link)
-            (g/line [(@local-state :link-start-x) (@local-state :link-start-y)]
-                    [(@local-state :mouse-x) (@local-state :mouse-y)] {}))
+            (let [tr (parent-view :orgpad/transform)]
+              (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
+                      (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)]) {})))
           (when (@local-state :show-props-menu)
             (render-props-menu unit prop local-state))]
 

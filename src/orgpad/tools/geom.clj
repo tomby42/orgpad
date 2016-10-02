@@ -2,11 +2,11 @@
 
 (defmacro ^:private t
   [translate scale p idx]
-  `(+ (~translate ~idx) (* (~p ~idx) ~scale)))
+  `(/ (- (~p ~idx) (~translate ~idx)) ~scale))
 
 (defmacro ^:private tr
   [translate scale p idx]
-  `(/ (- (~p ~idx) (~translate ~idx)) ~scale))
+  `(+ (* (~p ~idx) ~scale) (~translate ~idx)))
 
 (defmacro ^:private pl
   [p1 p2 idx]
