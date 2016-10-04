@@ -82,6 +82,16 @@
                                 (.stopPropagation %))) }
        (node/node unit-tree (assoc app-state :mode :read))])))
 
+(defn- start-change-link-shape
+  [unit-tree prop parent-view start-pos end-pos mid-pt local-state ev]
+  (swap! local-state merge { :local-mode :link-shape
+                             :selected-link [unit-tree prop parent-view start-pos end-pos mid-pt]
+                             :link-menu-show :maybe
+                             :selected-unit nil
+                             :mouse-x (if (.-clientX ev) (.-clientX ev) (aget ev "touches" 0 "clientX"))
+                             :mouse-y (if (.-clientY ev) (.-clientY ev) (aget ev "touches" 0 "clientY")) })
+  (.stopPropagation ev))
+
 (rum/defcc map-link < rum/static lc/parser-type-mixin-context
   [component {:keys [props unit start-pos end-pos] :as unit-tree} app-state parent-view local-state]
   (let [prop (get-props props parent-view :orgpad.map-view/link-props)
@@ -98,14 +108,8 @@
        (g/quadratic-curve start-pos end-pos ctl-pt style)
        (when (= (app-state :mode) :write)
          [ :div { :className "map-view-child link-control" :style ctl-style
-                  :onMouseDown #(do
-                                  (swap! local-state merge { :local-mode :link-shape
-                                                             :selected-link [unit-tree prop parent-view start-pos end-pos mid-pt]
-                                                             :link-menu-show :maybe
-                                                             :selected-unit nil
-                                                             :mouse-x (.-clientX %)
-                                                             :mouse-y (.-clientY %) })
-                                  (.stopPropagation %)) } ]) ])))
+                  :onMouseDown #(start-change-link-shape unit-tree prop parent-view start-pos end-pos mid-pt local-state %)
+                  :onTouchStart #(start-change-link-shape unit-tree prop parent-view start-pos end-pos mid-pt local-state %) } ]) ])))
 
 (defn render-mapped-children-units
   [component {:keys [unit view props] :as unit-tree} app-state local-state]

@@ -107,7 +107,8 @@
       :mouse-down (swap! local-state merge { :show-local-menu true })
       :canvas-move (swap! local-state merge { :show-local-menu true })
       :make-link (make-link component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
-      :link-shape (when (= (@local-state :link-menu-show) :maybe) (swap! local-state assoc :link-menu-show :yes))
+      :link-shape (when (= (@local-state :link-menu-show) :maybe)
+                    (swap! local-state assoc :link-menu-show :yes))
       nil)
     (swap! local-state merge { :local-mode :none })))
 
@@ -200,7 +201,44 @@
       ])))
 
 
-(rum/defcc map-component < rum/static lc/parser-type-mixin-context (rum/local init-state)
+(def ^:private handle-touch-event
+  { :did-mount
+    (fn [state]
+      (let [move-cb
+            (fn [ev]
+              (let [component (state :rum/react-component)
+                    state' @(rum/state component)
+                    [unit-tree app-state] (state' :rum/args)]
+                (handle-mouse-move component unit-tree app-state
+                                   #js { :preventDefault (fn [] (.preventDefault ev))
+                                         :clientX (aget ev "touches" 0 "clientX")
+                                         :clientY (aget ev "touches" 0 "clientY") })))
+            end-cb
+            (fn [ev]
+              (let [component (state :rum/react-component)
+                    state' @(rum/state component)
+                    [unit-tree app-state] (state' :rum/args)]
+                (handle-mouse-up component unit-tree app-state
+                                 #js { :preventDefault (fn [] (.preventDefault ev))
+                                       :clientX (-> state :rum/local deref :mouse-x)
+                                       :clientY (-> state :rum/local deref :mouse-y) })))]
+        (swap! (state :rum/local) merge { :touch-move-event-handler move-cb
+                                          :touch-end-event-handler end-cb })
+        (js/document.addEventListener "touchmove" move-cb)
+        (js/document.addEventListener "touchend" end-cb))
+
+      state)
+
+    :will-unmount
+    (fn [state]
+      (js/document.removeEventListener "touchmove" (-> state :rum/local deref :touch-move-event-handler))
+      (js/document.removeEventListener "touchend" (-> state :rum/local deref :touch-end-event-handler))
+      (swap! (state :rum/local) dissoc :touch-move-event-handler)
+      (swap! (state :rum/local) dissoc :touch-end-event-handler)
+      state)
+   })
+
+(rum/defcc map-component < rum/static lc/parser-type-mixin-context (rum/local init-state) handle-touch-event
   [component unit-tree app-state]
 
   (if (= (:mode app-state) :write)

@@ -263,6 +263,27 @@
   (lc/transact! component [[ :orgpad.units/remove-unit
                              id ]]))
 
+(defn- start-unit-move
+  [local-state ev]
+  (js/console.log "unit-move" ev)
+  (swap! local-state merge { :local-mode :unit-move
+                             :mouse-x (.-clientX ev)
+                             :mouse-y (.-clientY ev) }))
+
+(defn- start-unit-resize
+  [local-state ev]
+  (swap! local-state merge { :local-mode :unit-resize
+                             :mouse-x (.-clientX ev)
+                             :mouse-y (.-clientY ev) }))
+
+(defn- start-link
+  [local-state ev]
+  (swap! local-state merge { :local-mode :make-link
+                             :link-start-x (.-clientX ev)
+                             :link-start-y (.-clientY ev)
+                             :mouse-x (.-clientX ev)
+                             :mouse-y (.-clientY ev) }))
+
 (def ^:private prop-editors
   { :show-color-picker render-color-picker
     :show-border-width render-border-width
@@ -287,12 +308,12 @@
                               :center-y (- (pos 1) padding)
                               :children-positions (compute-children-position prop)
                               :onMouseDown jev/block-propagation
+                              :onTouchStart jev/block-propagation
                               :onMouseUp jev/block-propagation })
            [ :i { :title "Move"
                   :className "fa fa-arrows fa-lg"
-                  :onMouseDown #(swap! local-state merge { :local-mode :unit-move
-                                                           :mouse-x (.-clientX %)
-                                                           :mouse-y (.-clientY %) })
+                  :onMouseDown #(start-unit-move local-state %)
+                  :onTouchStart #(start-unit-move local-state (aget % "touches" 0))
                   :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
            [ :i { :title "Edit"
                   :className "fa fa-pencil-square-o fa-lg"
@@ -302,16 +323,12 @@
                   :onMouseUp #(swap! local-state assoc :show-props-menu true) } ]
            [ :i { :title "Resize"
                   :className "fa fa-arrows-alt fa-lg"
-                  :onMouseDown #(swap! local-state merge { :local-mode :unit-resize
-                                                           :mouse-x (.-clientX %)
-                                                           :mouse-y (.-clientY %) })
+                  :onMouseDown #(start-unit-resize local-state %)
+                  :onTouchStart #(start-unit-resize local-state (aget % "touches" 0))
                   :onMouseUp #(swap! local-state merge { :local-mode :none })} ]
            [ :i { :title "Link" :className "fa fa-link fa-lg"
-                  :onMouseDown #(swap! local-state merge { :local-mode :make-link
-                                                           :link-start-x (.-clientX %)
-                                                           :link-start-y (.-clientY %)
-                                                           :mouse-x (.-clientX %)
-                                                           :mouse-y (.-clientY %) }) } ]
+                  :onMouseDown #(start-link local-state %)
+                  :onTouchStart #(start-link local-state (aget % "touches" 0)) } ]
            [ :i { :title "Remove" :className "fa fa-remove fa-lg"
                   :onMouseDown #(remove-unit component (-> unit :unit :db/id))  } ]
            )
