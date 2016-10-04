@@ -403,5 +403,5 @@
         val (aclone (prop' :orgpad/link-dash))]
     (if link-style-1
       (aset val 0 link-style-1)
-      (aset val 1 link-style-2 0))
+      (aset val 1 link-style-2))
     { :state (update-props state id (-> unit-tree :unit :db/id) :orgpad/unit-view-child prop' { :orgpad/link-dash val }) } ))
