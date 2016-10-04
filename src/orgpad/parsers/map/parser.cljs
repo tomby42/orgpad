@@ -405,3 +405,10 @@
       (aset val 0 link-style-1)
       (aset val 1 link-style-2))
     { :state (update-props state id (-> unit-tree :unit :db/id) :orgpad/unit-view-child prop' { :orgpad/link-dash val }) } ))
+
+(defmethod mutate :orgpad.units/map-view-link-remove
+  [{:keys [state]} _ id]
+  (let [parents (find-parents state id)
+        final-qry (into [[:db.fn/retractEntity id]]
+                        (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents))]
+    { :state (store/transact state final-qry) }))

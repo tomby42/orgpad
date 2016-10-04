@@ -371,6 +371,11 @@
                     :prop-name :orgpad/link-style-2
                     :action :orgpad.units/map-view-link-style }) ])
 
+(defn- remove-link
+  [component unit]
+  (lc/transact! component [[ :orgpad.units/map-view-link-remove (-> unit :unit :db/id) ]]))
+
+
 (def ^:private link-prop-editors
   { :show-link-color-picker render-link-color-picker
     :show-link-width render-link-width
@@ -409,6 +414,7 @@
               [ :i.fa.fa-minus. { :style { :position "absolute" :top 19 } } ]
               [ :i.fa.fa-tint {} ]
               ]
+             [ :i.fa.fa-remove.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit) } ]
            )]
 
            (map (fn [[key render-fn]]

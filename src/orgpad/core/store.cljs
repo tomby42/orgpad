@@ -222,7 +222,8 @@
                       (namespace %))]
     (or (= f :entities)
         (contains? f :db/id)
-        (= (-> f first fnamespace) "db")) ))
+        (= (-> f first fnamespace) "db")
+        (= (-> f first fnamespace) "db.fn")) ))
 
 (defn- stransact
   "specter transact"
