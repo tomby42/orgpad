@@ -23,6 +23,8 @@
    :orgpad/view-paths  {:db/cardinality :db.cardinality/many}
    :orgpad/transform   {}
    :orgpad/active-unit {}
+   :orgpad/unit-position {}
+   :orgpad/unit-visibility {}
    :orgpad/unit-width  {}
    :orgpad/unit-height {}
    :orgpad/unit-border-color {}

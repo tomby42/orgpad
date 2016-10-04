@@ -71,7 +71,8 @@
                                 :orgpad/refs -1
                                 :orgpad/type :orgpad/unit-view-child
                                 :orgpad/view-name view-name
-                                :orgpad/unit-position pos } )
+                                :orgpad/unit-position pos
+                                :orgpad/unit-visibility true } )
 
                        { :db/id -3
                          :orgpad/props-refs -4
@@ -81,8 +82,7 @@
                               { :db/id -4
                                 :orgpad/refs -3
                                 :orgpad/type :orgpad/unit-view-child-propagated
-                                :orgpad/view-name view-name
-                                :orgpad/unit-position pos } )
+                                :orgpad/view-name view-name } )
 
                       [:db/add 0 :orgpad/refs -1]
                       [:db/add 0 :orgpad/refs -3]]
