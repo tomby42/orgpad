@@ -183,7 +183,8 @@
               :onMouseDown #(handle-mouse-down component unit-tree app-state %)
               :onMouseUp #(handle-mouse-up component unit-tree app-state %)
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
-              :onBlur #(handle-blur component unit-tree app-state %) }
+              :onBlur #(handle-blur component unit-tree app-state %)
+              :onMouseLeave #(handle-blur component unit-tree app-state %) }
        (munit/render-mapped-children-units component unit-tree app-state local-state)
        (render-local-menu component unit-tree app-state local-state)
       ])))
@@ -196,10 +197,10 @@
               :onMouseDown #(handle-mouse-down component unit-tree app-state %)
               :onMouseUp #(handle-mouse-up component unit-tree app-state %)
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
-              :onBlur #(handle-blur component unit-tree app-state %) }
+              :onBlur #(handle-blur component unit-tree app-state %)
+              :onMouseLeave #(handle-blur component unit-tree app-state %) }
        (munit/render-mapped-children-units component unit-tree app-state local-state)
       ])))
-
 
 (def ^:private handle-touch-event
   { :did-mount

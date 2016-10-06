@@ -72,6 +72,7 @@
                                 :orgpad/type :orgpad/unit-view-child
                                 :orgpad/view-name view-name
                                 :orgpad/unit-position pos
+                                :orgpad/context-unit parent
                                 :orgpad/unit-visibility true } )
 
                        { :db/id -3
@@ -131,7 +132,7 @@
 
 (defn- propagated-prop
   [{:keys [unit view props]} prop parent-view]
-  (if (-> unit :orgpad/refs empty? not)
+  (if (and (-> unit :orgpad/refs empty? not) (contains? view :orgpad/active-unit))
     (let [child-unit (-> unit :orgpad/refs (nth (view :orgpad/active-unit)))
           prop (first
                 (filter (fn [p]
@@ -272,6 +273,7 @@
                          :orgpad/refs -1
                          :orgpad/type :orgpad/unit-view-child
                          :orgpad/view-name (-> map-unit-tree :view :orgpad/view-name)
+                         :orgpad/context-unit (-> map-unit-tree :unit :db/id)
                         })
                       [:db/add 0 :orgpad/refs -1]
                       ])

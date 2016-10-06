@@ -265,7 +265,6 @@
 
 (defn- start-unit-move
   [local-state ev]
-  (js/console.log "unit-move" ev)
   (swap! local-state merge { :local-mode :unit-move
                              :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))

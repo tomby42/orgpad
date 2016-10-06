@@ -79,7 +79,7 @@
         (get-view-props unit path-info')
 
         view-unit
-        (or view-unit-local (:orgpad/default-view-info view-info))
+        (or view-unit-local (-> view-info :orgpad/default-view-info (assoc :orgpad/refs [{ :db/id unit-id }])))
 
         props-info
         (when (:orgpad/child-props-types view-info)

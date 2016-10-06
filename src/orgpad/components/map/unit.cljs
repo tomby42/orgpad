@@ -13,28 +13,30 @@
             [orgpad.components.graphics.primitives :as g]))
 
 ;; TODO configure ??
-(def ^:private default-canvas-size 99999)
+;; (def ^:private default-canvas-size 99999)
 
 (defn- select-unit
   [unit-tree prop parent-view local-state]
   (swap! local-state merge { :selected-unit [unit-tree prop parent-view] }))
 
 (defn- props-pred
-  [view-name view-type v]
+  [ctx-unit view-name view-type v]
   (and v
+       (= (v :orgpad/context-unit) ctx-unit)
        (= (v :orgpad/view-type) view-type)
        (= (v :orgpad/type) :orgpad/unit-view-child)
        (= (v :orgpad/view-name) view-name)))
 
 (defn- get-props
-  [props {:keys [orgpad/view-name]} prop-name]
-  (->> props
-       (drop-while #(not (props-pred view-name prop-name %)))
-       first))
+  [props {:keys [orgpad/view-name orgpad/refs]} prop-name]
+  (let [pid (-> refs first :db/id)]
+    (->> props
+         (drop-while #(not (props-pred pid view-name prop-name %)))
+         first)))
 
 (defn- mapped?
-  [{:keys [orgpad/refs]} {:keys [orgpad/view-name]} prop-name]
-  (let [pred (partial props-pred view-name prop-name)]
+  [{:keys [orgpad/refs db/id]} {:keys [orgpad/view-name]} prop-name]
+  (let [pred (partial props-pred id view-name prop-name)]
     (filter (fn [u] (->> u :props (some pred))) refs)))
 
 (defn- mapped-children
