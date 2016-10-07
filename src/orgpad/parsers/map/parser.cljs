@@ -261,22 +261,25 @@
   [{:keys [state]} _ {:keys [map-unit-tree begin-unit-id position]}]
   (let [info (registry/get-component-info :orgpad/map-view)
         closest-unit (find-closest-unit map-unit-tree begin-unit-id position)
+        parent-id (-> map-unit-tree :unit :db/id)
         new-state (if closest-unit
                     (store/transact
                      state
-                     [{ :db/id -1
-                        :orgpad/refs [begin-unit-id (-> closest-unit :unit :db/id)]
-                        :orgpad/type :orgpad/unit
-                        :orgpad/props-refs -2 }
-                      (merge (-> info :orgpad/child-props-default :orgpad.map-view/link-props)
-                       { :db/id -2
-                         :orgpad/refs -1
-                         :orgpad/type :orgpad/unit-view-child
-                         :orgpad/view-name (-> map-unit-tree :view :orgpad/view-name)
-                         :orgpad/context-unit (-> map-unit-tree :unit :db/id)
-                        })
-                      [:db/add 0 :orgpad/refs -1]
-                      ])
+                     (into
+                      [{ :db/id -1
+                         :orgpad/refs [begin-unit-id (-> closest-unit :unit :db/id)]
+                         :orgpad/type :orgpad/unit
+                         :orgpad/props-refs -2 }
+                       (merge (-> info :orgpad/child-props-default :orgpad.map-view/link-props)
+                              { :db/id -2
+                                :orgpad/refs -1
+                                :orgpad/type :orgpad/unit-view-child
+                                :orgpad/view-name (-> map-unit-tree :view :orgpad/view-name)
+                                :orgpad/context-unit parent-id
+                               })
+                       [:db/add 0 :orgpad/refs -1]]
+                      (when parent-id
+                        [[:db/add parent-id :orgpad/refs -1]])))
                     state)]
     { :state new-state }))
 
