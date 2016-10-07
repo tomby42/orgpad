@@ -143,7 +143,7 @@
     { :unit unit'
       :path-info path-info'
       :view view-unit
-     :props props }))
+      :props props }))
 
 ;;; Default updated? definition
 

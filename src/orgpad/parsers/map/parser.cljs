@@ -131,15 +131,16 @@
                (store/transact state [[:db/add id :orgpad/unit-position new-translate]])) } ))
 
 (defn- propagated-prop
-  [{:keys [unit view props]} prop parent-view]
-  (if (and (-> unit :orgpad/refs empty? not) (contains? view :orgpad/active-unit))
+  [{:keys [unit]} prop view]
+  (if (and (-> unit :orgpad/refs empty? not) view)
     (let [child-unit (-> unit :orgpad/refs (nth (view :orgpad/active-unit)))
           prop (first
                 (filter (fn [p]
                           (and p
-                               (= (p :orgpad/view-name) (parent-view :orgpad/view-name))
+                               (= (p :orgpad/view-type) (prop :orgpad/view-type))
+                               (= (p :orgpad/view-name) (prop :orgpad/view-name))
                                (= (p :orgpad/type) :orgpad/unit-view-child-propagated)))
-                       (child-unit :props)))]
+                        (-> child-unit :unit :orgpad/props-refs)))]
       [child-unit prop])
     [nil nil]))
 
@@ -152,17 +153,35 @@
                            [:db/add unit-id :orgpad/props-refs -1]])
     (store/transact state (into [] (map #(into [:db/add id] %)) attrs))))
 
+(defn- sheet-view-unit
+  [db {:keys [unit view]}]
+  (if (contains? view :orgpad/active-unit)
+    view
+    (let [view-id (store/query db '[:find ?u .
+                                    :in $ ?p ?n
+                                    :where
+                                    [?u :orgpad/refs ?p]
+                                    [?u :orgpad/type :orgpad/unit-view]
+                                    [?u :orgpad/view-type :orgpad/map-tuple-view]
+                                    [?u :orgpad/view-name ?n]]
+                               [(unit :db/id) (view :orgpad/view-name)])]
+      (if view-id
+        (store/query db [:entity view-id])
+        { :orgpad/active-unit 0 }))))
+
 (defn- update-propagated-prop
   [{:keys [state]} {:keys [prop parent-view unit-tree] :as payload} comp-val-fn args]
   (let [id (prop :db/id)
         prop' (if id (store/query state [:entity id]) prop)
         info (registry/get-component-info (-> unit-tree :view :orgpad/view-type))
-        [propagated-unit propagated-prop] (propagated-prop unit-tree prop parent-view)
+        sheet-view
+        (sheet-view-unit state unit-tree)
+        [propagated-unit propagated-prop] (propagated-prop unit-tree prop' sheet-view)
         new-val (if comp-val-fn (comp-val-fn payload prop' args) args)]
     { :state (cond-> state
                true
                 (update-props id (-> unit-tree :unit :db/id) :orgpad/unit-view-child prop' new-val)
-               (and propagated-prop propagated-unit (info :orgpad/propagate-props-from-children?))
+               (and propagated-prop propagated-unit)
                 (update-props (:db/id propagated-prop) (-> propagated-unit :unit :db/id)
                               :orgpad/unit-view-child-propagated prop' new-val)) } ))
 
