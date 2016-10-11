@@ -103,7 +103,7 @@
              first)]
     [sel-unit sel-prop]))
 
-(defn- open-unit
+(defn open-unit
   [component { :keys [unit view path-info] }]
   (let [{ :keys [orgpad/view-name orgpad/view-type] } view
         view-path (path-info :orgpad/view-path)]

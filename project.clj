@@ -13,7 +13,7 @@
                  [cljsjs/react-dom            "15.3.0-0"]
                  [cljsjs/react-sanfona        "0.0.8-0"]
                  [cljsjs/react-tinymce        "0.5.1-0"]
-                 [cljsjs/react-tagsinput      "3.7.0-0"]
+                 [cljsjs/react-tagsinput      "3.13.5-0"]
                  [cljsjs/react-motion         "0.3.1-0"]
                  [cljsjs/react-select         "1.0.0-rc.1"]
                  ]

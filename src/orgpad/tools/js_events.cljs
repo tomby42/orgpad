@@ -9,4 +9,11 @@
 
 (defn stop-propagation
   [ev]
-  (.stopPropagation ev))
+  (doto ev
+    .stopPropagation))
+
+(defn- touch-pos
+  [ev]
+  (if (.-clientX ev)
+    ev
+    (aget ev "touches" 0)))

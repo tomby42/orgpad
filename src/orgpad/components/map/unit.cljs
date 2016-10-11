@@ -10,6 +10,7 @@
             [orgpad.tools.colls :as colls]
             [orgpad.tools.rum :as trum]
             [orgpad.tools.geom :as geom]
+            [orgpad.tools.js-events :as jev]
             [orgpad.components.graphics.primitives :as g]))
 
 ;; TODO configure ??
@@ -55,6 +56,19 @@
                             :end-pos (get-pos (mus (-> l :unit :orgpad/refs (nth 1) :unit :db/id)) view) }))
          links)))
 
+(defn- open-unit
+  [component unit-tree local-state]
+  (when (= (@local-state :local-mode) :try-unit-move)
+    (uedit/open-unit component unit-tree)))
+
+(defn- try-move-unit
+  [unit-tree prop parent-view local-state ev]
+  (swap! local-state merge { :local-mode :try-unit-move
+                             :selected-unit [unit-tree prop parent-view]
+                             :mouse-x (.-clientX (jev/touch-pos ev))
+                             :mouse-y (.-clientY (jev/touch-pos ev)) })
+  (.stopPropagation ev))
+
 (rum/defcc map-unit < rum/static lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} app-state parent-view local-state]
   (let [prop (get-props props parent-view :orgpad.map-view/vertex-props)
@@ -71,18 +85,29 @@
     (when (= (unit :db/id) (-> local-state deref :selected-unit first :unit :db/id))
       (select-unit unit-tree prop parent-view local-state))
     (html
-     [ :div { :style style :className "map-view-child" :key (unit :db/id)
-              :onMouseDown (if (= (app-state :mode) :write)
-                             #(do
-                                (select-unit unit-tree prop parent-view local-state)
-                                (.stopPropagation %))
-                             #(do
-                                (swap! local-state merge { :local-mode :unit-move
-                                                           :selected-unit [unit-tree prop parent-view]
-                                                           :mouse-x (.-clientX %)
-                                                           :mouse-y (.-clientY %) })
-                                (.stopPropagation %))) }
-       (node/node unit-tree (assoc app-state :mode :read))])))
+     [ :div
+      (if (= (app-state :mode) :write)
+        { :style style :className "map-view-child" :key (unit :db/id)
+          :onMouseDown #(try-move-unit unit-tree prop parent-view local-state %)
+         }
+        { :style style :className "map-view-child" :key (unit :db/id)
+          :onMouseDown #(try-move-unit unit-tree prop parent-view local-state %)
+          :onTouchStart #(try-move-unit unit-tree prop parent-view local-state %)
+         })
+       (node/node unit-tree (assoc app-state :mode :read))
+       (if (= (app-state :mode) :write)
+         [ :div.map-view-child
+           { :style { :top 0
+                      :width (prop :orgpad/unit-width)
+                      :height (prop :orgpad/unit-height) }
+             :onMouseDown #(try-move-unit unit-tree prop parent-view local-state %) } ]
+         [ :div.map-view-child.link-control
+           { :style { :top -20 :left -20 }
+             :onMouseDown #(try-move-unit unit-tree prop parent-view local-state %)
+             :onTouchStart #(try-move-unit unit-tree prop parent-view local-state %)
+             :onMouseUp #(open-unit component unit-tree local-state) } ]
+         )
+      ])))
 
 (defn- start-change-link-shape
   [unit-tree prop parent-view start-pos end-pos mid-pt local-state ev]

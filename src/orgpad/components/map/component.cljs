@@ -48,7 +48,7 @@
     (swap! local-state merge { :show-local-menu false })))
 
 (defn- create-pair-unit
-  [component {:keys [unit view] :as unit-tree} pos ev]
+  [component {:keys [unit view] :as unit-tree} pos]
   (lc/transact! component
                 [[ :orgpad.units/new-pair-unit
                    { :parent (unit :db/id)
@@ -56,32 +56,48 @@
                      :transform (view :orgpad/transform)
                      :position pos } ]] ))
 
+(defn- start-canvas-move
+  [local-state-atom ev]
+  (swap! local-state-atom
+         merge { :local-mode :canvas-move
+                 :show-local-menu false
+                 :mouse-x (.-clientX ev)
+                 :mouse-y (.-clientY ev) }))
+
+(defn- do-create-pair-unit
+  [component unit-tree pos ev]
+  (create-pair-unit component unit-tree pos)
+  (hide-local-menu component)
+  (.stopPropagation ev))
+
 (defn render-local-menu
   [component unit-tree app-state local-state-atom]
   (let [local-state @local-state-atom]
-    (when (local-state :show-local-menu)
+    (when (or (local-state :show-local-menu) (= (local-state :local-mode) :canvas-move))
       (let [pos { :center-x (local-state :mouse-x)
                   :center-y (local-state :mouse-y) }]
+        [:div { :style { :display (if (= (local-state :local-mode) :canvas-move) "none" "block") } }
         (mc/circle-menu (merge menu-conf pos { :onMouseDown jev/block-propagation
+                                               :onTouchStart jev/block-propagation
+                                               :onTouchEnd jev/block-propagation
                                                :onMouseUp jev/block-propagation })
                         [ :i { :className "fa fa-file-text-o fa-lg"
                                :title "Create new unit"
-                               :onMouseUp #(do
-                                             (create-pair-unit component unit-tree pos %)
-                                             (hide-local-menu component)) } ]
+                               :onMouseDown #(.stopPropagation %)
+                               :onMouseUp #(do-create-pair-unit component unit-tree pos %)
+                              }
+]
                         [ :i { :className "fa fa-arrows fa-lg"
                                :title "Move"
-                               :onMouseDown (fn [ev]
-                                              (swap! local-state-atom
-                                                     merge { :local-mode :canvas-move
-                                                             :show-local-menu false
-                                                             :mouse-x (.-clientX ev)
-                                                             :mouse-y (.-clientY ev) })) } ]
+                               :onMouseDown (partial start-canvas-move local-state-atom)
+                               :onTouchStart #(start-canvas-move local-state-atom (aget % "touches" 0))
+ } ]
                         [ :i { :className "fa fa-plus fa-lg" :title "Zoom in" } ]
                         [ :i { :className "fa fa-minus fa-lg" :title "Zoom out" } ]
                         [ :i { :className "fa fa-close fa-lg"
                                :title "Hide menu"
-                               :onMouseUp #(hide-local-menu component) } ] )) )))
+                               :onMouseUp #(hide-local-menu component) } ] ) ]
+        ) )))
 
 (defn handle-mouse-down
   [component unit-tree app-state ev]
@@ -102,7 +118,6 @@
 (defn- handle-mouse-up
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
-
     (case (:local-mode @local-state)
       :mouse-down (swap! local-state merge { :show-local-menu true })
       :canvas-move (swap! local-state merge { :show-local-menu true })
@@ -162,16 +177,17 @@
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
     (case (@local-state :local-mode)
-      :canvas-move (canvas-move component unit-tree app-state local-state ev)
-      :unit-move (unit-change component local-state ev :orgpad.units/map-view-unit-move)
-      :unit-resize (unit-change component local-state ev :orgpad.units/map-view-unit-resize)
-      :make-link (update-mouse-position local-state ev)
-      :link-shape (update-link-shape component local-state ev)
+      :canvas-move (canvas-move component unit-tree app-state local-state (jev/stop-propagation ev))
+      :unit-move (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
+      :unit-resize (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-resize)
+      :make-link (update-mouse-position local-state (jev/stop-propagation ev))
+      :link-shape (update-link-shape component local-state (jev/stop-propagation ev))
+      :try-unit-move (do
+                       (swap! local-state assoc :local-mode :unit-move)
+                       (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move))
       nil)
     (when (not= (@local-state :local-mode) :default-mode)
-      (doto ev
-        .preventDefault
-        .stopPropagation))))
+      (.preventDefault ev))))
 
 (defn- handle-blur
   [component unit-tree app-state ev]
@@ -183,7 +199,12 @@
   (let [local-state (trum/comp->local-state component)]
     (html
      [ :div { :className "map-view"
-              :onMouseDown #(handle-mouse-down component unit-tree app-state %)
+              :onMouseDown #(do
+                              (handle-mouse-down component unit-tree app-state %)
+                              (.stopPropagation %))
+              ;;:onTouchStart #(do
+              ;;                 (handle-mouse-down component unit-tree app-state (aget % "touches" 0))
+              ;;                 (.stopPropagation %))
               :onMouseUp #(handle-mouse-up component unit-tree app-state %)
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
               :onBlur #(handle-blur component unit-tree app-state %)
@@ -197,7 +218,12 @@
   (let [local-state (trum/comp->local-state component)]
     (html
      [ :div { :className "map-view"
-              :onMouseDown #(handle-mouse-down component unit-tree app-state %)
+              :onMouseDown #(do
+                              (handle-mouse-down component unit-tree app-state %)
+                              (.stopPropagation %))
+              :onTouchStart #(do
+                               (handle-mouse-down component unit-tree app-state (aget % "touches" 0))
+                               (.stopPropagation %))
               :onMouseUp #(handle-mouse-up component unit-tree app-state %)
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
               :onBlur #(handle-blur component unit-tree app-state %)
@@ -215,6 +241,7 @@
                     [unit-tree app-state] (state' :rum/args)]
                 (handle-mouse-move component unit-tree app-state
                                    #js { :preventDefault (fn [] (.preventDefault ev))
+                                         :stopPropagation (fn [] (.stopPropagation ev))
                                          :clientX (aget ev "touches" 0 "clientX")
                                          :clientY (aget ev "touches" 0 "clientY") })))
             end-cb
@@ -224,6 +251,7 @@
                     [unit-tree app-state] (state' :rum/args)]
                 (handle-mouse-up component unit-tree app-state
                                  #js { :preventDefault (fn [] (.preventDefault ev))
+                                       :stopPropagation (fn [] (.stopPropagation ev))
                                        :clientX (-> state :rum/local deref :mouse-x)
                                        :clientY (-> state :rum/local deref :mouse-y) })))]
         (swap! (state :rum/local) merge { :touch-move-event-handler move-cb
