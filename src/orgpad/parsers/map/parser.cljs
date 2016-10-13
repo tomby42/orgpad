@@ -47,10 +47,9 @@
                        :orgpad/refs unit-id
                        :orgpad/active-unit (count (unit :orgpad/refs)) })
               [:db/add (view :db/id) :orgpad/active-unit (count (unit :orgpad/refs))])
-            [:db/add 0 :orgpad/refs -1]]
+            [:db/add unit-id :orgpad/refs -1]]
            propagated-refs
-           (if (-> :db/id view nil?) [[:db/add unit-id :orgpad/props-refs -2]] [])
-           (if (zero? unit-id) [] [[:db/add unit-id :orgpad/refs -1]]))]
+           (if (-> :db/id view nil?) [[:db/add unit-id :orgpad/props-refs -2]] []))]
           { :state (store/transact state t) }))
 
 (defmethod mutate :orgpad.units/new-pair-unit
@@ -60,8 +59,7 @@
         pos  [(/ (- (:center-x position) (translate 0)) scale)
               (/ (- (:center-y position) (translate 1)) scale)]]
     { :state (store/transact
-              state (into
-                     [ { :db/id -1
+              state [ { :db/id -1
                          :orgpad/type :orgpad/unit
                          :orgpad/props-refs -2
                          :orgpad/refs -3 }
@@ -85,11 +83,9 @@
                                 :orgpad/type :orgpad/unit-view-child-propagated
                                 :orgpad/view-name view-name } )
 
-                      [:db/add 0 :orgpad/refs -1]
-                      [:db/add 0 :orgpad/refs -3]]
-                     (if (zero? parent)
-                       []
-                       [[:db/add parent :orgpad/refs -1]]))) } ))
+                      [:db/add parent :orgpad/refs -1]
+                      ]
+                     ) } ))
 
 (defn- compute-translate
   [translate scale new-pos old-pos]
@@ -284,21 +280,18 @@
         new-state (if closest-unit
                     (store/transact
                      state
-                     (into
-                      [{ :db/id -1
-                         :orgpad/refs [begin-unit-id (-> closest-unit :unit :db/id)]
-                         :orgpad/type :orgpad/unit
-                         :orgpad/props-refs -2 }
-                       (merge (-> info :orgpad/child-props-default :orgpad.map-view/link-props)
-                              { :db/id -2
-                                :orgpad/refs -1
-                                :orgpad/type :orgpad/unit-view-child
-                                :orgpad/view-name (-> map-unit-tree :view :orgpad/view-name)
-                                :orgpad/context-unit parent-id
-                               })
-                       [:db/add 0 :orgpad/refs -1]]
-                      (when parent-id
-                        [[:db/add parent-id :orgpad/refs -1]])))
+                     [{ :db/id -1
+                        :orgpad/refs [begin-unit-id (-> closest-unit :unit :db/id)]
+                        :orgpad/type :orgpad/unit
+                        :orgpad/props-refs -2 }
+                      (merge (-> info :orgpad/child-props-default :orgpad.map-view/link-props)
+                             { :db/id -2
+                               :orgpad/refs -1
+                               :orgpad/type :orgpad/unit-view-child
+                               :orgpad/view-name (-> map-unit-tree :view :orgpad/view-name)
+                               :orgpad/context-unit parent-id
+                              })
+                      [:db/add parent-id :orgpad/refs -1]])
                     state)]
     { :state new-state }))
 
