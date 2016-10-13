@@ -6,6 +6,7 @@
             [orgpad.components.registry :as registry]
             [orgpad.components.node :as node]
             [orgpad.components.map.unit :as munit]
+            [orgpad.components.map.unit-editor :as uedit]
             [orgpad.tools.time :as t]
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
@@ -23,6 +24,14 @@
                                                            :view view
                                                            :direction dir
                                                            :nof-sheets (-> unit :orgpad/refs count) } ]]))
+
+(defn- sort-refs
+  [refs]
+  (into [] (sort #(compare (-> %1 :unit :db/id) (-> %2 :unit :db/id)) refs)))
+
+(defn- open-unit
+  [component {:keys [unit view]}]
+  (uedit/open-unit component (get (-> unit :orgpad/refs sort-refs) (view :orgpad/active-unit))))
 
 (defn- render-local-menu
   [component unit-tree app-state local-state]
@@ -43,6 +52,10 @@
        [ :i { :className "fa fa-caret-right fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Remove" }
        [ :i { :className "fa fa-remove fa-lg" } ] ]
+      [ :div { :className "tools-button" :title "Edit" }
+       [ :i { :className "fa fa-pencil-square-o fa-lg"
+              :onClick #(open-unit component unit-tree)
+             } ] ]
       ]
      ] ] ))
 
@@ -57,7 +70,7 @@
 (defn- active-child-tree
   [unit view]
   (let [active-child (-> view :orgpad/active-unit)]
-    (-> unit :orgpad/refs (get active-child))))
+    (-> unit :orgpad/refs sort-refs (get active-child))))
 
 (defn- render-write-mode
   [component { :keys [unit view props] :as unit-tree } app-state local-state]
@@ -66,8 +79,7 @@
       (render-local-menu component unit-tree app-state local-state)
       (render-sheet-number unit-tree)
       (when child-tree
-        (rum/with-key (node/node child-tree app-state) 2))
-     ]))
+        (rum/with-key (node/node child-tree app-state) 2)) ]))
 
 (defn- comp-dir
   [e]
@@ -89,6 +101,8 @@
                             (switch-active-sheet component unit-tree (comp-dir e)))) }
      (when child-tree
        (rum/with-key (node/node child-tree app-state) 2))
+     [ :div.map-tuple-clicker-left ]
+     [ :div.map-tuple-clicker-right ]
      ]))
 
 (rum/defcc map-tuple-component < rum/static lc/parser-type-mixin-context

@@ -55,16 +55,18 @@
 (defn orgpad-db
   [data]
   (if (and data (-> data .-length (not= 0)))
-    (let [raw-data
+    (let [d (aget js/LZString "decompressFromBase64")
+          raw-data
           (if (.startsWith data "#orgpad/DatomAtomStore")
             data
-            (js/LZString.decompressFromBase64 data))]
+            (d data))]
       (cljs.reader/read-string raw-data))
     (empty-orgpad-db)))
 
 (defn store-db
   [db storage-el]
-  (let [comp-db (js/LZString.compressToBase64 (pr-str db))]
+  (let [c (aget js/LZString "compressToBase64")
+        comp-db (c (pr-str db))]
     (set! (.-text storage-el) comp-db)))
 
 (defn- full-html
