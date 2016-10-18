@@ -2,6 +2,8 @@
   (:require [cljs.test :refer-macros [run-all-tests]]
             [orgpad.core.store-test]
             [orgpad.core.orgpad-test]
+            [orgpad.data.union-find-test]
+            [orgpad.dataflow.graph-test]
             ))
 
 (enable-console-print!)
