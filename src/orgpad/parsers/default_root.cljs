@@ -45,7 +45,7 @@
            :orgpad/unit-view params) ))
 
 (defmethod updated? :orgpad/root-view
-  [{:keys [value]} { :keys [state] }]
+  [{:keys [value]} { :keys [state] } _]
   (let [root-view-info (find-root-view-info state)
         old-root (-> value :unit :db/id)
         current-root (-> root-view-info :orgpad/refs last :db/id)]
@@ -60,7 +60,7 @@
   { :state (store/transact state [path val]) })
 
 (defmethod updated? :orgpad/app-state
-  [_ { :keys [state] }]
+  [_ { :keys [state] } _]
   (store/changed? state []))
 
 (defmethod mutate :orgpad/root-view-stack
@@ -82,7 +82,7 @@
                                     [:db/retract rvi-id :orgpad/view-paths [view-path id]] ]) }))
 
 (defmethod mutate :orgpad/root-view-conf
-  [{ :keys [state :force-update!] } _ [{:keys [unit view path-info] } {:keys [attr value]}]]
+  [{ :keys [state force-update!] } _ [{:keys [unit view path-info] } {:keys [attr value]}]]
   (let [path-info-id (path-info :db/id)]
     (force-update!)
     { :state

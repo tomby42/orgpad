@@ -3,7 +3,7 @@
             [orgpad.core.store-test]
             [orgpad.core.orgpad-test]
             [orgpad.data.union-find-test]
-            [orgpad.dataflow.graph-test]
+            [orgpad.dataflow.systems-test]
             ))
 
 (enable-console-print!)

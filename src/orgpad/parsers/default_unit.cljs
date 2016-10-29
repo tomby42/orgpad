@@ -18,10 +18,10 @@
   [_ key _]
   key)
 
-(defn dispatch2
+(defn dispatch3key
   "Helper function for implementing :update? as multimethod. Use this
    as the dispatch-fn."
-  [{ :keys [key] } _]
+  [{ :keys [key] } _ _]
   key)
 
 
@@ -29,8 +29,7 @@
 
 (defmulti read dispatch3)
 (defmulti mutate dispatch3)
-(defmulti updated? dispatch2)
-
+(defmulti updated? dispatch3key)
 
 ;;; default read method
 
@@ -107,7 +106,7 @@
                    (= (u :db/id) (-> old-node :value :unit :db/id)))
 
             (do
-;;              (println "skipping" old-node u)
+              ;; (println "skipping" old-node u)
               (vswap! tree conj old-node)
               (old-node :value))
             (props (merge env
@@ -122,7 +121,9 @@
         unit'
         (if (:orgpad/needs-children-info view-info)
           (let [old-children-nodes (and old-node (old-node :children))
-                use-children-nodes? (= (count old-children-nodes) (count (unit :orgpad/refs)))]
+                use-children-nodes? (and old-node
+                                         (= (old-node :key) :orgpad/unit-view)
+                                         (= (count old-children-nodes) (count (unit :orgpad/refs))))]
             (update-in (ds/entity->map unit) [:orgpad/refs]
                        (if use-children-nodes?
                          #(into [] (map parser' % old-children-nodes))
@@ -148,13 +149,15 @@
 ;;; Default updated? definition
 
 (defmethod updated? :default
-  [_ _]
+  [_ _ _]
   false)
 
 (defmethod updated? :orgpad/unit-view
-  [{:keys [value]} { :keys [state] }]
+  [{:keys [value]} { :keys [state] } force-update-part]
 
-  (store/changed? state [:entities (concat [(value :unit)] (-> value :unit :orgpad/props-refs))]))
+  (let [unit (value :unit)]
+    (or (force-update-part (unit :db/id))
+        (store/changed? state [:entities (concat [unit] (unit :orgpad/props-refs))]))))
 
 ;;; Clone of unit view
 

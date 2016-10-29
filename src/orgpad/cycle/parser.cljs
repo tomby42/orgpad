@@ -1,8 +1,6 @@
 (ns ^{:doc "Definition of property parser"}
   orgpad.cycle.parser)
 
-(def ^:private force-update (volatile! false))
-
 (defn- parse-props-
   [{:keys [tree read] :as env} k params]
 
@@ -28,10 +26,10 @@
     (-> tree deref first)))
 
 (defn- mark-changed
-  [{:keys [props-changed?] :as env} node]
+  [{:keys [props-changed? force-update-part force-update-all] :as env} node]
   (let [mark-changed' (partial mark-changed env)
         node'         (assoc node :children (doall (mapv mark-changed' (node :children))))
-        me-changed?   (or (props-changed? node' env) @force-update)]
+        me-changed?   (or (props-changed? node' env @force-update-part) @force-update-all)]
 
     (-> node'
         (assoc :me-changed? me-changed?)
@@ -65,10 +63,13 @@
           (node :value))))))
 
 (defn update-parsed-props
-  [state read old-tree changed?]
+  [state read old-tree changed? force-update-all force-update-part]
   (let [tree (volatile! [[(mark-changed { :props-changed? changed?
+                                          :force-update-all force-update-all
+                                          :force-update-part force-update-part
                                           :state state } old-tree)] []])]
-    (vreset! force-update false)
+    (vreset! force-update-all false)
+    (vreset! force-update-part {})
     (update-parsed-props- { :state state
                             :props update-parsed-props-
                             :read read
@@ -76,5 +77,7 @@
     (-> tree deref second first)))
 
 (defn force-update!
-  []
-  (vreset! force-update true))
+  [force-update-all force-update-part & [uid]]
+  (if uid
+    (vswap! force-update-part assoc uid true)
+    (vreset! force-update-all true)))

@@ -35,54 +35,58 @@
 (defn- parser-mixin
   [state parser-state read-fn mutate-fn update-fn global-cfg]
 
-  (letfn [(parser-read [key params]
-            (let [pstate-cur (@parser-state [key params])]
-              (if (nil? pstate-cur)
-                (let [pstate (parser/parse-props @state read-fn key params)]
-                  (vswap! parser-state assoc [key params] pstate)
-                  (pstate :value))
-                (pstate-cur :value))))
+  (let [force-update-all (volatile! false)
+        force-update-part (volatile! {})]
+    (letfn [(parser-read [key params disable-cache?]
+              (let [pstate-cur (@parser-state [key params])]
+                (if (nil? pstate-cur)
+                  (let [pstate (parser/parse-props @state read-fn key params)]
+                    (when (not disable-cache?)
+                      (vswap! parser-state assoc [key params] pstate))
+                    (pstate :value))
+                  (pstate-cur :value))))
 
-          (parser-mutate [key-params-tuple]
-            (let [[new-store key-params-read effects]
-                  (reduce
-                   (fn [[store key-params-read effects] [key params & [type] :as kp]]
-                     (if (= type :read)
-                       [store (conj key-params-read kp) effects]
-                       (let [{:keys [state effect]}
-                             (mutate-fn { :state store
-                                          :force-update! parser/force-update!
-                                          :transact! parser-mutate } key params)]
-                         [state key-params-read
-                          (if (nil? effect)
-                            effects
-                            (conj effects effect))] )))
-                   [@state [] []] key-params-tuple)
+            (parser-mutate [key-params-tuple]
+              (let [[new-store key-params-read effects]
+                    (reduce
+                     (fn [[store key-params-read effects] [key params & [type] :as kp]]
+                       (if (= type :read)
+                         [store (conj key-params-read kp) effects]
+                         (let [{:keys [state effect]}
+                               (mutate-fn { :state store
+                                            :force-update! (partial parser/force-update! force-update-all force-update-part)
+                                            :transact! parser-mutate } key params)]
+                           [state key-params-read
+                            (if (nil? effect)
+                              effects
+                              (conj effects effect))] )))
+                     [@state [] []] key-params-tuple)
 
-                  key-params-read' (if (empty? key-params-read)
-                                     (keys @parser-state)
-                                     key-params-read)]
+                    key-params-read' (if (empty? key-params-read)
+                                       (keys @parser-state)
+                                       key-params-read)]
 
-              (doseq [[key params] key-params-read']
-                (let [pstate-cur (@parser-state [key params])
-                      pstate (parser/update-parsed-props
-                              new-store read-fn pstate-cur update-fn)]
-                  (vswap! parser-state assoc [key params] pstate)))
+                (doseq [[key params] key-params-read']
+                  (let [pstate-cur (@parser-state [key params])
+                        pstate (parser/update-parsed-props
+                                new-store read-fn pstate-cur update-fn
+                                force-update-all force-update-part)]
+                    (vswap! parser-state assoc [key params] pstate)))
 
-              (reset! state (store/reset-changes new-store))
+                (reset! state (store/reset-changes new-store))
 
-              (eff/do-effects effects) ))]
+                (eff/do-effects effects) ))]
 
-    { :child-context
-      (fn [_]
-        { :parser-read
-          parser-read
+      { :child-context
+        (fn [_]
+          { :parser-read
+            parser-read
 
-          :parser-mutate
-          parser-mutate
+            :parser-mutate
+            parser-mutate
 
-          :global-conf
-          #js [global-cfg] }) }))
+            :global-conf
+            #js [global-cfg] }) })))
 
 (defn- container-mixin
   [component]
@@ -108,11 +112,12 @@
     (rum/mount el root-el)))
 
 (defn props
-  "Returns unwinded value for given 'component', 'key' and 'params'"
-  [component key params]
+  "Returns unwinded value for given 'component', 'key' and
+  'params'. optional 'disable-cache?' switches off cache of results."
+  [component key params & [disable-cache?]]
   (let [parser-read (aget (.. component -context) "parser-read")]
     (assert (-> parser-read nil? not))
-    (parser-read key params)))
+    (parser-read key params disable-cache?)))
 
 (defn transact!
   "Updates state regarding to 'component' and 'key-params-tuple'"
