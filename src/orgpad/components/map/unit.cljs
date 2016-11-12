@@ -75,9 +75,9 @@
         pos (prop :orgpad/unit-position)
         style (merge { :width (prop :orgpad/unit-width)
                        :height (prop :orgpad/unit-height)
-                       :border (str (prop :orgpad/unit-border-width) "px "
-                                    (prop :orgpad/unit-border-style) " "
-                                    (prop :orgpad/unit-border-color))
+                       :borderWidth (prop :orgpad/unit-border-width)
+                       :borderStyle (prop :orgpad/unit-border-style)
+                       :borderColor (prop :orgpad/unit-border-color)
                        :borderRadius (str (prop :orgpad/unit-corner-x) "px "
                                           (prop :orgpad/unit-corner-y) "px")
                        :backgroundColor (prop :orgpad/unit-bg-color) }
