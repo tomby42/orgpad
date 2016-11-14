@@ -5,6 +5,7 @@
             [orgpad.components.registry :as registry]
             [orgpad.tools.colls :as colls]
             [orgpad.tools.geom :as geom]
+            [orgpad.tools.dscript :as ds]
             [orgpad.parsers.default-unit :as dp :refer [read mutate]]))
 
 (def ^:private propagated-query
@@ -128,8 +129,8 @@
 
 (defn- propagated-prop
   [{:keys [unit]} prop view]
-  (if (and (-> unit :orgpad/refs empty? not) view)
-    (let [child-unit (-> unit :orgpad/refs (nth (view :orgpad/active-unit)))
+  (if (and (-> unit :orgpad/refs empty? not) view (contains? (view :orgpad/active-unit)))
+    (let [child-unit (-> unit ds/sort-refs (nth (view :orgpad/active-unit)))
           prop (first
                 (filter (fn [p]
                           (and p
@@ -223,7 +224,7 @@
 (defn- update-all-propagated-props
   [db unit props-from-children view-units]
   (let [id (unit :db/id)
-        refs (unit :orgpad/refs)]
+        refs (ds/sort-refs unit)]
     (into [] (mapcat (fn [vu]
                        (child-propagated-props db id
                                                (-> refs (get (vu :orgpad/active-unit)) :unit :db/id)
@@ -269,7 +270,8 @@
     (->> map-unit-tree
          :unit
          :orgpad/refs
-         (filter (fn [u] (first (sequence xform (u :props)))))
+         (filter (fn [u] (and (not= (-> u :unit :db/id) begin-unit-id)
+                              (first (sequence xform (u :props))))))
          first)))
 
 (defmethod mutate :orgpad.units/try-make-new-link-unit

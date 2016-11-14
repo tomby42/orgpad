@@ -17,3 +17,7 @@
        (filter pred)
        first
        entity->map))
+
+(defn- sort-refs
+  [unit]
+  (into [] (sort #(compare (-> %1 :unit :db/id) (-> %2 :unit :db/id)) (unit :orgpad/refs))))

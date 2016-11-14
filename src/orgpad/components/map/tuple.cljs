@@ -10,7 +10,8 @@
             [orgpad.tools.time :as t]
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
-            [orgpad.tools.rum :as trum]))
+            [orgpad.tools.rum :as trum]
+            [orgpad.tools.dscript :as ds]))
 
 (def ^:private CLICK-DELTA 250)
 
@@ -25,13 +26,9 @@
                                                            :direction dir
                                                            :nof-sheets (-> unit :orgpad/refs count) } ]]))
 
-(defn- sort-refs
-  [refs]
-  (into [] (sort #(compare (-> %1 :unit :db/id) (-> %2 :unit :db/id)) refs)))
-
 (defn- open-unit
   [component {:keys [unit view]}]
-  (uedit/open-unit component (get (-> unit :orgpad/refs sort-refs) (view :orgpad/active-unit))))
+  (uedit/open-unit component (get (ds/sort-refs unit) (view :orgpad/active-unit))))
 
 (defn- render-local-menu
   [component unit-tree app-state local-state]
@@ -70,7 +67,7 @@
 (defn- active-child-tree
   [unit view]
   (let [active-child (-> view :orgpad/active-unit)]
-    (-> unit :orgpad/refs sort-refs (get active-child))))
+    (-> unit ds/sort-refs (get active-child))))
 
 (defn- render-write-mode
   [component { :keys [unit view props] :as unit-tree } app-state local-state]
