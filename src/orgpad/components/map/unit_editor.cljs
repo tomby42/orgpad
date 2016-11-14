@@ -10,6 +10,7 @@
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.rum :as trum]
             [orgpad.tools.geom :as geom]
+            [orgpad.tools.orgpad :as ot]
             [orgpad.components.graphics.primitives :as g]
             [orgpad.components.menu.color.picker :as cpicker]))
 
@@ -292,7 +293,7 @@
 (defn- node-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
-        [unit prop] (selected-unit-prop unit-tree (-> old-unit :unit :db/id) (old-prop :db/id))]
+        [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
     (when (and prop unit)
       (let [pos (prop :orgpad/unit-position)
             bw (prop :orgpad/unit-border-width)
@@ -329,7 +330,7 @@
                   :onMouseDown #(start-link local-state %)
                   :onTouchStart #(start-link local-state (aget % "touches" 0)) } ]
            [ :i { :title "Remove" :className "fa fa-remove fa-lg"
-                  :onMouseDown #(remove-unit component (-> unit :unit :db/id))  } ]
+                  :onMouseDown #(remove-unit component (ot/uid unit))  } ]
            )
           (when (= (@local-state :local-mode) :make-link)
             (let [tr (parent-view :orgpad/transform)]
@@ -389,7 +390,7 @@
 
 (defn- remove-link
   [component unit]
-  (lc/transact! component [[ :orgpad.units/map-view-link-remove (-> unit :unit :db/id) ]]))
+  (lc/transact! component [[ :orgpad.units/map-view-link-remove (ot/uid unit) ]]))
 
 
 (def ^:private link-prop-editors
@@ -407,7 +408,7 @@
   (let [select-link (@local-state :selected-link)]
     (when (and select-link (= (@local-state :link-menu-show) :yes))
       (let [[old-unit old-prop _ _ _ mid-pt] select-link
-            [unit prop] (selected-unit-prop unit-tree (-> old-unit :unit :db/id) (old-prop :db/id))]
+            [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
         (when (and prop unit)
           (into
            [:div {}

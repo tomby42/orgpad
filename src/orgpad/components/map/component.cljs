@@ -9,6 +9,7 @@
             [orgpad.components.map.unit :as munit]
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
+            [orgpad.tools.orgpad :as ot]
             [orgpad.tools.rum :as trum]))
 
 
@@ -112,7 +113,7 @@
   [component unit-tree local-state pos]
   (lc/transact! component [[ :orgpad.units/try-make-new-link-unit
                             { :map-unit-tree unit-tree
-                              :begin-unit-id (-> @local-state :selected-unit (nth 0) :unit :db/id)
+                              :begin-unit-id (-> @local-state :selected-unit (nth 0) ot/uid)
                               :position pos }]]))
 
 (defn- handle-mouse-up

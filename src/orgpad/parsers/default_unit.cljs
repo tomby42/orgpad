@@ -3,6 +3,7 @@
   (:require [orgpad.core.store :as store]
             [orgpad.tools.dscript :as ds]
             [orgpad.tools.colls :as colls]
+            [orgpad.tools.orgpad :as ot]
             [orgpad.components.registry :as registry]))
 
 
@@ -103,7 +104,7 @@
           (if (and old-node
                    (not (or (old-node :changed?)
                             (old-node :me-changed?)))
-                   (= (u :db/id) (-> old-node :value :unit :db/id)))
+                   (= (u :db/id) (-> old-node :value ot/uid)))
 
             (do
               ;; (println "skipping" old-node u)

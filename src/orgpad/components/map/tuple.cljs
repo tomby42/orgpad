@@ -11,7 +11,7 @@
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.rum :as trum]
-            [orgpad.tools.dscript :as ds]))
+            [orgpad.tools.orgpad :as ot]))
 
 (def ^:private CLICK-DELTA 250)
 
@@ -28,7 +28,7 @@
 
 (defn- open-unit
   [component {:keys [unit view]}]
-  (uedit/open-unit component (get (ds/sort-refs unit) (view :orgpad/active-unit))))
+  (uedit/open-unit component (get (ot/sort-refs unit) (view :orgpad/active-unit))))
 
 (defn- render-local-menu
   [component unit-tree app-state local-state]
@@ -67,7 +67,7 @@
 (defn- active-child-tree
   [unit view]
   (let [active-child (-> view :orgpad/active-unit)]
-    (-> unit ds/sort-refs (get active-child))))
+    (-> unit ot/sort-refs (get active-child))))
 
 (defn- render-write-mode
   [component { :keys [unit view props] :as unit-tree } app-state local-state]

@@ -4,6 +4,7 @@
             [orgpad.core.orgpad :as orgpad]
             [orgpad.parsers.default-unit :as dp :refer [read mutate updated?]]
             [orgpad.tools.dscript :as ds]
+            [orgpad.tools.orgpad :as ot]
             [orgpad.components.registry :as registry]))
 
 (defn- find-root-view-info
@@ -47,7 +48,7 @@
 (defmethod updated? :orgpad/root-view
   [{:keys [value]} { :keys [state] } _]
   (let [root-view-info (find-root-view-info state)
-        old-root (-> value :unit :db/id)
+        old-root (ot/uid value)
         current-root (-> root-view-info :orgpad/refs last :db/id)]
     (not= current-root old-root)))
 

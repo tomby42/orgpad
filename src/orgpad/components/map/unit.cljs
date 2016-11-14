@@ -11,6 +11,7 @@
             [orgpad.tools.rum :as trum]
             [orgpad.tools.geom :as geom]
             [orgpad.tools.js-events :as jev]
+            [orgpad.tools.orgpad :as ot]
             [orgpad.components.graphics.primitives :as g]))
 
 ;; TODO configure ??
@@ -51,9 +52,9 @@
 (defn- mapped-links
   [unit-tree view m-units]
   (let [links (mapped? unit-tree view :orgpad.map-view/link-props)
-        mus   (into {} (map (fn [u] [(-> u :unit :db/id) u])) m-units)]
-    (map (fn [l] (merge l { :start-pos (get-pos (mus (-> l :unit :orgpad/refs (nth 0) :unit :db/id)) view)
-                            :end-pos (get-pos (mus (-> l :unit :orgpad/refs (nth 1) :unit :db/id)) view) }))
+        mus   (into {} (map (fn [u] [(ot/uid u) u])) m-units)]
+    (map (fn [l] (merge l { :start-pos (get-pos (mus (-> l :unit :orgpad/refs (nth 0) ot/uid)) view)
+                            :end-pos (get-pos (mus (-> l :unit :orgpad/refs (nth 1) ot/uid)) view) }))
          links)))
 
 (defn- open-unit
@@ -82,7 +83,7 @@
                                           (prop :orgpad/unit-corner-y) "px")
                        :backgroundColor (prop :orgpad/unit-bg-color) }
                      (css/transform { :translate pos })) ]
-    (when (= (unit :db/id) (-> local-state deref :selected-unit first :unit :db/id))
+    (when (= (unit :db/id) (-> local-state deref :selected-unit first ot/uid))
       (select-unit unit-tree prop parent-view local-state))
     (html
      [ :div
