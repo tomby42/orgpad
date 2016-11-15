@@ -70,7 +70,7 @@
                              :mouse-y (.-clientY (jev/touch-pos ev)) })
   (.stopPropagation ev))
 
-(rum/defcc map-unit < rum/static lc/parser-type-mixin-context
+(rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} app-state parent-view local-state]
   (let [prop (get-props props parent-view :orgpad.map-view/vertex-props)
         pos (prop :orgpad/unit-position)
