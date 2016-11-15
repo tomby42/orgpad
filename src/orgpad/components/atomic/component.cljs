@@ -6,7 +6,8 @@
             [orgpad.components.registry :as registry]
             [orgpad.components.atomic.atom-editor :as atom-editor]
             [orgpad.components.atomic.tags-editor :as tags-editor]
-            [orgpad.components.atomic.desc-editor :as desc-editor]))
+            [orgpad.components.atomic.desc-editor :as desc-editor]
+            [orgpad.tools.rum :as trum]))
 
 (defn- render-write-mode
   [{:keys [unit view]} app-state]
@@ -28,7 +29,7 @@
                  {:__html (view :orgpad/atom)} } ])
      ])
 
-(rum/defc atomic-component < rum/static lc/parser-type-mixin-context
+(rum/defc atomic-component < trum/istatic lc/parser-type-mixin-context
   [unit-tree app-state]
   (if (= (:mode app-state) :write)
     (render-write-mode unit-tree app-state)

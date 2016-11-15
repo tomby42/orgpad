@@ -120,7 +120,7 @@
                              :mouse-y (if (.-clientY ev) (.-clientY ev) (aget ev "touches" 0 "clientY")) })
   (.stopPropagation ev))
 
-(rum/defcc map-link < rum/static lc/parser-type-mixin-context
+(rum/defcc map-link < trum/istatic lc/parser-type-mixin-context
   [component {:keys [props unit start-pos end-pos] :as unit-tree} app-state parent-view local-state]
   (let [prop (get-props props parent-view :orgpad.map-view/link-props)
         mid-pt (geom/++ (geom/*c (geom/++ start-pos end-pos) 0.5) (prop :orgpad/link-mid-pt))

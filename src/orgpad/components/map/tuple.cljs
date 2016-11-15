@@ -102,7 +102,7 @@
      [ :div.map-tuple-clicker-right ]
      ]))
 
-(rum/defcc map-tuple-component < rum/static lc/parser-type-mixin-context
+(rum/defcc map-tuple-component < trum/istatic lc/parser-type-mixin-context
   (rum/local { :unroll false :time-stamp 0} )
   [component unit-tree app-state]
   (let [local-state (trum/comp->local-state component)]

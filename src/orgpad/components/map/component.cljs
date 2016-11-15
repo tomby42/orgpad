@@ -271,7 +271,7 @@
       state)
    })
 
-(rum/defcc map-component < rum/static lc/parser-type-mixin-context (rum/local init-state) handle-touch-event
+(rum/defcc map-component < trum/istatic lc/parser-type-mixin-context (rum/local init-state) handle-touch-event
   [component unit-tree app-state]
 
   (if (= (:mode app-state) :write)
