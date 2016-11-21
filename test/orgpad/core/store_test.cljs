@@ -77,6 +77,29 @@
 
       ))
 
+
+  (testing "undo with rewrite"
+    (let [db   (create-db)
+          es1  (store/new-datom-store db)
+          es2  (store/transact es1
+                    [{:db/id 3
+                      :name "Trubko"
+                      :friend 2
+                      }])
+          es3  (store/transact es2
+                    [[:db/add 3 :name "Trabko"]])]
+
+      (is (not (empty? (store/query es3 '[:find ?e :where [?e :name "Trabko"]])))
+          "should be present")
+
+      (is (empty? (store/query (store/undo es3) '[:find ?e :where [?e :name "Trabko"]]))
+          "should be empty")
+
+      (is (not (empty? (store/query (store/undo es3) '[:find ?e :where [?e :name "Trubko"]])))
+          "should be present")
+
+      ))
+
   (testing "redo"
     (let [db   (create-db)
           es1  (store/new-datom-store db)
