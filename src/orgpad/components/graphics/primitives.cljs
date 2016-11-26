@@ -86,6 +86,17 @@
                     (.moveTo (s 0) (s 1))
                     (.lineTo (e 0) (e 1)))))))
 
+(defn- draw-poly-line
+  [state]
+  (draw-curve state
+              (fn [ctx pts border-width l t]
+                (let [s (pt-lp (first pts) l t border-width)]
+                  (.moveTo ctx (s 0) (s 1)))
+                (doseq [p (rest pts)]
+                  (let [p' (pt-lp p l t border-width)]
+                    (.lineTo ctx (p' 0) (p' 1)))))
+              (-> state :rum/args first)))
+
 (defn- render-curve
   [style & pts]
   (let [border-width (comp-border-width style)

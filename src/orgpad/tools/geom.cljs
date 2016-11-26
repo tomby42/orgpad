@@ -1,6 +1,6 @@
 (ns orgpad.tools.geom
   (:require-macros orgpad.tools.geom orgpad.tools.colls))
-  
+
 (defn screen->canvas
   [transform p]
   (let [tr (transform :translate)
@@ -21,6 +21,9 @@
    (++ (++ p1 p2) p3)))
 
 (defn --
+  ([p]
+   [(- (p 0)) (- (p 1))])
+
   ([p1 p2]
    [(orgpad.tools.geom/ml p1 p2 0) (orgpad.tools.geom/ml p1 p2 1)])
 
@@ -40,7 +43,23 @@
   [p1 p2]
   (+ (* (nth p1 0) (nth p2 0)) (* (nth p1 1) (nth p2 1))))
 
+(defn vsize
+  [v]
+  (js/Math.sqrt (dot v v)))
+
 (defn normal
   [dir]
-  (let [size (js/Math.sqrt (dot dir dir))]
-    [(-> dir (nth 1) (/ size)) (/ (nth dir 0) size)]))
+  (let [size (vsize dir)]
+    [(-> dir (nth 1) (/ size) -) (/ (nth dir 0) size)]))
+
+(defn flipx
+  [v]
+  [(- (v 0)) (v 1)])
+
+(defn flipy
+  [v]
+  [(v 0) (- (v 1))])
+
+(defn normalize
+  [v]
+  (*c v (/ 1 (vsize v))))
