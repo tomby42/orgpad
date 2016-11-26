@@ -4,6 +4,8 @@
             [orgpad.core.orgpad-test]
             [orgpad.data.union-find-test]
             [orgpad.dataflow.systems-test]
+            [orgpad.tools.bezier-test]
+            [orgpad.tools.geom-test]
             ))
 
 (enable-console-print!)

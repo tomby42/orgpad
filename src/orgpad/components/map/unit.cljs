@@ -12,6 +12,7 @@
             [orgpad.tools.geom :as geom]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.bezier :as bez]
             [orgpad.components.graphics.primitives :as g]))
 
 ;; TODO configure ??

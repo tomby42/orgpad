@@ -1,6 +1,5 @@
 (ns ^{:doc "Math tools"}
-  orgpad.tools.math
-  (:require [rum.core :as rum]))
+  orgpad.tools.math)
 
 (def pi (.-PI js/Math))
 (def cos (.-cos js/Math))

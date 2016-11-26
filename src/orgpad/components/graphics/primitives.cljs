@@ -60,12 +60,12 @@
   (-> state (trum/ref :canvas) (.getContext "2d")))
 
 (defn- draw-curve
-  [state f]
+  [state f & [pts]]
   (let [ctx (get-context state)
         args (state :rum/args)
         style (last args)
         border-width (comp-border-width style)
-        pts (subvec args 0 (dec (count args)))
+        pts (or pts (subvec args 0 (dec (count args))))
         [l t] (left-top-corner pts)
         [w h] (dims border-width pts)]
     (.clearRect ctx 0 0 w h)
@@ -97,6 +97,10 @@
 (rum/defc line < rum/static (trum/gen-update-mixin draw-line)
   [start end style]
   (render-curve style start end))
+
+(rum/defc poly-line < rum/static (trum/gen-update-mixin draw-poly-line)
+  [pts style]
+  (apply render-curve style pts))
 
 (defn- draw-quadratic-curve
   [state]
