@@ -6,6 +6,7 @@
             [orgpad.dataflow.systems-test]
             [orgpad.tools.bezier-test]
             [orgpad.tools.geom-test]
+            [orgpad.tools.order-numbers-test]
             ))
 
 (enable-console-print!)
