@@ -400,7 +400,7 @@
                  [?parent :orgpad/refs-order ?o]]
                [id]))
 
-(defn- update-refs-orders
+(defn- remove-from-refs-orders
   [id refs-orders]
   (map (fn [[eid o]]
          [eid (->> o
@@ -409,17 +409,21 @@
                    (disj o))])
        refs-orders))
 
+(defn- remove-from-refs-orders-qry
+  [db id]
+  (let [refs-orders (->> id (find-refs-orders db) (remove-from-refs-orders id))]
+    (map (fn [[pid o]] [:db/add pid :orgpad/refs-order o]) refs-orders)))
+
 (defmethod mutate :orgpad.units/remove-unit
   [{:keys [state]} _ id]
   (let [units-to-remove (find-children-deep state [id])
         parents (find-parents state id)
-        refs-orders (->> id (find-refs-orders state) (update-refs-orders id))
         edges (mapcat #(find-relative state % edge-check-query) (find-relative state id edge-query))
         edges-to-remove (into [] (comp (filter (fn [[_ cnt]] (= cnt 2))) (map first)) edges)
         edges-props-to-remove (mapcat (fn [eid] (find-props state eid)) edges-to-remove)
         final-qry (colls/minto []
                                (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents)
-                               (map (fn [[pid o]] [:db/add pid :orgpad/refs-order o]) refs-orders)
+                               (remove-from-refs-orders-qry state id)
                                (map (fn [eid] [:db.fn/retractEntity eid])
                                     (concat units-to-remove edges-to-remove edges-props-to-remove)))]
     { :state (store/transact state final-qry) }))
@@ -453,6 +457,7 @@
 (defmethod mutate :orgpad.units/map-view-link-remove
   [{:keys [state]} _ id]
   (let [parents (find-parents state id)
-        final-qry (into [[:db.fn/retractEntity id]]
-                        (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents))]
+        final-qry (colls/minto [[:db.fn/retractEntity id]]
+                               (remove-from-refs-orders-qry state id)
+                               (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents))]
     { :state (store/transact state final-qry) }))
