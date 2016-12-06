@@ -11,10 +11,14 @@
 (def num->str js/String.fromCharCode)
 (def mid-cipher (-> first-char (+ last-char) (bit-shift-right 1) num->str))
 
+(def canonical-length 4)
+
 (defn zeros
   [num-digits]
   (let [z (num->str first-char)]
     (apply str (repeat num-digits z))))
+
+(def canonical-zero (zeros canonical-length))
 
 (defn inc-on-pos
   [num pos]
@@ -33,6 +37,10 @@
                        first-char
                        c))
                     (.substring num' (inc i))))))))
+
+(defn canonical-next
+  [num]
+  (inc-on-pos num canonical-length))
 
 (defn- extend-by-zeros
   [num n]

@@ -3,10 +3,10 @@
   :url "http://www.orgpad.org/"
 
   :dependencies [[org.clojure/clojure         "1.8.0"]
-                 [org.clojure/clojurescript   "1.9.227"]
+                 [org.clojure/clojurescript   "1.9.293"]
                  [org.clojure/core.async      "0.2.385"]
                  [org.clojure/test.check      "0.9.0"]
-                 [datascript                  "0.15.3"]
+                 [datascript                  "0.15.5"]
                  [com.rpl/specter             "0.10.0"]
                  [rum                         "0.9.1"]
                  [cljsjs/react                "15.3.0-0"]

@@ -6,6 +6,7 @@
             [orgpad.tools.colls :as colls]
             [orgpad.tools.geom :as geom]
             [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.order-numbers :as ordn]
             [orgpad.parsers.default-unit :as dp :refer [read mutate]]))
 
 (def ^:private propagated-query
@@ -284,6 +285,9 @@
                      state
                      [{ :db/id -1
                         :orgpad/refs [begin-unit-id (ot/uid closest-unit)]
+                        :orgpad/refs-order (sorted-set [ordn/canonical-zero begin-unit-id]
+                                                       [(ordn/canonical-next ordn/canonical-zero)
+                                                        (ot/uid closest-unit)])
                         :orgpad/type :orgpad/unit
                         :orgpad/props-refs -2 }
                       (merge (-> info :orgpad/child-props-default :orgpad.map-view/link-props)
@@ -386,15 +390,36 @@
                     (find-props db id)
                     (find-children-deep db (find-relative db id child-query)))) ids))
 
+(defn- find-refs-orders
+  [db id]
+  (store/query db
+               '[:find ?parent ?o
+                 :in $ ?e
+                 :where
+                 [?parent :orgpad/refs ?e]
+                 [?parent :orgpad/refs-order ?o]]
+               [id]))
+
+(defn- update-refs-orders
+  [id refs-orders]
+  (map (fn [[eid o]]
+         [eid (->> o
+                   (drop-while (fn [[_ eid]] (= id eid)))
+                   first
+                   (disj o))])
+       refs-orders))
+
 (defmethod mutate :orgpad.units/remove-unit
   [{:keys [state]} _ id]
   (let [units-to-remove (find-children-deep state [id])
         parents (find-parents state id)
+        refs-orders (-> id (find-refs-orders db) (update-refs-orders id))
         edges (mapcat #(find-relative state % edge-check-query) (find-relative state id edge-query))
         edges-to-remove (into [] (comp (filter (fn [[_ cnt]] (= cnt 2))) (map first)) edges)
         edges-props-to-remove (mapcat (fn [eid] (find-props state eid)) edges-to-remove)
         final-qry (colls/minto []
                                (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents)
+                               (map (fn [[pid o]] [:db/add pid :orgpad/refs-order o]) refs-orders)
                                (map (fn [eid] [:db.fn/retractEntity eid])
                                     (concat units-to-remove edges-to-remove edges-props-to-remove)))]
     { :state (store/transact state final-qry) }))

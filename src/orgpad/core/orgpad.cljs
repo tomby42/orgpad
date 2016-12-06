@@ -37,6 +37,7 @@
    :orgpad/link-width {}
    :orgpad/link-dash {}
    :orgpad/link-mid-pt {}
+   :orgpad/refs-order  {}
    })
 
 (defn empty-orgpad-db
@@ -52,6 +53,20 @@
                        ])
       (store/transact [[:mode] :write])))
 
+(defn- update-refs-orders
+  [db]
+  (let [refs-orders
+        (store/query db
+                     '[:find ?eid ?o
+                       :in $
+                       :where
+                       [?eid :orgpad/refs-order ?o]])]
+    (store/transact state
+                    (mapv (fn [[eid o]]
+                            [:db/add eid :orgpad/refs-order (apply sorted-set o)])
+                          refs-orders))))
+
+
 (defn orgpad-db
   [data]
   (if (and data (-> data .-length (not= 0)))
@@ -60,7 +75,7 @@
           (if (.startsWith data "#orgpad/DatomAtomStore")
             data
             (d data))]
-      (cljs.reader/read-string raw-data))
+      (update-refs-orders (cljs.reader/read-string raw-data)))
     (empty-orgpad-db)))
 
 (defn store-db
