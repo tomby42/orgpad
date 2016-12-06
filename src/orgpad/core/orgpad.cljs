@@ -66,7 +66,6 @@
                             [:db/add eid :orgpad/refs-order (apply sorted-set o)])
                           refs-orders))))
 
-
 (defn orgpad-db
   [data]
   (if (and data (-> data .-length (not= 0)))

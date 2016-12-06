@@ -413,7 +413,7 @@
   [{:keys [state]} _ id]
   (let [units-to-remove (find-children-deep state [id])
         parents (find-parents state id)
-        refs-orders (-> id (find-refs-orders db) (update-refs-orders id))
+        refs-orders (->> id (find-refs-orders state) (update-refs-orders id))
         edges (mapcat #(find-relative state % edge-check-query) (find-relative state id edge-query))
         edges-to-remove (into [] (comp (filter (fn [[_ cnt]] (= cnt 2))) (map first)) edges)
         edges-props-to-remove (mapcat (fn [eid] (find-props state eid)) edges-to-remove)
