@@ -271,8 +271,7 @@
     (->> map-unit-tree
          :unit
          :orgpad/refs
-         (filter (fn [u] (and (not= (ot/uid u) begin-unit-id)
-                              (first (sequence xform (u :props))))))
+         (filter (fn [u] (first (sequence xform (u :props)))))
          first)))
 
 (defmethod mutate :orgpad.units/try-make-new-link-unit
@@ -296,6 +295,9 @@
                                :orgpad/type :orgpad/unit-view-child
                                :orgpad/view-name (-> map-unit-tree :view :orgpad/view-name)
                                :orgpad/context-unit parent-id
+                               :orgpad/link-mid-pt (if (= begin-unit-id (ot/uid closest-unit))
+                                                     [-40 0]
+                                                     [0 0])
                               })
                       [:db/add parent-id :orgpad/refs -1]])
                     state)]

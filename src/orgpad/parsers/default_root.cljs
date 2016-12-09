@@ -108,3 +108,8 @@
   [{ :keys [state] } _ storage-el]
   { :state state
     :effect #(orgpad/save-file-by-uri state storage-el) })
+
+(defmethod mutate :orgpad/export
+  [{ :keys [state] } _ _]
+  { :state state
+    :effect #(orgpad/export-file-by-uri state) })

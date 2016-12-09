@@ -111,6 +111,7 @@
    [ :div.file-item
     [ :span "Import" ]]
    [ :div.file-item
+    { :onClick #(lc/transact! component [[ :orgpad/export true ]]) }
     [ :span "Export" ]]))
 
 (rum/defcc status < (rum/local { :unroll false :view-menu-unroll false :typed "" } ) lc/parser-type-mixin-context

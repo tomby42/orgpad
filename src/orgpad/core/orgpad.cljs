@@ -61,7 +61,7 @@
                        :in $
                        :where
                        [?eid :orgpad/refs-order ?o]])]
-    (store/transact state
+    (store/transact db
                     (mapv (fn [[eid o]]
                             [:db/add eid :orgpad/refs-order (apply sorted-set o)])
                           refs-orders))))
@@ -77,10 +77,14 @@
       (update-refs-orders (cljs.reader/read-string raw-data)))
     (empty-orgpad-db)))
 
+(defn- compress-db
+  [db]
+  (let [c (aget js/LZString "compressToBase64")]
+    (c (pr-str db))))
+
 (defn store-db
   [db storage-el]
-  (let [c (aget js/LZString "compressToBase64")
-        comp-db (c (pr-str db))]
+  (let [comp-db (compress-db db)]
     (set! (.-text storage-el) comp-db)))
 
 (defn- full-html
@@ -111,6 +115,25 @@
       (let [blob (js/Blob. #js [content] #js {:type "text/html"})]
         (.setAttribute link "href" (js/window.URL.createObjectURL blob)))
       (.setAttribute link "href" (str "data:text/html,"
+                                      (js/window.encodeURIComponent content))))
+    (doto link
+      (.setAttribute "download" filename)
+      (js/document.body.appendChild)
+      (.click)
+      (js/document.body.removeChild))))
+
+(defn export-file-by-uri
+  [db]
+  (let [p (js/document.location.pathname.lastIndexOf "/")
+        filename (if (not= p -1)
+                   (.replace (js/document.location.pathname.substr (inc p)) "html" "orgpad")
+                   "orgpad.orgpad")
+        link (js/document.createElement "a")
+        content (compress-db db)]
+    (if (not= js/window.Blob js/undefined)
+      (let [blob (js/Blob. #js [content] #js {:type "text/plain"})]
+        (.setAttribute link "href" (js/window.URL.createObjectURL blob)))
+      (.setAttribute link "href" (str "data:text/plain"
                                       (js/window.encodeURIComponent content))))
     (doto link
       (.setAttribute "download" filename)

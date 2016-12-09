@@ -13,6 +13,7 @@
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.bezier :as bez]
+            [orgpad.tools.math :as math]
             [orgpad.components.graphics.primitives :as g]))
 
 (defn- select-unit
@@ -51,8 +52,13 @@
   [unit-tree view m-units]
   (let [links (mapped? unit-tree view :orgpad.map-view/link-props)
         mus   (into {} (map (fn [u] [(ot/uid u) u])) m-units)]
-    (map (fn [l] (merge l { :start-pos (get-pos (mus (-> l :unit :orgpad/refs (nth 0) ot/uid)) view)
-                            :end-pos (get-pos (mus (-> l :unit :orgpad/refs (nth 1) ot/uid)) view) }))
+    (map (fn [l]
+           (let [refs (-> l :unit :orgpad/refs)
+                 id1 (-> refs (nth 0) ot/uid)
+                 id2 (-> refs (nth 1) ot/uid)]
+             (merge l { :start-pos (get-pos (mus id1) view)
+                        :end-pos (get-pos (mus id2) view)
+                        :cyclic? (= id1 id2) })))
          links)))
 
 (defn- open-unit
@@ -118,7 +124,7 @@
                              :mouse-y (if (.-clientY ev) (.-clientY ev) (aget ev "touches" 0 "clientY")) })
   (.stopPropagation ev))
 
-(defn- make-arrow
+(defn- make-arrow-quad
   [start-pos end-pos ctl-pt prop]
   (let [p1 (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos 0.85)
         dir (-> p1 (geom/-- (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos 0.84)) geom/normalize)
@@ -132,8 +138,21 @@
                           :lineCap "round" } }]
     (g/poly-line [p2 p1 p3] style)))
 
+(defn- make-arrow-arc
+  [s e prop]
+  (let [dir (geom/normalize (geom/-- s e))
+        n (geom/normal dir)
+        s' (geom/++ (geom/*c n -10) s)
+        p1 (geom/++ (geom/*c dir 10) s')
+        p2 (geom/++ (geom/*c dir -10) s')
+        style { :css { :zIndex -1 }
+                :canvas { :strokeStyle (prop :orgpad/link-color)
+                          :lineWidth (prop :orgpad/link-width)
+                          :lineCap "round" } }]
+    (g/poly-line [p1 s p2] style)))
+
 (rum/defcc map-link < trum/istatic lc/parser-type-mixin-context
-  [component {:keys [props unit start-pos end-pos] :as unit-tree} app-state parent-view local-state]
+  [component {:keys [props unit start-pos end-pos cyclic?] :as unit-tree} app-state parent-view local-state]
   (let [prop (get-props props parent-view :orgpad.map-view/link-props)
         mid-pt (geom/++ (geom/*c (geom/++ start-pos end-pos) 0.5) (prop :orgpad/link-mid-pt))
         style { :css { :zIndex -1 }
@@ -145,8 +164,13 @@
         ctl-pt (geom/*c (geom/-- mid-pt (geom/*c start-pos 0.25) (geom/*c end-pos 0.25)) 2)]
     (html
      [ :div {}
-       (g/quadratic-curve start-pos end-pos ctl-pt style)
-       (make-arrow start-pos end-pos ctl-pt prop)
+       (if cyclic?
+         (g/arc (geom/*c (geom/++ start-pos mid-pt) 0.5)
+                (/ (geom/distance start-pos mid-pt) 2) 0 math/pi2 style)
+         (g/quadratic-curve start-pos end-pos ctl-pt style))
+       (if cyclic?
+         (make-arrow-arc start-pos mid-pt prop)
+         (make-arrow-quad start-pos end-pos ctl-pt prop))
        (when (= (app-state :mode) :write)
          [ :div { :className "map-view-child link-control" :style ctl-style
                   :onMouseDown #(start-change-link-shape unit-tree prop parent-view start-pos end-pos mid-pt local-state %)

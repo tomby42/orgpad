@@ -63,3 +63,7 @@
 (defn normalize
   [v]
   (*c v (/ 1 (vsize v))))
+
+(defn distance
+  [p1 p2]
+  (vsize (-- p1 p2)))

@@ -4,6 +4,7 @@
 (def pi (.-PI js/Math))
 (def cos (.-cos js/Math))
 (def sin (.-sin js/Math))
+(def pi2 (* 2 pi))
 
 (defn deg->rads
   [deg]

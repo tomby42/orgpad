@@ -4,6 +4,8 @@
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
             [orgpad.tools.rum :as trum]
+            [orgpad.tools.geom :as geom]
+            [orgpad.tools.math :as math]
             [orgpad.tools.css :as css]))
 
 (defn- comp-border-width
@@ -127,3 +129,24 @@
 (rum/defc quadratic-curve < rum/static (trum/gen-update-mixin draw-quadratic-curve)
   [start end ctl-pt style]
   (render-curve style start end ctl-pt))
+
+(defn- arc-bbox
+  [center radius]
+  (let [d [radius radius]]
+    [(geom/-- center d)
+     (geom/++ center d)]))
+
+(defn- draw-arc-curve
+  [state]
+  (let [[center radius start-angle stop-angle] (vec (-> state :rum/args))
+        bbox (arc-bbox center radius)]
+    (draw-curve state
+                (fn [ctx _ border-width l t]
+                  (let [c (pt-lp center l t border-width)]
+                    (.arc ctx (c 0) (c 1) radius (or start-angle 0) (or stop-angle math/pi2) true)))
+                bbox)))
+
+(rum/defc arc < rum/static (trum/gen-update-mixin draw-arc-curve)
+  [center radius start-angle stop-angle style]
+  (let [bbox (arc-bbox center radius)]
+    (render-curve style (bbox 0) (bbox 1))))
