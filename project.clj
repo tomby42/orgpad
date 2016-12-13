@@ -18,8 +18,8 @@
                  [cljsjs/react-select         "1.0.0-rc.1"]
                  ]
 
-  :plugins [[lein-cljsbuild "1.1.3"]
-            [lein-figwheel "0.5.3-2"] ;; needs update to lein 2.5.3 at least
+  :plugins [[lein-cljsbuild "1.1.4"]
+            [lein-figwheel "0.5.8"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             ]
 
@@ -35,7 +35,7 @@
   :profiles {:dev
              {:dependencies [[com.cemerick/piggieback "0.2.1"]
                              [org.clojure/tools.nrepl "0.2.12"]
-                             [figwheel-sidecar        "0.5.3-2"]]
+                             [figwheel-sidecar        "0.5.8"]]
               }
 
              :repl {:plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]] }

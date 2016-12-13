@@ -60,11 +60,14 @@
                      '[:find ?eid ?o
                        :in $
                        :where
-                       [?eid :orgpad/refs-order ?o]])]
-    (store/transact db
-                    (mapv (fn [[eid o]]
-                            [:db/add eid :orgpad/refs-order (apply sorted-set o)])
-                          refs-orders))))
+                       [?eid :orgpad/refs-order ?o]])
+        qry
+        (mapv (fn [[eid o]]
+                [:db/add eid :orgpad/refs-order (apply sorted-set o)])
+              refs-orders)]
+    (if (empty? qry)
+      db
+      (store/transact db qry))))
 
 (defn orgpad-db
   [data]
@@ -102,7 +105,7 @@
            content)
       content)))
 
-(defn save-file-by-uri
+(defn export-html-by-uri
   [db storage-el]
   (store-db db storage-el)
   (let [p (js/document.location.pathname.lastIndexOf "/")
@@ -122,7 +125,7 @@
       (.click)
       (js/document.body.removeChild))))
 
-(defn export-file-by-uri
+(defn save-file-by-uri
   [db]
   (let [p (js/document.location.pathname.lastIndexOf "/")
         filename (if (not= p -1)
@@ -140,3 +143,7 @@
       (js/document.body.appendChild)
       (.click)
       (js/document.body.removeChild))))
+
+(defn load-orgpad
+  [db files]
+  (orgpad-db (get files 0)))

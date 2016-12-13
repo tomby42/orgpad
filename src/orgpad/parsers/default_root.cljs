@@ -104,12 +104,17 @@
       (->> (merge env))
       (mutate :orgpad/root-view-conf [unit-tree attr])))
 
-(defmethod mutate :orgpad/save
+(defmethod mutate :orgpad/export-as-html
   [{ :keys [state] } _ storage-el]
   { :state state
-    :effect #(orgpad/save-file-by-uri state storage-el) })
+    :effect #(orgpad/export-html-by-uri state storage-el) })
 
-(defmethod mutate :orgpad/export
+(defmethod mutate :orgpad/save-orgpad
   [{ :keys [state] } _ _]
   { :state state
-    :effect #(orgpad/export-file-by-uri state) })
+    :effect #(orgpad/save-file-by-uri state) })
+
+(defmethod mutate :orgpad/load-orgpad
+  [{ :keys [state force-update!] } _ files]
+  (force-update!)
+  { :state (orgpad/load-orgpad state files) })

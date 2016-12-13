@@ -6,6 +6,7 @@
             [orgpad.cycle.life :as lc]
             [orgpad.tools.dscript :as ds]
             [orgpad.components.registry :as registry]
+            [orgpad.components.input.file :as if]
             [orgpad.tools.rum :as trum]))
 
 (def ^:private mode-icons
@@ -105,14 +106,19 @@
                                           :all "file-menu-all"
                                           :header "file-menu-header"
                                           :open "open-file" }
+
    [ :div.file-item
-    { :onClick #(lc/transact! component [[ :orgpad/save ((lc/global-conf component) :storage-el) ]]) }
+    { :onClick #(lc/transact! component [[ :orgpad/save-orgpad true ]]) }
     [ :span "Save" ]]
+
    [ :div.file-item
-    [ :span "Import" ]]
+    (if/file-input { :on-change #(lc/transact! component [[ :orgpad/load-orgpad % ]]) }
+                   [ :span "Load" ])]
+
    [ :div.file-item
-    { :onClick #(lc/transact! component [[ :orgpad/export true ]]) }
-    [ :span "Export" ]]))
+    { :onClick #(lc/transact! component [[ :orgpad/export-as-html ((lc/global-conf component) :storage-el) ]]) }
+    [ :span "Export html" ]]
+   ))
 
 (rum/defcc status < (rum/local { :unroll false :view-menu-unroll false :typed "" } ) lc/parser-type-mixin-context
   [component { :keys [unit view path-info] :as unit-tree } app-state]
