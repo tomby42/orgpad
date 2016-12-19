@@ -1,6 +1,6 @@
 # ORGPAD
 
-                                         <img width="200px" height="190px" src="notes/orgpad2.svg?raw=true" />
+                                         <img width="200px" height="190px" src="notes/orgpad2.png?raw=true" />
 
 Universal tool for thoughts managing and co-sharing.
 
@@ -50,4 +50,4 @@ Universal tool for thoughts managing and co-sharing.
  * `project.clj` - project file
 
 ## Life cycle
-![Life cycle](notes/life-cycle.svg?raw=true)
+![Life cycle](notes/life-cycle.png?raw=true)
