@@ -1,6 +1,6 @@
 # ORGPAD
 
-                                         <img width="200px" height="190px" src="notes/orgpad2.svg" />
+                                         <img width="200px" height="190px" src="https://github.com/tomby42/orgpad/blob/develop/notes/orgpad2.svg" />
 
 Universal tool for thoughts managing and co-sharing.
 
@@ -50,4 +50,4 @@ Universal tool for thoughts managing and co-sharing.
  * `project.clj` - project file
 
 ## Life cycle
-![Life cycle](notes/life-cycle.svg)
+![Life cycle](https://github.com/tomby42/orgpad/blob/develop/notes/life-cycle.svg)
