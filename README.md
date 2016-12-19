@@ -48,4 +48,6 @@ Universal tool for thoughts managing and co-sharing.
  * `tests` - directory where tests reside
  * `README.md` - this file
  * `project.clj` - project file
- 
+
+## Life cycle
+![Life cycle](notes/life-cycle.svg)
