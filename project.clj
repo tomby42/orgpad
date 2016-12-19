@@ -9,11 +9,11 @@
                  [datascript                  "0.15.5"]
                  [com.rpl/specter             "0.10.0"]
                  [rum                         "0.9.1"]
-                 [cljsjs/react                "15.3.0-0"]
-                 [cljsjs/react-dom            "15.3.0-0"]
-                 [cljsjs/react-sanfona        "0.0.8-0"]
-                 [cljsjs/react-tinymce        "0.5.1-0"]
-                 [cljsjs/react-tagsinput      "3.13.5-0"]
+                 [cljsjs/react                "15.4.0-0"]
+                 [cljsjs/react-dom            "15.4.0-0"]
+                 [cljsjs/react-sanfona        "0.0.14-0"]
+                 [cljsjs/react-tinymce        "0.5.1-0"]  ;; *
+                 [cljsjs/react-tagsinput      "3.13.5-0"] ;; *
                  [cljsjs/react-motion         "0.3.1-0"]
                  [cljsjs/react-select         "1.0.0-rc.1"]
                  ]
@@ -21,10 +21,11 @@
   :plugins [[lein-cljsbuild "1.1.4"]
             [lein-figwheel "0.5.8"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
+            [lein-localrepo "0.5.3"]
             ]
 
   :hooks [leiningen.less]
-
+  
   :source-paths ["src"]
 
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target" "resources/test/js/compiled"]

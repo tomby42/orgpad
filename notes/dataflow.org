@@ -1,0 +1,53 @@
+* Chtel bych mit nalinkovane vstupy (?) - na zacatku staci jako vyber z var jednotky
+* vytvareni nove jednotky vytvori term jednotku
+* selection menu element by mel byt vespodu
+* child jednotky by meli byt renderovany ve write modu aby nebylo potreba lezt dovnitr
+* oznacovani rootu (vicero korenu ?)
+* update by mel komunikovat s vyhodnocovacem
+* pozdeji parser text -> ast
+
+------------------
+inputs a b c d e f
+
+for all inputs do sum 
+for a c d do sum
+
+
+sum 
+
+|---+---+---+---+---+---|
+| a | b | c | d | e | f |
+|---+---+---+---+---+---|
+| x |   | x |   | x |   |
+|---+---+---+---+---+---|
+
+ace
+
+*+
+
+a*(c+e)
+
+cea
++*
+
+a*sin(a+e)
+
+|---+---+---+---+---|
+|   |   |   |   |   |
+|---+---+---+---+---|
+|   |   |   |   |   |
+|---+---+---+---+---|
+
+reduce
+ acc x y z ->
+   recur(acc + 1 x * 2 y z)
+   reduced(acc)
+ 0 x y z
+
+
+|---+---+---+---+---|
+|   |   |   |   |   |
+|---+---+---+---+---|
+|   |   |   |   |   |
+|---+---+---+---+---|
+
