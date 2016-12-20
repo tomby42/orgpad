@@ -1,8 +1,8 @@
 /*
  * Pi (personalised/pico) mind
- * (C) 2011-2015 Tomas 'tomby' Bily <tomby@ucw.cz>
+ * (C) 2011-now Tomas 'tomby' Bily <tomby@ucw.cz>
  *
- * version: 0.5.5a-Barcelona (Mon Dec 21 17:17:25 CET 2015)
+ * version: 0.5.6a-Barcelona (Tue 20 Dec 15:35:25 CET 2016)
  */
 
 /*
@@ -4736,7 +4736,8 @@ D6Vme1bslonTXaAWIJlsM9r8eMEzF8BIt/0HzKzDagI8NitQYFRw47mp4F+0Mp9/K0gxvc31G9xY\
 
       var buoyPitch = function (b) {
         window.PimContentToSave = preparePitchData (b, b.getDID ()); // b; // .dataView.getDataModel ().toJSON ();
-        var w = $openWin ("#pitch=" + b.getDID () + (mode.showNameInPitch ? '&true' : ''), "_blank");
+        var pos = b.rbox.getAbsolutePos ();
+        var w = $openWin ("#pitch=" + b.getDID () + (mode.showNameInPitch ? '&true' : '&false') + '&' + pos.x + ',' + pos.y, "_blank");
         w.focus ();
         ptr.journal.addJournal ("buoyPitch", [b.getDID ()]);
       };
@@ -6056,7 +6057,7 @@ AAAASUVORK5CYII=";
   var makePitch = function (params, elName) {
     var datas = window/*.opener*/.PimContentToSave;
     var did = parseInt (params [0]);
-    var showNameAttr = params[1];
+    var showNameAttr = params[1] === 'true';
 
     $getElementById (elName).style.display = "none";
 
