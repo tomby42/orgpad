@@ -68,7 +68,7 @@
                         :optimizations :whitespace
                         :pretty-print true}}
 
-            {:id "min"
+            {:id "prod"
              :source-paths ["src"]
              :compiler {:output-to "resources/public/js/compiled/orgpad.js"
                         :main orgpad.core.boot
