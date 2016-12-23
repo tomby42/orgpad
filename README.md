@@ -10,7 +10,7 @@ Universal tool for thoughts managing and co-sharing.
  * Java 1.7 and above
  * node 6.x and above
  * phantomjs 1.9x (not tested with 2.x)
- * Leiningen - http://leiningen.org/#install
+ * Leiningen 2.5.3 and above - http://leiningen.org/#install
 
 * Installation
  * clone git repo `git clone git@github.com:tomby42/orgpad.git`
@@ -24,6 +24,10 @@ Universal tool for thoughts managing and co-sharing.
 
 * Running tests
  * run `lein cljsbuild test`
+
+* Building production version
+  * run `lein clean`
+  * run `lein cljsbuild prod`
 
 * File structure
  * `arxiv` - materials related to orgpad development

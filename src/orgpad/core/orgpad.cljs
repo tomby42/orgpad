@@ -105,19 +105,20 @@
            content)
       content)))
 
-(defn export-html-by-uri
-  [db storage-el]
-  (store-db db storage-el)
-  (let [p (js/document.location.pathname.lastIndexOf "/")
-        filename (if (not= p -1)
-                   (js/document.location.pathname.substr (inc p))
-                   "orgpad.html")
-        link (js/document.createElement "a")
-        content (full-html)]
+(defn- file-name
+  [defualt-name]
+  (let [p (js/document.location.pathname.lastIndexOf "/")]
+    (if (not= p -1)
+      (js/document.location.pathname.substr (inc p))
+      defualt-name)))
+
+(defn- store-file
+  [filename content mime-type]
+  (let [link (js/document.createElement "a")]
     (if (not= js/window.Blob js/undefined)
-      (let [blob (js/Blob. #js [content] #js {:type "text/html"})]
+      (let [blob (js/Blob. #js [content] #js {:type mime-type})]
         (.setAttribute link "href" (js/window.URL.createObjectURL blob)))
-      (.setAttribute link "href" (str "data:text/html,"
+      (.setAttribute link "href" (str "data:" mime-type ","
                                       (js/window.encodeURIComponent content))))
     (doto link
       (.setAttribute "download" filename)
@@ -125,24 +126,16 @@
       (.click)
       (js/document.body.removeChild))))
 
+(defn export-html-by-uri
+  [db storage-el]
+  (store-db db storage-el)
+  (let [filename (file-name "orgpad.html")]
+    (store-file filename (full-html) "text/html")))
+
 (defn save-file-by-uri
   [db]
-  (let [p (js/document.location.pathname.lastIndexOf "/")
-        filename (if (not= p -1)
-                   (.replace (js/document.location.pathname.substr (inc p)) "html" "orgpad")
-                   "orgpad.orgpad")
-        link (js/document.createElement "a")
-        content (compress-db db)]
-    (if (not= js/window.Blob js/undefined)
-      (let [blob (js/Blob. #js [content] #js {:type "text/plain"})]
-        (.setAttribute link "href" (js/window.URL.createObjectURL blob)))
-      (.setAttribute link "href" (str "data:text/plain"
-                                      (js/window.encodeURIComponent content))))
-    (doto link
-      (.setAttribute "download" filename)
-      (js/document.body.appendChild)
-      (.click)
-      (js/document.body.removeChild))))
+  (let [filename (.replace (file-name "orgpad.orgpad") "html" "orgpad")]
+    (store-file filename (compress-db db) "text/plain")))
 
 (defn load-orgpad
   [db files]

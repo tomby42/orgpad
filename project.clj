@@ -9,6 +9,8 @@
                  [datascript                  "0.15.5"]
                  [com.rpl/specter             "0.10.0"]
                  [rum                         "0.9.1"]
+                 [com.cemerick/url            "0.1.1"]
+                 [cljs-ajax                   "0.5.8"]
                  [cljsjs/react                "15.4.0-0"]
                  [cljsjs/react-dom            "15.4.0-0"]
                  [cljsjs/react-sanfona        "0.0.14-0"]
