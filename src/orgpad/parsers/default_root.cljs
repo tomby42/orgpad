@@ -118,3 +118,8 @@
   [{ :keys [state force-update!] } _ files]
   (force-update!)
   { :state (orgpad/load-orgpad state files) })
+
+(defmethod mutate :orgpad/download-orgpad-from-url
+  [{ :keys [state transact!] } _ url]
+  { :state state
+    :effect #(orgpad/download-orgpad-from-url url transact!) })

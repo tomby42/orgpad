@@ -96,20 +96,23 @@
   [init-store read-fn mutate-fn update-fn root-component global-cfg]
   (let [state (atom init-store)
         parser-state (volatile! {})
+        context (parser-mixin state parser-state read-fn mutate-fn update-fn global-cfg)
         class (rum/build-class [(container-mixin root-component)
                                 (bind-atom state)
-                                (parser-mixin state parser-state read-fn mutate-fn update-fn global-cfg)
-                                parser-type-mixin]
+                                context
+                                parser-type-mixin
+                                parser-type-mixin-context]
                                "Orgpad root component")]
-    class))
+    [class ((context :child-context))]))
 
 (defn create-cycle
   "Creates app life cycle infrastrucure "
   [initial-store read-fn mutate-fn update-fn root-el root-component global-cfg]
 
-  (let [class (create-root-class initial-store read-fn mutate-fn update-fn root-component global-cfg)
+  (let [[class context] (create-root-class initial-store read-fn mutate-fn update-fn root-component global-cfg)
         el    (rum/element class {} nil)]
-    (rum/mount el root-el)))
+    (rum/mount el root-el)
+    context))
 
 (defn props
   "Returns unwinded value for given 'component', 'key' and

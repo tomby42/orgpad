@@ -3,7 +3,8 @@
   (:require
    [cljs.reader :as reader]
    [datascript.core   :as d]
-   [orgpad.core.store :as store]))
+   [orgpad.core.store :as store]
+   [ajax.core :as ajax]))
 
 (def orgpad-db-schema
   {
@@ -140,3 +141,9 @@
 (defn load-orgpad
   [db files]
   (orgpad-db (get files 0)))
+
+(defn download-orgpad-from-url
+  [url transact!]
+  (ajax/GET url { :handler #(transact! [[ :orgpad/load-orgpad [%] ]])
+                  :error-handler #(js/console.log (str "Error while downloading from " url " " %))
+                  :format :text }))
