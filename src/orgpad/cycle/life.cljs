@@ -112,7 +112,7 @@
   (let [[class context] (create-root-class initial-store read-fn mutate-fn update-fn root-component global-cfg)
         el    (rum/element class {} nil)]
     (rum/mount el root-el)
-    context))
+    (assoc context :root-el el)))
 
 (defn props
   "Returns unwinded value for given 'component', 'key' and
