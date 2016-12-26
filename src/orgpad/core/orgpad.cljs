@@ -16,12 +16,10 @@
                         :db/cardinality :db.cardinality/many}
    :orgpad/props-refs  {:db/valueType :db.type/ref
                         :db/cardinality :db.cardinality/many}
+   :orgpad/view-stack  {:db/cardinality :db.cardinality/many}
    :orgpad/view-name   {}
-   :orgpad/view-names  {:db/cardinality :db.cardinality/many}
    :orgpad/view-type   {}
-   :orgpad/view-types  {:db/cardinality :db.cardinality/many}
    :orgpad/view-path   {}
-   :orgpad/view-paths  {:db/cardinality :db.cardinality/many}
    :orgpad/transform   {}
    :orgpad/active-unit {}
    :orgpad/unit-position {}

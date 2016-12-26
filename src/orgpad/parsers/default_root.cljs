@@ -22,20 +22,24 @@
         root-info
         (registry/get-component-info :orgpad/root-view)
 
+        [_ cr-id v-name v-type v-path]
+        (if (root-view-info :orgpad/view-stack)
+          (->> root-view-info :orgpad/view-stack sort last)
+          [nil nil nil nil nil])
+
         view-name
-        (or (-> root-view-info :orgpad/view-names last first)
+        (or v-name
             (-> root-info :orgpad/default-view-info :orgpad/view-name))
 
         view-type
-        (or (-> root-view-info :orgpad/view-types last first)
+        (or v-type
             (-> root-info :orgpad/default-view-info :orgpad/view-type))
 
         view-path
-        (or (-> root-view-info :orgpad/view-paths last first)
-            [])
+        (or v-path [])
 
         current-root-id
-        (-> root-view-info :orgpad/refs last :db/id)]
+        (or cr-id (-> root-view-info :orgpad/refs last :db/id))]
 
 ;;    (println "root parser" current-root-id view-name view-type view-path)
 
@@ -67,20 +71,16 @@
 (defmethod mutate :orgpad/root-view-stack
   [{ :keys [state] } _ { :keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
   (let [root-view-info (find-root-view-info state)
-        rvi-id (root-view-info :db/id)]
-    { :state (store/transact state [[:db/add rvi-id :orgpad/refs id]
-                                    [:db/add rvi-id :orgpad/view-names [view-name id]]
-                                    [:db/add rvi-id :orgpad/view-types [view-type id]]
-                                    [:db/add rvi-id :orgpad/view-paths [view-path id]]]) }))
+        rvi-id (root-view-info :db/id)
+        pos (or (-> root-view-info :orgpad/view-stack count) 0)]
+    { :state (store/transact state [[:db/add rvi-id :orgpad/view-stack [pos id view-name view-type view-path]]]) }))
 
 (defmethod mutate :orgpad/root-unit-close
   [{ :keys [state] } _ {:keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
   (let [root-view-info (find-root-view-info state)
-        rvi-id (root-view-info :db/id)]
-    { :state (store/transact state [[:db/retract rvi-id :orgpad/refs id]
-                                    [:db/retract rvi-id :orgpad/view-names [view-name id]]
-                                    [:db/retract rvi-id :orgpad/view-types [view-type id]]
-                                    [:db/retract rvi-id :orgpad/view-paths [view-path id]] ]) }))
+        rvi-id (root-view-info :db/id)
+        last-view (-> root-view-info :orgpad/view-stack sort last)]
+    { :state (store/transact state [[:db/retract rvi-id :orgpad/view-stack last-view] ]) }))
 
 (defmethod mutate :orgpad/root-view-conf
   [{ :keys [state force-update!] } _ [{:keys [unit view path-info] } {:keys [attr value]}]]
