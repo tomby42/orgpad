@@ -62,9 +62,9 @@
               (/ (- (:center-y position) (translate 1)) scale)]]
     { :state (store/transact
               state [ { :db/id -1
-                         :orgpad/type :orgpad/unit
-                         :orgpad/props-refs -2
-                         :orgpad/refs -3 }
+                        :orgpad/type :orgpad/unit
+                        :orgpad/props-refs -2
+                        :orgpad/refs -3 }
 
                        (merge (-> info :orgpad/child-props-default :orgpad.map-view/vertex-props)
                               { :db/id -2
