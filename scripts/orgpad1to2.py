@@ -52,7 +52,7 @@ def getBorderStyle(dash):
     if dash == '1,0':
         return 'solid'
     dashes = dash.split(',')
-    if dashes[0] == dashes[1]:
+    if len(dashes) == 2 and dashes[0] == dashes[1]:
         return 'dotted'
     return 'dashed'
 
@@ -104,8 +104,13 @@ def printUnit(_uid, modelData, attrData):
     print '[%d :orgpad/unit-visibility true %d]' % (propUID, txStamp)
     print '[%d :orgpad/view-type :orgpad.map-view/vertex-props %d]' % (propUID, txStamp)
     printLevelProps(propUID, attrData['state']['attrs']['0'])
+    #print "modelData", modelData['data']
+    #print "attrData", attrData['state']['attrs']
     for i in xrange(0,3):
-        printSheet(uid, modelData['data'][str(i)], attrData['state']['attrs'][str(i)])
+        mdata = ''
+        if str(i) in modelData['data']:
+            mdata = modelData['data'][str(i)]
+        printSheet(uid, mdata, attrData['state']['attrs'][str(i)])
 
 def getMidPt(isCurved):
     if isCurved:
@@ -141,7 +146,11 @@ for nid in nodes:
     printUnit(nid, nodes[nid], nodeAttrs[nid])
 
 for aid in links:
-    printLink(aid, links[aid], linkAttrs[aid])
+    try:
+        printLink(aid, links[aid], linkAttrs[aid])
+    except:
+        pass
+
 
 print suffix
     
