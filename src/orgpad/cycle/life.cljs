@@ -13,7 +13,8 @@
         (let [component   (:rum/react-component state)]
           (add-watch state-atom key
                      (fn [_ _ _ _]
-                       (rum/request-render component)))
+                       (rum/request-render component)
+                       ))
           state))
 
       :will-unmount

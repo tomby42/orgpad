@@ -16,9 +16,13 @@
             [orgpad.tools.math :as math]
             [orgpad.components.graphics.primitives :as g]))
 
+(defn- parent-id
+  [view]
+  (-> view :orgpad/refs first :db/id))
+
 (defn- select-unit
-  [unit-tree prop parent-view local-state]
-  (swap! local-state merge { :selected-unit [unit-tree prop parent-view] }))
+  [unit-tree prop component local-state]
+  (swap! local-state merge { :selected-unit [unit-tree prop (aget component "parent-view")] }))
 
 (defn- props-pred
   [ctx-unit view-name view-type v]
@@ -29,37 +33,42 @@
        (= (v :orgpad/view-name) view-name)))
 
 (defn- get-props
-  [props {:keys [orgpad/view-name orgpad/refs]} prop-name]
-  (let [pid (-> refs first :db/id)]
-    (->> props
-         (drop-while #(not (props-pred pid view-name prop-name %)))
-         first)))
+  [props view-name pid prop-name]
+  (->> props
+       (drop-while #(not (props-pred pid view-name prop-name %)))
+       first))
 
 (defn- mapped?
-  [{:keys [orgpad/refs db/id]} {:keys [orgpad/view-name]} prop-name]
+  [{:keys [orgpad/refs db/id]} view-name prop-name]
   (let [pred (partial props-pred id view-name prop-name)]
     (filter (fn [u] (->> u :props (some pred))) refs)))
 
 (defn- mapped-children
-  [unit-tree view]
-  (mapped? unit-tree view :orgpad.map-view/vertex-props))
+  [unit-tree view-name]
+  (mapped? unit-tree view-name :orgpad.map-view/vertex-props))
+
+(def mapped-children-mem
+  (memoize mapped-children))
 
 (defn- get-pos
-  [u parent-view]
-  (-> u :props (get-props parent-view :orgpad.map-view/vertex-props) :orgpad/unit-position))
+  [u view-name pid]
+  (-> u :props (get-props view-name pid :orgpad.map-view/vertex-props) :orgpad/unit-position))
 
 (defn- mapped-links
-  [unit-tree view m-units]
-  (let [links (mapped? unit-tree view :orgpad.map-view/link-props)
+  [unit-tree view-name pid m-units]
+  (let [links (mapped? unit-tree view-name :orgpad.map-view/link-props)
         mus   (into {} (map (fn [u] [(ot/uid u) u])) m-units)]
     (map (fn [l]
            (let [refs (-> l :unit :orgpad/refs)
                  id1 (-> refs (nth 0) ot/uid)
                  id2 (-> refs (nth 1) ot/uid)]
-             (merge l { :start-pos (get-pos (mus id1) view)
-                        :end-pos (get-pos (mus id2) view)
-                        :cyclic? (= id1 id2) })))
+             [l { :start-pos (get-pos (mus id1) view-name pid)
+                  :end-pos (get-pos (mus id2) view-name pid)
+                  :cyclic? (= id1 id2) }]))
          links)))
+
+(def mapped-links-mem
+  (memoize mapped-links))
 
 (defn- open-unit
   [component unit-tree local-state]
@@ -67,16 +76,16 @@
     (uedit/open-unit component unit-tree)))
 
 (defn- try-move-unit
-  [unit-tree prop parent-view local-state ev]
+  [unit-tree prop component local-state ev]
   (swap! local-state merge { :local-mode :try-unit-move
-                             :selected-unit [unit-tree prop parent-view]
+                             :selected-unit [unit-tree prop (aget component "parent-view")]
                              :mouse-x (.-clientX (jev/touch-pos ev))
                              :mouse-y (.-clientY (jev/touch-pos ev)) })
   (.stopPropagation ev))
 
 (rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
-  [component {:keys [props unit] :as unit-tree} app-state parent-view local-state]
-  (let [prop (get-props props parent-view :orgpad.map-view/vertex-props)
+  [component {:keys [props unit] :as unit-tree} app-state component view-name pid local-state]
+  (let [prop (get-props props view-name pid :orgpad.map-view/vertex-props)
         pos (prop :orgpad/unit-position)
         style (merge { :width (prop :orgpad/unit-width)
                        :height (prop :orgpad/unit-height)
@@ -87,17 +96,18 @@
                                           (prop :orgpad/unit-corner-y) "px")
                        :backgroundColor (prop :orgpad/unit-bg-color) }
                      (css/transform { :translate pos })) ]
+    (js/window.console.log "rendering " (unit :db/id))
     (when (= (unit :db/id) (-> local-state deref :selected-unit first ot/uid))
-      (select-unit unit-tree prop parent-view local-state))
+      (select-unit unit-tree prop component local-state))
     (html
      [ :div
       (if (= (app-state :mode) :write)
         { :style style :className "map-view-child" :key (unit :db/id)
-          :onMouseDown #(try-move-unit unit-tree prop parent-view local-state %)
+          :onMouseDown #(try-move-unit unit-tree prop component local-state %)
          }
         { :style style :className "map-view-child" :key (unit :db/id)
-          :onMouseDown #(try-move-unit unit-tree prop parent-view local-state %)
-          :onTouchStart #(try-move-unit unit-tree prop parent-view local-state %)
+          :onMouseDown #(try-move-unit unit-tree prop component local-state %)
+          :onTouchStart #(try-move-unit unit-tree prop component local-state %)
          })
        (node/node unit-tree (assoc app-state :mode :read))
        (if (= (app-state :mode) :write)
@@ -105,19 +115,23 @@
            { :style { :top 0
                       :width (prop :orgpad/unit-width)
                       :height (prop :orgpad/unit-height) }
-             :onMouseDown #(try-move-unit unit-tree prop parent-view local-state %) } ]
+             :onMouseDown #(try-move-unit unit-tree prop component local-state %) } ]
          [ :div.map-view-child.link-control
            { :style { :top -20 :left -20 }
-             :onMouseDown #(try-move-unit unit-tree prop parent-view local-state %)
-             :onTouchStart #(try-move-unit unit-tree prop parent-view local-state %)
+             :onMouseDown #(try-move-unit unit-tree prop component local-state %)
+             :onTouchStart #(try-move-unit unit-tree prop component local-state %)
              :onMouseUp #(open-unit component unit-tree local-state) } ]
          )
       ])))
 
+(def map-unit-mem
+  (colls/memoize' map-unit {:key-fn #(-> % first ot/uid)
+                            :eq-fns [identical? identical? identical? identical? identical? identical?]}))
+
 (defn- start-change-link-shape
-  [unit-tree prop parent-view start-pos end-pos mid-pt local-state ev]
+  [unit-tree prop component start-pos end-pos mid-pt local-state ev]
   (swap! local-state merge { :local-mode :link-shape
-                             :selected-link [unit-tree prop parent-view start-pos end-pos mid-pt]
+                             :selected-link [unit-tree prop (aget component "parent-view") start-pos end-pos mid-pt]
                              :link-menu-show :maybe
                              :selected-unit nil
                              :mouse-x (if (.-clientX ev) (.-clientX ev) (aget ev "touches" 0 "clientX"))
@@ -151,9 +165,11 @@
                           :lineCap "round" } }]
     (g/poly-line [p1 s p2] style)))
 
-(rum/defcc map-link < trum/istatic lc/parser-type-mixin-context
-  [component {:keys [props unit start-pos end-pos cyclic?] :as unit-tree} app-state parent-view local-state]
-  (let [prop (get-props props parent-view :orgpad.map-view/link-props)
+(def ^:private link-eq-fns [identical? = identical? identical? identical? identical? identical?])
+
+(rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
+  [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic?]} app-state component view-name pid local-state]
+  (let [prop (get-props props view-name pid :orgpad.map-view/link-props)
         mid-pt (geom/++ (geom/*c (geom/++ start-pos end-pos) 0.5) (prop :orgpad/link-mid-pt))
         style { :css { :zIndex -1 }
                 :canvas { :strokeStyle (prop :orgpad/link-color)
@@ -162,6 +178,7 @@
                           :lineDash (prop :orgpad/link-dash) } }
         ctl-style (css/transform {:translate (geom/-- mid-pt [10 10])})
         ctl-pt (geom/*c (geom/-- mid-pt (geom/*c start-pos 0.25) (geom/*c end-pos 0.25)) 2)]
+    (js/window.console.log "rendering " (unit :db/id))
     (html
      [ :div {}
        (if cyclic?
@@ -173,19 +190,26 @@
          (make-arrow-quad start-pos end-pos ctl-pt prop))
        (when (= (app-state :mode) :write)
          [ :div { :className "map-view-child link-control" :style ctl-style
-                  :onMouseDown #(start-change-link-shape unit-tree prop parent-view start-pos end-pos mid-pt local-state %)
-                  :onTouchStart #(start-change-link-shape unit-tree prop parent-view start-pos end-pos mid-pt local-state %) } ]) ])))
+                  :onMouseDown #(start-change-link-shape unit-tree prop component start-pos end-pos mid-pt local-state %)
+                  :onTouchStart #(start-change-link-shape unit-tree prop component start-pos end-pos mid-pt local-state %) } ]) ])))
+
+(def map-link-mem
+  (colls/memoize' map-link {:key-fn #(-> % first ot/uid)
+                            :eq-fns link-eq-fns}))
 
 (defn render-mapped-children-units
   [component {:keys [unit view props] :as unit-tree} app-state local-state]
   (let [style (merge (css/transform (:orgpad/transform view))
                      {})
-        m-units (mapped-children unit view)
-        m-links (mapped-links unit view m-units)]
+        view-name (view :orgpad/view-name)
+        pid (parent-id view)
+        m-units (mapped-children-mem unit view-name)
+        m-links (mapped-links-mem unit view-name pid m-units)]
+    (aset component "parent-view" view)
     (html
      (conj
       (colls/minto [ :div { :className "map-view-canvas" :style style } ]
-                   (map #(map-link % app-state view local-state) m-links)
-                   (map #(map-unit % app-state view local-state) m-units))
+                   (map #(map-link-mem (% 0) (% 1) app-state component view-name pid local-state) m-links)
+                   (map #(map-unit-mem % app-state component view-name pid local-state) m-units))
       (when (= (app-state :mode) :write)
         (uedit/unit-editor unit-tree app-state local-state)))) ))

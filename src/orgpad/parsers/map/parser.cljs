@@ -111,7 +111,6 @@
                                       [:db/add unit-id :orgpad/props-refs -1]])
                (store/transact state [[:db/add id :orgpad/transform new-transformation]])) } ))
 
-
 (defmethod mutate :orgpad.units/map-view-unit-move
   [{:keys [state]} _ {:keys [prop parent-view unit-tree old-pos new-pos]}]
   (let [id (prop :db/id)

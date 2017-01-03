@@ -26,7 +26,7 @@
         [ :div { :key 1} [ :div {} (html (into [] (map-indexed (fn [idx tag] (html [ :span { :key idx :className "react-tagsinput-tag" } tag ])) (view :orgpad/tags)))) ] ])
       (when (and (view :orgpad/atom) (not= (view :orgpad/atom) ""))
         [ :div  {:dangerouslySetInnerHTML
-                 {:__html (js/window.decodeURIComponent (view :orgpad/atom))} } ])
+                 {:__html (view :orgpad/atom)} } ])
      ])
 
 (rum/defc atomic-component < trum/istatic lc/parser-type-mixin-context

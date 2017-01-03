@@ -4,6 +4,7 @@
    [cljs.reader :as reader]
    [datascript.core   :as d]
    [orgpad.core.store :as store]
+   [orgpad.tools.colls :as colls]
    [ajax.core :as ajax]))
 
 (def orgpad-db-schema
@@ -59,11 +60,29 @@
                      '[:find ?eid ?o
                        :in $
                        :where
-                       [?eid :orgpad/refs-order ?o]])
-        qry
-        (mapv (fn [[eid o]]
-                [:db/add eid :orgpad/refs-order (apply sorted-set o)])
-              refs-orders)]
+                       [?eid :orgpad/refs-order ?o]])]
+
+    (mapv (fn [[eid o]]
+            [:db/add eid :orgpad/refs-order (apply sorted-set o)])
+          refs-orders)))
+
+(defn- unescape-atoms
+  [db]
+  (let [atoms
+        (store/query db
+                     '[:find ?eid ?a
+                       :in $
+                       :where
+                       [?eid :orgpad/atom ?a]])]
+    (mapv (fn [[eid a]]
+            [:db/add eid :orgpad/atom (js/window.unescape a)]) atoms)))
+
+(defn- update-db
+  [db]
+  (let [qry
+        (colls/minto []
+                     (update-refs-orders db)
+                     (unescape-atoms db))]
     (if (empty? qry)
       db
       (store/transact db qry))))
@@ -76,7 +95,7 @@
           (if (.startsWith data "#orgpad/DatomAtomStore")
             data
             (d data))]
-      (update-refs-orders (cljs.reader/read-string raw-data)))
+      (update-db (cljs.reader/read-string raw-data)))
     (empty-orgpad-db)))
 
 (defn- compress-db

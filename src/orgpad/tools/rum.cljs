@@ -1,6 +1,7 @@
 (ns ^{:doc "RUM tools"}
   orgpad.tools.rum
-  (:require [rum.core :as rum]))
+  (:require [rum.core :as rum]
+            [orgpad.tools.colls :as colls]))
 
 (defn comp->local-state
   [component]
@@ -38,25 +39,35 @@
   [state key]
   (js/ReactDOM.findDOMNode (ref state (name key))))
 
-(defn shallow-eq
-  [s1 s2]
-  (let [n (count s1)]
-    (if (== n (count s2))
-      (loop [ss1 s1
-             ss2 s2
-             s   true]
-        (if s
-          (if (empty? ss1)
-            true
-            (recur (rest ss1) (rest ss2) (identical? (first ss1) (first ss2))))
-          false))
-      false)))
-
 (def istatic
   "Mixin. Will avoid re-render if none of component’s arguments have changed.
    Does equality check (identical?) on all arguments"
   { :should-update
     (fn [old-state new-state]
+      ;; (when (not (colls/shallow-eq
+      ;;             (:rum/args old-state) (:rum/args new-state)))
+      ;;   (println "should-update")
+      ;;   (println "old" (:rum/args old-state))
+      ;;   (println "new" (:rum/args new-state)))
+        ;; (println "eq" (colls/shallow-eq
+        ;;               (:rum/args old-state) (:rum/args new-state)))
       (not
-       (shallow-eq
+       (colls/shallow-eq
         (:rum/args old-state) (:rum/args new-state)))) })
+
+(defn statical
+  "Create mixin. Will avoid re-render if none of component’s arguments have changed.
+   Does equality check (depends on feeded vector of equality functions) on all arguments"
+  [eq-fns]
+  { :should-update
+    (fn [old-state new-state]
+      ;; (when (not
+      ;;        (colls/semi-shallow-eq
+      ;;         (:rum/args old-state) (:rum/args new-state) eq-fns))
+      ;;   (println "should-update")
+      ;;   (println "old" (:rum/args old-state))
+      ;;   (println "new" (:rum/args new-state)))
+
+      (not
+       (colls/semi-shallow-eq
+        (:rum/args old-state) (:rum/args new-state) eq-fns))) })
