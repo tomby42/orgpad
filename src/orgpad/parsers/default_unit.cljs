@@ -19,12 +19,21 @@
   [_ key _]
   key)
 
+(comment
 (defn dispatch3key
   "Helper function for implementing :update? as multimethod. Use this
    as the dispatch-fn."
   [{ :keys [key] } _ _]
   key)
+)
 
+;;(comment
+(defn dispatch3key
+  "Helper function for implementing :update? as multimethod. Use this
+   as the dispatch-fn."
+  [node _ _]
+  (aget node "key"))
+;;)
 
 ;;; General method declaration
 
@@ -54,6 +63,7 @@
                         (and (= (u :orgpad/view-path) view-path)
                              (= (u :orgpad/type) :orgpad/unit-path-info)))))
 
+(comment
 (defmethod read :orgpad/unit-view
   [{ :keys [state props old-node tree unit-id view-name view-type view-path view-contexts] :as env } k params]
 ;;  (println "read :orgpad/unit-view" unit-id view-name view-type view-path view-contexts k)
@@ -160,6 +170,117 @@
       :path-info path-info'
       :view view-unit
       :props props }))
+)
+
+;;(comment
+(defmethod read :orgpad/unit-view
+  [{ :keys [state props old-node tree unit-id view-name view-type view-path view-contexts] :as env } k params]
+;;  (println "read :orgpad/unit-view" unit-id view-name view-type view-path view-contexts k)
+
+  (let [db  state
+
+        unit
+        (store/query db [:entity unit-id])
+
+        path-info
+        (get-path-info unit view-path)
+
+        path-info'
+        (assoc (or path-info { :orgpad/view-name view-name
+                               :orgpad/view-type view-type
+                               :orgpad/view-path view-path })
+               :orgpad/type :orgpad/unit-view)
+
+        view-info
+        (registry/get-component-info (path-info' :orgpad/view-type))
+
+        view-unit-local
+        (get-view-props unit path-info')
+
+        view-unit
+        (or view-unit-local (-> view-info :orgpad/default-view-info (assoc :orgpad/refs [{ :db/id unit-id }])))
+
+        props-info
+        (when (:orgpad/child-props-types view-info)
+          (into [] (map (fn [type]
+                          { :orgpad/view-type type
+                            :orgpad/view-name (:orgpad/view-name path-info')
+                            :orgpad/type      :orgpad/unit-view-child }))
+                (:orgpad/child-props-types view-info)))
+
+        view-contexts'
+        (if (:orgpad/propagate-props-from-children? view-info)
+          (let [view-contexts'' (mapv #(assoc % :orgpad/type :orgpad/unit-view-child-propagated)
+                                      view-contexts)]
+            (if props-info
+              (into view-contexts'' props-info)
+              view-contexts''))
+          (when props-info
+            props-info))
+
+        parser'
+        (fn [u old-node]
+          (if (and old-node
+                   (not (or (aget old-node "changed?")
+                            (aget old-node "me-changed?")))
+                   (= (u :db/id) (-> (aget old-node "value") ot/uid)))
+
+            (do
+              ;; (println "skipping" old-node u)
+              (.push @tree old-node)
+              ;; (vswap! tree conj old-node)
+              (aget old-node "value"))
+            (props (merge env
+                          { :unit-id    (u :db/id)
+                            :old-node   nil
+                            :view-path  (-> view-path (conj unit-id) (conj (view-unit :orgpad/view-name)))
+                            :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
+                            :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
+                            :view-contexts view-contexts' })
+                   :orgpad/unit-view params)))
+
+        unit'
+        (let [eunit (ds/entity->map unit)]
+          (if (:orgpad/needs-children-info view-info)
+            (let [old-children-nodes (and old-node (aget old-node "children"))
+                  use-children-nodes? (and old-node
+                                           (= (aget old-node "key") :orgpad/unit-view)
+                                           (= (alength old-children-nodes) (count (unit :orgpad/refs))))]
+              (update-in eunit [:orgpad/refs]
+                         (fn [refs]
+                           ;; (println (eunit :orgpad/refs-order))
+                           (if (eunit :orgpad/refs-order)
+                             (let [children (if use-children-nodes?
+                                              (into {} (map (juxt :db/id parser')
+                                                            refs old-children-nodes))
+                                              (into {} (map (juxt :db/id parser') refs)))]
+                               (mapv (comp children second) (eunit :orgpad/refs-order)))
+                             (if use-children-nodes?
+                               (into [] (map parser' refs old-children-nodes))
+                               (mapv parser' refs))))))
+            (if (eunit :orgpad/refs-order)
+              (update-in eunit [:orgpad/refs]
+                         (fn [refs]
+                           (let [children (into {} (map (juxt :db/id identity) refs))]
+                             (mapv (comp children second) (eunit :orgpad/refs-order)))))
+              eunit)))
+
+        props
+        (when view-contexts
+          (mapv #(get-view-props unit %) view-contexts))
+        ]
+
+;;     (println { :unit unit'
+;;                :path-info path-info'
+;;                :view view-unit
+;;                :props props })
+
+
+    { :unit unit'
+      :path-info path-info'
+      :view view-unit
+      :props props }))
+;;)
 
 ;;; Default updated? definition
 
@@ -167,13 +288,28 @@
   [_ _ _]
   false)
 
+(comment
 (defmethod updated? :orgpad/unit-view
-  [{:keys [value]} { :keys [state] } force-update-part]
+  [{:keys [value]} { :keys [state changed-entities] } force-update-part]
 
-  (let [unit (value :unit)]
+  (let [changed-datom-entities (changed-entities :datom)
+        unit (value :unit)]
     (or (force-update-part (unit :db/id))
-        (store/changed? state [:entities (concat [unit] (unit :orgpad/props-refs))]))))
+        (contains? changed-datom-entities (unit :db/id))
+        (some #(contains? changed-datom-entities (% :db/id)) (unit :orgpad/props-refs)))))
+)
 
+;;(comment
+(defmethod updated? :orgpad/unit-view
+  [node { :keys [state changed-entities] } force-update-part]
+
+  (let [value (aget node "value")
+        changed-datom-entities (changed-entities :datom)
+        unit (value :unit)]
+    (or (force-update-part (unit :db/id))
+        (contains? changed-datom-entities (unit :db/id))
+        (some #(contains? changed-datom-entities (% :db/id)) (unit :orgpad/props-refs)))))
+;;)
 ;;; Clone of unit view
 
 (defn- clone-view

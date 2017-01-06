@@ -1,5 +1,6 @@
 (ns ^{:doc "Definition of property parser"}
-  orgpad.cycle.parser)
+    orgpad.cycle.parser
+  (:require [orgpad.core.store :as store]))
 
 (defn- parse-props-
   [{:keys [tree read] :as env} k params]
@@ -14,6 +15,20 @@
       (vreset! tree (conj tree' node))
       val)))
 
+(defn- parse-props-1-
+  [{:keys [tree read] :as env} k params]
+
+  (let [tree' @tree]
+    (vreset! tree #js [])
+    (let [val   (read env k params)
+          node  #js { :value val
+                      :children @tree
+                      :key k
+                      :params params }]
+      (.push tree' node)
+      (vreset! tree tree')
+      val)))
+
 (defn parse-props
   [state read k params]
 
@@ -25,17 +40,36 @@
                  k params)
     (-> tree deref first)))
 
+(defn parse-props-1
+  [state read k params]
+
+  (let [tree (volatile! #js [])]
+    (parse-props-1- { :state state
+                      :props parse-props-1-
+                      :read read
+                      :tree tree }
+                 k params)
+    (-> tree deref (aget 0))))
+
 (defn- mark-changed
   [{:keys [props-changed? force-update-part force-update-all] :as env} node]
-  (let [mark-changed' (partial mark-changed env)
-        node'         (assoc node :children (doall (mapv mark-changed' (node :children))))
+  (let [node'         (assoc node :children (mapv (fn [node] (mark-changed env node)) (node :children)))
         me-changed?   (or (props-changed? node' env @force-update-part) @force-update-all)]
 
     (-> node'
-        (assoc :me-changed? me-changed?)
-        (assoc :changed? (or me-changed?
+        (assoc :me-changed? me-changed?
+               :changed? (or me-changed?
                              (some :changed? (node' :children))
                              false))) ))
+
+(defn- mark-changed-1
+  [{:keys [props-changed? force-update-part force-update-all] :as env} node]
+  (.forEach (aget node "children") (fn [node] (mark-changed-1 env node)))
+  (let [me-changed?   (or (props-changed? node env @force-update-part) @force-update-all)]
+    (doto node
+      (aset "me-changed?" me-changed?)
+      (aset "changed?" (or me-changed?
+                           (.some (aget node "children") (fn [n] (aget n "changed?"))))))))
 
 (defn- update-parsed-props-
   [{:keys [read tree] :as env}]
@@ -62,11 +96,40 @@
           (vreset! tree [(rest old-tree) (conj tree' node)])
           (node :value))))))
 
+(defn- update-parsed-props-1-
+  [{:keys [read tree] :as env}]
+  (let [dtree    @tree
+        old-tree (aget dtree 0)
+        tree'    (aget dtree 1)
+        node     (.shift old-tree)]
+    (if (aget node "me-changed?")
+      (do
+        (vreset! tree #js [])
+        (let [val (parse-props-1- (merge env { :props parse-props-1- :old-node node })
+                                  (aget node "key") (aget node "params"))]
+          (vreset! tree #js [old-tree (.concat tree' @tree)])
+          val))
+      (if (aget node "changed?")
+        (do
+          (vreset! tree #js [(aget node "children") #js []])
+          (let [val (read env (aget node "key") (aget node "params"))]
+            (doto node
+              (aset "value" val)
+              (aset "children" (-> tree deref (aget 1))))
+            (.push tree' node)
+            (vreset! tree #js [old-tree tree'])
+            val))
+        (do
+          (.push tree' node)
+          (vreset! tree #js [old-tree tree'])
+          (aget node "value"))))))
+
 (defn update-parsed-props
   [state read old-tree changed? force-update-all force-update-part]
   (let [tree (volatile! [[(mark-changed { :props-changed? changed?
                                           :force-update-all force-update-all
                                           :force-update-part force-update-part
+                                          :changed-entities (store/changed-entities state)
                                           :state state } old-tree)] []])]
     (vreset! force-update-all false)
     (vreset! force-update-part {})
@@ -75,6 +138,21 @@
                             :read read
                             :tree tree })
     (-> tree deref second first)))
+
+(defn update-parsed-props-1
+  [state read old-tree changed? force-update-all force-update-part]
+  (let [tree (volatile! #js [#js [(mark-changed-1 { :props-changed? changed?
+                                                    :force-update-all force-update-all
+                                                    :force-update-part force-update-part
+                                                    :changed-entities (store/changed-entities state)
+                                                    :state state } old-tree)] #js []])]
+    (vreset! force-update-all false)
+    (vreset! force-update-part {})
+    (update-parsed-props-1- { :state state
+                              :props update-parsed-props-1-
+                              :read read
+                              :tree tree })
+    (-> tree deref (aget 1 0))))
 
 (defn force-update!
   [force-update-all force-update-part & [uid]]

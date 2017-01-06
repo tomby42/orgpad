@@ -19,6 +19,8 @@
   (changed? [store qry] [store qry params]
     "Returns true if 'qry' matches store parts that were changed from
     last call of reset-changes")
+  (changed-entities [store]
+    "Returns collection of ids of changed entities")
   (reset-changes [store]
     "Returns new store with reset cumulative changes"))
 
@@ -149,6 +151,10 @@
     [store qry params]
     (-> (apply d/q qry (.-cumulative-changes store) params) empty? not))
 
+  (changed-entities
+    [store]
+    (.-changed-entities store))
+
   (reset-changes
     [store]
     (DatomStore. (.-db store)
@@ -271,6 +277,10 @@
     (if (datom-query? qry)
       (changed? (.-datom store) qry params)
       true))
+
+  (changed-entities
+    [store]
+    {:datom (changed-entities (.-datom store)) :atom :all})
 
   (reset-changes
     [store]

@@ -49,12 +49,24 @@
                         :view-path view-path })
            :orgpad/unit-view params) ))
 
+(comment
 (defmethod updated? :orgpad/root-view
   [{:keys [value]} { :keys [state] } _]
   (let [root-view-info (find-root-view-info state)
         old-root (ot/uid value)
         current-root (-> root-view-info :orgpad/refs last :db/id)]
     (not= current-root old-root)))
+)
+
+;;(comment
+(defmethod updated? :orgpad/root-view
+  [node { :keys [state] } _]
+  (let [value (aget node "value")
+        root-view-info (find-root-view-info state)
+        old-root (ot/uid value)
+        current-root (-> root-view-info :orgpad/refs last :db/id)]
+    (not= current-root old-root)))
+;;)
 
 (defmethod read :orgpad/app-state
   [{ :keys [state] :as env } _ _]

@@ -96,7 +96,7 @@
                                           (prop :orgpad/unit-corner-y) "px")
                        :backgroundColor (prop :orgpad/unit-bg-color) }
                      (css/transform { :translate pos })) ]
-    (js/window.console.log "rendering " (unit :db/id))
+    ;; (js/window.console.log "rendering " (unit :db/id))
     (when (= (unit :db/id) (-> local-state deref :selected-unit first ot/uid))
       (select-unit unit-tree prop component local-state))
     (html
@@ -178,7 +178,7 @@
                           :lineDash (prop :orgpad/link-dash) } }
         ctl-style (css/transform {:translate (geom/-- mid-pt [10 10])})
         ctl-pt (geom/*c (geom/-- mid-pt (geom/*c start-pos 0.25) (geom/*c end-pos 0.25)) 2)]
-    (js/window.console.log "rendering " (unit :db/id))
+    ;; (js/window.console.log "rendering " (unit :db/id))
     (html
      [ :div {}
        (if cyclic?
