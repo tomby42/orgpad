@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>cljsjs</groupId>
+  <artifactId>react-motion</artifactId>
+  <version>0.3.1-0</version>
+  <name>react-motion</name>
+  <description>A spring that solves your animation problems.</description>
+  <url>https://github.com/chenglou/react-motion</url>
+  <licenses>
+    <license>
+      <url>http://opensource.org/licenses/MIT</url>
+      <name>MIT</name>
+      <comments/>
+    </license>
+  </licenses>
+  <scm>
+    <url>https://github.com/cljsjs/packages</url>
+    <tag>25ff44bad06a68df3d890b8590ed13413ce86255</tag>
+  </scm>
+  <dependencies>
+    <dependency>
+      <groupId>cljsjs</groupId>
+      <artifactId>boot-cljsjs</artifactId>
+      <version>0.5.0</version>
+      <scope>test</scope>
+      <exclusions/>
+    </dependency>
+    <dependency>
+      <groupId>cljsjs</groupId>
+      <artifactId>react</artifactId>
+      <version>0.13.3-1</version>
+      <scope>compile</scope>
+      <exclusions/>
+    </dependency>
+  </dependencies>
+</project>
