@@ -232,6 +232,14 @@
        (munit/render-mapped-children-units component unit-tree app-state local-state)
       ])))
 
+(defn- prevent-default
+  [ev]
+  (fn []
+    (try
+      (when (.-preventDefault ev)
+        (.preventDefault ev))
+      (catch :default e e))))
+
 (def ^:private handle-touch-event
   { :did-mount
     (fn [state]
@@ -241,7 +249,7 @@
                     state' @(rum/state component)
                     [unit-tree app-state] (state' :rum/args)]
                 (handle-mouse-move component unit-tree app-state
-                                   #js { :preventDefault (fn [] (.preventDefault ev))
+                                   #js { :preventDefault (prevent-default ev)
                                          :stopPropagation (fn [] (.stopPropagation ev))
                                          :clientX (aget ev "touches" 0 "clientX")
                                          :clientY (aget ev "touches" 0 "clientY") })))
@@ -251,7 +259,7 @@
                     state' @(rum/state component)
                     [unit-tree app-state] (state' :rum/args)]
                 (handle-mouse-up component unit-tree app-state
-                                 #js { :preventDefault (fn [] (.preventDefault ev))
+                                 #js { :preventDefault (prevent-default ev)
                                        :stopPropagation (fn [] (.stopPropagation ev))
                                        :clientX (-> state :rum/local deref :mouse-x)
                                        :clientY (-> state :rum/local deref :mouse-y) })))]
