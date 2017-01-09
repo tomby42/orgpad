@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>cljsjs</groupId>
+  <artifactId>latlon-geohash</artifactId>
+  <version>1.1.0-0</version>
+  <name>latlon-geohash</name>
+  <description>Latlong geohash</description>
+  <url>https://github.com/chrisveness/latlon-geohash</url>
+  <licenses>
+    <license>
+      <url>http://opensource.org/licenses/MIT</url>
+      <name>MIT</name>
+      <comments/>
+    </license>
+  </licenses>
+  <packaging>jar</packaging>
+  <scm>
+    <url>https://github.com/cljsjs/packages</url>
+    <tag>25ff44bad06a68df3d890b8590ed13413ce86255</tag>
+  </scm>
+  <dependencies>
+    <dependency>
+      <groupId>cljsjs</groupId>
+      <artifactId>boot-cljsjs</artifactId>
+      <version>0.5.0</version>
+      <scope>test</scope>
+      <exclusions/>
+    </dependency>
+  </dependencies>
+</project>
