@@ -16,14 +16,16 @@
                  [cljsjs/react-sanfona        "0.0.14-0"]
                  [cljsjs/react-tinymce        "0.5.1-0"]  ;; *
                  [cljsjs/react-tagsinput      "3.13.5-0"] ;; *
-                 [cljsjs/react-motion         "0.3.1-0"]
+                 [cljsjs/react-motion         "0.3.1-0"]  ;; *
                  [cljsjs/react-select         "1.0.0-rc.1"]
+                 [cljsjs/latlon-geohash       "1.1.0-0"] ;; *
                  ]
 
   :plugins [[lein-cljsbuild "1.1.4"]
             [lein-figwheel "0.5.8"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             [lein-localrepo "0.5.3"]
+            [lein-doo "0.1.7"]
             ]
 
   :hooks [leiningen.less]
