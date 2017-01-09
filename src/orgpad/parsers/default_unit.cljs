@@ -304,11 +304,11 @@
   [node { :keys [state changed-entities] } force-update-part]
 
   (let [value (aget node "value")
-        changed-datom-entities (changed-entities :datom)
+        changed-datom-entities (aget changed-entities "datom")
         unit (value :unit)]
     (or (force-update-part (unit :db/id))
-        (contains? changed-datom-entities (unit :db/id))
-        (some #(contains? changed-datom-entities (% :db/id)) (unit :orgpad/props-refs)))))
+        (aget changed-datom-entities (unit :db/id))
+        (some #(aget changed-datom-entities (% :db/id)) (unit :orgpad/props-refs)))))
 ;;)
 ;;; Clone of unit view
 

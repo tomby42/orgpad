@@ -1,6 +1,7 @@
 (ns ^{:doc "Definition of property parser"}
     orgpad.cycle.parser
-  (:require [orgpad.core.store :as store]))
+  (:require [orgpad.core.store :as store]
+            [clojure.walk :as walk]))
 
 (defn- parse-props-
   [{:keys [tree read] :as env} k params]
@@ -139,12 +140,20 @@
                             :tree tree })
     (-> tree deref second first)))
 
+(defn- to-js
+  [c]
+  (clj->js
+   (walk/postwalk (fn [c']
+                    (if (set? c')
+                      (into {} (map #(vector % true)) c')
+                      c')) c)))
+
 (defn update-parsed-props-1
   [state read old-tree changed? force-update-all force-update-part]
   (let [tree (volatile! #js [#js [(mark-changed-1 { :props-changed? changed?
                                                     :force-update-all force-update-all
                                                     :force-update-part force-update-part
-                                                    :changed-entities (store/changed-entities state)
+                                                    :changed-entities (to-js (store/changed-entities state))
                                                     :state state } old-tree)] #js []])]
     (vreset! force-update-all false)
     (vreset! force-update-part {})
