@@ -10,8 +10,8 @@
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.orgpad :as ot]
-            [orgpad.tools.rum :as trum]))
-
+            [orgpad.tools.rum :as trum]
+            [orgpad.tools.geohash :as geohash]))
 
 (def ^:private init-state
   { :show-local-menu false
@@ -200,6 +200,7 @@
   (let [local-state (trum/comp->local-state component)]
     (html
      [ :div { :className "map-view"
+              :ref "component-node"
               :onMouseDown #(do
                               (handle-mouse-down component unit-tree app-state %)
                               (.stopPropagation %))
@@ -219,6 +220,7 @@
   (let [local-state (trum/comp->local-state component)]
     (html
      [ :div { :className "map-view"
+              :ref "component-node"
               :onMouseDown #(do
                               (handle-mouse-down component unit-tree app-state %)
                               (.stopPropagation %))
@@ -281,7 +283,6 @@
 
 (rum/defcc map-component < trum/istatic lc/parser-type-mixin-context (rum/local init-state) handle-touch-event
   [component unit-tree app-state]
-
   (if (= (:mode app-state) :write)
     (render-write-mode component unit-tree app-state)
     (render-read-mode component unit-tree app-state)))

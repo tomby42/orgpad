@@ -42,12 +42,13 @@
     (-> tree deref first)))
 
 (defn parse-props-1
-  [state read k params]
+  [state read global-cache k params]
 
   (let [tree (volatile! #js [])]
     (parse-props-1- { :state state
                       :props parse-props-1-
                       :read read
+                      :global-cache global-cache
                       :tree tree }
                  k params)
     (-> tree deref (aget 0))))
@@ -149,7 +150,7 @@
                       c')) c)))
 
 (defn update-parsed-props-1
-  [state read old-tree changed? force-update-all force-update-part]
+  [state read old-tree changed? force-update-all force-update-part global-cache]
   (let [tree (volatile! #js [#js [(mark-changed-1 { :props-changed? changed?
                                                     :force-update-all force-update-all
                                                     :force-update-part force-update-part
@@ -160,6 +161,7 @@
     (update-parsed-props-1- { :state state
                               :props update-parsed-props-1-
                               :read read
+                              :global-cache global-cache
                               :tree tree })
     (-> tree deref (aget 1 0))))
 
