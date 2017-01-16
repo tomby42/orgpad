@@ -42,6 +42,12 @@
   (redo-info [this]
     "Returns info for performing redo"))
 
+(defprotocol ITempids
+
+  (tempids [this]
+    "Returns current mapping of tempids to ids from last transaction
+    that created current state"))
+
 ;;; History record
 
 (deftype HistoryRecords [history history-finger]
@@ -101,7 +107,7 @@
   "Returns new datom store with applied data from 'tx-report'"
   [store tx-report & [finger]]
   (let [tx-data (:tx-data tx-report)]
-    ;; (println tx-data)
+    ;; (println tx-report)
     (DatomStore. (:db-after tx-report)
                  (push (.-history-records store) tx-data finger)
                  (if (empty? tx-data)
@@ -110,7 +116,8 @@
                  (if (empty? tx-data)
                    (.-changed-entities store)
                    (reduce (fn [ens d] (conj ens (.-e d))) (.-changed-entities store) tx-data))
-                 (.-meta store))))
+                 (merge (.-meta store)
+                        { :orgpad.store/tempids (:tempids tx-report) }))))
 
 (deftype DatomStore [db history-records cumulative-changes changed-entities meta]
 
@@ -181,6 +188,11 @@
                                         (dtool/datoms->tx tx))
                           finger)
         store)))
+
+  ITempids
+  (tempids
+    [store]
+    (-> store .-meta :orgpad.store/tempids))
 
   IPrintWithWriter
   (-pr-writer
@@ -301,6 +313,11 @@
     (DatomAtomStore. (redo (.-datom store))
                      (.-atom store)
                      (.-meta store)))
+
+  ITempids
+  (tempids
+    [store]
+    (-> store .-datom tempids))
 
   IPrintWithWriter
   (-pr-writer

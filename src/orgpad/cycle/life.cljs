@@ -3,7 +3,8 @@
   (:require [rum.core :as rum]
             [orgpad.core.store :as store]
             [orgpad.cycle.parser :as parser]
-            [orgpad.cycle.effects :as eff]))
+            [orgpad.cycle.effects :as eff]
+            [orgpad.tools.jcolls :as jcolls]))
 
 (defn- bind-atom
   [state-atom & [key]]
@@ -189,13 +190,25 @@
   (aget (.. component -context) "global-conf" 0))
 
 (defn set-global-cache
-  [component key val]
-  (let [global-cache (aget (.. component -context) "global-cache")]
-    (assert (-> global-cache nil? not))
-    (aset global-cache key val)))
+  "Sets global cache entry"
+  ([component key val]
+   (let [global-cache (aget (.. component -context) "global-cache")]
+     (assert (-> global-cache nil? not))
+     (aset global-cache key val)))
+
+  ([component key1 key2 & kv]
+   (let [global-cache (aget (.. component -context) "global-cache")]
+     (assert (-> global-cache nil? not))
+     (apply jcolls/aset! global-cache key1 key2 kv))))
 
 (defn get-global-cache
-  [component key]
-  (let [global-cache (aget (.. component -context) "global-cache")]
-    (assert (-> global-cache nil? not))
-    (aget global-cache key)))
+  "Gets global cache entry"
+  ([component key]
+   (let [global-cache (aget (.. component -context) "global-cache")]
+     (assert (-> global-cache nil? not))
+     (aget global-cache key)))
+
+  ([component key & keys]
+   (let [global-cache (aget (.. component -context) "global-cache")]
+     (assert (-> global-cache nil? not))
+     (apply aget global-cache key keys))))

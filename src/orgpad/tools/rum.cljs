@@ -7,6 +7,14 @@
   [component]
   (-> component rum/state deref :rum/local))
 
+(defn component
+  [state]
+  (state :rum/react-component))
+
+(defn args
+  [state]
+  (state :rum/args))
+
 (defn gen-update-mixin
   [update-fn]
   { :did-mount

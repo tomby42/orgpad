@@ -7,6 +7,7 @@
             [orgpad.tools.geom :as geom]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.order-numbers :as ordn]
+            [orgpad.tools.geocache :as geocache]
             [orgpad.parsers.default-unit :as dp :refer [read mutate]]))
 
 (def ^:private propagated-query
@@ -15,6 +16,7 @@
     :where
     [?p :orgpad/view-type ?type]
     [?p :orgpad/refs ?e]])
+
 
 (defn- prepare-propagated-props
   [db unit-id props-from-children]
@@ -55,39 +57,48 @@
           { :state (store/transact state t) }))
 
 (defmethod mutate :orgpad.units/new-pair-unit
-  [{:keys [state]} _ {:keys [parent position transform view-name]}]
+  [{:keys [state global-cache]} _ {:keys [parent position transform view-name]}]
   (let [info (registry/get-component-info :orgpad/map-view)
+        default-props (-> info
+                          :orgpad/child-props-default
+                          :orgpad.map-view/vertex-props)
         {:keys [translate scale]} transform
         pos  [(/ (- (:center-x position) (translate 0)) scale)
-              (/ (- (:center-y position) (translate 1)) scale)]]
-    { :state (store/transact
-              state [ { :db/id -1
-                        :orgpad/type :orgpad/unit
-                        :orgpad/props-refs -2
-                        :orgpad/refs -3 }
+              (/ (- (:center-y position) (translate 1)) scale)]
+        new-state
+        (store/transact
+         state [ { :db/id -1
+                   :orgpad/type :orgpad/unit
+                   :orgpad/props-refs -2
+                   :orgpad/refs -3 }
 
-                       (merge (-> info :orgpad/child-props-default :orgpad.map-view/vertex-props)
-                              { :db/id -2
-                                :orgpad/refs -1
-                                :orgpad/type :orgpad/unit-view-child
-                                :orgpad/view-name view-name
-                                :orgpad/unit-position pos
-                                :orgpad/context-unit parent
-                                :orgpad/unit-visibility true } )
+                (merge default-props
+                       { :db/id -2
+                         :orgpad/refs -1
+                         :orgpad/type :orgpad/unit-view-child
+                         :orgpad/view-name view-name
+                         :orgpad/unit-position pos
+                         :orgpad/context-unit parent
+                         :orgpad/unit-visibility true } )
 
-                       { :db/id -3
-                         :orgpad/props-refs -4
-                         :orgpad/type :orgpad/unit }
+                { :db/id -3
+                  :orgpad/props-refs -4
+                  :orgpad/type :orgpad/unit }
 
-                       (merge (-> info :orgpad/child-props-default :orgpad.map-view/vertex-props)
-                              { :db/id -4
-                                :orgpad/refs -3
-                                :orgpad/type :orgpad/unit-view-child-propagated
-                                :orgpad/view-name view-name } )
+                (merge (-> info :orgpad/child-props-default :orgpad.map-view/vertex-props)
+                       { :db/id -4
+                         :orgpad/refs -3
+                         :orgpad/type :orgpad/unit-view-child-propagated
+                         :orgpad/view-name view-name } )
 
-                      [:db/add parent :orgpad/refs -1]
-                      ]
-                     ) } ))
+                [:db/add parent :orgpad/refs -1]
+                ])]
+    (geocache/create! global-cache parent)
+    (geocache/update-box! global-cache parent
+                          (get (store/tempids new-state) -1) pos
+                          [(default-props :orgpad/unit-width)
+                           (default-props :orgpad/unit-height)])
+    { :state new-state } ))
 
 (defn- compute-translate
   [translate scale new-pos old-pos]

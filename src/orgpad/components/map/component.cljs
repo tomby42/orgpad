@@ -281,7 +281,17 @@
       state)
    })
 
-(rum/defcc map-component < trum/istatic lc/parser-type-mixin-context (rum/local init-state) handle-touch-event
+(def ^:private component-size-mixin
+  (trum/gen-update-mixin
+   (fn [state]
+     (let [node (trum/ref-node state "component-node")
+           id (-> state trum/args first ot/uid)]
+       (lc/set-global-cache (trum/component state)
+                            id
+                            "bbox"
+                            (.getBoundingClientRect node))))))
+
+(rum/defcc map-component < trum/istatic lc/parser-type-mixin-context (rum/local init-state) handle-touch-event component-size-mixin
   [component unit-tree app-state]
   (if (= (:mode app-state) :write)
     (render-write-mode component unit-tree app-state)
