@@ -127,11 +127,16 @@
     :effect #(orgpad/save-file-by-uri state) })
 
 (defmethod mutate :orgpad/load-orgpad
-  [{ :keys [state force-update!] } _ files]
+  [{ :keys [state force-update! transact!] } _ files]
+  { :state (store/transact state [[:loading] true])
+    :effect #(transact! [[ :orgpad/loaded (orgpad/load-orgpad state files) ]])})
+
+(defmethod mutate :orgpad/loaded
+  [{ :keys [force-update!]} _ new-state]
   (force-update!)
-  { :state (orgpad/load-orgpad state files) })
+  { :state new-state })
 
 (defmethod mutate :orgpad/download-orgpad-from-url
   [{ :keys [state transact!] } _ url]
-  { :state state
+  { :state (store/transact state [[:loading] true])
     :effect #(orgpad/download-orgpad-from-url url transact!) })

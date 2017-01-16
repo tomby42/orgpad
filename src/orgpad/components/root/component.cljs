@@ -14,7 +14,15 @@
     [ :div { :className "root-view" }
       ;; (rum/with-key (sidebar/sidebar-component) 0)
       (rum/with-key (node/node unit-tree app-state) 1)
-      (rum/with-key (st/status unit-tree app-state) 2) ] ) )
+      (rum/with-key (st/status unit-tree app-state) 2)
+      (when (app-state :loading)
+        [ :div.loading
+         [ :div.status
+          [ :i.fa.fa-spinner.fa-pulse.fa-3x.fa-fw.margin-bottom ]
+          [ :div.sr-only "Loading..." ] ]
+         ]
+        )
+     ] ) )
 
 (registry/register-component-info
  :orgpad/root-view
