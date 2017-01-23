@@ -50,3 +50,11 @@
           (let [ret (apply f args)]
             (vswap! mem assoc key [args ret])
             ret))))))
+
+(defn vfirst
+  [v]
+  (nth v 0))
+
+(defn vsecond
+  [v]
+  (nth v 1))

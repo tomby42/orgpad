@@ -8,6 +8,7 @@
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.order-numbers :as ordn]
             [orgpad.tools.geocache :as geocache]
+            [orgpad.tools.dscript :as ds]
             [orgpad.parsers.default-unit :as dp :refer [read mutate]]))
 
 (def ^:private propagated-query
@@ -16,7 +17,6 @@
     :where
     [?p :orgpad/view-type ?type]
     [?p :orgpad/refs ?e]])
-
 
 (defn- prepare-propagated-props
   [db unit-id props-from-children]
@@ -123,20 +123,26 @@
                (store/transact state [[:db/add id :orgpad/transform new-transformation]])) } ))
 
 (defmethod mutate :orgpad.units/map-view-unit-move
-  [{:keys [state]} _ {:keys [prop parent-view unit-tree old-pos new-pos]}]
+  [{:keys [state global-cache]} _ {:keys [prop parent-view unit-tree old-pos new-pos]}]
   (let [id (prop :db/id)
         unit-id (ot/uid unit-tree)
         prop' (if id (store/query state [:entity id]) prop)
         new-translate (compute-translate (prop' :orgpad/unit-position)
                                          (-> parent-view :orgpad/transform :scale)
-                                         new-pos old-pos)]
-    { :state (if (nil? id)
-               (store/transact state [(merge prop { :db/id -1
-                                                    :orgpad/refs unit-id
-                                                    :orgpad/unit-position new-translate
-                                                    :orgpad/type :orgpad/unit-view-child })
-                                      [:db/add unit-id :orgpad/props-refs -1]])
-               (store/transact state [[:db/add id :orgpad/unit-position new-translate]])) } ))
+                                         new-pos old-pos)
+        new-state
+        (if (nil? id)
+          (store/transact state [(merge prop { :db/id -1
+                                               :orgpad/refs unit-id
+                                               :orgpad/unit-position new-translate
+                                               :orgpad/type :orgpad/unit-view-child })
+                                 [:db/add unit-id :orgpad/props-refs -1]])
+          (store/transact state [[:db/add id :orgpad/unit-position new-translate]]))
+        size [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]]
+    (geocache/update-box! global-cache (ot/pid parent-view)
+                          unit-id new-translate size
+                          (prop' :orgpad/unit-position) size)
+    { :state new-state } ))
 
 (defn- propagated-prop
   [{:keys [unit]} prop view]
@@ -178,7 +184,7 @@
         { :orgpad/active-unit 0 }))))
 
 (defn- update-propagated-prop
-  [{:keys [state]} {:keys [prop parent-view unit-tree] :as payload} comp-val-fn args]
+  [{:keys [state] :as env} {:keys [prop parent-view unit-tree] :as payload} comp-val-fn args & [global-update-fn]]
   (let [id (prop :db/id)
         prop' (if id (store/query state [:entity id]) prop)
         info (registry/get-component-info (-> unit-tree :view :orgpad/view-type))
@@ -186,6 +192,8 @@
         (sheet-view-unit state unit-tree)
         [propagated-unit propagated-prop] (propagated-prop unit-tree prop' sheet-view)
         new-val (if comp-val-fn (comp-val-fn payload prop' args) args)]
+    (when global-update-fn
+      (global-update-fn env payload prop' new-val))
     { :state (cond-> state
                true
                 (update-props id (ot/uid unit-tree) :orgpad/unit-view-child prop' new-val)
@@ -194,16 +202,23 @@
                               :orgpad/unit-view-child-propagated prop' new-val)) } ))
 
 (defn- comp-new-size
-  [{:keys [parent-view old-pos new-pos]} prop' _]
+  [{:keys [parent-view old-pos new-pos]} prop' {:keys [global-cache]}]
   (let [new-size (compute-translate [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
                                     (-> parent-view :orgpad/transform :scale)
                                     new-pos old-pos)]
     { :orgpad/unit-width (new-size 0)
       :orgpad/unit-height (new-size 1) }))
 
+(defn- update-geocache-after-resize
+  [{:keys [global-cache]} {:keys [parent-view unit-tree]} prop size]
+  (geocache/update-box! global-cache (ot/pid parent-view)
+                        (ot/uid unit-tree) (prop :orgpad/unit-position) size
+                        (prop :orgpad/unit-position)
+                        [(prop :orgpad/unit-width) (prop :orgpad/unit-height)]))
+
 (defmethod mutate :orgpad.units/map-view-unit-resize
   [env _ payload]
-  (update-propagated-prop env payload comp-new-size nil))
+  (update-propagated-prop env payload comp-new-size nil update-geocache-after-resize))
 
 (defn- child-propagated-props
   [db unit-id child-id props-from-children view-name]
@@ -242,9 +257,26 @@
                                                props-from-children (vu :orgpad/view-name))))
                      view-units)))
 
+(defn- update-geocache-after-switch-active
+  [state global-cache unit-tree update-trans]
+  (let [view-path (-> unit-tree :path-info :orgpad/view-path)
+        n (-> view-path count dec)]
+    (when (and (>= n 1)
+               (geocache/has-geocache? global-cache (nth view-path (dec n))))
+      (let [parent-id (nth view-path (dec n))
+            parent-name (nth view-path n 1)]
+        (when-let [prop (-> (filter #(= (% :orgpad/view-name) parent-name) update-trans) first)]
+          (let [e (store/query state [:entity (prop :db/id)])]
+            (geocache/update-box! global-cache parent-id
+                                  (ot/uid unit-tree) (e :orgpad/unit-position)
+                                  [(prop :orgpad/unit-width) (prop :orgpad/unit-height)]
+                                  (e :orgpad/unit-position)
+                                  [(e :orgpad/unit-width) (e :orgpad/unit-height)])))))))
+
 (defmethod mutate :orgpad.sheet/switch-active
-  [{:keys [state]} _ {:keys [unit view direction nof-sheets]}]
-  (let [info (registry/get-component-info (view :orgpad/view-type))
+  [{:keys [state global-cache]} _ {:keys [unit-tree direction nof-sheets]}]
+  (let [{:keys [unit view]} unit-tree
+        info (registry/get-component-info (view :orgpad/view-type))
         new-active-unit (mod (+ (view :orgpad/active-unit) direction) nof-sheets)
         view-units (-> (view-units state unit view)
                        (update-current-active-unit view new-active-unit))
@@ -252,6 +284,7 @@
                                                   unit
                                                   (info :orgpad/propagated-props-from-children)
                                                   view-units)]
+    (update-geocache-after-switch-active state global-cache unit-tree update-trans)
     { :state
       (store/transact
        state
@@ -263,16 +296,20 @@
                               :orgpad/type :orgpad/unit-view
                               :orgpad/active-unit new-active-unit })]) )) }))
 
+(defn- vertex-props-pred
+  [view-name]
+  (fn [prop]
+    (and prop
+         (= (prop :orgpad/view-name) view-name)
+         (= (prop :orgpad/view-type) :orgpad.map-view/vertex-props)
+         (= (prop :orgpad/type) :orgpad/unit-view-child))))
+
 (defn- find-closest-unit
   [map-unit-tree begin-unit-id position]
-  (let [view-name (-> map-unit-tree :view :orgpad/view-name)
+  (let [view-name (ot/view-name map-unit-tree)
         pos (geom/screen->canvas (-> map-unit-tree :view :orgpad/transform) position)
         xform (comp
-               (filter (fn [prop]
-                         (and prop
-                              (= (prop :orgpad/view-name) view-name)
-                              (= (prop :orgpad/view-type) :orgpad.map-view/vertex-props)
-                              (= (prop :orgpad/type) :orgpad/unit-view-child))))
+               (filter (vertex-props-pred view-name))
                (filter (fn [prop]
                          (let [u-pos (prop :orgpad/unit-position)
                                w     (prop :orgpad/unit-width)
@@ -284,11 +321,22 @@
          (filter (fn [u] (first (sequence xform (u :props)))))
          first)))
 
+(defn- update-geocahce-after-new-link
+  [state global-cache parent-id uid view-name begin-unit-id closest-unit mid-pt]
+  (let [bu (store/query state [:entity begin-unit-id])
+        pred (vertex-props-pred view-name)
+        prop1 (ds/find-props bu pred)
+        prop2 (ds/find-props-base (:unit closest-unit) pred)
+        bbox (geom/link-bbox (prop1 :orgpad/unit-position) (prop2 :orgpad/unit-position) mid-pt)]
+    (geocache/update-box! global-cache parent-id
+                          uid (bbox 0) (geom/-- (bbox 1) (bbox 0)))))
+
 (defmethod mutate :orgpad.units/try-make-new-link-unit
-  [{:keys [state]} _ {:keys [map-unit-tree begin-unit-id position]}]
+  [{:keys [state global-cache]} _ {:keys [map-unit-tree begin-unit-id position]}]
   (let [info (registry/get-component-info :orgpad/map-view)
         closest-unit (find-closest-unit map-unit-tree begin-unit-id position)
         parent-id (ot/uid map-unit-tree)
+        mid-pt-rel (if (= begin-unit-id (ot/uid closest-unit)) [-40 0] [0 0])
         new-state (if closest-unit
                     (store/transact
                      state
@@ -305,12 +353,15 @@
                                :orgpad/type :orgpad/unit-view-child
                                :orgpad/view-name (-> map-unit-tree :view :orgpad/view-name)
                                :orgpad/context-unit parent-id
-                               :orgpad/link-mid-pt (if (= begin-unit-id (ot/uid closest-unit))
-                                                     [-40 0]
-                                                     [0 0])
+                               :orgpad/link-mid-pt mid-pt-rel
                               })
                       [:db/add parent-id :orgpad/refs -1]])
                     state)]
+    (when closest-unit
+      (update-geocahce-after-new-link state global-cache (ot/uid map-unit-tree)
+                                      (get (store/tempids new-state) -1)
+                                      (ot/view-name map-unit-tree)
+                                      begin-unit-id closest-unit mid-pt-rel))
     { :state new-state }))
 
 (defmethod mutate :orgpad.units/map-view-link-shape

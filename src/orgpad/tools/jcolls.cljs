@@ -10,3 +10,14 @@
    (let [a (or (aget array idx) #js {})]
      (cljs.core/aset array idx a)
      (apply aset a idx2 idxv))))
+
+(defn aget-safe
+  "Returns the value at the index."
+  ([array i]
+   (or (cljs.core/aget array i) #js {}))
+
+  ([array i & idxs]
+   (let [a (aget array i)]
+     (if a
+       (apply aget-safe a idxs)
+       #js {}))))

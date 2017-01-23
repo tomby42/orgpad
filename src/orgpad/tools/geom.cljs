@@ -1,4 +1,5 @@
 (ns orgpad.tools.geom
+  (:require [orgpad.tools.colls :as colls])
   (:require-macros orgpad.tools.geom orgpad.tools.colls))
 
 (defn screen->canvas
@@ -67,3 +68,36 @@
 (defn distance
   [p1 p2]
   (vsize (-- p1 p2)))
+
+(defn points-bbox
+  [& points]
+  (let [xs (map colls/vfirst points)
+        ys (map colls/vsecond points)]
+    [[(apply min xs) (apply min ys)]
+     [(apply max xs) (apply max ys)]]))
+
+(defn link-middle-point
+  [start-pt end-pt mid-pt-rel]
+  (++ (*c (++ start-pt end-pt) 0.5) mid-pt-rel))
+
+(defn link-middle-ctl-point
+  [start-pt end-pt mid-pt]
+  (*c (-- mid-pt (*c start-pt 0.25) (*c end-pt 0.25)) 2))
+
+(defn link-arc-center
+  [start-pt mid-pt]
+  (*c (++ start-pt mid-pt) 0.5))
+
+(defn link-arc-radius
+  [start-pt mid-pt]
+  (/ (distance start-pt mid-pt) 2))
+
+(defn link-bbox
+  [start-pt end-pt mid-pt-rel]
+  (let [mid-pt (link-middle-point start-pt end-pt mid-pt-rel)]
+    (if (= start-pt end-pt)
+      (let [c (link-arc-center start-pt mid-pt)
+            r (link-arc-radius start-pt mid-pt)
+            r-shift [r r]]
+        [(-- c r-shift) (++ c r-shift)])
+      (points-bbox start-pt end-pt (link-middle-ctl-point start-pt end-pt mid-pt)))))

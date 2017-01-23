@@ -6,32 +6,18 @@
             [orgpad.tools.rum :as trum]
             [orgpad.tools.geom :as geom]
             [orgpad.tools.math :as math]
+            [orgpad.tools.colls :as colls]
             [orgpad.tools.css :as css]))
 
 (defn- comp-border-width
   [style]
   (or (-> style :canvas :lineWidth) 0))
 
-(defn- proj
-  [i p]
-  (nth p i))
-
-(defn- proj-x
-  [f pts idx]
-  (apply f (map (partial proj idx) pts)))
-
-(defn- proj-min
-  [pts idx]
-  (proj-x min pts idx))
-
-(defn- proj-max
-  [pts idx]
-  (proj-x max pts idx))
-
 (defn- comp-bb
   [border-width pts]
-  [[(- (proj-min pts 0) border-width) (- (proj-min pts 1) border-width)]
-   [(+ (proj-max pts 0) border-width) (+ (proj-max pts 1) border-width)]])
+  (let [bb (apply geom/points-bbox pts)
+        shift [border-width border-width]]
+    [(geom/-- (bb 0) shift) (geom/++ (bb 1) shift)]))
 
 (defn- dims
   [border-width pts]
@@ -41,7 +27,7 @@
 
 (defn- left-top-corner
   [pts]
-  [(proj-min pts 0) (proj-min pts 1)])
+  [(apply min (map colls/vfirst pts)) (apply min (map colls/vsecond pts))])
 
 (defn- set-style!
   [ctx style]

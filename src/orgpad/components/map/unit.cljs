@@ -170,20 +170,21 @@
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic?]} app-state component view-name pid local-state]
   (let [prop (get-props props view-name pid :orgpad.map-view/link-props)
-        mid-pt (geom/++ (geom/*c (geom/++ start-pos end-pos) 0.5) (prop :orgpad/link-mid-pt))
+        mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
         style { :css { :zIndex -1 }
                 :canvas { :strokeStyle (prop :orgpad/link-color)
                           :lineWidth (prop :orgpad/link-width)
                           :lineCap "round"
                           :lineDash (prop :orgpad/link-dash) } }
         ctl-style (css/transform {:translate (geom/-- mid-pt [10 10])})
-        ctl-pt (geom/*c (geom/-- mid-pt (geom/*c start-pos 0.25) (geom/*c end-pos 0.25)) 2)]
+        ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
     ;; (js/window.console.log "rendering " (unit :db/id))
+    
     (html
      [ :div {}
        (if cyclic?
-         (g/arc (geom/*c (geom/++ start-pos mid-pt) 0.5)
-                (/ (geom/distance start-pos mid-pt) 2) 0 math/pi2 style)
+         (g/arc (geom/link-arc-center start-pos mid-pt)
+                (geom/link-arc-radius start-pos mid-pt) 0 math/pi2 style)
          (g/quadratic-curve start-pos end-pos ctl-pt style))
        (if cyclic?
          (make-arrow-arc start-pos mid-pt prop)

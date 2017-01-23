@@ -1,11 +1,12 @@
 (ns ^{:doc "Geocache for map component"}
   orgpad.tools.geocache
-  (:require [orgpad.tools.geohash :as geohash]))
+  (:require [orgpad.tools.geohash :as geohash]
+            [orgpad.tools.jcolls :as jcolls]))
 
 (defn del-from-place!
   [geocache h id]
   (when (aget geocache h)
-    (js/delete (aget geocache h id))))
+    (js-delete (aget geocache h) id)))
 
 (defn add->place!
   [geocache h id]
@@ -36,3 +37,19 @@
       (del-from-place! geocache h uid))
     (doseq [h places]
       (add->place! geocache h uid))))
+
+(defn visible-units
+  [global-cache id pos size]
+  (let [vis-places (geohash/box->hashes (pos 0) (pos 1) (size 0) (size 1))]
+    ;;(println "vis-places" id pos size vis-places global-cache)
+    (persistent!
+     (reduce (fn [units h]
+               (let [ids (js/Object.keys (jcolls/aget-safe global-cache id "geocache" h))]
+                 ;; (println "ids" id h ids)
+                 (areduce ids idx ret units
+                          (conj! ret (js/parseInt (aget ids idx))))))
+             (transient #{}) vis-places))))
+
+(defn has-geocache?
+  [global-cache parent-id]
+  (not= (aget global-cache parent-id "geocache") js/undefined))

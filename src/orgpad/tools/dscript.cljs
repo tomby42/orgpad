@@ -10,10 +10,10 @@
   (when e
     (into { :db/id (.-eid e) } e)))
 
+(defn find-props-base
+  [u pred]
+  (->> u :orgpad/props-refs (filter pred) first))
+
 (defn find-props
   [u pred]
-  (->> u
-       :orgpad/props-refs
-       (filter pred)
-       first
-       entity->map))
+  (entity->map (find-props-base u pred)))

@@ -11,7 +11,8 @@
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.rum :as trum]
-            [orgpad.tools.geohash :as geohash]))
+            [orgpad.tools.geom :as geom]
+            [orgpad.tools.geocache :as geocache]))
 
 (def ^:private init-state
   { :show-local-menu false
@@ -285,11 +286,25 @@
   (trum/gen-update-mixin
    (fn [state]
      (let [node (trum/ref-node state "component-node")
-           id (-> state trum/args first ot/uid)]
+           id (-> state trum/args first ot/uid)
+           bbox (.getBoundingClientRect node)]
+       ;; (js/console.log bbox)
        (lc/set-global-cache (trum/component state)
                             id
                             "bbox"
-                            (.getBoundingClientRect node))))))
+                            bbox)))))
+
+(defn- pick-visible-children
+  [unit view-unit old-node global-cache]
+  (let [id (unit :db/id)
+        children-cache (apply hash-map (map (fn [n] (vector (-> n :value ot/uid) n)) (aget old-node "children")))
+        pos (-> view-unit :orgpad/transform :translate)
+        bbox (aget global-cache id "bbox")
+        size (geom/*c [(- (.-right bbox) (.-left bbox))
+                       (- (.-bottom bbox) (.-top bbox))]
+                      (-> view-unit :orgpad/transform :scale))
+        vis-units (geocache/visible-units global-cache id pos size)]
+    (map (juxt identity children-cache) vis-units)))
 
 (rum/defcc map-component < trum/istatic lc/parser-type-mixin-context (rum/local init-state) handle-touch-event component-size-mixin
   [component unit-tree app-state]
@@ -329,4 +344,5 @@
                                 }
    :orgpad/needs-children-info true
    :orgpad/view-name           "Map View"
+   :orgpad/visible-children-picker pick-visible-children
   })

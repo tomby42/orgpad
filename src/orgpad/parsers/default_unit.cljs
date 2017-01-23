@@ -63,118 +63,172 @@
                         (and (= (u :orgpad/view-path) view-path)
                              (= (u :orgpad/type) :orgpad/unit-path-info)))))
 
-(comment
-(defmethod read :orgpad/unit-view
-  [{ :keys [state props old-node tree unit-id view-name view-type view-path view-contexts] :as env } k params]
-;;  (println "read :orgpad/unit-view" unit-id view-name view-type view-path view-contexts k)
+;;(comment
+;;(defmethod read :orgpad/unit-view
+;;  [{ :keys [state props old-node tree unit-id view-name view-type view-path view-contexts] :as env } k params]
+;;;;  (println "read :orgpad/unit-view" unit-id view-name view-type view-path view-contexts k)
+;;
+;;  (let [db  state
+;;
+;;        unit
+;;        (store/query db [:entity unit-id])
+;;
+;;        path-info
+;;        (get-path-info unit view-path)
+;;
+;;        path-info'
+;;        (assoc (or path-info { :orgpad/view-name view-name
+;;                               :orgpad/view-type view-type
+;;                               :orgpad/view-path view-path })
+;;               :orgpad/type :orgpad/unit-view)
+;;
+;;        view-info
+;;        (registry/get-component-info (path-info' :orgpad/view-type))
+;;
+;;        view-unit-local
+;;        (get-view-props unit path-info')
+;;
+;;        view-unit
+;;        (or view-unit-local (-> view-info :orgpad/default-view-info (assoc :orgpad/refs [{ :db/id unit-id }])))
+;;
+;;        props-info
+;;        (when (:orgpad/child-props-types view-info)
+;;          (into [] (map (fn [type]
+;;                          { :orgpad/view-type type
+;;                            :orgpad/view-name (:orgpad/view-name path-info')
+;;                            :orgpad/type      :orgpad/unit-view-child }))
+;;                (:orgpad/child-props-types view-info)))
+;;
+;;        view-contexts'
+;;        (if (:orgpad/propagate-props-from-children? view-info)
+;;          (let [view-contexts'' (mapv #(assoc % :orgpad/type :orgpad/unit-view-child-propagated)
+;;                                      view-contexts)]
+;;            (if props-info
+;;              (into view-contexts'' props-info)
+;;              view-contexts''))
+;;          (when props-info
+;;            props-info))
+;;
+;;        parser'
+;;        (fn [u old-node]
+;;          (if (and old-node
+;;                   (not (or (old-node :changed?)
+;;                            (old-node :me-changed?)))
+;;                   (= (u :db/id) (-> old-node :value ot/uid)))
+;;
+;;            (do
+;;              ;; (println "skipping" old-node u)
+;;              (vswap! tree conj old-node)
+;;              (old-node :value))
+;;            (props (merge env
+;;                          { :unit-id    (u :db/id)
+;;                            :old-node   nil
+;;                            :view-path  (-> view-path (conj unit-id) (conj (view-unit :orgpad/view-name)))
+;;                            :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
+;;                            :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
+;;                            :view-contexts view-contexts' })
+;;                   :orgpad/unit-view params)))
+;;
+;;        unit'
+;;        (let [eunit (ds/entity->map unit)]
+;;          (if (:orgpad/needs-children-info view-info)
+;;            (let [old-children-nodes (and old-node (old-node :children))
+;;                  use-children-nodes? (and old-node
+;;                                           (= (old-node :key) :orgpad/unit-view)
+;;                                           (= (count old-children-nodes) (count (unit :orgpad/refs))))]
+;;              (update-in eunit [:orgpad/refs]
+;;                         (fn [refs]
+;;                           ;; (println (eunit :orgpad/refs-order))
+;;                           (if (eunit :orgpad/refs-order)
+;;                             (let [children (if use-children-nodes?
+;;                                              (into {} (map (juxt :db/id parser')
+;;                                                            refs old-children-nodes))
+;;                                              (into {} (map (juxt :db/id parser') refs)))]
+;;                               (mapv (comp children second) (eunit :orgpad/refs-order)))
+;;                             (if use-children-nodes?
+;;                               (into [] (map parser' refs old-children-nodes))
+;;                               (mapv parser' refs))))))
+;;            (if (eunit :orgpad/refs-order)
+;;              (update-in eunit [:orgpad/refs]
+;;                         (fn [refs]
+;;                           (let [children (into {} (map (juxt :db/id identity) refs))]
+;;                             (mapv (comp children second) (eunit :orgpad/refs-order)))))
+;;              eunit)))
+;;
+;;        props
+;;        (when view-contexts
+;;          (mapv #(get-view-props unit %) view-contexts))
+;;        ]
+;;
+;;;;     (println { :unit unit'
+;;;;                :path-info path-info'
+;;;;                :view view-unit
+;;;;                :props props })
+;;
+;;
+;;    { :unit unit'
+;;      :path-info path-info'
+;;      :view view-unit
+;;      :props props }))
+;;)
 
-  (let [db  state
+(defn- parse
+  [props tree env unit-id view-unit view-info view-path view-contexts params uid old-node]
+  (if (and old-node
+           (not (or (aget old-node "changed?")
+                    (aget old-node "me-changed?")))
+           (= uid (-> (aget old-node "value") ot/uid)))
 
-        unit
-        (store/query db [:entity unit-id])
+    (do
+      ;; (println "skipping" old-node u)
+      (.push @tree old-node)
+      ;; (vswap! tree conj old-node)
+      (aget old-node "value"))
+    (props (merge env
+                  { :unit-id    uid
+                    :old-node   nil
+                    :view-path  (-> view-path (conj unit-id) (conj (view-unit :orgpad/view-name)))
+                    :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
+                    :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
+                    :view-contexts view-contexts })
+           :orgpad/unit-view params)))
 
-        path-info
-        (get-path-info unit view-path)
-
-        path-info'
-        (assoc (or path-info { :orgpad/view-name view-name
-                               :orgpad/view-type view-type
-                               :orgpad/view-path view-path })
-               :orgpad/type :orgpad/unit-view)
-
-        view-info
-        (registry/get-component-info (path-info' :orgpad/view-type))
-
-        view-unit-local
-        (get-view-props unit path-info')
-
-        view-unit
-        (or view-unit-local (-> view-info :orgpad/default-view-info (assoc :orgpad/refs [{ :db/id unit-id }])))
-
-        props-info
-        (when (:orgpad/child-props-types view-info)
-          (into [] (map (fn [type]
-                          { :orgpad/view-type type
-                            :orgpad/view-name (:orgpad/view-name path-info')
-                            :orgpad/type      :orgpad/unit-view-child }))
-                (:orgpad/child-props-types view-info)))
-
-        view-contexts'
-        (if (:orgpad/propagate-props-from-children? view-info)
-          (let [view-contexts'' (mapv #(assoc % :orgpad/type :orgpad/unit-view-child-propagated)
-                                      view-contexts)]
-            (if props-info
-              (into view-contexts'' props-info)
-              view-contexts''))
-          (when props-info
-            props-info))
-
-        parser'
-        (fn [u old-node]
-          (if (and old-node
-                   (not (or (old-node :changed?)
-                            (old-node :me-changed?)))
-                   (= (u :db/id) (-> old-node :value ot/uid)))
-
-            (do
-              ;; (println "skipping" old-node u)
-              (vswap! tree conj old-node)
-              (old-node :value))
-            (props (merge env
-                          { :unit-id    (u :db/id)
-                            :old-node   nil
-                            :view-path  (-> view-path (conj unit-id) (conj (view-unit :orgpad/view-name)))
-                            :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
-                            :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
-                            :view-contexts view-contexts' })
-                   :orgpad/unit-view params)))
-
-        unit'
-        (let [eunit (ds/entity->map unit)]
-          (if (:orgpad/needs-children-info view-info)
-            (let [old-children-nodes (and old-node (old-node :children))
-                  use-children-nodes? (and old-node
-                                           (= (old-node :key) :orgpad/unit-view)
-                                           (= (count old-children-nodes) (count (unit :orgpad/refs))))]
-              (update-in eunit [:orgpad/refs]
-                         (fn [refs]
-                           ;; (println (eunit :orgpad/refs-order))
-                           (if (eunit :orgpad/refs-order)
-                             (let [children (if use-children-nodes?
-                                              (into {} (map (juxt :db/id parser')
-                                                            refs old-children-nodes))
-                                              (into {} (map (juxt :db/id parser') refs)))]
-                               (mapv (comp children second) (eunit :orgpad/refs-order)))
-                             (if use-children-nodes?
-                               (into [] (map parser' refs old-children-nodes))
-                               (mapv parser' refs))))))
-            (if (eunit :orgpad/refs-order)
-              (update-in eunit [:orgpad/refs]
-                         (fn [refs]
-                           (let [children (into {} (map (juxt :db/id identity) refs))]
-                             (mapv (comp children second) (eunit :orgpad/refs-order)))))
-              eunit)))
-
-        props
-        (when view-contexts
-          (mapv #(get-view-props unit %) view-contexts))
-        ]
-
-;;     (println { :unit unit'
-;;                :path-info path-info'
-;;                :view view-unit
-;;                :props props })
-
-
-    { :unit unit'
-      :path-info path-info'
-      :view view-unit
-      :props props }))
-)
+(defn- build-unit
+  [unit view-unit old-node view-info parser' global-cache]
+  (let [eunit (ds/entity->map unit)]
+    (if (:orgpad/needs-children-info view-info)
+      (if (and old-node (:orgpad/visible-children-picker view-info))
+        (update-in eunit [:orgpad/refs]
+                   (fn [refs]
+                     (mapv (fn [[u o]] (parser' u o))
+                           ((:orgpad/visible-children-picker view-info) unit view-unit old-node global-cache))))
+        (let [old-children-nodes (and old-node (aget old-node "children"))
+              use-children-nodes? (and old-node
+                                       (= (aget old-node "key") :orgpad/unit-view)
+                                       (= (alength old-children-nodes) (count (unit :orgpad/refs))))]
+          (update-in eunit [:orgpad/refs]
+                     (fn [refs]
+                       (let [refs' (map :db/id refs)]
+                         ;; (println (eunit :orgpad/refs-order))
+                         (if (eunit :orgpad/refs-order)
+                           (let [children (if use-children-nodes?
+                                            (into {} (map (juxt identity parser')
+                                                          refs' old-children-nodes))
+                                            (into {} (map (juxt identity parser') refs')))]
+                             (mapv (comp children second) (eunit :orgpad/refs-order)))
+                           (if use-children-nodes?
+                             (into [] (map parser' refs' old-children-nodes))
+                             (mapv parser' refs'))))))))
+      (if (eunit :orgpad/refs-order)
+        (update-in eunit [:orgpad/refs]
+                   (fn [refs]
+                     (let [children (into {} (map (juxt :db/id identity) refs))]
+                       (mapv (comp children second) (eunit :orgpad/refs-order)))))
+        eunit))))
 
 ;;(comment
 (defmethod read :orgpad/unit-view
-  [{ :keys [state props old-node tree unit-id view-name view-type view-path view-contexts] :as env } k params]
+  [{ :keys [state props old-node tree unit-id view-name view-type view-path view-contexts global-cache] :as env } k params]
 ;;  (println "read :orgpad/unit-view" unit-id view-name view-type view-path view-contexts k)
 
   (let [db  state
@@ -218,52 +272,9 @@
           (when props-info
             props-info))
 
-        parser'
-        (fn [u old-node]
-          (if (and old-node
-                   (not (or (aget old-node "changed?")
-                            (aget old-node "me-changed?")))
-                   (= (u :db/id) (-> (aget old-node "value") ot/uid)))
+        parser' (partial parse props tree env unit-id view-unit view-info view-path view-contexts' params)
 
-            (do
-              ;; (println "skipping" old-node u)
-              (.push @tree old-node)
-              ;; (vswap! tree conj old-node)
-              (aget old-node "value"))
-            (props (merge env
-                          { :unit-id    (u :db/id)
-                            :old-node   nil
-                            :view-path  (-> view-path (conj unit-id) (conj (view-unit :orgpad/view-name)))
-                            :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
-                            :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
-                            :view-contexts view-contexts' })
-                   :orgpad/unit-view params)))
-
-        unit'
-        (let [eunit (ds/entity->map unit)]
-          (if (:orgpad/needs-children-info view-info)
-            (let [old-children-nodes (and old-node (aget old-node "children"))
-                  use-children-nodes? (and old-node
-                                           (= (aget old-node "key") :orgpad/unit-view)
-                                           (= (alength old-children-nodes) (count (unit :orgpad/refs))))]
-              (update-in eunit [:orgpad/refs]
-                         (fn [refs]
-                           ;; (println (eunit :orgpad/refs-order))
-                           (if (eunit :orgpad/refs-order)
-                             (let [children (if use-children-nodes?
-                                              (into {} (map (juxt :db/id parser')
-                                                            refs old-children-nodes))
-                                              (into {} (map (juxt :db/id parser') refs)))]
-                               (mapv (comp children second) (eunit :orgpad/refs-order)))
-                             (if use-children-nodes?
-                               (into [] (map parser' refs old-children-nodes))
-                               (mapv parser' refs))))))
-            (if (eunit :orgpad/refs-order)
-              (update-in eunit [:orgpad/refs]
-                         (fn [refs]
-                           (let [children (into {} (map (juxt :db/id identity) refs))]
-                             (mapv (comp children second) (eunit :orgpad/refs-order)))))
-              eunit)))
+        unit' (build-unit unit view-unit old-node view-info parser' global-cache)
 
         props
         (when view-contexts

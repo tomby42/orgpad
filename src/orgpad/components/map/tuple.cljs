@@ -20,11 +20,10 @@
   (lc/transact! component [[ :orgpad.units/new-sheet unit-tree ]]))
 
 (defn- switch-active-sheet
-  [component {:keys [unit view]} dir]
-  (lc/transact! component [[ :orgpad.sheet/switch-active { :unit unit
-                                                           :view view
+  [component unit-tree dir]
+  (lc/transact! component [[ :orgpad.sheet/switch-active { :unit-tree unit-tree
                                                            :direction dir
-                                                           :nof-sheets (-> unit :orgpad/refs count) } ]]))
+                                                           :nof-sheets (-> unit-tree :unit :orgpad/refs count) } ]]))
 
 (defn- open-unit
   [component {:keys [unit view]}]
