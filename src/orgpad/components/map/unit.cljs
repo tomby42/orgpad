@@ -14,6 +14,7 @@
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.bezier :as bez]
             [orgpad.tools.math :as math]
+            [orgpad.tools.geocache :as geocache]
             [orgpad.components.graphics.primitives :as g]))
 
 (defn- parent-id
@@ -84,7 +85,7 @@
   (.stopPropagation ev))
 
 (rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
-  [component {:keys [props unit] :as unit-tree} app-state component view-name pid local-state]
+  [component {:keys [props unit] :as unit-tree} app-state pcomponent view-name pid local-state]
   (let [prop (get-props props view-name pid :orgpad.map-view/vertex-props)
         pos (prop :orgpad/unit-position)
         style (merge { :width (prop :orgpad/unit-width)
@@ -96,18 +97,18 @@
                                           (prop :orgpad/unit-corner-y) "px")
                        :backgroundColor (prop :orgpad/unit-bg-color) }
                      (css/transform { :translate pos })) ]
-    ;; (js/window.console.log "rendering " (unit :db/id))
+    (js/window.console.log "rendering " (unit :db/id))
     (when (= (unit :db/id) (-> local-state deref :selected-unit first ot/uid))
-      (select-unit unit-tree prop component local-state))
+      (select-unit unit-tree prop pcomponent local-state))
     (html
      [ :div
       (if (= (app-state :mode) :write)
         { :style style :className "map-view-child" :key (unit :db/id)
-          :onMouseDown #(try-move-unit unit-tree prop component local-state %)
+          :onMouseDown #(try-move-unit unit-tree prop pcomponent local-state %)
          }
         { :style style :className "map-view-child" :key (unit :db/id)
-          :onMouseDown #(try-move-unit unit-tree prop component local-state %)
-          :onTouchStart #(try-move-unit unit-tree prop component local-state %)
+          :onMouseDown #(try-move-unit unit-tree prop pcomponent local-state %)
+          :onTouchStart #(try-move-unit unit-tree prop pcomponent local-state %)
          })
        (node/node unit-tree (assoc app-state :mode :read))
        (if (= (app-state :mode) :write)
@@ -115,12 +116,12 @@
            { :style { :top 0
                       :width (prop :orgpad/unit-width)
                       :height (prop :orgpad/unit-height) }
-             :onMouseDown #(try-move-unit unit-tree prop component local-state %) } ]
+             :onMouseDown #(try-move-unit unit-tree prop pcomponent local-state %) } ]
          [ :div.map-view-child.link-control
            { :style { :top -20 :left -20 }
-             :onMouseDown #(try-move-unit unit-tree prop component local-state %)
-             :onTouchStart #(try-move-unit unit-tree prop component local-state %)
-             :onMouseUp #(open-unit component unit-tree local-state) } ]
+             :onMouseDown #(try-move-unit unit-tree prop pcomponent local-state %)
+             :onTouchStart #(try-move-unit unit-tree prop pcomponent local-state %)
+             :onMouseUp #(open-unit pcomponent unit-tree local-state) } ]
          )
       ])))
 
@@ -167,8 +168,15 @@
 
 (def ^:private link-eq-fns [identical? = identical? identical? identical? identical? identical?])
 
+(defn- update-geocahce-for-link-changes
+  [component pid uid start-pos end-pos mid-pt-rel]
+  (let [global-cache (lc/get-global-cache component)
+        bbox (geom/link-bbox start-pos end-pos mid-pt-rel)]
+    (geocache/update-box! global-cache pid uid
+                          (bbox 0) (geom/-- (bbox 1) (bbox 0)))))
+
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
-  [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic?]} app-state component view-name pid local-state]
+  [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic?]} app-state pcomponent view-name pid local-state]
   (let [prop (get-props props view-name pid :orgpad.map-view/link-props)
         mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
         style { :css { :zIndex -1 }
@@ -178,8 +186,9 @@
                           :lineDash (prop :orgpad/link-dash) } }
         ctl-style (css/transform {:translate (geom/-- mid-pt [10 10])})
         ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
-    ;; (js/window.console.log "rendering " (unit :db/id))
-    
+    (js/window.console.log "rendering " (unit :db/id))
+    ;; o'hack
+    (update-geocahce-for-link-changes pcomponent pid (unit :db/id) start-pos end-pos (prop :orgpad/link-mid-pt))
     (html
      [ :div {}
        (if cyclic?
@@ -191,8 +200,8 @@
          (make-arrow-quad start-pos end-pos ctl-pt prop))
        (when (= (app-state :mode) :write)
          [ :div { :className "map-view-child link-control" :style ctl-style
-                  :onMouseDown #(start-change-link-shape unit-tree prop component start-pos end-pos mid-pt local-state %)
-                  :onTouchStart #(start-change-link-shape unit-tree prop component start-pos end-pos mid-pt local-state %) } ]) ])))
+                  :onMouseDown #(start-change-link-shape unit-tree prop pcomponent start-pos end-pos mid-pt local-state %)
+                  :onTouchStart #(start-change-link-shape unit-tree prop pcomponent start-pos end-pos mid-pt local-state %) } ]) ])))
 
 (def map-link-mem
   (colls/memoize' map-link {:key-fn #(-> % first ot/uid)

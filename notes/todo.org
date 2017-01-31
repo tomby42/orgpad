@@ -1,3 +1,8 @@
+CURRENT:
+* map-unit, map-link nejspis nemuseji byt defcc prozkoumat
+* source code style
+
+PAST:
 * reader mode pro mapu
 * reader mode pro sheety
 * dodelat writer mode pro sheety

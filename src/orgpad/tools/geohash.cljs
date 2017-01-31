@@ -5,7 +5,7 @@
 (def ^:private MAX-COORD 1000000)
 (def ^:private COORD-CENTER (/ MAX-COORD 2))
 (def ^:private MAX-RESOLUTION 12)
-(def ^:private BOX-RESOLUTION 8)
+(def ^:private BOX-RESOLUTION 7)
 
 (defn pos->hash
   "Map x, y coords to geohash with hash length res."

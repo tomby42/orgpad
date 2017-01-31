@@ -20,6 +20,7 @@
                  [cljsjs/react-select         "1.0.0-rc.1"]
                  [cljsjs/latlon-geohash       "1.1.0-0"] ;; *
                  [doo                         "0.1.7"]
+                 [org.clojure/data.avl        "0.0.17"]
                  ]
 
   :plugins [[lein-cljsbuild "1.1.4"]

@@ -9,6 +9,7 @@
             [orgpad.tools.geom-test]
             [orgpad.tools.order-numbers-test]
             [orgpad.tools.geohash-test]
+            [orgpad.tools.geocache-test]
             ))
 
 (enable-console-print!)

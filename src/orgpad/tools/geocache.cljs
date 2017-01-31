@@ -1,6 +1,7 @@
 (ns ^{:doc "Geocache for map component"}
   orgpad.tools.geocache
-  (:require [orgpad.tools.geohash :as geohash]
+  (:require [clojure.data.avl :as avl]
+            [orgpad.tools.geohash :as geohash]
             [orgpad.tools.jcolls :as jcolls]))
 
 (defn del-from-place!
@@ -33,6 +34,7 @@
                      (geohash/box->hashes (old-pos 0) (old-pos 1)
                                           (old-size 0) (old-size 1))
                      [])]
+    (println "update-box!" places old-places)
     (doseq [h old-places]
       (del-from-place! geocache h uid))
     (doseq [h places]
@@ -40,16 +42,30 @@
 
 (defn visible-units
   [global-cache id pos size]
-  (let [vis-places (geohash/box->hashes (pos 0) (pos 1) (size 0) (size 1))]
-    ;;(println "vis-places" id pos size vis-places global-cache)
-    (persistent!
-     (reduce (fn [units h]
-               (let [ids (js/Object.keys (jcolls/aget-safe global-cache id "geocache" h))]
-                 ;; (println "ids" id h ids)
-                 (areduce ids idx ret units
-                          (conj! ret (js/parseInt (aget ids idx))))))
-             (transient #{}) vis-places))))
+  (let [vis-places (geohash/box->hashes (- (pos 0)) (- (pos 1)) (size 0) (size 1))
+        vis-units (persistent!
+                   (reduce (fn [units h]
+                             (let [ids (js/Object.keys (jcolls/aget-safe global-cache id "geocache" h))]
+                               ;; (println "ids" id h ids)
+                               (areduce ids idx ret units
+                                        (conj! ret (js/parseInt (aget ids idx))))))
+                           (transient (avl/sorted-set)) vis-places))]
+    (println "vis-places" id pos size vis-places vis-units)
+    vis-units))
 
 (defn has-geocache?
   [global-cache parent-id]
-  (not= (aget global-cache parent-id "geocache") js/undefined))
+  (not= (jcolls/aget-nil global-cache parent-id "geocache") nil))
+
+(defn clear!
+  [global-cache parent-id ids]
+  (let [geocache (aget global-cache parent-id "geocache")
+        keys (js/Object.keys geocache)]
+    (loop [i 0]
+      (when (< i (.-length keys))
+        (let [b (aget geocache (aget keys i))]
+          (loop [j 0]
+            (when (< j (.-length ids))
+              (js-delete b (aget ids j))
+              (recur (inc j))))
+          (recur (inc i)))))))

@@ -203,6 +203,11 @@
 
 (defn get-global-cache
   "Gets global cache entry"
+  ([component]
+   (let [global-cache (aget (.. component -context) "global-cache")]
+     (assert (-> global-cache nil? not))
+     global-cache))
+
   ([component key]
    (let [global-cache (aget (.. component -context) "global-cache")]
      (assert (-> global-cache nil? not))

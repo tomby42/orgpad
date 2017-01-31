@@ -25,13 +25,13 @@
     )
 
   (testing "box->hashes"
-    (is (= ["s006g7h0"] (gh/box->hashes 0 0 1 1))
+    (is (= ["s006g7h0"] (gh/box->hashes 0 0 1 1 8))
         "should contains only one hash")
 
-    (is (= ["s006g7h0" "s006g7h2"] (gh/box->hashes 0 0 380 1))
+    (is (= ["s006g7h0" "s006g7h2"] (gh/box->hashes 0 0 380 1 8))
         "should contains two hashes")
 
-    (is (= ["s006g7h0" "s006g7h2" "s006g7h1" "s006g7h3"] (gh/box->hashes 0 0 400 200))
+    (is (= ["s006g7h0" "s006g7h2" "s006g7h1" "s006g7h3"] (gh/box->hashes 0 0 400 200 8))
         "should contains four hashes")
 
     )

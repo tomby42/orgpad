@@ -296,15 +296,21 @@
 
 (defn- pick-visible-children
   [unit view-unit old-node global-cache]
-  (let [id (unit :db/id)
-        children-cache (apply hash-map (map (fn [n] (vector (-> n :value ot/uid) n)) (aget old-node "children")))
-        pos (-> view-unit :orgpad/transform :translate)
-        bbox (aget global-cache id "bbox")
-        size (geom/*c [(- (.-right bbox) (.-left bbox))
-                       (- (.-bottom bbox) (.-top bbox))]
-                      (-> view-unit :orgpad/transform :scale))
-        vis-units (geocache/visible-units global-cache id pos size)]
-    (map (juxt identity children-cache) vis-units)))
+  (let [id (unit :db/id)]
+    (if (aget global-cache id)
+      (let [children-cache (if old-node
+                             (apply hash-map (map (fn [n]
+                                                    (vector (-> n :value ot/uid) n))
+                                                  (aget old-node "children")))
+                             {})
+            pos (-> view-unit :orgpad/transform :translate)
+            bbox (aget global-cache id "bbox")
+            size (geom/*c [(- (.-right bbox) (.-left bbox))
+                           (- (.-bottom bbox) (.-top bbox))]
+                          (-> view-unit :orgpad/transform :scale))
+            vis-units (geocache/visible-units global-cache id pos size)]
+        (map (juxt identity children-cache) vis-units))
+      [])))
 
 (rum/defcc map-component < trum/istatic lc/parser-type-mixin-context (rum/local init-state) handle-touch-event component-size-mixin
   [component unit-tree app-state]

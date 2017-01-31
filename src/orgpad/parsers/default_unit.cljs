@@ -197,7 +197,7 @@
   [unit view-unit old-node view-info parser' global-cache]
   (let [eunit (ds/entity->map unit)]
     (if (:orgpad/needs-children-info view-info)
-      (if (and old-node (:orgpad/visible-children-picker view-info))
+      (if (:orgpad/visible-children-picker view-info)
         (update-in eunit [:orgpad/refs]
                    (fn [refs]
                      (mapv (fn [[u o]] (parser' u o))
