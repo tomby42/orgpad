@@ -11,7 +11,7 @@
 
   (query [store qry] [store qry params]
     "Query store by 'qry' with given params and returns result.")
-  (transact [store qry]
+  (transact [store qry] [store qry params]
     "Perform transaction on store and returns new one."))
 
 (defprotocol IStoreChanges
@@ -119,6 +119,15 @@
                  (merge (.-meta store)
                         { :orgpad.store/tempids (:tempids tx-report) }))))
 
+(defn- tx-report->only-db-store
+  "Returns new datom store with new db only, rest of properties are preserved"
+  [store tx-report]
+  (DatomStore. (:db-after tx-report)
+               (.-history-records store)
+               (.-cumulative-changes store)
+               (.-changed-entities store)
+               (.-meta store)))
+
 (deftype DatomStore [db history-records cumulative-changes changed-entities meta]
 
   IWithMeta
@@ -141,6 +150,10 @@
   (transact
     [store qry]
     (tx-report->store store (d/with (.-db store) qry)))
+
+  (transact
+    [store qry params]
+    (tx-report->only-db-store store (d/with (.-db store) qry)))
 
   IStoreChanges
   (changed?
@@ -275,7 +288,13 @@
     [store qry]
     (if (datom-transact-query? qry)
       (DatomAtomStore. (transact (.-datom store) qry) (.-atom store) (.-meta store))
-      (DatomAtomStore. (.-datom store) (stransact (.-atom store) qry) (.-meta store)) ))
+      (DatomAtomStore. (.-datom store) (stransact (.-atom store) qry) (.-meta store))))
+
+  (transact
+    [store qry params]
+    (if (datom-transact-query? qry)
+      (DatomAtomStore. (transact (.-datom store) qry params) (.-atom store) (.-meta store))
+      (DatomAtomStore. (.-datom store) (stransact (.-atom store) qry) (.-meta store))))
 
   IStoreChanges
   (changed?

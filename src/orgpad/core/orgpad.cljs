@@ -42,7 +42,6 @@
 
 (defn empty-orgpad-db
   []
-
   (-> (store/new-datom-atom-store {} (d/empty-db orgpad-db-schema))
       (store/transact [{ :db/id 0,
                          :orgpad/props-refs 1
@@ -85,7 +84,7 @@
                      (unescape-atoms db))]
     (if (empty? qry)
       db
-      (store/transact db qry))))
+      (store/transact db qry {}))))
 
 (defn orgpad-db
   [data]
