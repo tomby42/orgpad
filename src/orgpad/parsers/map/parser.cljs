@@ -477,8 +477,14 @@
   (let [refs-orders (->> id (find-refs-orders db) (remove-from-refs-orders id))]
     (map (fn [[pid o]] [:db/add pid :orgpad/refs-order o]) refs-orders)))
 
+(defn- update-geocache-after-remove
+  [global-cache parents id other]
+  (let [ids (apply array (conj other id))]
+    (doseq [pid parents]
+      (geocache/clear! global-cache pid ids))))
+
 (defmethod mutate :orgpad.units/remove-unit
-  [{:keys [state]} _ id]
+  [{:keys [state global-cache]} _ id]
   (let [units-to-remove (find-children-deep state [id])
         parents (find-parents state id)
         edges (mapcat #(find-relative state % edge-check-query) (find-relative state id edge-query))
@@ -489,6 +495,7 @@
                                (remove-from-refs-orders-qry state id)
                                (map (fn [eid] [:db.fn/retractEntity eid])
                                     (concat units-to-remove edges-to-remove edges-props-to-remove)))]
+    (update-geocache-after-remove global-cache parents id edges-to-remove)
     { :state (store/transact state final-qry) }))
 
 (defn- update-link-props
@@ -518,9 +525,11 @@
     { :state (update-props state id (ot/uid unit-tree) :orgpad/unit-view-child prop' { :orgpad/link-dash val }) } ))
 
 (defmethod mutate :orgpad.units/map-view-link-remove
-  [{:keys [state]} _ id]
+  [{:keys [state global-cache]} _ id]
   (let [parents (find-parents state id)
         final-qry (colls/minto [[:db.fn/retractEntity id]]
+                               (map (fn [eid] [:db.fn/retractEntity eid]) (find-props state id))
                                (remove-from-refs-orders-qry state id)
                                (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents))]
+    (update-geocache-after-remove global-cache parents id [])
     { :state (store/transact state final-qry) }))

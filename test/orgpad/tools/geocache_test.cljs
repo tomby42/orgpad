@@ -29,7 +29,8 @@
           _ (gc/add->place! geocache "1" 1)
           _ (gc/add->place! geocache "2" 3)
           _ (gc/add->place! geocache "2" 2)
-          _ (gc/clear! global-cache 0 #js [1 2])]
+          _ (gc/clear! global-cache 0 #js [1 2])
+          _ (gc/clear! global-cache 1 #js [1 2])]
       (is (= (jcolls/aget-nil geocache "0" 1) nil))
       (is (= (jcolls/aget-nil geocache "0" 2) nil))
       (is (= (jcolls/aget-nil geocache "0" 3) true))

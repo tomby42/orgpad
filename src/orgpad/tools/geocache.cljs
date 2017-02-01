@@ -59,13 +59,13 @@
 
 (defn clear!
   [global-cache parent-id ids]
-  (let [geocache (aget global-cache parent-id "geocache")
-        keys (js/Object.keys geocache)]
-    (loop [i 0]
-      (when (< i (.-length keys))
-        (let [b (aget geocache (aget keys i))]
-          (loop [j 0]
-            (when (< j (.-length ids))
-              (js-delete b (aget ids j))
-              (recur (inc j))))
-          (recur (inc i)))))))
+  (when-let [geocache (jcolls/aget-nil global-cache parent-id "geocache")]
+    (let [keys (js/Object.keys geocache)]
+      (loop [i 0]
+        (when (< i (.-length keys))
+          (let [b (aget geocache (aget keys i))]
+            (loop [j 0]
+              (when (< j (.-length ids))
+                (js-delete b (aget ids j))
+                (recur (inc j))))
+            (recur (inc i))))))))
