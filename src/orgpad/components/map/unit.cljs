@@ -169,10 +169,10 @@
 (def ^:private link-eq-fns [identical? = identical? identical? identical? identical? identical?])
 
 (defn- update-geocahce-for-link-changes
-  [component pid uid start-pos end-pos mid-pt-rel]
+  [component pid view-name uid start-pos end-pos mid-pt-rel]
   (let [global-cache (lc/get-global-cache component)
         bbox (geom/link-bbox start-pos end-pos mid-pt-rel)]
-    (geocache/update-box! global-cache pid uid
+    (geocache/update-box! global-cache pid view-name uid
                           (bbox 0) (geom/-- (bbox 1) (bbox 0)))))
 
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
@@ -188,7 +188,7 @@
         ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
     (js/window.console.log "rendering " (unit :db/id))
     ;; o'hack
-    (update-geocahce-for-link-changes pcomponent pid (unit :db/id) start-pos end-pos (prop :orgpad/link-mid-pt))
+    (update-geocahce-for-link-changes pcomponent pid view-name (unit :db/id) start-pos end-pos (prop :orgpad/link-mid-pt))
     (html
      [ :div {}
        (if cyclic?

@@ -5,6 +5,7 @@
             [orgpad.parsers.default-unit :as dp :refer [read mutate updated?]]
             [orgpad.tools.dscript :as ds]
             [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.geocache :as geocache]
             [orgpad.components.registry :as registry]))
 
 (defn- find-root-view-info
@@ -132,8 +133,9 @@
     :effect #(transact! [[ :orgpad/loaded (orgpad/load-orgpad state files) ]])})
 
 (defmethod mutate :orgpad/loaded
-  [{ :keys [force-update!]} _ new-state]
+  [{ :keys [force-update! global-cache]} _ new-state]
   (force-update!)
+  (geocache/rebuild! global-cache new-state)
   { :state new-state })
 
 (defmethod mutate :orgpad/download-orgpad-from-url

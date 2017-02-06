@@ -9,7 +9,7 @@
   ([array idx idx2 & idxv]
    (let [a (or (aget array idx) #js {})]
      (cljs.core/aset array idx a)
-     (apply aset a idx2 idxv))))
+     (apply aset! a idx2 idxv))))
 
 (defn aget-safe
   "Returns the value at the index."

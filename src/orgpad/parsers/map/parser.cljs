@@ -93,8 +93,8 @@
 
                 [:db/add parent :orgpad/refs -1]
                 ])]
-    (geocache/create! global-cache parent)
-    (geocache/update-box! global-cache parent
+    (geocache/create! global-cache parent view-name)
+    (geocache/update-box! global-cache parent view-name
                           (get (store/tempids new-state) -1) pos
                           [(default-props :orgpad/unit-width)
                            (default-props :orgpad/unit-height)])
@@ -139,7 +139,7 @@
                                  [:db/add unit-id :orgpad/props-refs -1]])
           (store/transact state [[:db/add id :orgpad/unit-position new-translate]]))
         size [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]]
-    (geocache/update-box! global-cache (ot/pid parent-view)
+    (geocache/update-box! global-cache (ot/pid parent-view) (:orgpad/view-name parent-view)
                           unit-id new-translate size
                           (prop' :orgpad/unit-position) size)
     { :state new-state } ))
@@ -211,7 +211,7 @@
 
 (defn- update-geocache-after-resize
   [{:keys [global-cache]} {:keys [parent-view unit-tree]} prop size]
-  (geocache/update-box! global-cache (ot/pid parent-view)
+  (geocache/update-box! global-cache (ot/pid parent-view) (:orgpad/view-name parent-view)
                         (ot/uid unit-tree) (prop :orgpad/unit-position) size
                         (prop :orgpad/unit-position)
                         [(prop :orgpad/unit-width) (prop :orgpad/unit-height)]))
@@ -262,12 +262,12 @@
   (let [view-path (-> unit-tree :path-info :orgpad/view-path)
         n (-> view-path count dec)]
     (when (and (>= n 1)
-               (geocache/has-geocache? global-cache (nth view-path (dec n))))
+               (geocache/has-geocache? global-cache (nth view-path (dec n)) (nth view-path n)))
       (let [parent-id (nth view-path (dec n))
-            parent-name (nth view-path n 1)]
+            parent-name (nth view-path n)]
         (when-let [prop (-> (filter #(= (% :orgpad/view-name) parent-name) update-trans) first)]
           (let [e (store/query state [:entity (prop :db/id)])]
-            (geocache/update-box! global-cache parent-id
+            (geocache/update-box! global-cache parent-id parent-name
                                   (ot/uid unit-tree) (e :orgpad/unit-position)
                                   [(prop :orgpad/unit-width) (prop :orgpad/unit-height)]
                                   (e :orgpad/unit-position)
@@ -328,7 +328,7 @@
         prop1 (ds/find-props bu pred)
         prop2 (ds/find-props-base (:unit closest-unit) pred)
         bbox (geom/link-bbox (prop1 :orgpad/unit-position) (prop2 :orgpad/unit-position) mid-pt)]
-    (geocache/update-box! global-cache parent-id
+    (geocache/update-box! global-cache parent-id view-name
                           uid (bbox 0) (geom/-- (bbox 1) (bbox 0)))))
 
 (defmethod mutate :orgpad.units/try-make-new-link-unit

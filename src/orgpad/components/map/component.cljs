@@ -308,7 +308,7 @@
             size (geom/*c [(- (.-right bbox) (.-left bbox))
                            (- (.-bottom bbox) (.-top bbox))]
                           (-> view-unit :orgpad/transform :scale))
-            vis-units (geocache/visible-units global-cache id pos size)]
+            vis-units (geocache/visible-units global-cache id (:orgpad/view-name view-unit) pos size)]
         (map (juxt identity children-cache) vis-units))
       [])))
 
