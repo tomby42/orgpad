@@ -299,9 +299,10 @@
   (let [id (unit :db/id)]
     (if (aget global-cache id)
       (let [children-cache (if old-node
-                             (apply hash-map (map (fn [n]
-                                                    (vector (-> n :value ot/uid) n))
-                                                  (aget old-node "children")))
+                             (persistent!
+                              (reduce (fn [m n]
+                                        (assoc! m (-> n (aget "value") ot/uid) n))
+                                      (transient {}) (aget old-node "children")))
                              {})
             pos (-> view-unit :orgpad/transform :translate)
             bbox (aget global-cache id "bbox")

@@ -97,7 +97,7 @@
                                           (prop :orgpad/unit-corner-y) "px")
                        :backgroundColor (prop :orgpad/unit-bg-color) }
                      (css/transform { :translate pos })) ]
-    (js/window.console.log "rendering " (unit :db/id))
+    ;; (js/window.console.log "rendering " (unit :db/id))
     (when (= (unit :db/id) (-> local-state deref :selected-unit first ot/uid))
       (select-unit unit-tree prop pcomponent local-state))
     (html
@@ -186,7 +186,7 @@
                           :lineDash (prop :orgpad/link-dash) } }
         ctl-style (css/transform {:translate (geom/-- mid-pt [10 10])})
         ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
-    (js/window.console.log "rendering " (unit :db/id))
+    ;; (js/window.console.log "rendering " (unit :db/id))
     ;; o'hack
     (update-geocahce-for-link-changes pcomponent pid view-name (unit :db/id) start-pos end-pos (prop :orgpad/link-mid-pt))
     (html

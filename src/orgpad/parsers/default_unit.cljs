@@ -180,7 +180,7 @@
            (= uid (-> (aget old-node "value") ot/uid)))
 
     (do
-      ;; (println "skipping" old-node u)
+      ;; (println "skipping" old-node uid)
       (.push @tree old-node)
       ;; (vswap! tree conj old-node)
       (aget old-node "value"))

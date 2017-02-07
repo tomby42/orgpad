@@ -35,7 +35,7 @@
                      (geohash/box->hashes (old-pos 0) (old-pos 1)
                                           (old-size 0) (old-size 1))
                      [])]
-    (println "update-box!" places old-places)
+    ;; (println "update-box!" places old-places)
     (doseq [h old-places]
       (del-from-place! geocache h uid))
     (doseq [h places]
@@ -52,7 +52,7 @@
                                (areduce ids idx ret units
                                         (conj! ret (js/parseInt (aget ids idx))))))
                            (transient (avl/sorted-set)) vis-places))]
-    (println "vis-places" id pos size vis-places vis-units)
+    ;; (println "vis-places" id pos size vis-places vis-units)
     vis-units))
 
 (defn has-geocache?
