@@ -14,10 +14,11 @@
     (js-delete (aget geocache h) id)))
 
 (defn add->place!
-  [geocache h id]
-  (if (aget geocache h)
-    (aset geocache h id true)
-    (aset geocache h (js-obj id true))))
+  [geocache h id & [info]]
+  (let [info' (or info true)]
+    (if (aget geocache h)
+      (aset geocache h id info')
+      (aset geocache h (js-obj id info')))))
 
 (defn create!
   [global-cache id view-name]
@@ -25,7 +26,7 @@
     (jcolls/aset! global-cache id "geocache" view-name #js {})))
 
 (defn update-box!
-  [global-cache parent-id view-name uid pos size & [old-pos old-size]]
+  [global-cache parent-id view-name uid pos size & [old-pos old-size info]]
   (let [geocache (aget global-cache parent-id "geocache" view-name)
         places (if (and pos size)
                  (geohash/box->hashes (pos 0) (pos 1)
@@ -39,7 +40,7 @@
     (doseq [h old-places]
       (del-from-place! geocache h uid))
     (doseq [h places]
-      (add->place! geocache h uid))))
+      (add->place! geocache h uid info))))
 
 (defn visible-units
   [global-cache id view-name pos size]
@@ -47,10 +48,16 @@
         geocache (jcolls/aget-safe global-cache id "geocache" view-name)
         vis-units (persistent!
                    (reduce (fn [units h]
-                             (let [ids (js/Object.keys (jcolls/aget-safe geocache h))]
+                             (let [hs  (jcolls/aget-safe geocache h)
+                                   ids (js/Object.keys hs)]
                                ;; (println "ids" id h ids)
                                (areduce ids idx ret units
-                                        (conj! ret (js/parseInt (aget ids idx))))))
+                                        (let [info (aget hs (aget ids idx))
+                                              ret' (if (= info true)
+                                                     ret
+                                                     (areduce info idx1 ret1 ret
+                                                              (conj! ret1 (aget info idx1))))]
+                                          (conj! ret' (js/parseInt (aget ids idx)))))))
                            (transient (avl/sorted-set)) vis-places))]
     ;; (println "vis-places" id pos size vis-places vis-units)
     vis-units))
@@ -97,13 +104,13 @@
                              :in $
                              :where
                              [?unit :orgpad/props-refs ?map-prop]
+                             [?unit :orgpad/refs-order ?refs-order]
                              [?map-prop :orgpad/refs ?unit]
                              [?map-prop :orgpad/type :orgpad/unit-view-child]
-                             [?map-prop :orgpad/view-type :orgpad.map-view/vertex-props]
+                             [?map-prop :orgpad/view-type :orgpad.map-view/link-props]
                              [?map-prop :orgpad/view-name ?view-name]
                              [?map-prop :orgpad/context-unit ?parent]
-                             [?map-prop :orgpad/link-mid-pt ?mid-pt]
-                             [?map-prop :orgpad/refs-order ?refs-order]])
+                             [?map-prop :orgpad/link-mid-pt ?mid-pt]])
         vertices-map (into {} (map (fn [vinfo] [(nth vinfo 1) vinfo])) vertices)
         parent-views (into #{} (map (fn [vinfo] [(nth vinfo 0) (nth vinfo 2)])) vertices)]
     (doseq [[pid view-name] parent-views]
@@ -114,6 +121,9 @@
       (let [vs (into [] (map (fn [[_ uid]] uid)) refs-order)
             start (vertices-map (vs 0))
             end (vertices-map (vs 1))
-            bbox (geom/link-bbox (start 3) (end 3) mid-pt)]
+            bbox (geom/link-bbox (start 3) (end 3) mid-pt)
+            pos (bbox 0)
+            size (geom/-- (bbox 1) (bbox 0))]
+        (jcolls/aset! global-cache uid "link-info" view-name [pos size])
         (update-box! global-cache pid view-name
-                     uid (bbox 0) (geom/-- (bbox 1) (bbox 0)))))))
+                     uid pos size nil nil #js [(vs 0) (vs 1)])))))

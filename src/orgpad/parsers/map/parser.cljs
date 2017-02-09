@@ -9,6 +9,7 @@
             [orgpad.tools.order-numbers :as ordn]
             [orgpad.tools.geocache :as geocache]
             [orgpad.tools.dscript :as ds]
+            [orgpad.tools.jcolls :as jcolls]
             [orgpad.parsers.default-unit :as dp :refer [read mutate]]))
 
 (def ^:private propagated-query
@@ -327,9 +328,13 @@
         pred (vertex-props-pred view-name)
         prop1 (ds/find-props bu pred)
         prop2 (ds/find-props-base (:unit closest-unit) pred)
-        bbox (geom/link-bbox (prop1 :orgpad/unit-position) (prop2 :orgpad/unit-position) mid-pt)]
+        bbox (geom/link-bbox (prop1 :orgpad/unit-position) (prop2 :orgpad/unit-position) mid-pt)
+        pos (bbox 0)
+        size (geom/-- (bbox 1) (bbox 0))]
+    (jcolls/aset! global-cache uid "link-info" view-name [pos size])
     (geocache/update-box! global-cache parent-id view-name
-                          uid (bbox 0) (geom/-- (bbox 1) (bbox 0)))))
+                          uid pos size nil nil
+                          #js [begin-unit-id (ot/uid closest-unit)])))
 
 (defmethod mutate :orgpad.units/try-make-new-link-unit
   [{:keys [state global-cache]} _ {:keys [map-unit-tree begin-unit-id position]}]
@@ -480,6 +485,8 @@
 (defn- update-geocache-after-remove
   [global-cache parents id other]
   (let [ids (apply array (conj other id))]
+    (doseq [uid ids]
+      (js-delete global-cache uid))
     (doseq [pid parents]
       (geocache/clear! global-cache pid ids))))
 
