@@ -194,7 +194,7 @@
         ctl-style (css/transform {:translate (geom/-- mid-pt [10 10])})
         ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
     ;; (js/window.console.log "rendering " (unit :db/id))
-    ;; o'hack
+    ;; ugly o'hack
     (update-geocahce-for-link-changes pcomponent pid view-name (unit :db/id)
                                       start-pos end-pos (prop :orgpad/link-mid-pt)
                                       (unit :orgpad/refs))

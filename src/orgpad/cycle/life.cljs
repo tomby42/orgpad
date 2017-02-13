@@ -45,21 +45,11 @@
     (letfn [(parser-read [key params disable-cache?]
               (let [pstate-cur (@parser-state [key params])]
                 (if (nil? pstate-cur)
-                  (let [pstate (parser/parse-props @state read-fn key params)]
-                    (when (not disable-cache?)
-                      (vswap! parser-state assoc [key params] pstate))
-                    (pstate :value))
-                  (pstate-cur :value))))
-
-            (parser-read-1 [key params disable-cache?]
-              (let [pstate-cur (@parser-state [key params])]
-                (if (nil? pstate-cur)
-                  (let [pstate (parser/parse-props-1 @state read-fn global-cache key params)]
+                  (let [pstate (parser/parse-props @state read-fn global-cache key params)]
                     (when (not disable-cache?)
                       (vswap! parser-state assoc [key params] pstate))
                     (aget pstate "value"))
                   (aget pstate-cur "value"))))
-
 
             (parser-mutate [key-params-tuple]
               (let [[new-store key-params-read effects]
@@ -69,6 +59,7 @@
                          [store (conj key-params-read kp) effects]
                          (let [{:keys [state effect]}
                                (mutate-fn { :state store
+                                            :global-cache global-cache
                                             :force-update! (partial parser/force-update! force-update-all force-update-part)
                                             :transact! parser-mutate } key params)]
                            [state key-params-read
@@ -85,57 +76,21 @@
                   (let [pstate-cur (@parser-state [key params])
                         pstate (parser/update-parsed-props
                                 new-store read-fn pstate-cur update-fn
-                                force-update-all force-update-part)]
-                    (vswap! parser-state assoc [key params] pstate)))
-
-                (reset! state (store/reset-changes new-store))
-
-                (eff/do-effects effects) ))
-
-            (parser-mutate-1 [key-params-tuple]
-              (let [[new-store key-params-read effects]
-                    (reduce
-                     (fn [[store key-params-read effects] [key params & [type] :as kp]]
-                       (if (= type :read)
-                         [store (conj key-params-read kp) effects]
-                         (let [{:keys [state effect]}
-                               (mutate-fn { :state store
-                                            :global-cache global-cache
-                                            :force-update! (partial parser/force-update! force-update-all force-update-part)
-                                            :transact! parser-mutate-1 } key params)]
-                           [state key-params-read
-                            (if (nil? effect)
-                              effects
-                              (conj effects effect))] )))
-                     [@state [] []] key-params-tuple)
-
-                    key-params-read' (if (empty? key-params-read)
-                                       (keys @parser-state)
-                                       key-params-read)]
-
-                (doseq [[key params] key-params-read']
-                  (let [pstate-cur (@parser-state [key params])
-                        pstate (parser/update-parsed-props-1
-                                new-store read-fn pstate-cur update-fn
                                 force-update-all force-update-part
                                 global-cache)]
                     (vswap! parser-state assoc [key params] pstate)))
 
                 (reset! state (store/reset-changes new-store))
 
-                (eff/do-effects effects) ))
-
-            ]
+                (eff/do-effects effects) ))]
 
       { :child-context
         (fn [_]
           { :parser-read
-            ;;parser-read
-            parser-read-1
+            parser-read
 
             :parser-mutate
-            ;;parser-mutate
-            parser-mutate-1
+            parser-mutate
 
             :global-conf
             #js [global-cfg]
