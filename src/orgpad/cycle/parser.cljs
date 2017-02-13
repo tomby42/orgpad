@@ -1,5 +1,5 @@
 (ns ^{:doc "Definition of property parser"}
-    orgpad.cycle.parser
+  orgpad.cycle.parser
   (:require [orgpad.core.store :as store]
             [clojure.walk :as walk]))
 

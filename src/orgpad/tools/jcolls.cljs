@@ -1,5 +1,7 @@
 (ns ^{:doc "JS collections tools"}
-  orgpad.tools.jcolls)
+  orgpad.tools.jcolls
+  (:require [goog.array]
+            [goog.object]))
 
 (defn aset!
   "Sets the value at the index."
@@ -32,3 +34,9 @@
      (if a
        (apply aget-nil a idxs)
        nil))))
+
+(defn clear!
+  [coll]
+  (if (js/Array.isArray coll)
+    (js/goog.array.clear coll)
+    (js/goog.object.clear coll)))

@@ -12,6 +12,7 @@
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.rum :as trum]
             [orgpad.tools.geom :as geom]
+            [orgpad.tools.jcolls :as jcolls]
             [orgpad.tools.geocache :as geocache]))
 
 (def ^:private init-state
@@ -293,6 +294,9 @@
                             id
                             "bbox"
                             bbox)))))
+(defn get-default-bbox
+  []
+  #js { :left 0 :right js/window.innerWidth :top 0 :bottom js/window.innerHeight })
 
 (defn- pick-visible-children
   [unit view-unit old-node global-cache]
@@ -305,7 +309,8 @@
                                       (transient {}) (aget old-node "children")))
                              {})
             pos (-> view-unit :orgpad/transform :translate)
-            bbox (aget global-cache id "bbox")
+            bbox (or (aget global-cache id "bbox")
+                     (get-default-bbox))
             size (geom/*c [(- (.-right bbox) (.-left bbox))
                            (- (.-bottom bbox) (.-top bbox))]
                           (-> view-unit :orgpad/transform :scale))

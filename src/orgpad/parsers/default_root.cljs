@@ -6,6 +6,7 @@
             [orgpad.tools.dscript :as ds]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.geocache :as geocache]
+            [orgpad.tools.jcolls :as jscolls]
             [orgpad.components.registry :as registry]))
 
 (defn- find-root-view-info
@@ -135,6 +136,7 @@
 (defmethod mutate :orgpad/loaded
   [{ :keys [force-update! global-cache]} _ new-state]
   (force-update!)
+  (jscolls/clear! global-cache)
   (geocache/rebuild! global-cache new-state)
   { :state new-state })
 
