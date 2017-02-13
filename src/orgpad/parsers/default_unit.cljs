@@ -182,7 +182,6 @@
     (do
       ;; (println "skipping" old-node uid)
       (.push @tree old-node)
-      ;; (vswap! tree conj old-node)
       (aget old-node "value"))
     (props (merge env
                   { :unit-id    uid
@@ -201,7 +200,9 @@
         (update-in eunit [:orgpad/refs]
                    (fn [refs]
                      (mapv (fn [[u o]] (parser' u o))
-                           ((:orgpad/visible-children-picker view-info) unit view-unit old-node global-cache))))
+                           ((:orgpad/visible-children-picker view-info) unit view-unit
+                            (if (and old-node (= (aget old-node "key") :orgpad/unit-view)) old-node nil)
+                            global-cache))))
         (let [old-children-nodes (and old-node (aget old-node "children"))
               use-children-nodes? (and old-node
                                        (= (aget old-node "key") :orgpad/unit-view)
