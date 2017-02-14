@@ -4,6 +4,7 @@
             [orgpad.tools.dscript :as ds]
             [orgpad.tools.colls :as colls]
             [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.geocache :as geocache]
             [orgpad.components.registry :as registry]))
 
 
@@ -59,7 +60,6 @@
            (not (or (aget old-node "changed?")
                     (aget old-node "me-changed?")))
            (= uid (-> (aget old-node "value") ot/uid)))
-
     (do
       ;; (println "skipping" old-node uid)
       (.push @tree old-node)
@@ -237,11 +237,12 @@
     []))
 
 (defmethod mutate :orgpad.units/clone-view
-  [{:keys [state]} _ [unit-tree new-view-name]]
+  [{:keys [state global-cache]} _ [unit-tree new-view-name]]
   (let [indexer (volatile! 0)
         info (registry/get-component-info (-> unit-tree :view :orgpad/view-type))
         cloned-view (clone-view unit-tree new-view-name indexer)
         cloned-child-props (clone-child-props info unit-tree new-view-name indexer)
         cloned-propagated-child-props (clone-propagated-child-props info unit-tree new-view-name indexer)]
+    (geocache/copy global-cache (ot/uid unit-tree) (-> unit-tree :view :orgpad/view-name) new-view-name)
     { :state
       (store/transact state (colls/minto cloned-view cloned-child-props cloned-propagated-child-props)) }))

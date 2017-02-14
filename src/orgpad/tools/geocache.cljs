@@ -1,6 +1,7 @@
 (ns ^{:doc "Geocache for map component"}
   orgpad.tools.geocache
-  (:require [clojure.data.avl :as avl]
+  (:require [goog]
+            [clojure.data.avl :as avl]
             [orgpad.core.store :as store]
             [orgpad.tools.geohash :as geohash]
             [orgpad.tools.geom :as geom]
@@ -127,3 +128,14 @@
         (jcolls/aset! global-cache uid "link-info" view-name [pos size])
         (update-box! global-cache pid view-name
                      uid pos size nil nil #js [(vs 0) (vs 1)])))))
+
+(defn copy
+  [global-cache pid src dst]
+  (when-let [geocaches (jcolls/aget-nil global-cache pid "geocache")]
+    (aset geocaches dst (js/goog.cloneObject (aget geocaches src))))
+  (let [ks (js/Object.keys global-cache)]
+    (areduce ks i ret global-cache
+             (let [lid (aget ks i)
+                   val (jcolls/aget-nil global-cache lid "link-info" src)]
+               (when (-> val nil? not)
+                 (jcolls/aset! global-cache lid "link-info" dst val))))))
