@@ -1,7 +1,6 @@
 (ns ^{:doc "Geocache for map component"}
   orgpad.tools.geocache
-  (:require [goog]
-            [clojure.data.avl :as avl]
+  (:require [clojure.data.avl :as avl]
             [orgpad.core.store :as store]
             [orgpad.tools.geohash :as geohash]
             [orgpad.tools.geom :as geom]

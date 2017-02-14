@@ -7,12 +7,16 @@
 (def ^:private MAX-RESOLUTION 12)
 (def ^:private BOX-RESOLUTION 7)
 
+(def ^:private encode (aget js/Geohash "encode"))
+(def ^:private decode (aget js/Geohash "decode"))
+(def ^:private adjacent (aget js/Geohash "adjacent"))
+
 (defn pos->hash
   "Map x, y coords to geohash with hash length res."
   [x y & [res]]
   (let [lon (/ (+ x COORD-CENTER) MAX-COORD)
         lat (/ (+ y COORD-CENTER) MAX-COORD)]
-    (js/Geohash.encode lat lon (or res MAX-RESOLUTION))))
+    (encode lat lon (or res MAX-RESOLUTION))))
 
 (defn- lalo->px
   [l]
@@ -21,7 +25,7 @@
 (defn hash->pos
   "Maps geohash to x, y in plane"
   [h]
-  (let [c (js/Geohash.decode h)]
+  (let [c (decode h)]
     [(lalo->px (aget c "lon" )) (lalo->px (aget c "lat" ))]))
 
 (defn- steps
@@ -29,8 +33,8 @@
   [res]
   (let [h (pos->hash 0 0 res)
         hc1 (hash->pos h)
-        hc2 (hash->pos (js/Geohash.adjacent h "e"))
-        hc3 (hash->pos (js/Geohash.adjacent h "n"))]
+        hc2 (hash->pos (adjacent h "e"))
+        hc3 (hash->pos (adjacent h "n"))]
     [(- (hc2 0) (hc1 0))
      (- (hc3 1) (hc1 1))]))
 
