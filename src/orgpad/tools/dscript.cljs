@@ -17,3 +17,7 @@
 (defn find-props
   [u pred]
   (entity->map (find-props-base u pred)))
+
+(defn props->maps
+  [u]
+  (mapv entity->map (:orgpad/props-refs u)))

@@ -51,6 +51,18 @@
                     (aget pstate "value"))
                   (aget pstate-cur "value"))))
 
+            (parser-state-push! [key params]
+              ;; (println (@parser-state [key params]))
+              (vswap! parser-state update-in [:stack [key params]] (fnil conj []) (parser/clone-node (@parser-state [key params]))))
+
+            (parser-state-pop! [key params update!]
+              ;; (println (last (get-in @parser-state [:stack [key params]])))
+              (let [current-state (get @parser-state [key params])
+                    old-state (-> @parser-state (get-in [:stack [key params]]) peek)]
+                (update! old-state current-state)
+                (vswap! parser-state assoc [key params] old-state)
+                (vswap! parser-state update-in [:stack [key params]] pop)))
+
             (parser-mutate [key-params-tuple]
               (let [[new-store key-params-read effects]
                     (reduce
@@ -61,6 +73,8 @@
                                (mutate-fn { :state store
                                             :global-cache global-cache
                                             :force-update! (partial parser/force-update! force-update-all force-update-part)
+                                            :parser-state-push! parser-state-push!
+                                            :parser-state-pop! parser-state-pop!
                                             :transact! parser-mutate } key params)]
                            [state key-params-read
                             (if (nil? effect)
@@ -69,7 +83,7 @@
                      [@state [] []] key-params-tuple)
 
                     key-params-read' (if (empty? key-params-read)
-                                       (keys @parser-state)
+                                       (-> @parser-state (dissoc :stack) keys)
                                        key-params-read)]
 
                 (doseq [[key params] key-params-read']

@@ -72,17 +72,42 @@
   (store/changed? state []))
 
 (defmethod mutate :orgpad/root-view-stack
-  [{ :keys [state] } _ { :keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
+  [{ :keys [state parser-state-push!] } _ { :keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
   (let [root-view-info (find-root-view-info state)
         rvi-id (root-view-info :db/id)
         pos (or (-> root-view-info :orgpad/view-stack count) 0)]
+    (parser-state-push! :orgpad/root-view [])
     { :state (store/transact state [[:db/add rvi-id :orgpad/view-stack [pos id view-name view-type view-path]]]) }))
 
+(defn update-parser-state!
+  [db old new]
+  (let [root (aget old "children" 0)
+        child (aget new "children" 0)
+        uid (ot/uid (aget child "value"))
+        idx (.findIndex (aget root "children")
+                        (fn [node] (= (-> node (aget "value") ot/uid)
+                                      uid)))
+        unit (-> child (aget "value") :unit)
+        props (-> db (store/query[:entity (:db/id unit)])
+                  ds/props->maps)
+        unit' (assoc unit :orgpad/props-refs props)
+        new-value (update-in (aget root "value")
+                             [:unit :orgpad/refs]
+                             update idx
+                             assoc :unit unit' :props props)]
+    ;; (println "old value" (aget root "value"))
+    ;; (println "new value" new-value)
+    (aset child "value" (assoc (aget child "value") :unit unit' :props props))
+    (aset root "children" idx child)
+    (aset root "value" new-value)
+    (aset old "value" new-value)))
+
 (defmethod mutate :orgpad/root-unit-close
-  [{ :keys [state] } _ {:keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
+  [{ :keys [state parser-state-pop!] } _ {:keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
   (let [root-view-info (find-root-view-info state)
         rvi-id (root-view-info :db/id)
         last-view (-> root-view-info :orgpad/view-stack sort last)]
+    (parser-state-pop! :orgpad/root-view [] (partial update-parser-state! state))
     { :state (store/transact state [[:db/retract rvi-id :orgpad/view-stack last-view] ]) }))
 
 (defmethod mutate :orgpad/root-view-conf

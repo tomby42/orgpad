@@ -38,6 +38,14 @@
       (aset "changed?" (or me-changed?
                            (.some (aget node "children") (fn [n] (aget n "changed?"))))))))
 
+(defn clone-node
+  [node]
+  (let [children (aget node "children")]
+    #js { :value (aget node "value")
+          :children (amap children i ret (clone-node (aget children i)))
+          :key (aget node "key")
+          :params (aget node "params") }))
+
 (defn- update-parsed-props-
   [{:keys [read tree] :as env}]
   (let [dtree    @tree
