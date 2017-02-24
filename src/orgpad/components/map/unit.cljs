@@ -22,8 +22,8 @@
   (-> view :orgpad/refs first :db/id))
 
 (defn- select-unit
-  [unit-tree prop component local-state]
-  (swap! local-state merge { :selected-unit [unit-tree prop (aget component "parent-view")] }))
+  [unit-tree prop pcomponent local-state]
+  (swap! local-state merge { :selected-unit [unit-tree prop (aget pcomponent "parent-view")] }))
 
 (defn- props-pred
   [ctx-unit view-name view-type v]
@@ -77,17 +77,25 @@
     (uedit/open-unit component unit-tree)))
 
 (defn- try-move-unit
-  [unit-tree prop component local-state ev]
-  (swap! local-state merge { :local-mode :try-unit-move
-                             :selected-unit [unit-tree prop (aget component "parent-view")]
-                             :mouse-x (.-clientX (jev/touch-pos ev))
-                             :mouse-y (.-clientY (jev/touch-pos ev)) })
+  [component unit-tree prop pcomponent local-state ev]
+  (let [old-node (:selected-node @local-state)
+        new-node (-> component rum/state deref (trum/ref-node "unit-node"))]
+    (when old-node
+      (aset old-node "style" "z-index" "0"))
+    (when new-node
+      (aset new-node "style" "z-index" "1"))
+    (swap! local-state merge { :local-mode :try-unit-move
+                               :selected-unit [unit-tree prop (aget pcomponent "parent-view")]
+                               :selected-node new-node
+                               :mouse-x (.-clientX (jev/touch-pos ev))
+                               :mouse-y (.-clientY (jev/touch-pos ev)) }))
   (.stopPropagation ev))
 
 (rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} app-state pcomponent view-name pid local-state]
   (let [prop (get-props props view-name pid :orgpad.map-view/vertex-props)
         pos (prop :orgpad/unit-position)
+        selected? (= (unit :db/id) (-> local-state deref :selected-unit first ot/uid))
         style (merge { :width (prop :orgpad/unit-width)
                        :height (prop :orgpad/unit-height)
                        :borderWidth (prop :orgpad/unit-border-width)
@@ -98,17 +106,19 @@
                        :backgroundColor (prop :orgpad/unit-bg-color) }
                      (css/transform { :translate pos })) ]
     ;; (js/window.console.log "rendering " (unit :db/id))
-    (when (= (unit :db/id) (-> local-state deref :selected-unit first ot/uid))
+    (when selected?
       (select-unit unit-tree prop pcomponent local-state))
     (html
      [ :div
       (if (= (app-state :mode) :write)
         { :style style :className "map-view-child" :key (unit :db/id)
-          :onMouseDown #(try-move-unit unit-tree prop pcomponent local-state %)
+          :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)
+          :ref "unit-node"
          }
         { :style style :className "map-view-child" :key (unit :db/id)
-          :onMouseDown #(try-move-unit unit-tree prop pcomponent local-state %)
-          :onTouchStart #(try-move-unit unit-tree prop pcomponent local-state %)
+          :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)
+          :onTouchStart #(try-move-unit component unit-tree prop pcomponent local-state %)
+          :ref "unit-node"
          })
        (node/node unit-tree (assoc app-state :mode :read))
        (if (= (app-state :mode) :write)
@@ -116,11 +126,11 @@
            { :style { :top 0
                       :width (prop :orgpad/unit-width)
                       :height (prop :orgpad/unit-height) }
-             :onMouseDown #(try-move-unit unit-tree prop pcomponent local-state %) } ]
-         [ :div.map-view-child.link-control
-           { :style { :top -20 :left -20 }
-             :onMouseDown #(try-move-unit unit-tree prop pcomponent local-state %)
-             :onTouchStart #(try-move-unit unit-tree prop pcomponent local-state %)
+             :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %) } ]
+         [ :div.map-view-child.leader-control
+           { :style { :top -10 :left -10 }
+             :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)
+             :onTouchStart #(try-move-unit component unit-tree prop pcomponent local-state %)
              :onMouseUp #(open-unit pcomponent unit-tree local-state) } ]
          )
       ])))

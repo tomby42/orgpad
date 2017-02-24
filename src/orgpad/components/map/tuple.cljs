@@ -77,9 +77,16 @@
       (when child-tree
         (rum/with-key (node/node child-tree app-state) 2)) ]))
 
+(defn- find-map-tuple-node
+  [e]
+  (loop [n (.-target e)]
+    (if (= (.-className n) "map-tuple")
+      n
+      (recur (.-parentNode n)))))
+
 (defn- comp-dir
   [e]
-  (let [bb (->> e .-target .getBoundingClientRect)
+  (let [bb (->> e find-map-tuple-node .getBoundingClientRect)
         x (.-clientX e)
         dist->left (- x (.-left bb))
         dist->right (- (.-right bb) x)]
