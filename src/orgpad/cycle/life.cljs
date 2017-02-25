@@ -59,8 +59,9 @@
               ;; (println (last (get-in @parser-state [:stack [key params]])))
               (let [current-state (get @parser-state [key params])
                     old-state (-> @parser-state (get-in [:stack [key params]]) peek)]
-                (update! old-state current-state)
-                (vswap! parser-state assoc [key params] old-state)
+                (when update!
+                  (update! old-state current-state)
+                  (vswap! parser-state assoc [key params] old-state))
                 (vswap! parser-state update-in [:stack [key params]] pop)))
 
             (parser-mutate [key-params-tuple]

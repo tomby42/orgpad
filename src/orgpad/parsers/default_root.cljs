@@ -102,12 +102,23 @@
     (aset root "value" new-value)
     (aset old "value" new-value)))
 
+(defn- sequent?
+  [db stack]
+  (let [uid (-> stack last second)
+        parent (if (= (count stack) 1) 0 (-> stack pop last second))]
+    (not-empty (store/query db '[:find ?x
+                                 :in $ ?p ?u
+                                 :where
+                                 [?p :orgpad/refs ?x]
+                                 [(= ?x ?u)]] [parent uid]))))
+
 (defmethod mutate :orgpad/root-unit-close
   [{ :keys [state parser-state-pop!] } _ {:keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
   (let [root-view-info (find-root-view-info state)
         rvi-id (root-view-info :db/id)
-        last-view (-> root-view-info :orgpad/view-stack sort last)]
-    (parser-state-pop! :orgpad/root-view [] (partial update-parser-state! state))
+        view-stack (-> root-view-info :orgpad/view-stack sort)
+        last-view (last view-stack)]
+    (parser-state-pop! :orgpad/root-view [] (if (sequent? state view-stack) (partial update-parser-state! state) nil))
     { :state (store/transact state [[:db/retract rvi-id :orgpad/view-stack last-view] ]) }))
 
 (defmethod mutate :orgpad/root-view-conf
