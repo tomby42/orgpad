@@ -31,6 +31,16 @@
   (redo [store]
     "Performs redo on store and returns new one."))
 
+(defprotocol IStoreHistoryStatus
+
+  (undoable? [store]
+    "Returns true if it is possible to perform undo on current store.
+     false otherwise.")
+
+  (redoable? [store]
+    "Returns true if it is possible to perform redo on current store.
+     false otherwise."))
+
 (defprotocol IHistoryRecords
 
   (push [this record] [this record meta]
@@ -61,8 +71,7 @@
     [this record meta]
     (if (empty? record)
       this
-      (HistoryRecords. (conj (.-history this) record)
-                       (or meta (.-history-finger this)))))
+      (HistoryRecords. (conj (.-history this) record) meta)))
 
   (undo-info [this]
     (let [finger         (.-history-finger this)
@@ -73,7 +82,7 @@
           record         (if (neg? current-finger)
                            nil
                            (history current-finger))]
-      (if (nil? record )
+      (if (nil? record)
         [nil nil]
         [record (dec current-finger)])))
 
@@ -201,6 +210,15 @@
                                         (dtool/datoms->tx tx))
                           finger)
         store)))
+
+  IStoreHistoryStatus
+  (undoable?
+    [store]
+    (-> (undo-info (.-history-records store)) first nil? not))
+
+  (redoable?
+    [store]
+    (-> (redo-info (.-history-records store)) first nil? not))
 
   ITempids
   (tempids
@@ -332,6 +350,15 @@
     (DatomAtomStore. (redo (.-datom store))
                      (.-atom store)
                      (.-meta store)))
+
+  IStoreHistoryStatus
+  (undoable?
+    [store]
+    (undoable? (.-datom store)))
+
+  (redoable?
+    [store]
+    (redoable? (.-datom store)))
 
   ITempids
   (tempids

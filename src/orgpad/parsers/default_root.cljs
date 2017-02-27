@@ -15,7 +15,7 @@
     (ds/find-props root-unit (fn [u] (= (u :orgpad/type) :orgpad/root-unit-view)))))
 
 (defmethod read :orgpad/root-view
-  [{ :keys [state props] :as env } k params]
+  [{ :keys [state query] :as env } k params]
   (let [db state
 
         root-view-info
@@ -45,7 +45,7 @@
 
 ;;    (println "root parser" current-root-id view-name view-type view-path)
 
-    (props (merge env { :view-name view-name
+    (query (merge env { :view-name view-name
                         :unit-id current-root-id
                         :view-type view-type
                         :view-path view-path })
@@ -169,3 +169,19 @@
   [{ :keys [state transact!] } _ url]
   { :state (store/transact state [[:loading] true])
     :effect #(orgpad/download-orgpad-from-url url transact!) })
+
+(defmethod read :orgpad/undoable?
+  [{ :keys [state] } _ _]
+  (store/undoable? state))
+
+(defmethod read :orgpad/redoable?
+  [{ :keys [state] } _ _]
+  (store/redoable? state))
+
+(defmethod mutate :orgpad/undo
+  [{ :keys [state] } _ _]
+  { :state (store/undo state) })
+
+(defmethod mutate :orgpad/redo
+  [{ :keys [state] } _ _]
+  { :state (store/redo state) })

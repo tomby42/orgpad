@@ -55,7 +55,7 @@
                              (= (u :orgpad/type) :orgpad/unit-path-info)))))
 
 (defn- parse
-  [props tree env unit-id view-unit view-info view-path view-contexts params uid old-node]
+  [query tree env unit-id view-unit view-info view-path view-contexts params uid old-node]
   (if (and old-node
            (not (or (aget old-node "changed?")
                     (aget old-node "me-changed?")))
@@ -64,7 +64,7 @@
       ;; (println "skipping" old-node uid)
       (.push @tree old-node)
       (aget old-node "value"))
-    (props (merge env
+    (query (merge env
                   { :unit-id    uid
                     :old-node   nil
                     :view-path  (-> view-path (conj unit-id) (conj (view-unit :orgpad/view-name)))
@@ -109,7 +109,7 @@
         eunit))))
 
 (defmethod read :orgpad/unit-view
-  [{ :keys [state props old-node tree unit-id view-name view-type view-path view-contexts global-cache] :as env } k params]
+  [{ :keys [state query old-node tree unit-id view-name view-type view-path view-contexts global-cache] :as env } k params]
 ;;  (println "read :orgpad/unit-view" unit-id view-name view-type view-path view-contexts k)
 
   (let [db  state
@@ -153,7 +153,7 @@
           (when props-info
             props-info))
 
-        parser' (partial parse props tree env unit-id view-unit view-info view-path view-contexts' params)
+        parser' (partial parse query tree env unit-id view-unit view-info view-path view-contexts' params)
 
         unit' (build-unit unit view-unit old-node view-info parser' global-cache)
 

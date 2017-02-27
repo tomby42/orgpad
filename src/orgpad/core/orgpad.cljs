@@ -49,8 +49,8 @@
                        { :db/id 1,
                          :orgpad/type :orgpad/root-unit-view,
                          :orgpad/refs 0 }
-                       ])
-      (store/transact [[:mode] :write])))
+                       ] {})
+      (store/transact [[:mode] :write] {})))
 
 (defn- update-refs-orders
   [db]

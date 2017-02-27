@@ -113,12 +113,35 @@
 
    [ :div.file-item
     (if/file-input { :on-change #(lc/transact! component [[ :orgpad/load-orgpad % ]]) }
-                   [ :span "Load" ])]
+                   [ :span { :key 1 } "Load" ])]
 
    [ :div.file-item
     { :onClick #(lc/transact! component [[ :orgpad/export-as-html ((lc/global-conf component) :storage-el) ]]) }
     [ :span "Export html" ]]
    ))
+
+(defn- render-edit-menu
+  [component unit-tree local-state]
+  (let [undoable (lc/query component :orgpad/undoable? [] true)
+        redoable (lc/query component :orgpad/redoable? [] true)]
+    (render-menu
+     local-state :edit-menu-unroll "Edit" { :body "edit-menu-body"
+                                            :all "edit-menu-all"
+                                            :header "edit-menu-header"
+                                            :open "open-edit" }
+
+     [ :div
+      (if undoable
+        { :className "file-item" :onClick #(lc/transact! component [[ :orgpad/undo true ]]) }
+        { :className "disabled-item" })
+      [ :span "Undo" ]]
+
+     [ :div
+      (if redoable
+        { :className "file-item" :onClick #(lc/transact! component [[ :orgpad/redo true ]]) }
+        { :className "disabled-item"})
+      [ :span  "Redo" ]]
+     )))
 
 (rum/defcc status < (rum/local { :unroll false :view-menu-unroll false :typed "" } ) lc/parser-type-mixin-context
   [component { :keys [unit view path-info] :as unit-tree } app-state]
@@ -130,6 +153,7 @@
        [ :i { :className "fa fa-navicon fa-lg" } ] ]
       [ :div { :className (str "tools" (when (@local-state :unroll) " more-current")) }
        (render-file-menu component unit-tree local-state)
+       (render-edit-menu component unit-tree local-state)
        (render-view-menu component unit-tree local-state)
 
 ;;       [ :div { :className "mode-button" }

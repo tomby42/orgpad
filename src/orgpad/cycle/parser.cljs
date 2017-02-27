@@ -3,7 +3,7 @@
   (:require [orgpad.core.store :as store]
             [clojure.walk :as walk]))
 
-(defn- parse-props-
+(defn- parse-query-
   [{:keys [tree read] :as env} k params]
 
   (let [tree' @tree]
@@ -17,12 +17,12 @@
       (vreset! tree tree')
       val)))
 
-(defn parse-props
+(defn parse-query
   [state read global-cache k params]
 
   (let [tree (volatile! #js [])]
-    (parse-props- { :state state
-                    :props parse-props-
+    (parse-query- { :state state
+                    :query parse-query-
                     :read read
                     :global-cache global-cache
                     :tree tree }
@@ -30,9 +30,9 @@
     (-> tree deref (aget 0))))
 
 (defn- mark-changed
-  [{:keys [props-changed? force-update-part force-update-all] :as env} node]
+  [{:keys [query-changed? force-update-part force-update-all] :as env} node]
   (.forEach (aget node "children") (fn [node] (mark-changed env node)))
-  (let [me-changed?   (or (props-changed? node env @force-update-part) @force-update-all)]
+  (let [me-changed?   (or (query-changed? node env @force-update-part) @force-update-all)]
     (doto node
       (aset "me-changed?" me-changed?)
       (aset "changed?" (or me-changed?
@@ -46,7 +46,7 @@
           :key (aget node "key")
           :params (aget node "params") }))
 
-(defn- update-parsed-props-
+(defn- update-parsed-query-
   [{:keys [read tree] :as env}]
   (let [dtree    @tree
         old-tree (aget dtree 0)
@@ -55,7 +55,7 @@
     (if (aget node "me-changed?")
       (do
         (vreset! tree #js [])
-        (let [val (parse-props- (merge env { :props parse-props- :old-node node })
+        (let [val (parse-query- (merge env { :query parse-query- :old-node node })
                                 (aget node "key") (aget node "params"))]
           (vreset! tree #js [old-tree (.concat tree' @tree)])
           val))
@@ -82,17 +82,17 @@
                       (into {} (map #(vector % true)) c')
                       c')) c)))
 
-(defn update-parsed-props
+(defn update-parsed-query
   [state read old-tree changed? force-update-all force-update-part global-cache]
-  (let [tree (volatile! #js [#js [(mark-changed { :props-changed? changed?
+  (let [tree (volatile! #js [#js [(mark-changed { :query-changed? changed?
                                                   :force-update-all force-update-all
                                                   :force-update-part force-update-part
                                                   :changed-entities (to-js (store/changed-entities state))
                                                   :state state } old-tree)] #js []])]
     (vreset! force-update-all false)
     (vreset! force-update-part {})
-    (update-parsed-props- { :state state
-                            :props update-parsed-props-
+    (update-parsed-query- { :state state
+                            :query update-parsed-query-
                             :read read
                             :global-cache global-cache
                             :tree tree })

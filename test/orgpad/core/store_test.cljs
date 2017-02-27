@@ -110,21 +110,52 @@
                       :friend 2
                       }])
                    (store/transact
-                    [{:db/id 3
-                      :name "Trubko"
-                      :friend 2
+                    [{:db/id 2
+                      :name "Budko"
+                      :friend 3
                       }]))
           es3   (-> es2
                     store/undo
                     store/redo)]
 
-      (is (empty? (store/query (store/undo es2) '[:find ?e :where [?e :name "Trubko"]]))
+      (is (empty? (store/query (store/undo es2) '[:find ?e :where [?e :name "Budko"]]))
           "should be empty")
 
-      (is (not (empty? (store/query es3 '[:find ?e :where [?e :name "Trubko"]])))
+      (is (not (empty? (store/query es3 '[:find ?e :where [?e :name "Budko"]])))
           "should be present")
 
       ))
+
+   (testing "undo finger"
+     (let [db   (create-db)
+           es1  (store/new-datom-store db)
+           es2  (-> es1
+                    (store/transact
+                     [{:db/id 3
+                       :name "Trubko"
+                       :friend 2
+                       }])
+                    (store/transact
+                     [{:db/id 2
+                       :name "Budko"
+                       :friend 3
+                       }]))
+           es3   (store/undo es2)
+           es4   (store/transact es3
+                                 [{:db/id 4
+                                   :name "Fero"
+                                   :friend 3
+                                   }])
+           es5   (store/undo es4)
+           ]
+       (is (empty? (store/query es5 '[:find ?e :where [?e :name "Budko"]]))
+           "Budko should not be in db")
+       (is (empty? (store/query es5 '[:find ?e :where [?e :name "Fero"]]))
+           "Fero should not be in db")
+       (is (not (empty? (store/query es5 '[:find ?e :where [?e :name "Trubko"]])))
+           "Trubko should be in db")
+       ))
+
 
   (testing "changed?"
     (let [db   (create-db)

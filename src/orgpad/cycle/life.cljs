@@ -45,7 +45,7 @@
     (letfn [(parser-read [key params disable-cache?]
               (let [pstate-cur (@parser-state [key params])]
                 (if (nil? pstate-cur)
-                  (let [pstate (parser/parse-props @state read-fn global-cache key params)]
+                  (let [pstate (parser/parse-query @state read-fn global-cache key params)]
                     (when (not disable-cache?)
                       (vswap! parser-state assoc [key params] pstate))
                     (aget pstate "value"))
@@ -89,7 +89,7 @@
 
                 (doseq [[key params] key-params-read']
                   (let [pstate-cur (@parser-state [key params])
-                        pstate (parser/update-parsed-props
+                        pstate (parser/update-parsed-query
                                 new-store read-fn pstate-cur update-fn
                                 force-update-all force-update-part
                                 global-cache)]
@@ -139,8 +139,8 @@
     (rum/mount el root-el)
     (assoc context :root-el el)))
 
-(defn props
-  "Returns unwinded value for given 'component', 'key' and
+(defn query
+  "Returns value of query for given 'component', 'key' and
   'params'. optional 'disable-cache?' switches off cache of results."
   [component key params & [disable-cache?]]
   (let [parser-read (aget (.. component -context) "parser-read")]

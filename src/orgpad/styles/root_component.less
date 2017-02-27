@@ -53,7 +53,7 @@
 
         .more-current {
             .more;
-            width: 360px;
+            width: 400px;
         }
 
         .more-4 {
@@ -85,6 +85,12 @@
             }
         }
 
+        .disabled-item {
+            text-align: center;
+            cursor: pointer;
+            color: #ddd;
+        }
+
         .view-menu-all {
             width: 180px;
         }
@@ -107,6 +113,19 @@
         }
 
         .file-menu-body {
+            padding-left: 0px;
+            width: 100px;
+        }
+
+        .edit-menu-all {
+            width: 100px;
+        }
+
+        .edit-menu-header {
+            .file-menu-all;
+        }
+
+        .edit-menu-body {
             padding-left: 0px;
             width: 100px;
         }
@@ -161,6 +180,11 @@
                 &.open-file {
                     .transformY;
                     height: 74px;
+                }
+
+                &.open-edit {
+                    .transformY;
+                    height: 44px;
                 }
             }
         }
