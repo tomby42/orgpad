@@ -216,7 +216,6 @@
                                       :new (get-info new-db uid) }))
                      (filter (fn [{:keys [new old]}] (or new old))))
                     changed-units)]
-    (println "update-changed-units!" changed-units infos)
     (doseq [info infos]
       (if (= (or (get-in info [:old :type]) (get-in info [:new :type])) :vertex)
         (let [old-info (get-in info [:old :info])
@@ -225,7 +224,6 @@
               [pid uid view-name] data
               [_ _ _ pos w h] new-info
               [_ _ _ old-pos old-w old-h] old-info]
-          (println "vertex geocache update" pid view-name uid pos [w h] old-pos [old-w old-h])
           (update-box! global-cache pid view-name uid pos [w h] old-pos [old-w old-h]))
         (let [old-info (get-in info [:old :info])
               new-info (get-in info [:new :info])
@@ -235,8 +233,6 @@
               [_ _ _ old-mid-pt] old-info
               [pos size] (link-dims (get-in info [:new :v1]) (get-in info [:new :v2]) mid-pt)
               [old-pos old-size] (link-dims (get-in info [:old :v1]) (get-in info [:old :v2]) old-mid-pt)]
-          (println "link geocache update" pid view-name
-                   uid pos size old-pos old-size #js [(get-in info [:new :v1 1]) (get-in info [:new :v2 1])])
           (when (and pos size)
             (jcolls/aset! global-cache uid "link-info" view-name [pos size]))
           (update-box! global-cache pid view-name
