@@ -64,6 +64,8 @@
   (swap! local-state-atom
          merge { :local-mode :canvas-move
                  :show-local-menu false
+                 :start-mouse-x (.-clientX ev)
+                 :start-mouse-y (.-clientY ev)
                  :mouse-x (.-clientX ev)
                  :mouse-y (.-clientY ev) }))
 
@@ -107,6 +109,8 @@
   (let [local-state (trum/comp->local-state component)]
     (swap! local-state merge { :mouse-x (.-clientX ev)
                                :mouse-y (.-clientY ev)
+                               :start-mouse-x (.-clientX ev)
+                               :start-mouse-y (.-clientY ev)
                                :local-mode (if (= (app-state :mode) :write) :mouse-down :canvas-move)
                                :show-local-menu false })
     ))
@@ -118,12 +122,24 @@
                               :begin-unit-id (-> @local-state :selected-unit (nth 0) ot/uid)
                               :position pos }]]))
 
+(defn- stop-canvas-move
+  [component { :keys [unit view] } local-state]
+  (lc/transact! component
+                [[ :orgpad.units/map-view-canvas-move
+                   { :view view
+                     :unit-id (unit :db/id)
+                     :old-pos [(@local-state :start-mouse-x)
+                               (@local-state :start-mouse-y)]
+                     :new-pos [(@local-state :mouse-x)
+                               (@local-state :mouse-y)] }]])
+  (swap! local-state merge { :show-local-menu true }))
+
 (defn- handle-mouse-up
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
     (case (:local-mode @local-state)
       :mouse-down (swap! local-state merge { :show-local-menu true })
-      :canvas-move (swap! local-state merge { :show-local-menu true })
+      :canvas-move (stop-canvas-move component unit-tree local-state)
       :make-link (make-link component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
       :link-shape (when (= (@local-state :link-menu-show) :maybe)
                     (swap! local-state assoc :link-menu-show :yes))
@@ -135,8 +151,23 @@
   (swap! local-state merge { :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))
 
+(def ^:private tr-rex (js/RegExp "translate\\(([-0-9.]+)px, ([-0-9.]+)px"))
+(def ^:private sc-rex (js/RegExp "scale.*"))
+
 (defn- canvas-move
   [component { :keys [unit view] :as unit-tree } app-state local-state ev]
+  (let [pel (-> component rum/state deref (trum/ref-node "component-node"))
+        el (aget pel "children" 0)
+        tr (aget el "style" "transform")
+        t (.exec tr-rex tr)
+        s (.exec sc-rex tr)
+        x (js/parseInt (aget t 1))
+        y (js/parseInt (aget t 2))]
+    (aset el "style" "transform" (str "translate("
+                                      (+ x (- (.-clientX ev) (@local-state :mouse-x))) "px, "
+                                      (+ y (- (.-clientY ev) (@local-state :mouse-y))) "px) "
+                                      s)))
+  (comment
   (lc/transact! component
                 [[ :orgpad.units/map-view-canvas-move
                    { :view view
@@ -145,6 +176,7 @@
                                (@local-state :mouse-y)]
                      :new-pos [(.-clientX ev)
                                (.-clientY ev)] }]])
+  )
   (update-mouse-position local-state ev))
 
 (defn- unit-change
@@ -294,7 +326,7 @@
                             id
                             "bbox"
                             bbox)))))
-(defn get-default-bbox
+(defn- get-default-bbox
   []
   #js { :left 0 :right js/window.innerWidth :top 0 :bottom js/window.innerHeight })
 

@@ -84,46 +84,80 @@
                   (recur (inc i))))))
           (recur (inc k)))))))
 
+(defn- refs-order->vertices
+  [refs-order]
+  (into [] (map (fn [[_ uid]] uid)) refs-order))
+
+
+(defn- link-dims
+  [start end mid-pt]
+  (if (and start end mid-pt)
+    (let [bbox (geom/link-bbox (start 3) (end 3) mid-pt)
+          pos (bbox 0)
+          size (geom/-- (bbox 1) (bbox 0))]
+      [pos size])
+    [nil nil]))
+
+(defn- make-vertex-query
+  [& params]
+  (into []
+        (concat
+         '[:find]
+         (if (empty? params)
+           '[?parent ?unit ?view-name ?pos ?w ?h]
+           '[[?parent ?unit ?view-name ?pos ?w ?h]])
+         '[:in $] params
+         '[:where
+           [?unit :orgpad/props-refs ?map-prop]
+           [?map-prop :orgpad/refs ?unit]
+           [?map-prop :orgpad/type :orgpad/unit-view-child]
+           [?map-prop :orgpad/view-type :orgpad.map-view/vertex-props]
+           [?map-prop :orgpad/view-name ?view-name]
+           [?map-prop :orgpad/context-unit ?parent]
+           [?map-prop :orgpad/unit-position ?pos]
+           [?map-prop :orgpad/unit-width ?w]
+           [?map-prop :orgpad/unit-height ?h]])))
+
+(defn- make-link-query
+  [& params]
+  (into []
+        (concat
+         '[:find]
+         (if (empty? params)
+           '[?parent ?unit ?view-name ?mid-pt ?refs-order]
+           '[[?parent ?unit ?view-name ?mid-pt ?refs-order]])
+         '[:in $] params
+         '[:where
+           [?unit :orgpad/props-refs ?map-prop]
+           [?unit :orgpad/refs-order ?refs-order]
+           [?map-prop :orgpad/refs ?unit]
+           [?map-prop :orgpad/type :orgpad/unit-view-child]
+           [?map-prop :orgpad/view-type :orgpad.map-view/link-props]
+           [?map-prop :orgpad/view-name ?view-name]
+           [?map-prop :orgpad/context-unit ?parent]
+           [?map-prop :orgpad/link-mid-pt ?mid-pt]])))
+
+(def ^:private vertex-all-query
+  (make-vertex-query))
+
+(def ^:private link-all-query
+  (make-link-query))
+
 (defn rebuild!
   [global-cache db]
-  (let [vertices (store/query db
-                              '[:find ?parent ?unit ?view-name ?pos ?w ?h
-                                :in $
-                                :where
-                                [?unit :orgpad/props-refs ?map-prop]
-                                [?map-prop :orgpad/refs ?unit]
-                                [?map-prop :orgpad/type :orgpad/unit-view-child]
-                                [?map-prop :orgpad/view-type :orgpad.map-view/vertex-props]
-                                [?map-prop :orgpad/view-name ?view-name]
-                                [?map-prop :orgpad/context-unit ?parent]
-                                [?map-prop :orgpad/unit-position ?pos]
-                                [?map-prop :orgpad/unit-width ?w]
-                                [?map-prop :orgpad/unit-height ?h]])
-        edges (store/query db
-                           '[:find ?parent ?unit ?view-name ?mid-pt ?refs-order
-                             :in $
-                             :where
-                             [?unit :orgpad/props-refs ?map-prop]
-                             [?unit :orgpad/refs-order ?refs-order]
-                             [?map-prop :orgpad/refs ?unit]
-                             [?map-prop :orgpad/type :orgpad/unit-view-child]
-                             [?map-prop :orgpad/view-type :orgpad.map-view/link-props]
-                             [?map-prop :orgpad/view-name ?view-name]
-                             [?map-prop :orgpad/context-unit ?parent]
-                             [?map-prop :orgpad/link-mid-pt ?mid-pt]])
-        vertices-map (into {} (map (fn [vinfo] [(nth vinfo 1) vinfo])) vertices)
+  (let [vertices (store/query db vertex-all-query)
+        edges (store/query db link-all-query)
+        vertices-map (into {} (map (fn [vinfo] [(subvec vinfo 0 3) vinfo])) vertices)
         parent-views (into #{} (map (fn [vinfo] [(nth vinfo 0) (nth vinfo 2)])) vertices)]
     (doseq [[pid view-name] parent-views]
       (create! global-cache pid view-name))
     (doseq [[pid uid view-name pos w h] vertices]
       (update-box! global-cache pid view-name uid pos [w h]))
     (doseq [[pid uid view-name mid-pt refs-order] edges]
-      (let [vs (into [] (map (fn [[_ uid]] uid)) refs-order)
-            start (vertices-map (vs 0))
-            end (vertices-map (vs 1))
-            bbox (geom/link-bbox (start 3) (end 3) mid-pt)
-            pos (bbox 0)
-            size (geom/-- (bbox 1) (bbox 0))]
+      (let [vs (refs-order->vertices refs-order)
+            start (vertices-map [pid (vs 0) view-name])
+            end (vertices-map [pid (vs 1) view-name])
+            [pos size] (link-dims start end mid-pt)]
         (jcolls/aset! global-cache uid "link-info" view-name [pos size])
         (update-box! global-cache pid view-name
                      uid pos size nil nil #js [(vs 0) (vs 1)])))))
@@ -138,3 +172,72 @@
                    val (jcolls/aget-nil global-cache lid "link-info" src)]
                (when (-> val nil? not)
                  (jcolls/aset! global-cache lid "link-info" dst val))))))
+
+(def ^:private vertex-unit-query
+  (make-vertex-query '?unit))
+
+(def ^:private vertex-prop-query
+  (make-vertex-query '?map-prop))
+
+(def ^:private link-unit-query
+  (make-link-query '?unit))
+
+(def ^:private link-prop-query
+  (make-link-query '?map-prop))
+
+(defn- get-vertex-info
+  [db uid]
+  (or (store/query db vertex-unit-query [uid]) (store/query db vertex-prop-query [uid])))
+
+(defn- get-link-info
+  [db uid]
+  (or (store/query db link-unit-query [uid]) (store/query db link-prop-query [uid])))
+
+(defn- get-info
+  [db uid]
+  (let [vinfo (get-vertex-info db uid)]
+    (if (nil? vinfo)
+      (when-let [linfo (get-link-info db uid)]
+        (let [vs (refs-order->vertices (linfo 4))
+              v1-info (get-vertex-info db (vs 0))
+              v2-info (get-vertex-info db (vs 1))]
+          { :type :link
+            :info linfo
+            :v1 v1-info
+            :v2 v2-info }))
+      { :type :vertex
+        :info vinfo })))
+
+(defn update-changed-units!
+  [global-cache old-db new-db changed-units]
+  (let [infos (into #{}
+                    (comp
+                     (map (fn [uid] { :old (get-info old-db uid)
+                                      :new (get-info new-db uid) }))
+                     (filter (fn [{:keys [new old]}] (or new old))))
+                    changed-units)]
+    (println "update-changed-units!" changed-units infos)
+    (doseq [info infos]
+      (if (= (or (get-in info [:old :type]) (get-in info [:new :type])) :vertex)
+        (let [old-info (get-in info [:old :info])
+              new-info (get-in info [:new :info])
+              data (or old-info new-info)
+              [pid uid view-name] data
+              [_ _ _ pos w h] new-info
+              [_ _ _ old-pos old-w old-h] old-info]
+          (println "vertex geocache update" pid view-name uid pos [w h] old-pos [old-w old-h])
+          (update-box! global-cache pid view-name uid pos [w h] old-pos [old-w old-h]))
+        (let [old-info (get-in info [:old :info])
+              new-info (get-in info [:new :info])
+              data (or old-info new-info)
+              [pid uid view-name] data
+              [_ _ _ mid-pt] new-info
+              [_ _ _ old-mid-pt] old-info
+              [pos size] (link-dims (get-in info [:new :v1]) (get-in info [:new :v2]) mid-pt)
+              [old-pos old-size] (link-dims (get-in info [:old :v1]) (get-in info [:old :v2]) old-mid-pt)]
+          (println "link geocache update" pid view-name
+                   uid pos size old-pos old-size #js [(get-in info [:new :v1 1]) (get-in info [:new :v2 1])])
+          (when (and pos size)
+            (jcolls/aset! global-cache uid "link-info" view-name [pos size]))
+          (update-box! global-cache pid view-name
+                       uid pos size old-pos old-size #js [(get-in info [:new :v1 1]) (get-in info [:new :v2 1])]))))))

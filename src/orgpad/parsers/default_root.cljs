@@ -179,9 +179,13 @@
   (store/redoable? state))
 
 (defmethod mutate :orgpad/undo
-  [{ :keys [state] } _ _]
-  { :state (store/undo state) })
+  [{ :keys [state global-cache] } _ _]
+  (let [new-state (store/undo state)]
+    (geocache/update-changed-units! global-cache state new-state (:datom (store/changed-entities new-state)))
+    { :state new-state }))
 
 (defmethod mutate :orgpad/redo
-  [{ :keys [state] } _ _]
-  { :state (store/redo state) })
+  [{ :keys [state global-cache] } _ _]
+  (let [new-state (store/redo state)]
+    (geocache/update-changed-units! global-cache state new-state (:datom (store/changed-entities new-state)))
+    { :state new-state }))

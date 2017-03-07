@@ -62,6 +62,24 @@
 
     ))
 
+  (testing "query"
+    (let [db (-> (create-db)
+                 (store/new-datom-store db)
+                 (store/transact
+                  [{:db/id 1
+                    :name "Bzuk"
+                    :friend 2}
+                   {:db/id 2
+                    :name "Cuk"
+                    :friend 1}
+                   {:db/id 3
+                    :name "Fuk"}]))]
+     (is (= (store/query db '[:find [?i ?n] :in $ :where [?i :friend 1] [?i :name ?n]]) [2 "Cuk"])
+         "Should be entity no 2 named Cuk")
+     (is (= (store/query db '[:find [?i ?n] :in $ :where [?i :friend 3] [?i :name ?n]]) nil)
+         "Should be empty")
+    ))
+
   (testing "undo"
     (let [db   (create-db)
           es1  (store/new-datom-store db)
