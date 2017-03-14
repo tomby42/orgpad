@@ -22,9 +22,13 @@
      js/React
      js/ReactTinymce
      #js { :content atom
-           :config #js { :inline true
-                         :plugins "autolink link image lists print preview code"
-                         :toolbar "undo redo | bold italic | alignleft aligncenter alignright"
+           :config #js { :inline false
+                         :theme "modern"
+                         :plugins "advlist autolink autoresize lists link image charmap print preview hr anchor pagebreak
+                                   searchreplace wordcount visualblocks visualchars code fullscreen
+                                   insertdatetime media nonbreaking save table contextmenu directionality
+                                   emoticons template paste textcolor colorpicker textpattern imagetools codesample toc"
+                         :toolbar "undo redo | bold italic | alignleft aligncenter alignright |  bullist numlist outdent indent | fontselect fontsizeselect | forecolor backcolor | codesample"
                         }
            :onChange (fn [e]
                        (let [target (aget e "target")]
