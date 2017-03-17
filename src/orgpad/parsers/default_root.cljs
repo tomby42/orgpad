@@ -116,7 +116,7 @@
   [{ :keys [state parser-state-pop!] } _ {:keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
   (let [root-view-info (find-root-view-info state)
         rvi-id (root-view-info :db/id)
-        view-stack (-> root-view-info :orgpad/view-stack sort)
+        view-stack (->> root-view-info :orgpad/view-stack sort (into []))
         last-view (last view-stack)]
     (parser-state-pop! :orgpad/root-view [] (if (sequent? state view-stack) (partial update-parser-state! state) nil))
     { :state (store/transact state [[:db/retract rvi-id :orgpad/view-stack last-view] ]) }))
