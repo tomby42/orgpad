@@ -274,8 +274,9 @@
                                   (e :orgpad/unit-position)
                                   [(e :orgpad/unit-width) (e :orgpad/unit-height)])))))))
 
-(defmethod mutate :orgpad.sheet/switch-active
-  [{:keys [state global-cache]} _ {:keys [unit-tree direction nof-sheets]}]
+(defn- switch-active
+  [{:keys [state global-cache]}
+   {:keys [unit-tree direction nof-sheets new-active-pos]}]
   (let [{:keys [unit view]} unit-tree
         info (registry/get-component-info (view :orgpad/view-type))
         new-active-unit (mod (+ (view :orgpad/active-unit) direction) nof-sheets)
@@ -285,17 +286,22 @@
                                                   unit
                                                   (info :orgpad/propagated-props-from-children)
                                                   view-units)]
-    (update-geocache-after-switch-active state global-cache unit-tree update-trans)
+      (update-geocache-after-switch-active state global-cache unit-tree update-trans)
+      (into update-trans
+            (if (view :db/id)
+              [[:db/add (view :db/id) :orgpad/active-unit
+                (or new-active-pos new-active-unit)]]
+              [[:db/add (unit :db/id) :orgpad/props-refs -1]
+               (merge view { :db/id -1
+                             :orgpad/type :orgpad/unit-view
+                             :orgpad/active-unit (or new-active-pos
+                                                     new-active-unit) })]) )))
+
+(defmethod mutate :orgpad.sheet/switch-active
+  [env _ params]
+  (let [qry (switch-active env params)]
     { :state
-      (store/transact
-       state
-       (into update-trans
-             (if (view :db/id)
-               [[:db/add (view :db/id) :orgpad/active-unit new-active-unit]]
-               [[:db/add (unit :db/id) :orgpad/props-refs -1]
-                (merge view { :db/id -1
-                              :orgpad/type :orgpad/unit-view
-                              :orgpad/active-unit new-active-unit })]) )) }))
+      (store/transact (:state env) qry) }))
 
 (defn- vertex-props-pred
   [view-name]
@@ -490,8 +496,8 @@
     (doseq [pid parents]
       (geocache/clear! global-cache pid ids))))
 
-(defmethod mutate :orgpad.units/remove-unit
-  [{:keys [state global-cache]} _ id]
+(defn- remove-unit
+  [{:keys [state global-cache]} id]
   (let [units-to-remove (find-children-deep state [id])
         parents (find-parents state id)
         edges (mapcat #(find-relative state % edge-check-query) (find-relative state id edge-query))
@@ -503,7 +509,12 @@
                                (map (fn [eid] [:db.fn/retractEntity eid])
                                     (concat units-to-remove edges-to-remove edges-props-to-remove)))]
     (update-geocache-after-remove global-cache parents id edges-to-remove)
-    { :state (store/transact state final-qry) }))
+    final-qry))
+
+(defmethod mutate :orgpad.units/remove-unit
+  [env _ params]
+  (let [final-qry (remove-unit env params)]
+    { :state (store/transact (:state env) final-qry) }))
 
 (defn- update-link-props
   [{:keys [state]} {:keys [prop parent-view unit-tree]} val]
@@ -540,3 +551,19 @@
                                (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents))]
     (update-geocache-after-remove global-cache parents id [])
     { :state (store/transact state final-qry) }))
+
+(defmethod mutate :orgpad.units/remove-active-sheet-unit
+  [env _ {:keys [unit view] :as unit-tree}]
+  (let [nof-sheets (ot/refs-count unit-tree)]
+    (if (= nof-sheets 1)
+      { :state (:state env) }
+      (let [active-idx (view :orgpad/active-unit)
+            ruid (-> unit (ot/get-sorted-ref active-idx) ot/uid)
+            active-pos (if (= active-idx (dec nof-sheets)) 0 active-idx)
+            switch-qry (switch-active env { :unit-tree unit-tree
+                                            :direction 1
+                                            :nof-sheets nof-sheets
+                                            :new-active-pos active-pos})
+            remove-qry (remove-unit env ruid)
+            final-qry (into switch-qry remove-qry)]
+        { :state (store/transact (:state env) final-qry) }))))

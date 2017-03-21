@@ -21,13 +21,20 @@
 
 (defn- switch-active-sheet
   [component unit-tree dir]
-  (lc/transact! component [[ :orgpad.sheet/switch-active { :unit-tree unit-tree
-                                                           :direction dir
-                                                           :nof-sheets (-> unit-tree :unit :orgpad/refs count) } ]]))
+  (lc/transact! component [[ :orgpad.sheet/switch-active
+                            { :unit-tree unit-tree
+                              :direction dir
+                              :nof-sheets (ot/refs-count unit-tree) } ]]))
 
 (defn- open-unit
   [component {:keys [unit view]}]
-  (uedit/open-unit component (get (ot/sort-refs unit) (view :orgpad/active-unit))))
+  (uedit/open-unit component
+                   (ot/get-sorted-ref unit
+                                      (view :orgpad/active-unit))))
+
+(defn- remove-unit
+  [component unit-tree]
+  (lc/transact! component [[ :orgpad.units/remove-active-sheet-unit unit-tree ]]))
 
 (defn- render-local-menu
   [component unit-tree app-state local-state]
@@ -46,7 +53,8 @@
       [ :div { :className "tools-button" :title "Next"
                :onClick #(switch-active-sheet component unit-tree 1) }
        [ :i { :className "fa fa-caret-right fa-lg" } ] ]
-      [ :div { :className "tools-button" :title "Remove" }
+      [ :div { :className "tools-button" :title "Remove"
+               :onClick #(remove-unit component unit-tree) }
        [ :i { :className "fa fa-remove fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Edit" }
        [ :i { :className "fa fa-pencil-square-o fa-lg"
