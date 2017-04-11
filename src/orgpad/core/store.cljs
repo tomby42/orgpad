@@ -31,6 +31,11 @@
   (redo [store]
     "Performs redo on store and returns new one."))
 
+(defprotocol IStoreHistoryInfo
+
+  (history-info [store]
+    "Returns history info. [finger, count]"))
+
 (defprotocol IStoreHistoryStatus
 
   (undoable? [store]
@@ -211,6 +216,11 @@
                           finger)
         store)))
 
+  IStoreHistoryInfo
+  (history-info
+    [store]
+    [(-> store .-history-records .-history-finger) (-> store .-history-records .-history count)])
+
   IStoreHistoryStatus
   (undoable?
     [store]
@@ -350,6 +360,11 @@
     (DatomAtomStore. (redo (.-datom store))
                      (.-atom store)
                      (.-meta store)))
+
+  IStoreHistoryInfo
+  (history-info
+    [store]
+    (history-info (.-datom store)))
 
   IStoreHistoryStatus
   (undoable?

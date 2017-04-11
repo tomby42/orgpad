@@ -189,3 +189,16 @@
   (let [new-state (store/redo state)]
     (geocache/update-changed-units! global-cache state new-state (:datom (store/changed-entities new-state)))
     { :state new-state }))
+
+(defmethod read :orgpad/history-info
+  [{ :keys [state] } _ _]
+  (store/history-info state))
+
+(defmethod mutate :orgpad/history-change
+  [{ :keys [state] :as env } _ { :keys [old-finger new-finger] }]
+  { :state (reduce (fn [state _]
+                     (if (< old-finger new-finger)
+                       (:state (mutate env :orgpad/redo []))
+                       (:state (mutate env :orgpad/undo []))))
+                   state
+                   (range old-finger new-finger (if (< old-finger new-finger) 1 -1))) })
