@@ -24,3 +24,14 @@
 (defn get-sorted-ref
   [unit idx]
   (get (sort-refs unit) idx))
+
+(defn update-unit-view-query
+  [unit-id view key val]
+  (if (view :db/id)
+    [[:db/add (view :db/id) key val]]
+    [(merge view
+            { :db/id -1
+              :orgpad/refs unit-id
+              key val
+              :orgpad/type :orgpad/unit-view })
+     [:db/add unit-id :orgpad/props-refs -1] ]))

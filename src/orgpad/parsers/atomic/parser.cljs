@@ -2,19 +2,12 @@
   orgpad.parsers.atomic.parser
   (:require [orgpad.core.store :as store]
             [orgpad.effects.core :as eff]
-            [orgpad.parsers.default-unit :as dp :refer [read mutate]]))
+            [orgpad.parsers.default-unit :as dp :refer [read mutate]]
+            [orgpad.tools.orgpad :as orgpad]))
 
 (defn- update-view-unit
   [db unit-id view key val]
-  (store/transact db
-                  (if (view :db/id)
-                    [[:db/add (view :db/id) key val]]
-                    [(merge view
-                            { :db/id -1
-                              :orgpad/refs unit-id
-                              key val
-                              :orgpad/type :orgpad/unit-view })
-                     [:db/add unit-id :orgpad/props-refs -1] ])))
+  (store/transact db (orgpad/update-unit-view-query unit-id view key val)))
 
 (defmethod mutate :orgpad.tags/remove
   [{:keys [state]} _ {:keys [orgpad/view orgpad/tags]}]

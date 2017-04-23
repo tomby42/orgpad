@@ -41,5 +41,5 @@
                                  :orgpad/view-name "default" }
    :orgpad/class               atomic-component
    :orgpad/needs-children-info false
-   :orgpad/view-name           "Atomic View"
+   :orgpad/view-name           "Sheet View"
   })

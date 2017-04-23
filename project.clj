@@ -20,18 +20,19 @@
                  [cljsjs/react-select         "1.0.0-rc.1"]
                  [cljsjs/latlon-geohash       "1.1.0-0"] ;; *
                  [doo                         "0.1.7"]
-                 [org.clojure/data.avl        "0.0.17"]
-                 ]
+                 [org.clojure/data.avl        "0.0.17"]]
 
-  :plugins [[lein-cljsbuild "1.1.4"]
+  :npm {:dependencies [["jupyter-js-services" "0.21.1"]]}
+
+  :plugins [[lein-cljsbuild "1.1.5"]
             [lein-figwheel "0.5.10"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             [lein-localrepo "0.5.3"]
             [lein-doo "0.1.7"]
-            ]
+            [lein-npm "0.6.2"]]
 
-  :hooks [leiningen.less]
-  
+  :hooks [leiningen.less leiningen.cljsbuild]
+
   :source-paths ["src"]
 
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target" "resources/test/js/compiled"]
@@ -45,9 +46,7 @@
                              [figwheel-sidecar        "0.5.10"]]
               }
 
-             :repl {:plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]] }
-
-             }
+             :repl {:plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]] }}
 
   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
 
@@ -63,7 +62,13 @@
                         :asset-path "js/compiled/out"
                         :output-to "resources/public/js/compiled/orgpad.js"
                         :output-dir "resources/public/js/compiled/out"
-                        :source-map-timestamp true }}
+                        :source-map-timestamp true
+                        :language-in :ecmascript5
+                        :externs ["node_modules/jupyter-js-services/dist/index.js"]
+                        :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
+                                        :provides ["jupyter.services"]}]
+
+                        }}
 
             {:id "test"
              :source-paths ["src" "test"]
@@ -72,14 +77,24 @@
                         :output-dir "resources/test/js/compiled/out"
                         :asset-path "js/compiled/out"
                         :optimizations :whitespace
-                        :pretty-print true}}
+                        :pretty-print true
+                        :language-in :ecmascript5
+                        :externs ["node_modules/jupyter-js-services/dist/index.js"]
+                        :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
+                                        :provides ["jupyter.services"]}]
+                        }}
 
             {:id "prod"
              :source-paths ["src"]
              :compiler {:output-to "resources/public/js/compiled/orgpad.js"
                         :main orgpad.core.boot
                         :optimizations :advanced
-                        :pretty-print false}}]
+                        :pretty-print false
+                        :language-in :ecmascript5
+                        :externs ["node_modules/jupyter-js-services/dist/index.js"]
+                        :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
+                                        :provides ["jupyter.services"]}]
+                        }}]
 
    :test-commands {"test" ["phantomjs"
                            "resources/test/test.js"
