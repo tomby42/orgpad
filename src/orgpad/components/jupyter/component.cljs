@@ -80,7 +80,8 @@
 
 (defn- render-read-mode
   [component {:keys [view]} app-state]
-  )
+  [ :div { :className "jupyter-view" }
+   (render-results (:orgpad/jupyter-results view)) ])
 
 (rum/defcc jupyter-component < rum/static lc/parser-type-mixin-context
   [component unit-tree app-state]
@@ -96,15 +97,3 @@
    :orgpad/needs-children-info false
    :orgpad/view-name           "Jupyter View"
   })
-
-
-;;from mpl_toolkits import mplot3d
-;;%matplotlib inline
-;;import numpy as np
-;;import matplotlib.pyplot as plt
-;;fig = plt.figure()
-;;ax = plt.axes(projection='3d')
-;;zline = np.linspace(0, 15, 1000)
-;;xline = np.sin(zline)
-;;yline = np.cos(zline)
-;;ax.plot3D(xline, yline, zline, 'gray')
