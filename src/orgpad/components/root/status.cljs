@@ -8,7 +8,8 @@
             [orgpad.components.registry :as registry]
             [orgpad.components.input.file :as if]
             [orgpad.tools.js-events :as jev]
-            [orgpad.tools.rum :as trum]))
+            [orgpad.tools.rum :as trum]
+            [orgpad.components.ci.dialog :as ci]))
 
 (def ^:private mode-icons
   { :read  "fa-eye"
@@ -176,42 +177,44 @@
 (rum/defcc status < (rum/local { :unroll false :view-menu-unroll false :typed "" :history false } ) lc/parser-type-mixin-context
   [component { :keys [unit view path-info] :as unit-tree } app-state]
   (let [id (unit :db/id)
-        local-state (trum/comp->local-state component)]
+        local-state (trum/comp->local-state component)
+        msg-list (lc/query component :orgpad.ci/msg-list [])]
     [:div
      (when (:history @local-state)
        (render-history component local-state))
 
+     (ci/dialog-panel unit-tree app-state msg-list)
 
-    [ :div { :className "status-menu" }
-     [ :div { :className "tools-menu" :title "Actions" }
-      [ :div { :className "tools-button" :onClick #(swap! local-state update-in [:unroll] not) }
-       [ :i { :className "fa fa-navicon fa-lg" } ] ]
-      [ :div { :className (str "tools" (when (@local-state :unroll) " more-current")) }
-       (render-file-menu component unit-tree local-state)
-       (render-edit-menu component unit-tree local-state)
-       (render-view-menu component unit-tree local-state)
+     [ :div { :className "status-menu" }
+      [ :div { :className "tools-menu" :title "Actions" }
+       [ :div { :className "tools-button" :onClick #(swap! local-state update-in [:unroll] not) }
+        [ :i { :className "fa fa-navicon fa-lg" } ] ]
+       [ :div { :className (str "tools" (when (@local-state :unroll) " more-current")) }
+        (render-file-menu component unit-tree local-state)
+        (render-edit-menu component unit-tree local-state)
+        (render-view-menu component unit-tree local-state)
 
 ;;       [ :div { :className "mode-button" }
 ;;        [ :i { :className (str "fa fa-leaf fa-lg") } ] ]
+        ]
        ]
-      ]
 
-     [ :div { :className "mode-button"
-              :title "Toggle mode"
-              :onClick #(lc/transact!
-                        component
-                        [[:orgpad/app-state
-                          [[:mode] (next-mode (:mode app-state))]]]) }
-      [ :i { :className (str "fa "  (mode-icons (:mode app-state)) " fa-lg") } ] ]
-
-
-     (when (not= id 0)
-       [ :div { :className "done-root-unit-button"
-                :title "Done"
-                :onClick #(lc/transact!
+      [ :div { :className "mode-button"
+               :title "Toggle mode"
+               :onClick #(lc/transact!
                           component
-                          [[:orgpad/root-unit-close { :db/id id
-                                                      :orgpad/view-name (view :orgpad/view-name)
-                                                      :orgpad/view-type (view :orgpad/view-type)
-                                                      :orgpad/view-path (path-info :orgpad/view-path) }]])}
-        [ :i { :className "fa fa-check-circle-o fa-lg" } ] ] ) ] ] ) )
+                          [[:orgpad/app-state
+                            [[:mode] (next-mode (:mode app-state))]]]) }
+       [ :i { :className (str "fa "  (mode-icons (:mode app-state)) " fa-lg") } ] ]
+
+
+      (when (not= id 0)
+        [ :div { :className "done-root-unit-button"
+                 :title "Done"
+                 :onClick #(lc/transact!
+                            component
+                            [[:orgpad/root-unit-close { :db/id id
+                                                        :orgpad/view-name (view :orgpad/view-name)
+                                                        :orgpad/view-type (view :orgpad/view-type)
+                                                        :orgpad/view-path (path-info :orgpad/view-path) }]])}
+         [ :i { :className "fa fa-check-circle-o fa-lg" } ] ] ) ] ] ) )

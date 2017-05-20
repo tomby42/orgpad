@@ -134,13 +134,21 @@
                         { :orgpad.store/tempids (:tempids tx-report) }))))
 
 (defn- tx-report->only-db-store
-  "Returns new datom store with new db only, rest of properties are preserved"
-  [store tx-report]
-  (DatomStore. (:db-after tx-report)
-               (.-history-records store)
-               (.-cumulative-changes store)
-               (.-changed-entities store)
-               (.-meta store)))
+  "Returns new datom store with new db only, rest of properties are preserved if not required to update in params"
+  [store tx-report params]
+  (let [tx-data (:tx-data tx-report)]
+    (DatomStore. (:db-after tx-report)
+                 (.-history-records store)
+                 (if (and (:cumulative-changes params) (not (empty? tx-data)))
+                   (concat (.-cumulative-changes store) tx-data)
+                   (.-cumulative-changes store))
+                 (if (and (:cumulative-changes params) (not (empty? tx-data)))
+                   (reduce (fn [ens d] (conj ens (.-e d))) (.-changed-entities store) tx-data)
+                   (.-changed-entities store))
+                 (if (:tempids params)
+                   (merge (.-meta store)
+                          {:orgpad.store/tempids (:tempids tx-report)})
+                   (.-meta store)))))
 
 (deftype DatomStore [db history-records cumulative-changes changed-entities meta]
 
@@ -167,7 +175,7 @@
 
   (transact
     [store qry params]
-    (tx-report->only-db-store store (d/with (.-db store) qry)))
+    (tx-report->only-db-store store (d/with (.-db store) qry) params))
 
   IStoreChanges
   (changed?

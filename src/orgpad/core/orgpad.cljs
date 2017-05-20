@@ -38,6 +38,9 @@
    :orgpad/link-dash {}
    :orgpad/link-mid-pt {}
    :orgpad/refs-order  {}
+   :orgpad/text        {}
+   :orgpad/response    {}
+   :orgpad/parameters  {}
    })
 
 (defn empty-orgpad-db

@@ -17,6 +17,10 @@
   [unit]
   (-> unit :view :orgpad/view-name))
 
+(defn view-type
+  [unit]
+  (-> unit :view :orgpad/view-type))
+
 (defn refs-count
   [unit]
   (-> unit :unit :orgpad/refs count))
