@@ -8,14 +8,13 @@
 
 (defmethod mutate :orgpad.jupyter/update
   [{:keys [state]} _ {:keys [db/id orgpad/view key val]}]
-  (println "jupyter update" key val)
+  (println "jupyter update" id view key val (orgpad/update-unit-view-query id view key val))
   { :state (store/transact state (orgpad/update-unit-view-query id view key val)) })
 
 (defn- exec
   [transact! id view codes url]
   (jupyter/exec-code url (get codes 0)
                      (fn [res]
-                       (js/console.log res)
                        (when (and res (contains? #{"execute_result" "display_data"} (aget res "msg_type")))
                          (transact! [[:orgpad.jupyter/result
                                       { :id id
@@ -27,7 +26,7 @@
   [{:keys [state]} _ {:keys [id view msg-type data]}]
   (let [vid (:db/id view)
         results (store/query state '[:find ?r .
-                                     :in $ $vid
+                                     :in $ ?vid
                                      :where
                                      [?vid :orgpad/jupyter-results ?r]] [vid])]
     { :state (store/transact state [[:db/add vid :orgpad/jupyter-results (conj results data)]]) }))

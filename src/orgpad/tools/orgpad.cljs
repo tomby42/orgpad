@@ -1,5 +1,6 @@
 (ns ^{:doc "Orgpad tools"}
-  orgpad.tools.orgpad)
+  orgpad.tools.orgpad
+  (:require [orgpad.core.store :as store]))
 
 (defn uid
   [unit]
@@ -39,3 +40,36 @@
               key val
               :orgpad/type :orgpad/unit-view })
      [:db/add unit-id :orgpad/props-refs -1] ]))
+
+(def ^:private rules
+  '[[(eq [?e3 ?e4])
+     [(= ?e3 ?e4)]]
+    [(atom ?e1 ?e2 ?a)
+     [?e2 :orgpad/props-refs ?prop]
+     [?prop :orgpad/atom ?a]]
+    [(atom ?e1 ?e2 ?a)
+     [?e1 :orgpad/props-refs ?prop]
+     [?prop :orgpad/atom ?a]]
+    [(descendant ?e1 ?e2)
+     (eq ?e1 ?e2)]
+    [(descendant ?e1 ?e2)
+     [?e1 :orgpad/refs ?e2]]
+    [(descendant ?e1 ?e2)
+     [?e1 :orgpad/refs ?t]
+     (descendant ?t ?e2)]])
+
+(defn- contains-pattern?
+  [pattern text]
+  (not (empty? (re-seq (re-pattern pattern) text))))
+
+(defn search-child-by-descendant-txt-pattern
+  [store uid pattern]
+  (store/query store
+               '[:find  ?u1 ?u2
+                 :in    $ % ?p ?contains-text
+                 :where
+                 [?p :orgpad/refs ?u1]
+                 (descendant ?u1 ?u2)
+                 (atom ?u1 ?u2 ?a)
+                 [(?contains-text ?a)]]
+               [rules uid (partial contains-pattern? pattern)]))

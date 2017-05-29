@@ -5,6 +5,7 @@
             [orgpad.cycle.life :as lc]
             [orgpad.components.registry :as registry]
             [orgpad.tools.rum :as trum]
+            [orgpad.tools.orgpad :as ot]
             [orgpad.components.editors.tinymce :as tinymce]))
 
 (def ^:private code-regexp (js/RegExp. "<code>((?:.|[\\r\\n])*?)<\\/code>" "mig"))
@@ -29,6 +30,7 @@
 
 (defn- render-url-input
   [component id view]
+  (println "render url input" id view)
   [ :div { :className "react-tagsinput url-editor" }
    [ :input { :value (:orgpad/jupyter-url view)
               :placeholder "Jupyter nb server"
@@ -48,7 +50,11 @@
   [component id view]
   (tinymce/tinymce (view :orgpad/jupyter-code)
                    (fn [e]
-                     (let [target (aget e "target")]
+                     (let [target (aget e "target")
+                           unit-tree (first (trum/comp->args component))
+                           id (ot/uid unit-tree)
+                           view (:view unit-tree)]
+                       (println (trum/comp->args component) id unit-tree)
                        (lc/transact!
                         component
                         [[:orgpad.jupyter/update
@@ -59,10 +65,8 @@
 
 (defn- render-results
   [results]
-  (println "rendering results" results)
   (mapv (fn [result]
           (mapv (fn [[res-type res-data]]
-                  (println res-type res-data)
                   (case res-type
                     "image/png" [:img {:src (str "data:image/png;base64," res-data)}]
                     nil)) result))

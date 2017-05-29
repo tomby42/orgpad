@@ -3,10 +3,10 @@
   :url "http://www.orgpad.org/"
 
   :dependencies [[org.clojure/clojure         "1.8.0"]
-                 [org.clojure/clojurescript   "1.9.494"]
+                 [org.clojure/clojurescript   "1.9.562"]
                  [org.clojure/core.async      "0.3.442"]
                  [org.clojure/test.check      "0.9.0"]
-                 [datascript                  "0.16.0"]
+                 [datascript                  "0.16.1"]
                  [com.rpl/specter             "0.10.0"]
                  [rum                         "0.9.1"]
                  [com.cemerick/url            "0.1.1"]
@@ -22,7 +22,8 @@
                  [doo                         "0.1.7"]
                  [org.clojure/data.avl        "0.0.17"]]
 
-  :npm {:dependencies [["jupyter-js-services" "0.21.1"]]}
+  :npm {:dependencies [["jupyter-js-services" "0.21.1"]
+                       ["babel-polyfill" "6.23.0"]]}
 
   :plugins [[lein-cljsbuild "1.1.5"]
             [lein-figwheel "0.5.10"] ;; needs update to lein 2.5.3 at least
@@ -79,9 +80,12 @@
                         :optimizations :whitespace
                         :pretty-print true
                         :language-in :ecmascript5
-                        :externs ["node_modules/jupyter-js-services/dist/index.js"]
-                        :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
-                                        :provides ["jupyter.services"]}]
+                        :externs ["node_modules/babel-polyfill/dist/polyfill.js", "node_modules/jupyter-js-services/dist/index.js"]
+                        :foreign-libs [{:file "node_modules/babel-polyfill/dist/polyfill.js"
+                                        :provides ["babel.polyfill"]},
+                                       {:file "node_modules/jupyter-js-services/dist/index.js"
+                                        :provides ["jupyter.services"]}
+                                       ]
                         }}
 
             {:id "prod"
@@ -91,6 +95,7 @@
                         :optimizations :advanced
                         :pretty-print false
                         :language-in :ecmascript5
+                        :closure-warnings {:externs-validation :off :non-standard-jsdoc :off}
                         :externs ["node_modules/jupyter-js-services/dist/index.js"]
                         :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
                                         :provides ["jupyter.services"]}]

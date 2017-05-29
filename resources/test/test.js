@@ -1,6 +1,8 @@
 var page = require('webpage').create();
 var url = phantom.args[0];
 
+console.log('Phantom js started');
+
 page.onConsoleMessage = function (message) {
   console.log(message);
 };

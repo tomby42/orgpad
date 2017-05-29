@@ -1,7 +1,5 @@
 (ns ^{:doc "Store with history"}
-
   orgpad.core.store
-
   (:require
    [datascript.core     :as d]
    [com.rpl.specter     :as s]

@@ -7,6 +7,10 @@
   [component]
   (-> component rum/state deref :rum/local))
 
+(defn comp->args
+  [component]
+  (-> component rum/state deref :rum/args))
+
 (defn component
   [state]
   (state :rum/react-component))
