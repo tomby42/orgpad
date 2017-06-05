@@ -41,8 +41,11 @@
      (msg-list msgs)
      (msg-input (fn [ev]
                   (when (= (.-key ev) "Enter")
-                    (let [text (-> ev .-target .-value)]
+                    (let [text (-> ev .-target .-value)
+                          last-msg (last msgs)]
                       (aset ev "target" "value" "")
                       (lc/transact! component [[:orgpad.ci/send-msg
                                                 {:text text
+                                                 :unit-tree unit-tree
+                                                 :msg-id (if (:done? last-msg) nil (:db/id last-msg))
                                                  :ctx (o/view-type unit-tree)}]])))))]))

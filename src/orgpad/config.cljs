@@ -5,6 +5,7 @@
             [orgpad.components.map.tuple]
             [orgpad.components.jupyter.component]
             [orgpad.components.root.ci]
+            [orgpad.components.map.ci]
             [orgpad.parsers.default-root]
             [orgpad.parsers.atomic.parser]
             [orgpad.parsers.map.parser]

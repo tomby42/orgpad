@@ -147,7 +147,7 @@
                       #js { :rotate (js/ReactMotion.spring init-rotate main-spring-config)
                             :scale (js/ReactMotion.spring init-scale main-spring-config) })]
     [ :div { :className "circle-menu" }
-      (render-children open? (subvec children 1) config)
+      (render-children open? (vec (rest children)) config)
       (js/React.createElement
        js/ReactMotion.Motion
        #js { :style main-transf :key 1 }

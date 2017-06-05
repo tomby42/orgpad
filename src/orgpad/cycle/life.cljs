@@ -122,8 +122,8 @@
   (let [state (atom init-store)
         parser-state (volatile! {})
         context (parser-mixin state parser-state read-fn mutate-fn update-fn global-cfg)
-        class (rum/build-class [(container-mixin root-component)
-                                (bind-atom state)
+        class (rum/build-class (fn [state] [(root-component) state])
+                               [(bind-atom state)
                                 context
                                 parser-type-mixin
                                 parser-type-mixin-context]

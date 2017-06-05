@@ -13,10 +13,10 @@
 
 (defn create-regexp-parser
   [utterance->intent-desc]
-  (fn [text ctx state]
+  (fn [text ctx unit-tree state]
     (let [intent (utterance->intent-regexp utterance->intent-desc text)]
       (if (nil? intent)
         nil
         (let [ch (chan 10)
-              _ ((:parser intent) ch (:params intent) text ctx state)]
+              _ ((:parser intent) ch (:params intent) {:text text :ctx ctx :unit-tree unit-tree :state state})]
           ch)))))

@@ -9,7 +9,7 @@
 (def ^:private utterance->intent-desc
   [{:regexp #"(?i)^help",
     :params-name []
-    :parser (fn [ch params text ctx state]
+    :parser (fn [ch params _]
               (go
                 (let [msg (<! ch)]
                   (eci/send-response {:local-context :help
@@ -22,13 +22,13 @@
    ;; default fallback
    {:regexp #".*",
     :params-name []
-    :parser (fn [ch params text ctx state]
+    :parser (fn [ch params _]
               (go
                 (let [msg (<! ch)]
                   (eci/send-response {:msg-id (:msg-id msg)
                                       :text (:text msg)
                                       :done? true
-                                      :response (str "Sorry I can't understand '" text "'.")}))))}
+                                      :response (str "Sorry I can't understand '" (:text msg) "'.")}))))}
 
    ])
 

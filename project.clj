@@ -8,11 +8,12 @@
                  [org.clojure/test.check      "0.9.0"]
                  [datascript                  "0.16.1"]
                  [com.rpl/specter             "0.10.0"]
-                 [rum                         "0.9.1"]
+                 ;; [rum                         "0.9.1"]
+                 [sablono                     "0.7.7"]
                  [com.cemerick/url            "0.1.1"]
                  [cljs-ajax                   "0.5.8"]
-                 [cljsjs/react                "15.4.0-0"]
-                 [cljsjs/react-dom            "15.4.0-0"]
+                 [cljsjs/react                "15.4.2-0"]
+                 [cljsjs/react-dom            "15.4.2-0"]
                  [cljsjs/react-sanfona        "0.0.14-0"]
                  [cljsjs/react-tinymce        "0.5.1-0"]  ;; *
                  [cljsjs/react-tagsinput      "3.13.5-0"] ;; *

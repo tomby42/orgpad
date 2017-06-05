@@ -73,3 +73,25 @@
                  (atom ?u1 ?u2 ?a)
                  [(?contains-text ?a)]]
                [rules uid (partial contains-pattern? pattern)]))
+
+(defn props-pred
+  [ctx-unit view-name view-type type v]
+  (and v
+       (= (v :orgpad/context-unit) ctx-unit)
+       (= (v :orgpad/view-type) view-type)
+       (= (v :orgpad/type) type)
+       (= (v :orgpad/view-name) view-name)))
+
+(defn props-pred-view-child
+  [ctx-unit view-name view-type v]
+  (props-pred ctx-unit view-name view-type :orgpad/unit-view-child v))
+
+(defn get-props
+  [props view-name pid prop-name prop-type]
+  (->> props
+       (drop-while #(not (props-pred pid view-name prop-name prop-type %)))
+       first))
+
+(defn get-props-view-child
+  [props view-name pid prop-name]
+  (get-props props view-name pid prop-name :orgpad/unit-view-child))

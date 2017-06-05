@@ -16,12 +16,12 @@
 
 (defmethod mutate :orgpad.ci/send-msg
   [{:keys [state transact!]} _ msg]
-  (let [state' (store/transact state [{:db/id -1
+  (let [state' (store/transact state [{:db/id (or (:msg-id msg) -1)
                                        :orgpad/type :orgpad/msg
                                        :orgpad/text (:text msg)
                                        :orgpad/response "Processing..."}] {:cumulative-changes true :tempids true})
         msg' (assoc msg
-                    :msg-id (-> state' store/tempids (get -1))
+                    :msg-id (or (:msg-id msg) (-> state' store/tempids (get -1)))
                     :ask? (partial ask? transact!)
                     :respond (partial respond transact!))]
     { :state state'
@@ -30,6 +30,7 @@
 (defmethod mutate :orgpad.ci/update-msg
   [{:keys [state]} _ response]
   { :state (store/transact state [{:db/id (:msg-id response)
+                                   :done? false
                                    :orgpad/type :orgpad/msg
                                    :orgpad/text (:text response)
                                    :orgpad/response (:response response)}] {:cumulative-changes true}) })
@@ -40,6 +41,7 @@
                 (mutate env (:action response) response)
                 {:state state})]
     {:state (store/transact (:state minfo) [{:db/id (:msg-id response)
+                                             :done? true
                                              :orgpad/text (:text response)
                                              :orgpad/response (:response response)
                                              :orgpad/parameters (or (:parameters response) {})}])

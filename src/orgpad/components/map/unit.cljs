@@ -25,23 +25,9 @@
   [unit-tree prop pcomponent local-state]
   (swap! local-state merge { :selected-unit [unit-tree prop (aget pcomponent "parent-view")] }))
 
-(defn- props-pred
-  [ctx-unit view-name view-type v]
-  (and v
-       (= (v :orgpad/context-unit) ctx-unit)
-       (= (v :orgpad/view-type) view-type)
-       (= (v :orgpad/type) :orgpad/unit-view-child)
-       (= (v :orgpad/view-name) view-name)))
-
-(defn- get-props
-  [props view-name pid prop-name]
-  (->> props
-       (drop-while #(not (props-pred pid view-name prop-name %)))
-       first))
-
 (defn- mapped?
   [{:keys [orgpad/refs db/id]} view-name prop-name]
-  (let [pred (partial props-pred id view-name prop-name)]
+  (let [pred (partial ot/props-pred-view-child id view-name prop-name)]
     (filter (fn [u] (->> u :props (some pred))) refs)))
 
 (defn- mapped-children
@@ -53,7 +39,7 @@
 
 (defn- get-pos
   [u view-name pid]
-  (-> u :props (get-props view-name pid :orgpad.map-view/vertex-props) :orgpad/unit-position))
+  (-> u :props (ot/get-props-view-child view-name pid :orgpad.map-view/vertex-props) :orgpad/unit-position))
 
 (defn- mapped-links
   [unit-tree view-name pid m-units]
@@ -93,7 +79,7 @@
 
 (rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} app-state pcomponent view-name pid local-state]
-  (let [prop (get-props props view-name pid :orgpad.map-view/vertex-props)
+  (let [prop (ot/get-props-view-child props view-name pid :orgpad.map-view/vertex-props)
         pos (prop :orgpad/unit-position)
         selected? (= (unit :db/id) (-> local-state deref :selected-unit first ot/uid))
         style (merge { :width (prop :orgpad/unit-width)
@@ -194,7 +180,7 @@
 
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic?]} app-state pcomponent view-name pid local-state]
-  (let [prop (get-props props view-name pid :orgpad.map-view/link-props)
+  (let [prop (ot/get-props-view-child props view-name pid :orgpad.map-view/link-props)
         mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
         style { :css { :zIndex -1 }
                 :canvas { :strokeStyle (prop :orgpad/link-color)
