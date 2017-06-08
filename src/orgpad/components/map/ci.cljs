@@ -7,8 +7,8 @@
             [orgpad.components.ci.registry :as ci]))
 
 (def ^:private utterance->intent-desc
-  [{:regexp #"(?i)^add unit",
-    :params-name []
+  [{:regexp #"(?i)^add unit(?:\s+(.*))?",
+    :params-name [:position]
     :parser (fn [ch params _]
               (go
                 (let [msg (<! ch)

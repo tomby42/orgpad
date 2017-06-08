@@ -22,9 +22,13 @@
   [unit]
   (-> unit :view :orgpad/view-type))
 
+(defn refs
+  [unit]
+  (-> unit :unit :orgpad/refs))
+
 (defn refs-count
   [unit]
-  (-> unit :unit :orgpad/refs count))
+  (-> unit refs count))
 
 (defn get-sorted-ref
   [unit idx]
@@ -95,3 +99,15 @@
 (defn get-props-view-child
   [props view-name pid prop-name]
   (get-props props view-name pid prop-name :orgpad/unit-view-child))
+
+(defn child-bbs
+  [unit-tree]
+  (let [name (view-name unit-tree)
+        id (uid unit-tree)]
+    (map #(fn [u]
+            (let [prop (-> u
+                           :props
+                           (get-props-view-child name id :orgpad.map-view/vertex-props))]
+              [(:orgpad/unit-position prop)
+               [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]]))
+         (refs unit-tree))))

@@ -47,5 +47,6 @@
                       (lc/transact! component [[:orgpad.ci/send-msg
                                                 {:text text
                                                  :unit-tree unit-tree
+                                                 :app-state app-state
                                                  :msg-id (if (:done? last-msg) nil (:db/id last-msg))
                                                  :ctx (o/view-type unit-tree)}]])))))]))
