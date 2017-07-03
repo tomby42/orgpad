@@ -227,7 +227,7 @@
 (defn- handle-blur
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
-    (reset! local-state init-state)))
+    (swap! local-state merge init-state)))
 
 (defn- render-write-mode
   [component unit-tree app-state]
