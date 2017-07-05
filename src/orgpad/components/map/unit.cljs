@@ -64,24 +64,29 @@
 
 (defn- try-move-unit
   [component unit-tree prop pcomponent local-state ev]
+  (.stopPropagation ev)
   (let [old-node (:selected-node @local-state)
-        new-node (-> component rum/state deref (trum/ref-node "unit-node"))]
+        new-node (-> component rum/state deref (trum/ref-node "unit-node"))
+        parent-view (aget pcomponent "parent-view")]
     (when old-node
       (aset old-node "style" "z-index" "0"))
     (when new-node
       (aset new-node "style" "z-index" "1"))
     (swap! local-state merge { :local-mode :try-unit-move
-                               :selected-unit [unit-tree prop (aget pcomponent "parent-view")]
+                               :selected-unit [unit-tree prop parent-view]
                                :selected-node new-node
+                               :show-local-menu false
                                :mouse-x (.-clientX (jev/touch-pos ev))
-                               :mouse-y (.-clientY (jev/touch-pos ev)) }))
-  (.stopPropagation ev))
+                               :mouse-y (.-clientY (jev/touch-pos ev)) })
+    (lc/transact! component [[ :orgpad.units/select {:pid (parent-id parent-view)
+                                                     :uid (ot/uid unit-tree)} ]])))
 
 (rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} app-state pcomponent view-name pid local-state]
   (let [prop (ot/get-props-view-child props view-name pid :orgpad.map-view/vertex-props)
         pos (prop :orgpad/unit-position)
-        selected? (= (unit :db/id) (-> local-state deref :selected-unit first ot/uid))
+        selected? (= (unit :db/id) (get-in app-state [:selections pid 0]))
+        ;; selected? (= (unit :db/id) (-> @local-state :selected-unit first ot/uid))
         style (merge { :width (prop :orgpad/unit-width)
                        :height (prop :orgpad/unit-height)
                        :borderWidth (prop :orgpad/unit-border-width)
@@ -99,6 +104,8 @@
       (if (= (app-state :mode) :write)
         { :style style :className "map-view-child" :key (unit :db/id)
           :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)
+          :onTouchStart #(try-move-unit component unit-tree prop pcomponent local-state %)
+          :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
           :ref "unit-node"
          }
         { :style style :className "map-view-child" :key (unit :db/id)
@@ -127,13 +134,15 @@
 
 (defn- start-change-link-shape
   [unit-tree prop component start-pos end-pos mid-pt local-state ev]
-  (swap! local-state merge { :local-mode :link-shape
-                             :selected-link [unit-tree prop (aget component "parent-view") start-pos end-pos mid-pt]
-                             :link-menu-show :maybe
-                             :selected-unit nil
-                             :mouse-x (if (.-clientX ev) (.-clientX ev) (aget ev "touches" 0 "clientX"))
-                             :mouse-y (if (.-clientY ev) (.-clientY ev) (aget ev "touches" 0 "clientY")) })
-  (.stopPropagation ev))
+  (.stopPropagation ev)
+  (let [parent-view (aget component "parent-view")]
+    (swap! local-state merge { :local-mode :link-shape
+                               :selected-link [unit-tree prop parent-view start-pos end-pos mid-pt]
+                               :link-menu-show :maybe
+                               :selected-unit nil
+                               :mouse-x (if (.-clientX ev) (.-clientX ev) (aget ev "touches" 0 "clientX"))
+                               :mouse-y (if (.-clientY ev) (.-clientY ev) (aget ev "touches" 0 "clientY")) })
+    (lc/transact! component [[ :orgpad.units/deselect-all {:pid (parent-id parent-view)} ]])))
 
 (defn- make-arrow-quad
   [start-pos end-pos ctl-pt prop]

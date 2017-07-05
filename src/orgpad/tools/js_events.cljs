@@ -17,3 +17,9 @@
   (if (.-clientX ev)
     ev
     (aget ev "touches" 0)))
+
+(defn make-block-propagation
+  [f]
+  (fn [ev]
+    (.stopPropagation ev)
+    (f ev)))

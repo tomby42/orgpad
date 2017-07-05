@@ -2,7 +2,7 @@
   orgpad.core.store
   (:require
    [datascript.core     :as d]
-   [com.rpl.specter     :as s]
+   [com.rpl.specter     :as s :refer-macros [select transform]]
    [orgpad.tools.datom  :as dtool]))
 
 (defprotocol IStore

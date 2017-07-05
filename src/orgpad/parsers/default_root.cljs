@@ -1,6 +1,7 @@
 (ns ^{:doc "Default root read/write parser"}
   orgpad.parsers.default-root
-  (:require [orgpad.core.store :as store]
+  (:require [com.rpl.specter :refer [keypath]]
+            [orgpad.core.store :as store]
             [orgpad.core.orgpad :as orgpad]
             [orgpad.parsers.default-unit :as dp :refer [read mutate updated?]]
             [orgpad.tools.dscript :as ds]
@@ -64,8 +65,8 @@
   (-> state (store/query []) first))
 
 (defmethod mutate :orgpad/app-state
-  [{:keys [state transact!]} _ [path val]]
-  { :state (store/transact state [path val]) })
+  [{:keys [state]} _ path-val]
+  { :state (store/transact state path-val) })
 
 (defmethod updated? :orgpad/app-state
   [_ { :keys [state] } _]
@@ -202,3 +203,11 @@
                        (:state (mutate env :orgpad/undo []))))
                    state
                    (range old-finger new-finger (if (< old-finger new-finger) 1 -1))) })
+
+(defmethod mutate :orgpad.units/select
+  [{:keys [state]} _ {:keys [pid uid]}]
+  {:state (store/transact state [[:selections (keypath pid)] [uid]])})
+
+(defmethod mutate :orgpad.units/deselect-all
+  [{:keys [state]} _ {:keys [pid]}]
+  {:state (store/transact state [[:selections (keypath pid)] nil])})

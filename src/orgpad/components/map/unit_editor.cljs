@@ -267,6 +267,7 @@
 (defn- start-unit-move
   [local-state ev]
   (swap! local-state merge { :local-mode :unit-move
+                             :show-local-menu false
                              :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))
 
@@ -302,7 +303,13 @@
                          (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
         (into
          [:div {}
-          [ :div { :className "map-view-unit-selected" :style style :key 0 } ]
+          [ :div {:className "map-view-unit-selected"
+                  :style style
+                  :key 0
+                  :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
+                  :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
+                  :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))} ]
+
           (mc/circle-menu
            (merge menu-conf { :center-x (- (pos 0) padding)
                               :center-y (- (pos 1) padding)

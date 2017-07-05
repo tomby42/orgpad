@@ -111,9 +111,11 @@
                                :mouse-y (.-clientY ev)
                                :start-mouse-x (.-clientX ev)
                                :start-mouse-y (.-clientY ev)
+                               :selected-unit nil
+                               :selected-link nil
                                :local-mode (if (= (app-state :mode) :write) :mouse-down :canvas-move)
                                :show-local-menu false })
-    ))
+    (lc/transact! component [[ :orgpad.units/deselect-all {:pid (ot/uid unit-tree)} ]])))
 
 (defn- make-link
   [component unit-tree local-state pos]

@@ -3,12 +3,12 @@
   :url "http://www.orgpad.org/"
 
   :dependencies [[org.clojure/clojure         "1.8.0"]
-                 [org.clojure/clojurescript   "1.9.562"]
+                 [org.clojure/clojurescript   "1.9.671"]
                  [org.clojure/core.async      "0.3.442"]
                  [org.clojure/test.check      "0.9.0"]
                  [datascript                  "0.16.1"]
-                 [com.rpl/specter             "0.10.0"]
-                 ;; [rum                         "0.9.1"]
+                 [com.rpl/specter             "1.0.2"]
+                 ;; [rum                         "0.9.1"] ;; local modified copy src/rum
                  [sablono                     "0.7.7"]
                  [com.cemerick/url            "0.1.1"]
                  [cljs-ajax                   "0.5.8"]
@@ -27,7 +27,7 @@
                        ["babel-polyfill" "6.23.0"]]}
 
   :plugins [[lein-cljsbuild "1.1.5"]
-            [lein-figwheel "0.5.10"] ;; needs update to lein 2.5.3 at least
+            [lein-figwheel "0.5.11"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             [lein-localrepo "0.5.3"]
             [lein-doo "0.1.7"]
@@ -45,7 +45,7 @@
   :profiles {:dev
              {:dependencies [[com.cemerick/piggieback "0.2.1"]
                              [org.clojure/tools.nrepl "0.2.12"]
-                             [figwheel-sidecar        "0.5.10"]]
+                             [figwheel-sidecar        "0.5.11"]]
               }
 
              :repl {:plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]] }}
