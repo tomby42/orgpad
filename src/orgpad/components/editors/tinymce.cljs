@@ -3,7 +3,7 @@
   (:require [rum.core :as rum]
             [cljsjs.react-tinymce]))
 
-(def ^:private default-config
+(def default-config-full
   #js { :inline false
         :theme "modern"
         :plugins "advlist autolink autoresize lists link image charmap print preview hr anchor pagebreak
@@ -13,12 +13,16 @@
         :toolbar "undo redo | bold italic | alignleft aligncenter alignright |  bullist numlist outdent indent | fontselect fontsizeselect | forecolor backcolor | codesample"
        })
 
+(def default-config-simple-inline
+  #js { :inline true
+        :menubar false
+        :toolbar false })
+
 (rum/defc tinymce < rum/static
   [content on-change & [cfg]]
   (js/React.createElement
      js/ReactTinymce
      #js { :content content
-           :config (or cfg default-config)
-           :onChange on-change
-          }
+           :config (or cfg default-config-full)
+           :onChange on-change }
      nil))
