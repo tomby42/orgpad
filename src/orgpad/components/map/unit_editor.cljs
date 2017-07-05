@@ -306,6 +306,7 @@
           [ :div {:className "map-view-unit-selected"
                   :style style
                   :key 0
+                  ;; :onDoubleClick #(js/console.log "DOUBLE CLICK")
                   :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
                   :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
                   :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))} ]
