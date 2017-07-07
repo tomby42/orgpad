@@ -80,6 +80,16 @@
       ;;   (println "old" (:rum/args old-state))
       ;;   (println "new" (:rum/args new-state)))
 
-      (not
-       (colls/semi-shallow-eq
-        (:rum/args old-state) (:rum/args new-state) eq-fns))) })
+      (let [new-args (:rum/args new-state)
+            old-args (:rum/args old-state)]
+        (or
+         (empty? old-args)
+         (empty? new-state)
+         (not
+          (colls/semi-shallow-eq
+           old-args new-args eq-fns))))) })
+
+(defn force-update
+  [comp]
+  (when (.isMounted comp)
+    (.forceUpdate comp)))

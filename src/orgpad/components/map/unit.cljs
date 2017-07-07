@@ -22,8 +22,8 @@
   (-> view :orgpad/refs first :db/id))
 
 (defn- select-unit
-  [unit-tree prop pcomponent local-state]
-  (swap! local-state merge { :selected-unit [unit-tree prop (aget pcomponent "parent-view")] }))
+  [unit-tree prop pcomponent local-state component]
+  (swap! local-state merge { :selected-unit [unit-tree prop (aget pcomponent "parent-view") component] }))
 
 (defn- mapped?
   [{:keys [orgpad/refs db/id]} view-name prop-name]
@@ -71,9 +71,9 @@
     (when old-node
       (aset old-node "style" "z-index" "0"))
     (when new-node
-      (aset new-node "style" "z-index" "1"))
+      (aset new-node "style" "z-index" (if (:quick-edit @local-state) "2" "1")))
     (swap! local-state merge { :local-mode :try-unit-move
-                               :selected-unit [unit-tree prop parent-view]
+                               :selected-unit [unit-tree prop parent-view component]
                                :selected-node new-node
                                :show-local-menu false
                                :mouse-x (.-clientX (jev/touch-pos ev))
@@ -95,10 +95,11 @@
                        :borderRadius (str (prop :orgpad/unit-corner-x) "px "
                                           (prop :orgpad/unit-corner-y) "px")
                        :backgroundColor (prop :orgpad/unit-bg-color) }
-                     (css/transform { :translate pos })) ]
-    ;; (js/window.console.log "rendering " (unit :db/id))
+                     (css/transform { :translate pos })
+                     (when (and selected? (:quick-edit @local-state)) {:zIndex 2})) ]
+    ;; (js/window.console.log "rendering " (unit :db/id) (and selected? (:quick-edit @local-state)))
     (when selected?
-      (select-unit unit-tree prop pcomponent local-state))
+      (select-unit unit-tree prop pcomponent local-state component))
     (html
      [ :div
       (if (= (app-state :mode) :write)
@@ -113,13 +114,19 @@
           :onTouchStart #(try-move-unit component unit-tree prop pcomponent local-state %)
           :ref "unit-node"
          })
-       (node/node unit-tree (assoc app-state :mode :read))
-       (if (= (app-state :mode) :write)
-         [ :div.map-view-child
-           { :style { :top 0
-                      :width (prop :orgpad/unit-width)
-                      :height (prop :orgpad/unit-height) }
-             :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %) } ]
+      (node/node unit-tree
+                 (assoc app-state
+                        :mode
+                        (if (and selected? (:quick-edit @local-state))
+                          :quick-write
+                          :read)))
+      (if (= (app-state :mode) :write)
+        (when-not (and selected? (:quick-edit @local-state))
+          [ :div.map-view-child
+            { :style { :top 0
+                       :width (prop :orgpad/unit-width)
+                       :height (prop :orgpad/unit-height) }
+              :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %) } ])
          [ :div.map-view-child.leader-control
            { :style { :top -10 :left -10 }
              :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)

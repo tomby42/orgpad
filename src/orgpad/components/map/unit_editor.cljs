@@ -291,6 +291,12 @@
     :show-border-radius render-border-radius
     :show-border-style render-border-style })
 
+(defn enable-quick-edit
+  [local-state]
+  (let [react-component (-> @local-state :selected-unit (nth 3) rum/state deref :rum/react-component)]
+    (swap! local-state assoc :quick-edit true)
+    (trum/force-update react-component)))
+
 (defn- node-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
@@ -306,7 +312,7 @@
           [ :div {:className "map-view-unit-selected"
                   :style style
                   :key 0
-                  ;; :onDoubleClick #(js/console.log "DOUBLE CLICK")
+                  :onDoubleClick #(enable-quick-edit local-state)
                   :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
                   :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
                   :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))} ]

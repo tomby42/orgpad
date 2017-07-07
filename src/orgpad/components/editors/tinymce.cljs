@@ -16,7 +16,8 @@
 (def default-config-simple-inline
   #js { :inline true
         :menubar false
-        :toolbar false })
+        :toolbar false
+        :auto_focus true })
 
 (rum/defc tinymce < rum/static
   [content on-change & [cfg]]
