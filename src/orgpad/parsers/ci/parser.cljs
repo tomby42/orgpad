@@ -49,14 +49,15 @@
 
 (defmethod read :orgpad.ci/msg-list
   [{ :keys [state] :as env } _ params]
-  (let [msgs (store/query state '[:find ?id ?text ?response
+  (let [msgs (store/query state '[:find ?id ?text ?response ?done
                                   :in $
                                   :where
                                   [?id :orgpad/type :orgpad/msg]
                                   [?id :orgpad/text ?text]
-                                  [?id :orgpad/response ?response]])]
+                                  [?id :orgpad/response ?response]
+                                  [?id :done? ?done]])]
     (println "msgs: " msgs)
-    (map #(zipmap [:db/id :orgpad/text :orgpad/response] %) msgs)))
+    (map #(zipmap [:db/id :orgpad/text :orgpad/response :done?] %) msgs)))
 
 (defmethod updated? :orgpad.ci/msg-list
   [_ { :keys [state] } _]
