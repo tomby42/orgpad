@@ -26,9 +26,12 @@
                    [:hr]]) msgs)])
 
 (rum/defc msg-input < rum/static
-  [on-change]
+  [context on-change]
   [:div.ci-msg-input
    [:span.ci-mic.fa.fa-microphone.fa-lg]
+   (when (not (or (nil? context)
+                  (= context :default)))
+     [:span.ci-context (str context)])
    [:input.ci-input {:placeholder "Type what to do..."
                      :onKeyPress on-change}]])
 
@@ -39,7 +42,8 @@
      [:span {:className (str "ci-handle fa fa-lg " (if (:ci-visible @local-state) "fa-angle-down" "fa-angle-up"))
              :onClick #(swap! local-state update :ci-visible not)}]
      (msg-list msgs)
-     (msg-input (fn [ev]
+     (msg-input (-> msgs last :orgpad/context)
+                (fn [ev]
                   (when (= (.-key ev) "Enter")
                     (let [[unit-tree' app-state' msgs'] (trum/comp->args component)
                           text (-> ev .-target .-value)

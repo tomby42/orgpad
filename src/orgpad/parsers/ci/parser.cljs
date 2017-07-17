@@ -33,6 +33,7 @@
                                    :done? false
                                    :orgpad/type :orgpad/msg
                                    :orgpad/text (:text response)
+                                   :orgpad/context (or (:local-context response) :default)
                                    :orgpad/response (:response response)}] {:cumulative-changes true}) })
 
 (defmethod mutate :orgpad.ci/run-ation
@@ -43,21 +44,23 @@
     {:state (store/transact (:state minfo) [{:db/id (:msg-id response)
                                              :done? true
                                              :orgpad/text (:text response)
-                                             :orgpad/response (:response response)
+                                             :orgpad/response (or (:response minfo) (:response response))
+                                             :orgpad/context (or (:local-context response) :default)
                                              :orgpad/parameters (or (:parameters response) {})}])
      :effect (:effect minfo)}))
 
 (defmethod read :orgpad.ci/msg-list
   [{ :keys [state] :as env } _ params]
-  (let [msgs (store/query state '[:find ?id ?text ?response ?done
+  (let [msgs (store/query state '[:find ?id ?text ?response ?done ?context
                                   :in $
                                   :where
                                   [?id :orgpad/type :orgpad/msg]
                                   [?id :orgpad/text ?text]
                                   [?id :orgpad/response ?response]
+                                  [?id :orgpad/context ?context]
                                   [?id :done? ?done]])]
     (println "msgs: " msgs)
-    (map #(zipmap [:db/id :orgpad/text :orgpad/response :done?] %) msgs)))
+    (map #(zipmap [:db/id :orgpad/text :orgpad/response :done? :orgpad/context] %) msgs)))
 
 (defmethod updated? :orgpad.ci/msg-list
   [_ { :keys [state] } _]

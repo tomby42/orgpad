@@ -8,7 +8,7 @@
             (let [m (re-seq (:regexp desc) text)]
               (when-not (nil? m)
                 (reduced {:parser (:parser desc)
-                          :params (zipmap (:params-name desc) (rest m))}))))
+                          :params (zipmap (:params-name desc) (map second m))}))))
           nil descs))
 
 (defn create-regexp-parser

@@ -14,10 +14,13 @@
           parser-chan (if (:parser-chan @ci-state)
                         (:parser-chan @ci-state)
                         (let [c-prsr (ci-reg/get-ci ctx (:local-context @ci-state))
+                              c-prsr-loc-default (ci-reg/get-ci ctx :default)
                               c-prsr-default-loc (ci-reg/get-ci :default (:local-context @ci-state))
                               c-prsr-default (ci-reg/get-ci :default :default)]
                           (or (and (not= c-prsr :not-found)
                                    (c-prsr msg @ci-state))
+                              (and (not= c-prsr-loc-default :not-found)
+                                   (c-prsr-loc-default msg @ci-state))
                               (and (not= c-prsr-default-loc :not-found)
                                    (c-prsr-default-loc msg @ci-state))
                               (and (not= c-prsr-default :not-found)
