@@ -18,6 +18,7 @@
 (def ^:private init-state
   { :show-local-menu false
     :local-mode :none
+    :quick-edit false
     :mouse-x 0
     :mouse-y 0 })
 
@@ -114,6 +115,7 @@
                                :selected-unit nil
                                :selected-link nil
                                :local-mode (if (= (app-state :mode) :write) :mouse-down :canvas-move)
+                               :quick-edit false
                                :show-local-menu false })
     (lc/transact! component [[ :orgpad.units/deselect-all {:pid (ot/uid unit-tree)} ]])))
 

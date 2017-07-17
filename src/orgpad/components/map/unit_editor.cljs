@@ -268,6 +268,7 @@
   [local-state ev]
   (swap! local-state merge { :local-mode :unit-move
                              :show-local-menu false
+                             :quick-edit false
                              :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))
 

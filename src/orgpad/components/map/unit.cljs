@@ -76,6 +76,7 @@
                                :selected-unit [unit-tree prop parent-view component]
                                :selected-node new-node
                                :show-local-menu false
+                               :quick-edit false
                                :mouse-x (.-clientX (jev/touch-pos ev))
                                :mouse-y (.-clientY (jev/touch-pos ev)) })
     (lc/transact! component [[ :orgpad.units/select {:pid (parent-id parent-view)
@@ -85,7 +86,8 @@
   [component {:keys [props unit] :as unit-tree} app-state pcomponent view-name pid local-state]
   (let [prop (ot/get-props-view-child props view-name pid :orgpad.map-view/vertex-props)
         pos (prop :orgpad/unit-position)
-        selected? (= (unit :db/id) (get-in app-state [:selections pid 0]))
+        selections (get-in app-state [:selections pid])
+        selected? (= (:db/id unit) (first selections))
         ;; selected? (= (unit :db/id) (-> @local-state :selected-unit first ot/uid))
         style (merge { :width (prop :orgpad/unit-width)
                        :height (prop :orgpad/unit-height)
@@ -122,12 +124,14 @@
                           :read)))
       (if (= (app-state :mode) :write)
         (when-not (and selected? (:quick-edit @local-state))
-          [ :div.map-view-child
-            { :style { :top 0
-                       :width (prop :orgpad/unit-width)
-                       :height (prop :orgpad/unit-height) }
-              :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %) } ])
-         [ :div.map-view-child.leader-control
+          [:div.map-view-child
+           {:style {:top 0
+                    :width (prop :orgpad/unit-width)
+                    :height (prop :orgpad/unit-height) }
+            :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)}
+           (when (contains? selections (:db/id unit))
+             [:span.fa.fa-check-circle.fa-lg.select-check])])
+        [ :div.map-view-child.leader-control
            { :style { :top -10 :left -10 }
              :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)
              :onTouchStart #(try-move-unit component unit-tree prop pcomponent local-state %)

@@ -60,7 +60,8 @@
                                   [?id :orgpad/context ?context]
                                   [?id :done? ?done]])]
     (println "msgs: " msgs)
-    (map #(zipmap [:db/id :orgpad/text :orgpad/response :done? :orgpad/context] %) msgs)))
+    (sort #(compare (:db/id %1) (:db/id %2))
+          (map #(zipmap [:db/id :orgpad/text :orgpad/response :done? :orgpad/context] %) msgs))))
 
 (defmethod updated? :orgpad.ci/msg-list
   [_ { :keys [state] } _]

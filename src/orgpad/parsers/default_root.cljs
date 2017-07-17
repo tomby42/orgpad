@@ -206,7 +206,7 @@
 
 (defmethod mutate :orgpad.units/select
   [{:keys [state]} _ {:keys [pid uid]}]
-  {:state (store/transact state [[:selections (keypath pid)] [uid]])})
+  {:state (store/transact state [[:selections (keypath pid)] #{uid}])})
 
 (defmethod mutate :orgpad.units/deselect-all
   [{:keys [state]} _ {:keys [pid]}]
@@ -218,7 +218,7 @@
         selected-units (ot/search-child-by-descendant-txt-pattern state pid
                                                                   (:selection-text params))
         cnt (count selected-units)]
-    (println "selected: " pid selected-units (mapv first selected-units))
-    {:state (store/transact state [[:selections (keypath pid)] (mapv first selected-units)])
+    (println "selected: " pid selected-units (set (map first selected-units)))
+    {:state (store/transact state [[:selections (keypath pid)] (set (map first selected-units))])
      :response (str "Selected " cnt
                     (if (< cnt 2) " unit." " units."))}))
