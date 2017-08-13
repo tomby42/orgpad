@@ -197,6 +197,20 @@
                                 (.-clientY ev)] }]])
     (update-mouse-position local-state ev)))
 
+(defn- units-change
+  [component local-state ev action]
+  (let [[unit-tree selection] (@local-state :selected-units)]
+    (lc/transact! component
+                  [[ :orgpad.units/map-view-repeat-action
+                    { :unit-tree unit-tree
+                      :selection selection
+                      :action action
+                      :old-pos [(@local-state :mouse-x)
+                                (@local-state :mouse-y)]
+                      :new-pos [(.-clientX ev)
+                                (.-clientY ev)] }]])
+    (update-mouse-position local-state ev)))
+
 (defn- update-link-shape
   [component local-state ev]
   (let [[unit-tree prop parent-view start-pos end-pos] (@local-state :selected-link)]
@@ -212,6 +226,15 @@
                             (.-clientY ev)] }]])
     (update-mouse-position local-state ev)))
 
+(defn- start-selection
+  [local-state ev]
+  (swap! local-state merge {:local-mode :choose-selection
+                            :show-local-menu false
+                            :start-mouse-x (.-clientX ev)
+                            :start-mouse-y (.-clientY ev)
+                            :mouse-x (.-clientX ev)
+                            :mouse-y (.-clientY ev) }))
+
 (defn- handle-mouse-move
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
@@ -224,6 +247,9 @@
       :try-unit-move (do
                        (swap! local-state assoc :local-mode :unit-move)
                        (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move))
+      :units-move (units-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
+      :mouse-down (start-selection local-state (jev/stop-propagation ev))
+      :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
       nil)
     (when (not= (@local-state :local-mode) :default-mode)
       (.preventDefault ev))))
@@ -232,6 +258,17 @@
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
     (swap! local-state merge init-state)))
+
+(defn- render-selection-box
+  [local-state view]
+  (let [bb (geom/points-bbox [(:start-mouse-x local-state) (:start-mouse-y local-state)]
+                             [(:mouse-x local-state) (:mouse-y local-state)])
+        pos (geom/screen->canvas (:orgpad/transform view) (bb 0))
+        pos1 (geom/screen->canvas (:orgpad/transform view) (bb 1))
+        [width height] (geom/-- pos1 pos)]
+    [:div.selection-box {:style (merge {:width width
+                                        :height height}
+                                       (css/transform {:translate pos}))}]))
 
 (defn- render-write-mode
   [component unit-tree app-state]
@@ -251,6 +288,8 @@
               :onMouseLeave #(handle-blur component unit-tree app-state %) }
        (munit/render-mapped-children-units component unit-tree app-state local-state)
        (render-local-menu component unit-tree app-state local-state)
+       (when (= (:local-mode @local-state) :choose-selection)
+         (render-selection-box @local-state (:view unit-tree)))
       ])))
 
 (defn- render-read-mode

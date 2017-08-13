@@ -1,6 +1,7 @@
 (ns ^{:doc "Orgpad tools"}
   orgpad.tools.orgpad
-  (:require [orgpad.core.store :as store]))
+  (:require [orgpad.core.store :as store]
+            [orgpad.tools.geom :as geom]))
 
 (defn uid
   [unit]
@@ -100,14 +101,25 @@
   [props view-name pid prop-name]
   (get-props props view-name pid prop-name :orgpad/unit-view-child))
 
-(defn child-bbs
-  [unit-tree]
+(defn child-props
+  [prop-fn unit-tree & [selection]]
   (let [name (view-name unit-tree)
         id (uid unit-tree)]
-    (map #(fn [u]
-            (let [prop (-> u
-                           :props
-                           (get-props-view-child name id :orgpad.map-view/vertex-props))]
-              [(:orgpad/unit-position prop)
-               [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]]))
-         (refs unit-tree))))
+    (map (fn [u]
+           (let [prop (-> u
+                          :props
+                          (get-props-view-child name id :orgpad.map-view/vertex-props))]
+             (prop-fn prop)))
+         (if selection
+           (filter #(contains? selection (uid %)) (refs unit-tree))
+           (refs unit-tree)))))
+
+(defn child-bbs
+  [unit-tree & [selection]]
+  (child-props (fn [prop]
+                 (let [bw (:orgpad/unit-border-width prop)]
+                   [(:orgpad/unit-position prop)
+                    (geom/++ (:orgpad/unit-position prop)
+                             [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]
+                             [bw bw])]))
+               unit-tree selection))

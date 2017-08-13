@@ -11,6 +11,7 @@
             [orgpad.tools.rum :as trum]
             [orgpad.tools.geom :as geom]
             [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.dom :as dom]
             [orgpad.components.graphics.primitives :as g]
             [orgpad.components.menu.color.picker :as cpicker]))
 
@@ -89,6 +90,20 @@
      { :dx (- (+ (/ w 2) bw))
        :dy (- (+ h (* 1.2 padding) bw2)) }
      ]))
+
+(defn- compute-children-position-nodes
+  [bb]
+  (let [[w h] (geom/-- (bb 1) (bb 0))]
+    [{ :dx (- (/ w 2))
+       :dy padding }
+     { :dx (- (+ w padding))
+       :dy padding }
+     { :dx (- (+ w padding))
+       :dy (- (+ h (* 1.2 padding))) }
+     { :dx padding
+       :dy (- (+ h (* 1.2 padding))) }
+     { :dx (- (/ w 2))
+       :dy (- (+ h (* 1.2 padding))) }]))
 
 (defn- selected-unit-prop
   [{:keys [unit] :as unit-tree} unit-id prop-id]
@@ -272,6 +287,16 @@
                              :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))
 
+(defn- start-units-move
+  [unit-tree selection local-state ev]
+  (swap! local-state merge { :local-mode :units-move
+                             :show-local-menu false
+                             :quick-edit false
+                             :selected-units [unit-tree selection]
+                             :mouse-x (.-clientX ev)
+                             :mouse-y (.-clientY ev) }))
+
+
 (defn- start-unit-resize
   [local-state ev]
   (swap! local-state merge { :local-mode :unit-resize
@@ -298,66 +323,145 @@
     (swap! local-state assoc :quick-edit true)
     (trum/force-update react-component)))
 
+(def ^:private bb-border [20 20])
+
+(defn compute-bb
+  [component unit-tree selection]
+  (let [id (ot/uid unit-tree)
+        global-cache (lc/get-global-cache component)
+        screen-bbox (dom/dom-bb->bb (aget global-cache id "bbox"))
+        bbs (ot/child-bbs unit-tree selection)
+        bb (geom/bbs-bbox bbs)
+        transf (-> unit-tree :view :orgpad/transform)
+        bb-screen-coord (mapv (partial geom/canvas->screen transf) bb)
+        inside? (every? (partial geom/insideBB screen-bbox) bb-screen-coord)]
+    (if inside?
+      bb
+      (mapv (partial geom/screen->canvas transf) [(geom/++ (screen-bbox 0) bb-border)
+                                                  (geom/-- (screen-bbox 1) bb-border)]))))
+
+(defn- nodes-unit-editor
+  [component {:keys [view] :as unit-tree} app-state local-state parent-view]
+  (let [selection (get-in app-state [:selections (ot/uid unit-tree)])
+        bb (compute-bb component unit-tree selection)
+        pos (bb 0)
+        [width height] (geom/-- (bb 1) (bb 0))
+        style (merge {:width width
+                      :height height}
+                     (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
+    (into
+     [:div {}
+      [ :div {:className "map-view-unit-selected"
+              :style style
+              :key 0
+              :onDoubleClick #(enable-quick-edit local-state)
+              :onMouseDown (jev/make-block-propagation #(start-units-move unit-tree selection local-state %))
+              :onTouchStart (jev/make-block-propagation #(start-units-move unit-tree selection local-state (aget % "touches" 0)))
+              :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))} ]
+
+      (mc/circle-menu
+       (merge menu-conf {:center-x (- (pos 0) padding)
+                         :center-y (- (pos 1) padding)
+                         :children-positions (compute-children-position-nodes bb)
+                         :onMouseDown jev/block-propagation
+                         :onTouchStart jev/block-propagation
+                         :onMouseUp jev/block-propagation })
+       [ :i { :title "Move"
+             :className "fa fa-arrows fa-lg"
+             :onMouseDown #(start-units-move unit-tree selection local-state %)
+             :onTouchStart #(start-units-move unit-tree selection local-state (aget % "touches" 0))
+             :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
+       [ :i { :title "Edit"
+             :className "fa fa-pencil-square-o fa-lg"
+             :onMouseUp #(open-unit component unit)
+             } ]
+       [ :i { :title "Properties" :className "fa fa-cogs fa-lg"
+             :onMouseUp #(swap! local-state assoc :show-props-menu true) } ]
+       [ :i { :title "Resize"
+             :className "fa fa-arrows-alt fa-lg"
+             :onMouseDown #(start-unit-resize local-state %)
+             :onTouchStart #(start-unit-resize local-state (aget % "touches" 0))
+             :onMouseUp #(swap! local-state merge { :local-mode :none })} ]
+       [ :i { :title "Link" :className "fa fa-link fa-lg"
+             :onMouseDown #(start-link local-state %)
+             :onTouchStart #(start-link local-state (aget % "touches" 0)) } ]
+       [ :i { :title "Remove" :className "fa fa-remove fa-lg"
+             :onMouseDown #(remove-unit component (ot/uid unit))  } ]
+       )
+      (when (= (@local-state :local-mode) :make-link)
+        (let [tr (parent-view :orgpad/transform)]
+          (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
+                  (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)]) {})))
+      (when (@local-state :show-props-menu)
+        (render-props-menu unit prop local-state))]
+
+     (map (fn [[key render-fn]]
+            (when (@local-state key)
+              (render-fn component unit prop view local-state))) prop-editors))))
+
+
 (defn- node-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
         [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
     (when (and prop unit)
-      (let [pos (prop :orgpad/unit-position)
-            bw (prop :orgpad/unit-border-width)
-            style (merge { :width (+ (prop :orgpad/unit-width) (* 2 bw))
-                           :height (+ (prop :orgpad/unit-height) (* 2 bw)) }
-                         (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
-        (into
-         [:div {}
-          [ :div {:className "map-view-unit-selected"
-                  :style style
-                  :key 0
-                  :onDoubleClick #(enable-quick-edit local-state)
-                  :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
-                  :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
-                  :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))} ]
+      (if (not= (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
+        (nodes-unit-editor component unit-tree app-state local-state parent-view)
+        (let [pos (prop :orgpad/unit-position)
+              width (prop :orgpad/unit-width) height (prop :orgpad/unit-height)
+              bw (prop :orgpad/unit-border-width)
+              style (merge { :width (+ width (* 2 bw))
+                             :height (+ height (* 2 bw)) }
+                           (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
+          (into
+           [:div {}
+            [ :div {:className "map-view-unit-selected"
+                    :style style
+                    :key 0
+                    :onDoubleClick #(enable-quick-edit local-state)
+                    :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
+                    :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
+                    :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))} ]
 
-          (mc/circle-menu
-           (merge menu-conf { :center-x (- (pos 0) padding)
-                              :center-y (- (pos 1) padding)
-                              :children-positions (compute-children-position prop)
-                              :onMouseDown jev/block-propagation
-                              :onTouchStart jev/block-propagation
-                              :onMouseUp jev/block-propagation })
-           [ :i { :title "Move"
-                  :className "fa fa-arrows fa-lg"
-                  :onMouseDown #(start-unit-move local-state %)
-                  :onTouchStart #(start-unit-move local-state (aget % "touches" 0))
-                  :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
-           [ :i { :title "Edit"
-                  :className "fa fa-pencil-square-o fa-lg"
-                  :onMouseUp #(open-unit component unit)
-                 } ]
-           [ :i { :title "Properties" :className "fa fa-cogs fa-lg"
-                  :onMouseUp #(swap! local-state assoc :show-props-menu true) } ]
-           [ :i { :title "Resize"
-                  :className "fa fa-arrows-alt fa-lg"
-                  :onMouseDown #(start-unit-resize local-state %)
-                  :onTouchStart #(start-unit-resize local-state (aget % "touches" 0))
-                  :onMouseUp #(swap! local-state merge { :local-mode :none })} ]
-           [ :i { :title "Link" :className "fa fa-link fa-lg"
-                  :onMouseDown #(start-link local-state %)
-                  :onTouchStart #(start-link local-state (aget % "touches" 0)) } ]
-           [ :i { :title "Remove" :className "fa fa-remove fa-lg"
-                  :onMouseDown #(remove-unit component (ot/uid unit))  } ]
-           )
-          (when (= (@local-state :local-mode) :make-link)
-            (let [tr (parent-view :orgpad/transform)]
-              (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
-                      (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)]) {})))
-          (when (@local-state :show-props-menu)
-            (render-props-menu unit prop local-state))]
+            (mc/circle-menu
+             (merge menu-conf { :center-x (- (pos 0) padding)
+                               :center-y (- (pos 1) padding)
+                               :children-positions (compute-children-position prop)
+                               :onMouseDown jev/block-propagation
+                               :onTouchStart jev/block-propagation
+                               :onMouseUp jev/block-propagation })
+             [ :i { :title "Move"
+                   :className "fa fa-arrows fa-lg"
+                   :onMouseDown #(start-unit-move local-state %)
+                   :onTouchStart #(start-unit-move local-state (aget % "touches" 0))
+                   :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
+             [ :i { :title "Edit"
+                   :className "fa fa-pencil-square-o fa-lg"
+                   :onMouseUp #(open-unit component unit)
+                   } ]
+             [ :i { :title "Properties" :className "fa fa-cogs fa-lg"
+                   :onMouseUp #(swap! local-state assoc :show-props-menu true) } ]
+             [ :i { :title "Resize"
+                   :className "fa fa-arrows-alt fa-lg"
+                   :onMouseDown #(start-unit-resize local-state %)
+                   :onTouchStart #(start-unit-resize local-state (aget % "touches" 0))
+                   :onMouseUp #(swap! local-state merge { :local-mode :none })} ]
+             [ :i { :title "Link" :className "fa fa-link fa-lg"
+                   :onMouseDown #(start-link local-state %)
+                   :onTouchStart #(start-link local-state (aget % "touches" 0)) } ]
+             [ :i { :title "Remove" :className "fa fa-remove fa-lg"
+                   :onMouseDown #(remove-unit component (ot/uid unit))  } ]
+             )
+            (when (= (@local-state :local-mode) :make-link)
+              (let [tr (parent-view :orgpad/transform)]
+                (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
+                        (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)]) {})))
+            (when (@local-state :show-props-menu)
+              (render-props-menu unit prop local-state))]
 
-         (map (fn [[key render-fn]]
-                (when (@local-state key)
-                  (render-fn component unit prop view local-state))) prop-editors)
-         )))))
+           (map (fn [[key render-fn]]
+                  (when (@local-state key)
+                    (render-fn component unit prop view local-state))) prop-editors)))))))
 
 (def ^:private link-closed-editors { :show-link-color-picker false
                                      :show-link-width false

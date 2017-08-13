@@ -99,7 +99,7 @@
                        :backgroundColor (prop :orgpad/unit-bg-color) }
                      (css/transform { :translate pos })
                      (when (and selected? (:quick-edit @local-state)) {:zIndex 2})) ]
-    (js/window.console.log "rendering " (unit :db/id) (and selected? (:quick-edit @local-state)))
+    ;;(js/window.console.log "rendering " (unit :db/id) (and selected? (:quick-edit @local-state)))
     (when selected?
       (select-unit unit-tree prop pcomponent local-state component))
     (html

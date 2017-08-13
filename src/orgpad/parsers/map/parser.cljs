@@ -567,3 +567,18 @@
             remove-qry (remove-unit env ruid)
             final-qry (into switch-qry remove-qry)]
         { :state (store/transact (:state env) final-qry) }))))
+
+(defmethod mutate :orgpad.units/map-view-repeat-action
+  [{:keys [state] :as env} _ {:keys [unit-tree selection action old-pos new-pos]}]
+  (let [props (ot/child-props identity unit-tree selection)
+        new-state (reduce (fn [s [uid prop]]
+                            (:state (mutate (assoc env :state s) action
+                                            {:prop prop
+                                             :parent-view (:view unit-tree)
+                                             :unit-tree {:unit {:db/id uid}}
+                                             :old-pos old-pos
+                                             :new-pos new-pos })))
+                          (store/with-history-mode state {:new-record true
+                                                          :mode :acc})
+                          (map vector selection props))]
+    {:state (store/with-history-mode new-state :add)}))

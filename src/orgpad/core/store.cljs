@@ -27,7 +27,11 @@
   (undo [store]
     "Perform undo on store and returns new one.")
   (redo [store]
-    "Performs redo on store and returns new one."))
+    "Performs redo on store and returns new one.")
+  (tag [store tag]
+    "Tag current history position.")
+  (with-history-mode [store mode]
+    "Sets history mode - :acc concat record to last recornd in history, :add add new record to the end"))
 
 (defprotocol IStoreHistoryInfo
 
@@ -53,7 +57,13 @@
     "Returns info for performing undo")
 
   (redo-info [this]
-    "Returns info for performing redo"))
+    "Returns info for performing redo")
+
+  (tag-finger [this tag]
+    "Tag last record")
+
+  (set-history-mode [this mode]
+    "Sets history mode"))
 
 (defprotocol ITempids
 
@@ -71,10 +81,13 @@
     (push this record nil))
 
   (push
-    [this record meta]
-    (if (empty? record)
-      this
-      (HistoryRecords. (conj (.-history this) record) meta)))
+    [this record meta_]
+    (let [mode (-> history meta :mode)]
+      (if (empty? record)
+        this
+        (if (= mode :acc)
+          (HistoryRecords. (s/setval [s/LAST s/END] record history) meta_)
+          (HistoryRecords. (conj (.-history this) record) meta_)))))
 
   (undo-info [this]
     (let [finger         (.-history-finger this)
@@ -100,6 +113,22 @@
       (if (nil? record)
         [nil nil]
         [record (inc finger)])))
+
+  (tag-finger [this tag]
+    (let [pos (if (nil? history-finger)
+                s/LAST
+                (if (neg? history-finger)
+                  0
+                  history-finger))]
+      (HistoryRecords. (s/transform [pos] #(with-meta % tag) history) history-finger)))
+
+  (set-history-mode [this mode]
+    (let [history' (if (:new-record mode)
+                     (conj history [])
+                     history)]
+      (HistoryRecords. (with-meta history'
+                         (assoc (or (meta history) {}) :mode (or (:mode mode) mode)))
+                       history-finger)))
 
   IEquiv
   (-equiv [record other]
@@ -221,6 +250,14 @@
                                         (dtool/datoms->tx tx))
                           finger)
         store)))
+
+  (tag
+    [store tag]
+    (DatomStore. db (tag-finger history-records tag) cumulative-changes changed-entities (.-meta store)))
+
+  (with-history-mode
+    [store mode]
+    (DatomStore. db (set-history-mode history-records mode) cumulative-changes changed-entities (.-meta store)))
 
   IStoreHistoryInfo
   (history-info
@@ -364,6 +401,18 @@
   (redo
     [store]
     (DatomAtomStore. (redo (.-datom store))
+                     (.-atom store)
+                     (.-meta store)))
+
+  (tag
+    [store tag_]
+    (DatomAtomStore. (tag (.-datom store) tag_)
+                     (.-atom store)
+                     (.-meta store)))
+
+  (with-history-mode
+    [store mode]
+    (DatomAtomStore. (with-history-mode (.-datom store) mode)
                      (.-atom store)
                      (.-meta store)))
 

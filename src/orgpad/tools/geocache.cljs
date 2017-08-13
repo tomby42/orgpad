@@ -4,7 +4,8 @@
             [orgpad.core.store :as store]
             [orgpad.tools.geohash :as geohash]
             [orgpad.tools.geom :as geom]
-            [orgpad.tools.jcolls :as jcolls]))
+            [orgpad.tools.jcolls :as jcolls]
+            [goog.object :as gobject]))
 
 ;; TODO use es6 Map
 

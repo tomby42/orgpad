@@ -1,22 +1,23 @@
 (ns orgpad.tools.geom
   (:require [orgpad.tools.colls :as colls])
-  (:require-macros orgpad.tools.geom orgpad.tools.colls))
+  (:require-macros [orgpad.tools.geom :refer [insideInterval ml pl transf itransf]]
+                   [orgpad.tools.colls :refer [>-]]))
 
 (defn screen->canvas
   [transform p]
   (let [tr (transform :translate)
         s (transform :scale)]
-    [(orgpad.tools.geom/t tr s p 0) (orgpad.tools.geom/t tr s p 1)]))
+    [(itransf tr s p 0) (itransf tr s p 1)]))
 
 (defn canvas->screen
   [transform p]
   (let [tr (transform :translate)
         s (transform :scale)]
-    [(orgpad.tools.geom/tr tr s p 0) (orgpad.tools.geom/tr tr s p 1)]))
+    [(transf tr s p 0) (transf tr s p 1)]))
 
 (defn ++
   ([p1 p2]
-   [(orgpad.tools.geom/pl p1 p2 0) (orgpad.tools.geom/pl p1 p2 1)])
+   [(pl p1 p2 0) (pl p1 p2 1)])
 
   ([p1 p2 p3]
    (++ (++ p1 p2) p3)))
@@ -26,7 +27,7 @@
    [(- (p 0)) (- (p 1))])
 
   ([p1 p2]
-   [(orgpad.tools.geom/ml p1 p2 0) (orgpad.tools.geom/ml p1 p2 1)])
+   [(ml p1 p2 0) (ml p1 p2 1)])
 
   ([p1 p2 p3]
    (-- (-- p1 p2) p3)))
@@ -37,8 +38,8 @@
 
 (defn insideBB
   [bb p]
-  (and (orgpad.tools.geom/insideInterval (orgpad.tools.colls/>- bb 0 0) (orgpad.tools.colls/>- bb 1 0) (p 0))
-       (orgpad.tools.geom/insideInterval (orgpad.tools.colls/>- bb 0 1) (orgpad.tools.colls/>- bb 1 1) (p 1))))
+  (and (insideInterval (>- bb 0 0) (>- bb 1 0) (p 0))
+       (insideInterval (>- bb 0 1) (>- bb 1 1) (p 1))))
 
 (defn dot
   [p1 p2]
@@ -101,3 +102,8 @@
             r-shift [r r]]
         [(-- c r-shift) (++ c r-shift)])
       (points-bbox start-pt end-pt (link-middle-ctl-point start-pt end-pt mid-pt)))))
+
+(defn bbs-bbox
+  [bbs]
+  (apply points-bbox (apply concat bbs)))
+

@@ -1,10 +1,10 @@
 (ns orgpad.tools.geom)
 
-(defmacro ^:private t
+(defmacro ^:private itransf
   [translate scale p idx]
   `(/ (- (~p ~idx) (~translate ~idx)) ~scale))
 
-(defmacro ^:private tr
+(defmacro ^:private transf
   [translate scale p idx]
   `(+ (* (~p ~idx) ~scale) (~translate ~idx)))
 
