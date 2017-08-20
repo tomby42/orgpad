@@ -107,3 +107,10 @@
   [bbs]
   (apply points-bbox (apply concat bbs)))
 
+(defn bbs-intersect?
+  [bb1 bb2]
+  (not
+   (or (> (>- bb1 0 0) (>- bb2 1 0))
+       (< (>- bb1 1 0) (>- bb2 0 0))
+       (> (>- bb1 0 1) (>- bb2 1 1))
+       (< (>- bb1 1 1) (>- bb2 0 1)))))

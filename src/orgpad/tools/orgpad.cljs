@@ -27,6 +27,10 @@
   [unit]
   (-> unit :unit :orgpad/refs))
 
+(defn refs-uid
+  [unit]
+  (->> unit :unit :orgpad/refs (map uid)))
+
 (defn refs-count
   [unit]
   (-> unit refs count))

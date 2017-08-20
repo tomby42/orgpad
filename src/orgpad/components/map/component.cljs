@@ -138,6 +138,23 @@
                                (@local-state :mouse-y)] }]])
   (swap! local-state merge { :show-local-menu true }))
 
+
+(defn- get-transformed-bb
+  [local-state {:keys [orgpad/transform]}]
+  (let [bb (geom/points-bbox [(:start-mouse-x local-state) (:start-mouse-y local-state)]
+                             [(:mouse-x local-state) (:mouse-y local-state)])
+        pos (geom/screen->canvas transform (bb 0))
+        pos1 (geom/screen->canvas transform (bb 1))]
+    [pos pos1]))
+
+(defn- select-units-by-bb
+  [component unit-tree local-state]
+  (let [bb (get-transformed-bb @local-state (:view unit-tree))]
+    (lc/transact! component
+                  [[:orgpad.units/map-view-select-units-by-bb
+                    {:unit-tree unit-tree
+                     :bb bb}]])))
+
 (defn- handle-mouse-up
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
@@ -147,6 +164,7 @@
       :make-link (make-link component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
       :link-shape (when (= (@local-state :link-menu-show) :maybe)
                     (swap! local-state assoc :link-menu-show :yes))
+      :choose-selection (select-units-by-bb component unit-tree local-state)
       nil)
     (swap! local-state merge { :local-mode :none })))
 
@@ -261,10 +279,7 @@
 
 (defn- render-selection-box
   [local-state view]
-  (let [bb (geom/points-bbox [(:start-mouse-x local-state) (:start-mouse-y local-state)]
-                             [(:mouse-x local-state) (:mouse-y local-state)])
-        pos (geom/screen->canvas (:orgpad/transform view) (bb 0))
-        pos1 (geom/screen->canvas (:orgpad/transform view) (bb 1))
+  (let [[pos pos1] (get-transformed-bb local-state view)
         [width height] (geom/-- pos1 pos)]
     [:div.selection-box {:style (merge {:width width
                                         :height height}

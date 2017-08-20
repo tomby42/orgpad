@@ -1,6 +1,7 @@
 (ns ^{:doc "Definition of map view parser"}
   orgpad.parsers.map.parser
-  (:require [orgpad.core.store :as store]
+  (:require [com.rpl.specter :refer [keypath]]
+            [orgpad.core.store :as store]
             [orgpad.effects.core :as eff]
             [orgpad.components.registry :as registry]
             [orgpad.tools.colls :as colls]
@@ -582,3 +583,11 @@
                                                           :mode :acc})
                           (map vector selection props))]
     {:state (store/with-history-mode new-state :add)}))
+
+(defmethod mutate :orgpad.units/map-view-select-units-by-bb
+  [{:keys [state]} _ {:keys [unit-tree bb]}]
+  (let [bbs (ot/child-bbs unit-tree)
+        selected (into #{} (comp
+                            (filter #(geom/bbs-intersect? bb (second %)))
+                            (map first)) (map vector (ot/refs-uid unit-tree) bbs))]
+    {:state (store/transact state [[:selections (-> unit-tree ot/uid keypath)] selected])}))
