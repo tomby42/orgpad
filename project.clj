@@ -3,27 +3,27 @@
   :url "http://www.orgpad.org/"
 
   :dependencies [[org.clojure/clojure         "1.8.0"]
-                 [org.clojure/clojurescript   "1.9.854"]
+                 [org.clojure/clojurescript   "1.9.908"]
                  [org.clojure/core.async      "0.3.443"]
                  [org.clojure/test.check      "0.9.0"]
-                 [datascript                  "0.16.1"]
+                 [datascript                  "0.16.2"]
                  [com.rpl/specter             "1.0.2"]
-                 ;; [rum                         "0.9.1"] ;; local modified copy src/rum
+                 ;; [rum                         "0.9.1"] ;; local modified copy src/rum 0.10.8
                  [sablono                     "0.7.7"]
                  [com.cemerick/url            "0.1.1"]
-                 [cljs-ajax                   "0.5.8"]
-                 [cljsjs/react                "15.4.2-0"]
-                 [cljsjs/react-dom            "15.4.2-0"]
+                 [cljs-ajax                   "0.6.0"]
+                 [cljsjs/react                "15.6.1-0"]
+                 [cljsjs/react-dom            "15.6.1-0"]
                  [cljsjs/react-sanfona        "0.0.14-0"]
                  [cljsjs/react-tinymce        "0.5.1-0"]  ;; *
                  [cljsjs/react-tagsinput      "3.13.5-0"] ;; *
                  [cljsjs/react-motion         "0.3.1-0"]  ;; *
-                 [cljsjs/react-select         "1.0.0-rc.1"]
+                 [cljsjs/react-select         "1.0.0-rc.3"]
                  [cljsjs/latlon-geohash       "1.1.0-0"] ;; *
                  [doo                         "0.1.7"]
                  [org.clojure/data.avl        "0.0.17"]]
 
-  :npm {:dependencies [["jupyter-js-services" "0.21.1"]
+  :npm {:dependencies [["@jupyterlab/services" "0.48.0"]
                        ["babel-polyfill" "6.23.0"]]}
 
   :plugins [[lein-cljsbuild "1.1.7"]
