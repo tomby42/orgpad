@@ -19,6 +19,7 @@
   { :show-local-menu false
     :local-mode :none
     :quick-edit false
+    :canvas-mode :canvas-move
     :mouse-x 0
     :mouse-y 0 })
 
@@ -76,6 +77,10 @@
   (hide-local-menu component)
   (.stopPropagation ev))
 
+(defn- toggle-canvas-mode
+  [local-state]
+  (swap! local-state update :canvas-mode #(if (= % :canvas-move) :canvas-select :canvas-move)))
+
 (defn render-local-menu
   [component unit-tree app-state local-state-atom]
   (let [local-state @local-state-atom]
@@ -93,10 +98,9 @@
                                :onMouseUp #(do-create-pair-unit component unit-tree pos %)
                               }
 ]
-                        [ :i { :className "fa fa-arrows fa-lg"
-                               :title "Move"
-                               :onMouseDown (partial start-canvas-move local-state-atom)
-                               :onTouchStart #(start-canvas-move local-state-atom (aget % "touches" 0))
+                        [ :i { :className (if (= (:canvas-mode local-state) :canvas-select) "fa fa-crop fa-lg" "fa fa-arrows fa-lg")
+                               :title (if (= (:canvas-mode local-state) :canvas-select) "Toggle to move mode" "Toggle to select mode")
+                               :onClick #(toggle-canvas-mode local-state-atom)
  } ]
                         [ :i { :className "fa fa-plus fa-lg" :title "Zoom in" } ]
                         [ :i { :className "fa fa-minus fa-lg" :title "Zoom out" } ]
@@ -114,7 +118,9 @@
                                :start-mouse-y (.-clientY ev)
                                :selected-unit nil
                                :selected-link nil
-                               :local-mode (if (= (app-state :mode) :write) :mouse-down :canvas-move)
+                               :local-mode (if (= (app-state :mode) :write)
+                                             :mouse-down
+                                             :canvas-move)
                                :quick-edit false
                                :show-local-menu false })
     (lc/transact! component [[ :orgpad.units/deselect-all {:pid (ot/uid unit-tree)} ]])))
@@ -136,7 +142,7 @@
                                (@local-state :start-mouse-y)]
                      :new-pos [(@local-state :mouse-x)
                                (@local-state :mouse-y)] }]])
-  (swap! local-state merge { :show-local-menu true }))
+  (swap! local-state merge { :show-local-menu false }))
 
 
 (defn- get-transformed-bb
@@ -244,14 +250,16 @@
                             (.-clientY ev)] }]])
     (update-mouse-position local-state ev)))
 
-(defn- start-selection
+(defn- try-start-selection
   [local-state ev]
-  (swap! local-state merge {:local-mode :choose-selection
-                            :show-local-menu false
-                            :start-mouse-x (.-clientX ev)
-                            :start-mouse-y (.-clientY ev)
-                            :mouse-x (.-clientX ev)
-                            :mouse-y (.-clientY ev) }))
+  (if (= (:canvas-mode @local-state) :canvas-select)
+    (swap! local-state merge {:local-mode :choose-selection
+                              :show-local-menu false
+                              :start-mouse-x (.-clientX ev)
+                              :start-mouse-y (.-clientY ev)
+                              :mouse-x (.-clientX ev)
+                              :mouse-y (.-clientY ev) })
+    (start-canvas-move local-state ev)))
 
 (defn- handle-mouse-move
   [component unit-tree app-state ev]
@@ -266,7 +274,7 @@
                        (swap! local-state assoc :local-mode :unit-move)
                        (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move))
       :units-move (units-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
-      :mouse-down (start-selection local-state (jev/stop-propagation ev))
+      :mouse-down (try-start-selection local-state (jev/stop-propagation ev))
       :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
       nil)
     (when (not= (@local-state :local-mode) :default-mode)
@@ -279,7 +287,8 @@
 
 (defn- render-selection-box
   [local-state view]
-  (let [[pos pos1] (get-transformed-bb local-state view)
+  (let [[pos pos1] (geom/points-bbox [(:start-mouse-x local-state) (:start-mouse-y local-state)]
+                                     [(:mouse-x local-state) (:mouse-y local-state)])
         [width height] (geom/-- pos1 pos)]
     [:div.selection-box {:style (merge {:width width
                                         :height height}
