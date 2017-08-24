@@ -569,20 +569,26 @@
             final-qry (into switch-qry remove-qry)]
         { :state (store/transact (:state env) final-qry) }))))
 
-(defmethod mutate :orgpad.units/map-view-repeat-action
-  [{:keys [state] :as env} _ {:keys [unit-tree selection action old-pos new-pos]}]
-  (let [props (ot/child-props identity unit-tree selection)
-        new-state (reduce (fn [s [uid prop]]
+(defn- repeat-action
+  [{:keys [state] :as env} selection props action make-args]
+  (let [new-state (reduce (fn [s [uid prop]]
                             (:state (mutate (assoc env :state s) action
-                                            {:prop prop
-                                             :parent-view (:view unit-tree)
-                                             :unit-tree {:unit {:db/id uid}}
-                                             :old-pos old-pos
-                                             :new-pos new-pos })))
+                                            (make-args uid prop))))
                           (store/with-history-mode state {:new-record true
                                                           :mode :acc})
                           (map vector selection props))]
     {:state (store/with-history-mode new-state :add)}))
+
+(defmethod mutate :orgpad.units/map-view-repeat-action
+  [env _ {:keys [unit-tree selection action old-pos new-pos] :as args}]
+  (repeat-action env selection (ot/child-props identity unit-tree selection)
+                 action
+                 (fn [uid prop]
+                   {:prop prop
+                    :parent-view (:view unit-tree)
+                    :unit-tree {:unit {:db/id uid}}
+                    :old-pos old-pos
+                    :new-pos new-pos })))
 
 (defmethod mutate :orgpad.units/map-view-select-units-by-bb
   [{:keys [state]} _ {:keys [unit-tree bb]}]
@@ -591,3 +597,8 @@
                             (filter #(geom/bbs-intersect? bb (second %)))
                             (map first)) (map vector (ot/refs-uid unit-tree) bbs))]
     {:state (store/transact state [[:selections (-> unit-tree ot/uid keypath)] selected])}))
+
+(defmethod mutate :orgpad.units/remove-units
+  [env _ [pid selection]]
+  (let [res (repeat-action env selection (repeat nil) :orgpad.units/remove-unit #(identity %))]
+    {:state (store/transact (:state res) [[:selections (keypath pid)] nil])}))

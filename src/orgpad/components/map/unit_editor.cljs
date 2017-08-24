@@ -94,16 +94,13 @@
 (defn- compute-children-position-nodes
   [bb]
   (let [[w h] (geom/-- (bb 1) (bb 0))]
-    [{ :dx (- (/ w 2))
-       :dy padding }
-     { :dx (- (+ w padding))
+    [{ :dx (- (+ w padding))
        :dy padding }
      { :dx (- (+ w padding))
        :dy (- (+ h (* 1.2 padding))) }
      { :dx padding
        :dy (- (+ h (* 1.2 padding))) }
-     { :dx (- (/ w 2))
-       :dy (- (+ h (* 1.2 padding))) }]))
+     ]))
 
 (defn- selected-unit-prop
   [{:keys [unit] :as unit-tree} unit-id prop-id]
@@ -279,6 +276,11 @@
   (lc/transact! component [[ :orgpad.units/remove-unit
                              id ]]))
 
+(defn- remove-units
+  [component pid selection]
+  (lc/transact! component [[:orgpad.units/remove-units
+                            [pid selection]]]))
+
 (defn- start-unit-move
   [local-state ev]
   (swap! local-state merge { :local-mode :unit-move
@@ -371,22 +373,13 @@
              :onMouseDown #(start-units-move unit-tree selection local-state %)
              :onTouchStart #(start-units-move unit-tree selection local-state (aget % "touches" 0))
              :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
-       [ :i { :title "Edit"
-             :className "fa fa-pencil-square-o fa-lg"
-             :onMouseUp #(open-unit component unit)
-             } ]
        [ :i { :title "Properties" :className "fa fa-cogs fa-lg"
              :onMouseUp #(swap! local-state assoc :show-props-menu true) } ]
-       [ :i { :title "Resize"
-             :className "fa fa-arrows-alt fa-lg"
-             :onMouseDown #(start-unit-resize local-state %)
-             :onTouchStart #(start-unit-resize local-state (aget % "touches" 0))
-             :onMouseUp #(swap! local-state merge { :local-mode :none })} ]
        [ :i { :title "Link" :className "fa fa-link fa-lg"
              :onMouseDown #(start-link local-state %)
              :onTouchStart #(start-link local-state (aget % "touches" 0)) } ]
        [ :i { :title "Remove" :className "fa fa-remove fa-lg"
-             :onMouseDown #(remove-unit component (ot/uid unit))  } ]
+             :onMouseDown #(remove-units component (ot/uid unit-tree) selection) } ]
        )
       (when (= (@local-state :local-mode) :make-link)
         (let [tr (parent-view :orgpad/transform)]
