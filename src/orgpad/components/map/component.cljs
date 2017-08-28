@@ -132,6 +132,13 @@
                               :begin-unit-id (-> @local-state :selected-unit (nth 0) ot/uid)
                               :position pos }]]))
 
+(defn- make-links
+  [component unit-tree selection pos]
+  (lc/transact! component  [[:orgpad.units/try-make-new-links-unit
+                             {:unit-tree unit-tree
+                              :selection selection
+                              :position pos}]]))
+
 (defn- stop-canvas-move
   [component { :keys [unit view] } local-state]
   (lc/transact! component
@@ -171,6 +178,8 @@
       :link-shape (when (= (@local-state :link-menu-show) :maybe)
                     (swap! local-state assoc :link-menu-show :yes))
       :choose-selection (select-units-by-bb component unit-tree local-state)
+      :make-links (make-links component unit-tree (-> @local-state :selected-units second)
+                              [(.-clientX ev) (.-clientY ev)])
       nil)
     (swap! local-state merge { :local-mode :none })))
 
@@ -276,6 +285,7 @@
       :units-move (units-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
       :mouse-down (try-start-selection local-state (jev/stop-propagation ev))
       :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
+      :make-links (update-mouse-position local-state (jev/stop-propagation ev))
       nil)
     (when (not= (@local-state :local-mode) :default-mode)
       (.preventDefault ev))))

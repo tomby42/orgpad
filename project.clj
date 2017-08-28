@@ -45,7 +45,8 @@
   :profiles {:dev
              {:dependencies [[com.cemerick/piggieback "0.2.1"]
                              [org.clojure/tools.nrepl "0.2.12"]
-                             [figwheel-sidecar        "0.5.12"]]
+                             [figwheel-sidecar        "0.5.12"]
+                             [binaryage/devtools      "0.9.4"]]
               }
 
              :repl {:plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]] }}

@@ -312,6 +312,11 @@
                              :link-start-y (.-clientY ev)
                              :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))
+(defn- start-links
+  [unit-tree selection local-state ev]
+  (start-link local-state ev)
+  (swap! local-state merge {:local-mode :make-links
+                            :selected-units [unit-tree selection]}))
 
 (def ^:private prop-editors
   { :show-color-picker render-color-picker
@@ -376,12 +381,12 @@
        [ :i { :title "Properties" :className "fa fa-cogs fa-lg"
              :onMouseUp #(swap! local-state assoc :show-props-menu true) } ]
        [ :i { :title "Link" :className "fa fa-link fa-lg"
-             :onMouseDown #(start-link local-state %)
-             :onTouchStart #(start-link local-state (aget % "touches" 0)) } ]
+             :onMouseDown #(start-links unit-tree selection local-state %)
+             :onTouchStart #(start-links unit-tree selection local-state (aget % "touches" 0)) } ]
        [ :i { :title "Remove" :className "fa fa-remove fa-lg"
              :onMouseDown #(remove-units component (ot/uid unit-tree) selection) } ]
        )
-      (when (= (@local-state :local-mode) :make-link)
+      (when (= (@local-state :local-mode) :make-links)
         (let [tr (parent-view :orgpad/transform)]
           (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
                   (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)]) {})))

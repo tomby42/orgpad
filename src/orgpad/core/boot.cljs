@@ -7,8 +7,10 @@
             [orgpad.parsers.default-unit :as ps]
             [cemerick.url :as url]
             [orgpad.config]
+            [devtools.core :as devtools]
             ))
 
+(devtools/install!)
 (enable-console-print!)
 
 (defn ^:export init [cfg]

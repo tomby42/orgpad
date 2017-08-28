@@ -581,7 +581,7 @@
 
 (defmethod mutate :orgpad.units/map-view-repeat-action
   [env _ {:keys [unit-tree selection action old-pos new-pos] :as args}]
-  (repeat-action env selection (ot/child-props identity unit-tree selection)
+  (repeat-action env selection (ot/child-vertex-props identity unit-tree selection)
                  action
                  (fn [uid prop]
                    {:prop prop
@@ -602,3 +602,11 @@
   [env _ [pid selection]]
   (let [res (repeat-action env selection (repeat nil) :orgpad.units/remove-unit #(identity %))]
     {:state (store/transact (:state res) [[:selections (keypath pid)] nil])}))
+
+(defmethod mutate :orgpad.units/try-make-new-links-unit
+  [env _ {:keys [unit-tree selection position]}]
+  (repeat-action env selection (repeat nil) :orgpad.units/try-make-new-link-unit
+                 (fn [uid _]
+                   {:map-unit-tree unit-tree
+                    :begin-unit-id uid
+                    :position position})))
