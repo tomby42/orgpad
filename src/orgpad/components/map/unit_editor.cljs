@@ -357,7 +357,7 @@
                       :height height}
                      (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
     (into
-     [:div {}
+     [:div {:key "nodes-unit-editor"}
       [ :div {:className "map-view-unit-selected"
               :style style
               :key 0
@@ -412,7 +412,7 @@
                              :height (+ height (* 2 bw)) }
                            (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
           (into
-           [:div {}
+           [:div {:key "node-unit-editor"}
             [ :div {:className "map-view-unit-selected"
                     :style style
                     :key 0
