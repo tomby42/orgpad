@@ -389,7 +389,8 @@
       (when (= (@local-state :local-mode) :make-links)
         (let [tr (parent-view :orgpad/transform)]
           (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
-                  (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)]) {})))
+                  (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
+                  {:css {:zIndex 2}})))
       (when (@local-state :show-props-menu)
         (render-props-menu unit prop local-state))]
 
@@ -453,7 +454,8 @@
             (when (= (@local-state :local-mode) :make-link)
               (let [tr (parent-view :orgpad/transform)]
                 (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
-                        (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)]) {})))
+                        (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
+                        {:css {:zIndex 2}})))
             (when (@local-state :show-props-menu)
               (render-props-menu unit prop local-state))]
 
