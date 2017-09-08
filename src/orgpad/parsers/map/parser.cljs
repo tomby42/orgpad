@@ -611,17 +611,8 @@
                     :begin-unit-id uid
                     :position position})))
 
-(defmethod mutate :orgpad.units/map-view-units-change-color
-  [env _ {:keys [unit-tree selection position action color]}]
-  (repeat-action env selection (ot/child-vertex-props identity unit-tree selection) action
-                 (fn [uid prop]
-                   {:prop prop
-                    :parent-view (:view unit-tree)
-                    :unit-tree (ot/get-ref-by-uid unit-tree uid)
-                    :color color})))
-
 (defmethod mutate :orgpad.units/map-view-units-change-props
-  [env _ {:keys [unit-tree selection position action prop-name prop-val]}]
+  [env _ {:keys [unit-tree selection action prop-name prop-val]}]
   (repeat-action env selection (ot/child-vertex-props identity unit-tree selection) action
                  (fn [uid prop]
                    {:prop prop

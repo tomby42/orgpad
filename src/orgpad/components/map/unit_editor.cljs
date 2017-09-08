@@ -193,11 +193,12 @@
                                                         :unit-tree unit
                                                         :color c}]]))
                     (fn [c]
-                      (lc/transact! component [[:orgpad.units/map-view-units-change-color
+                      (lc/transact! component [[:orgpad.units/map-view-units-change-props
                                                 {:selection selection
                                                  :action action
                                                  :unit-tree unit
-                                                 :color c}]])))]
+                                                 :prop-name :color
+                                                 :prop-val c}]])))]
     [ :div.map-view-border-edit { :style { :width 210 :position "absolute" :top (- (pos 1) 300) :left (+ (pos 0) h -235)  } }
      [ :div.center (if (= action :orgpad.units/map-view-unit-border-color)
                      "Border Color"
@@ -230,7 +231,6 @@
             (lc/transact! component [[:orgpad.units/map-view-units-change-props
                                       {:action action
                                        :selection selection
-                                       :parent-view parent-view
                                        :unit-tree unit
                                        :prop-name prop-name
                                        :prop-val (normalize-range 0 max (-> ev .-target .-value)) } ]])))]
@@ -278,21 +278,30 @@
   [{:keys [component unit prop parent-view local-state selection]}]
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)
-        style (prop :orgpad/unit-border-style)]
+        style (prop :orgpad/unit-border-style)
+        on-change (if (nil? selection)
+                    (fn [ev]
+                      (lc/transact! component
+                                    [[:orgpad.units/map-view-unit-border-style
+                                      {:prop prop
+                                       :parent-view parent-view
+                                       :unit-tree unit
+                                       :orgpad/unit-border-style (-> ev .-target .-value) } ]]))
+                    (fn [ev]
+                      (lc/transact! component
+                                    [[:orgpad.units/map-view-units-change-props
+                                      {:action :orgpad.units/map-view-unit-border-style
+                                       :selection selection
+                                       :unit-tree unit
+                                       :prop-name :orgpad/unit-border-style
+                                       :prop-val (-> ev .-target .-value) } ]])))]
     [ :div.-100.map-view-border-edit { :style { :width 100 :position "absolute" :top (- (pos 1) 155) :left (+ (pos 0) h) } }
       [ :div.center "Border Style" ]
      (into
       [ :select.fake-center
        { :onMouseDown (partial mouse-down-default local-state)
          :onBlur jev/stop-propagation
-         :onChange (fn [ev]
-                     (lc/transact! component
-                                   [[ :orgpad.units/map-view-unit-border-style
-                                     { :prop prop
-                                       :parent-view parent-view
-                                       :unit-tree unit
-                                       :orgpad/unit-border-style (-> ev .-target .-value) } ]]))
-                 } ]
+         :onChange on-change } ]
       (map (fn [s]
              [ :option (if (= s style) { :selected true } {}) s ])
            border-styles) ) ] ))
