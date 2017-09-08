@@ -217,13 +217,23 @@
       (js/Math.min max)))
 
 (defn- render-slider
-  [component unit prop parent-view local-state {:keys [max prop-name action]}]
-  (letfn [(on-change [ev]
-            (lc/transact! component [[ action
-                                      { :prop prop
-                                        :parent-view parent-view
-                                        :unit-tree unit
-                                        prop-name (normalize-range 0 max (-> ev .-target .-value)) } ]]))]
+  [{:keys [component unit prop parent-view local-state max prop-name action selection]}]
+  (let [on-change
+        (if (nil? selection)
+          (fn [ev]
+            (lc/transact! component [[action
+                                      {:prop prop
+                                       :parent-view parent-view
+                                       :unit-tree unit
+                                       prop-name (normalize-range 0 max (-> ev .-target .-value)) } ]]))
+          (fn [ev]
+            (lc/transact! component [[:orgpad.units/map-view-units-change-props
+                                      {:action action
+                                       :selection selection
+                                       :parent-view parent-view
+                                       :unit-tree unit
+                                       :prop-name prop-name
+                                       :prop-val (normalize-range 0 max (-> ev .-target .-value)) } ]])))]
     [ :div.slider
      [ :input { :type "range" :min 0 :max max :step 1 :value (prop prop-name)
                 :onMouseDown (partial mouse-down-default local-state)
@@ -237,35 +247,35 @@
 
 
 (defn- render-border-width
-  [{:keys [component unit prop parent-view local-state]}]
+  [{:keys [prop] :as params}]
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)]
     [ :div.map-view-border-edit { :style { :position "absolute" :top (- (pos 1) 170) :left (+ (pos 0) h) } }
      [:div.center "Border Width"]
-     (render-slider component unit prop parent-view local-state { :max 20
-                                                                  :prop-name :orgpad/unit-border-width
-                                                                  :action :orgpad.units/map-view-unit-border-width }) ]))
+     (render-slider (merge params {:max 20
+                                   :prop-name :orgpad/unit-border-width
+                                   :action :orgpad.units/map-view-unit-border-width })) ]))
 
 (defn- render-border-radius
-  [{:keys [component unit prop parent-view local-state]}]
+  [{:keys [prop] :as params}]
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)]
     [ :div.map-view-border-edit { :style { :position "absolute" :top (- (pos 1) 210) :left (+ (pos 0) h)  } }
      [ :div.center "Border Radius" ]
-     (render-slider component unit prop parent-view local-state
-                    { :max 50
-                      :prop-name :orgpad/unit-corner-x
-                      :action :orgpad.units/map-view-unit-border-radius })
-     (render-slider component unit prop parent-view local-state
-                    { :max 50
-                      :prop-name :orgpad/unit-corner-y
-                      :action :orgpad.units/map-view-unit-border-radius }) ]))
+     (render-slider (merge params
+                           {:max 50
+                            :prop-name :orgpad/unit-corner-x
+                            :action :orgpad.units/map-view-unit-border-radius }))
+     (render-slider (merge params
+                           {:max 50
+                            :prop-name :orgpad/unit-corner-y
+                            :action :orgpad.units/map-view-unit-border-radius })) ]))
 
 (def ^:private border-styles
   [ "none" "solid" "dotted" "dashed" "double" "groove" "ridge" "inset" "outset" ])
 
 (defn- render-border-style
-  [{:keys [component unit prop parent-view local-state]}]
+  [{:keys [component unit prop parent-view local-state selection]}]
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)
         style (prop :orgpad/unit-border-style)]
@@ -510,24 +520,30 @@
   [component unit prop parent-view local-state mid-pt]
   [ :div.map-view-border-edit { :style { :position "absolute" :top (- (mid-pt 1) 170) :left (mid-pt 0) } }
    [:div.center "Line Width"]
-   (render-slider component unit prop parent-view local-state { :max 20
-                                                                :prop-name :orgpad/link-width
-                                                                :action :orgpad.units/map-view-line-width }) ])
+   (render-slider {:component component :unit unit :prop prop
+                   :parent-view parent-view :local-state local-state
+                   :max 20
+                   :prop-name :orgpad/link-width
+                   :action :orgpad.units/map-view-line-width }) ])
 
 (defn- render-link-style
   [component unit prop parent-view local-state mid-pt]
   [ :div.map-view-border-edit { :style { :position "absolute" :top (- (mid-pt 1) 210) :left (mid-pt 0) } }
    [ :div.center "Line style" ]
-   (render-slider component unit (assoc prop :orgpad/link-style-1
-                                        (or (-> prop :orgpad/link-dash (aget 0)) 0)) parent-view local-state
-                  { :max 50
-                    :prop-name :orgpad/link-style-1
-                    :action :orgpad.units/map-view-link-style })
-   (render-slider component unit (assoc prop :orgpad/link-style-2
-                                        (or (-> prop :orgpad/link-dash (aget 1)) 0)) parent-view local-state
-                  { :max 50
-                    :prop-name :orgpad/link-style-2
-                    :action :orgpad.units/map-view-link-style }) ])
+   (render-slider {:component component :unit unit
+                   :prop (assoc prop :orgpad/link-style-1
+                                (or (-> prop :orgpad/link-dash (aget 0)) 0))
+                   :parent-view parent-view :local-state local-state
+                   :max 50
+                   :prop-name :orgpad/link-style-1
+                   :action :orgpad.units/map-view-link-style })
+   (render-slider {:component component :unit unit
+                   :prop (assoc prop :orgpad/link-style-2
+                                (or (-> prop :orgpad/link-dash (aget 1)) 0))
+                   :parent-view parent-view :local-state local-state
+                   :max 50
+                   :prop-name :orgpad/link-style-2
+                   :action :orgpad.units/map-view-link-style }) ])
 
 (defn- remove-link
   [component unit]
