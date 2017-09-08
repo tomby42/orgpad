@@ -129,3 +129,10 @@
                                       [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]
                                       [bw bw])])))
                       unit-tree selection))
+
+(defn get-ref-by-uid
+  [unit-tree id]
+  (->> unit-tree
+       refs
+       (drop-while #(not= id (uid %)))
+       first))

@@ -1,5 +1,6 @@
 (ns ^{:doc "Map unit component"}
   orgpad.components.map.unit-editor
+  (:require-macros [orgpad.tools.colls :refer [>-]])
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
             [orgpad.cycle.life :as lc]
@@ -147,47 +148,61 @@
   (swap! local-state merge closed-editors
          { type (not (@local-state type)) }))
 
-(defn- render-props-menu
-  [unit prop local-state]
+(defn- get-props-menu-pos
+  [prop]
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)
         bw  (* 2(prop :orgpad/unit-border-width))]
-    (mc/circle-menu
-     (merge prop-menu-conf { :center-x (+ (pos 0) padding h bw)
-                             :center-y (- (pos 1) padding)
-                             :onMouseDown jev/block-propagation
-                             :onMouseUp jev/block-propagation })
-     [ :i { :title "Properties" :className "fa fa-cogs fa-lg" :onMouseDown #(close-props-menu local-state) } ]
-     [ :span { :title "Border color" :onMouseDown #(toggle-color-picker local-state :orgpad.units/map-view-unit-border-color) }
-      [ :i { :className "fa fa-square-o" :style { :position "absolute" :top 10 :left 10 } } ]
-      [ :i { :className "fa fa-paint-brush" :style { :position "absolute" :top 10 :left 10 } } ] ]
-     [ :span { :title "Background color" :onMouseDown #(toggle-color-picker local-state :orgpad.units/map-view-unit-bg-color) }
-      [ :i { :className "fa fa-square" :style { :position "absolute" :top 15 :left 10 } } ]
-      [ :i { :className "fa fa-paint-brush" :style { :position "absolute" :top 10 :left 10 :color "#030303" } } ] ]
-     [ :span { :title "Border width" :onMouseDown #(toggle-border-editor local-state :show-border-width) }
-      [ :i { :className "fa fa-minus" :style { :position "absolute" :top 20 :left 11 } } ]
-      [ :i { :className "fa fa-minus fa-lg" :style { :position "absolute" :top 15 :left 9 } } ]
-      [ :i { :className "fa fa-minus fa-2x" :style { :position "absolute" :top 0 :left 5 } } ] ]
-     [ :i { :title "Border radius" :className "fa fa-square-o fa-lg" :onMouseDown #(toggle-border-editor local-state :show-border-radius) } ]
-     [ :span { :title "Border style" :onMouseDown #(toggle-border-editor local-state :show-border-style) }
-      [ :i.fa.fa-square-o.fa-lg { :style { :position "absolute" :left 10 :top 10 } } ]
-      [ :i.fa.fa-tint { :style { :position "absolute" } } ] ] )))
+    [(+ (pos 0) padding h bw) (- (pos 1) padding)]))
+
+(defn- render-props-menu
+  [pos local-state]
+  (mc/circle-menu
+   (merge prop-menu-conf { :center-x (pos 0)
+                          :center-y (pos 1)
+                          :onMouseDown jev/block-propagation
+                          :onMouseUp jev/block-propagation })
+   [ :i { :title "Properties" :className "fa fa-cogs fa-lg" :onMouseDown #(close-props-menu local-state) } ]
+   [ :span { :title "Border color" :onMouseDown #(toggle-color-picker local-state :orgpad.units/map-view-unit-border-color) }
+    [ :i { :className "fa fa-square-o" :style { :position "absolute" :top 10 :left 10 } } ]
+    [ :i { :className "fa fa-paint-brush" :style { :position "absolute" :top 10 :left 10 } } ] ]
+   [ :span { :title "Background color" :onMouseDown #(toggle-color-picker local-state :orgpad.units/map-view-unit-bg-color) }
+    [ :i { :className "fa fa-square" :style { :position "absolute" :top 15 :left 10 } } ]
+    [ :i { :className "fa fa-paint-brush" :style { :position "absolute" :top 10 :left 10 :color "#030303" } } ] ]
+   [ :span { :title "Border width" :onMouseDown #(toggle-border-editor local-state :show-border-width) }
+    [ :i { :className "fa fa-minus" :style { :position "absolute" :top 20 :left 11 } } ]
+    [ :i { :className "fa fa-minus fa-lg" :style { :position "absolute" :top 15 :left 9 } } ]
+    [ :i { :className "fa fa-minus fa-2x" :style { :position "absolute" :top 0 :left 5 } } ] ]
+   [ :i { :title "Border radius" :className "fa fa-square-o fa-lg" :onMouseDown #(toggle-border-editor local-state :show-border-radius) } ]
+   [ :span { :title "Border style" :onMouseDown #(toggle-border-editor local-state :show-border-style) }
+    [ :i.fa.fa-square-o.fa-lg { :style { :position "absolute" :left 10 :top 10 } } ]
+    [ :i.fa.fa-tint { :style { :position "absolute" } } ] ] ))
 
 (defn- render-color-picker
-  [component unit prop parent-view local-state]
+  [{:keys [component unit prop parent-view local-state selection]}]
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)
         action (@local-state :color-picker-action)
-        color (if (= action :orgpad.units/map-view-unit-border-color) (prop :orgpad/unit-border-color) (prop :orgpad/unit-bg-color))]
+        color (if (= action :orgpad.units/map-view-unit-border-color)
+                (prop :orgpad/unit-border-color)
+                (prop :orgpad/unit-bg-color))
+        on-change (if (nil? selection)
+                    (fn [c]
+                      (lc/transact! component [[action {:prop prop
+                                                        :parent-view parent-view
+                                                        :unit-tree unit
+                                                        :color c}]]))
+                    (fn [c]
+                      (lc/transact! component [[:orgpad.units/map-view-units-change-color
+                                                {:selection selection
+                                                 :action action
+                                                 :unit-tree unit
+                                                 :color c}]])))]
     [ :div.map-view-border-edit { :style { :width 210 :position "absolute" :top (- (pos 1) 300) :left (+ (pos 0) h -235)  } }
      [ :div.center (if (= action :orgpad.units/map-view-unit-border-color)
                      "Border Color"
                      "Background Color") ]
-     (cpicker/color-picker color {} (fn [c]
-                                      (lc/transact! component [[ action { :prop prop
-                                                                          :parent-view parent-view
-                                                                          :unit-tree unit
-                                                                          :color c } ]]))) ] ))
+     (cpicker/color-picker color {} on-change) ] ))
 
 (defn- mouse-down-default
   [local-state ev]
@@ -220,8 +235,9 @@
                     :onChange on-change
  } ] ] ) )
 
+
 (defn- render-border-width
-  [component unit prop parent-view local-state]
+  [{:keys [component unit prop parent-view local-state]}]
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)]
     [ :div.map-view-border-edit { :style { :position "absolute" :top (- (pos 1) 170) :left (+ (pos 0) h) } }
@@ -231,7 +247,7 @@
                                                                   :action :orgpad.units/map-view-unit-border-width }) ]))
 
 (defn- render-border-radius
-  [component unit prop parent-view local-state]
+  [{:keys [component unit prop parent-view local-state]}]
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)]
     [ :div.map-view-border-edit { :style { :position "absolute" :top (- (pos 1) 210) :left (+ (pos 0) h)  } }
@@ -249,7 +265,7 @@
   [ "none" "solid" "dotted" "dashed" "double" "groove" "ridge" "inset" "outset" ])
 
 (defn- render-border-style
-  [component unit prop parent-view local-state]
+  [{:keys [component unit prop parent-view local-state]}]
   (let [pos (prop :orgpad/unit-position)
         h   (prop :orgpad/unit-width)
         style (prop :orgpad/unit-border-style)]
@@ -348,14 +364,19 @@
                                                   (geom/-- (screen-bbox 1) bb-border)]))))
 
 (defn- nodes-unit-editor
-  [component {:keys [view] :as unit-tree} app-state local-state parent-view]
+  [component {:keys [view] :as unit-tree} app-state local-state parent-view prop]
   (let [selection (get-in app-state [:selections (ot/uid unit-tree)])
         bb (compute-bb component unit-tree selection)
         pos (bb 0)
         [width height] (geom/-- (bb 1) (bb 0))
         style (merge {:width width
                       :height height}
-                     (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
+                     (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))
+        prop' (merge prop {:orgpad/unit-position (bb 0)
+                           :orgpad/unit-width width})
+        render-params {:component component :unit unit-tree :prop prop'
+                       :parent-view view :local-state local-state
+                       :selection selection}]
     (into
      [:div {:key "nodes-unit-editor"}
       [ :div {:className "map-view-unit-selected"
@@ -392,11 +413,11 @@
                   (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
                   {:css {:zIndex 2}})))
       (when (@local-state :show-props-menu)
-        (render-props-menu unit prop local-state))]
+        (render-props-menu [(+ (>- bb 1 0) padding) (- (>- bb 0 1) padding)] local-state))]
 
      (map (fn [[key render-fn]]
             (when (@local-state key)
-              (render-fn component unit prop view local-state))) prop-editors))))
+              (render-fn render-params))) prop-editors))))
 
 
 (defn- node-unit-editor
@@ -405,13 +426,14 @@
         [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
     (when (and prop unit)
       (if (not= (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
-        (nodes-unit-editor component unit-tree app-state local-state parent-view)
+        (nodes-unit-editor component unit-tree app-state local-state parent-view prop)
         (let [pos (prop :orgpad/unit-position)
               width (prop :orgpad/unit-width) height (prop :orgpad/unit-height)
               bw (prop :orgpad/unit-border-width)
               style (merge { :width (+ width (* 2 bw))
                              :height (+ height (* 2 bw)) }
-                           (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
+                           (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))
+              render-params {:component component :unit unit :prop prop :parent-view view :local-state local-state}]
           (into
            [:div {:key "node-unit-editor"}
             [ :div {:className "map-view-unit-selected"
@@ -457,11 +479,11 @@
                         (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
                         {:css {:zIndex 2}})))
             (when (@local-state :show-props-menu)
-              (render-props-menu unit prop local-state))]
+              (render-props-menu (get-props-menu-pos prop) local-state))]
 
            (map (fn [[key render-fn]]
                   (when (@local-state key)
-                    (render-fn component unit prop view local-state))) prop-editors)))))))
+                    (render-fn render-params))) prop-editors)))))))
 
 (def ^:private link-closed-editors { :show-link-color-picker false
                                      :show-link-width false
