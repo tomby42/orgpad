@@ -316,11 +316,18 @@
   (lc/transact! component [[:orgpad.units/remove-units
                             [pid selection]]]))
 
+(defn enable-quick-edit
+  [local-state]
+  (let [react-component (-> @local-state :selected-unit (nth 3) rum/state deref :rum/react-component)]
+    (swap! local-state assoc :quick-edit true)
+    (trum/force-update react-component)))
+
 (defn- start-unit-move
   [local-state ev]
   (swap! local-state merge { :local-mode :unit-move
                              :show-local-menu false
                              :quick-edit false
+                             :pre-quick-edit 0
                              :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))
 
@@ -329,6 +336,9 @@
   (swap! local-state merge { :local-mode :units-move
                              :show-local-menu false
                              :quick-edit false
+                             :pre-quick-edit (if (:pre-quick-edit @local-state)
+                                               (inc (:pre-quick-edit @local-state))
+                                               0)
                              :selected-units [unit-tree selection]
                              :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))
@@ -358,12 +368,6 @@
     :show-border-width render-border-width
     :show-border-radius render-border-radius
     :show-border-style render-border-style })
-
-(defn enable-quick-edit
-  [local-state]
-  (let [react-component (-> @local-state :selected-unit (nth 3) rum/state deref :rum/react-component)]
-    (swap! local-state assoc :quick-edit true)
-    (trum/force-update react-component)))
 
 (def ^:private bb-border [20 20])
 
@@ -401,7 +405,6 @@
       [ :div {:className "map-view-unit-selected"
               :style style
               :key 0
-              :onDoubleClick #(enable-quick-edit local-state)
               :onMouseDown (jev/make-block-propagation #(start-units-move unit-tree selection local-state %))
               :onTouchStart (jev/make-block-propagation #(start-units-move unit-tree selection local-state (aget % "touches" 0)))
               :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))} ]
@@ -461,7 +464,7 @@
                     :onDoubleClick #(enable-quick-edit local-state)
                     :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
                     :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
-                    :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))} ]
+                    :onMouseUp (jev/make-block-propagation #(swap! local-state merge {:local-mode :none}))} ]
 
             (mc/circle-menu
              (merge menu-conf { :center-x (- (pos 0) padding)

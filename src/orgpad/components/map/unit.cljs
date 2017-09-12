@@ -62,21 +62,40 @@
   (when (= (@local-state :local-mode) :try-unit-move)
     (uedit/open-unit component unit-tree)))
 
+(def ^:private finc (fnil inc 0))
+
+(def ^:private dbl-click-timeout 250)
+
+(defn- run-dbl-click-check
+  [local-state]
+  (js/setTimeout (fn []
+                   (println "dbl click timeout check" (:pre-quick-edit @local-state))
+                   (when (> (:pre-quick-edit @local-state) 1)
+                     (uedit/enable-quick-edit local-state))
+                   (swap! local-state assoc :pre-quick-edit 0))
+                 dbl-click-timeout))
+
 (defn- try-move-unit
   [component unit-tree prop pcomponent local-state ev]
   (.stopPropagation ev)
   (let [old-node (:selected-node @local-state)
         new-node (-> component rum/state deref (trum/ref-node "unit-node"))
-        parent-view (aget pcomponent "parent-view")]
+        parent-view (aget pcomponent "parent-view")
+        pre-quick-edit (:pre-quick-edit @local-state)]
     (when old-node
       (aset old-node "style" "z-index" "0"))
     (when new-node
       (aset new-node "style" "z-index" (if (:quick-edit @local-state) "2" "1")))
+    (when (or (=  pre-quick-edit 0)
+              (not pre-quick-edit))
+      (run-dbl-click-check local-state))
+    (println "try move unit" pre-quick-edit)
     (swap! local-state merge { :local-mode :try-unit-move
                                :selected-unit [unit-tree prop parent-view component]
                                :selected-node new-node
                                :show-local-menu false
                                :quick-edit false
+                               :pre-quick-edit (finc pre-quick-edit)
                                :mouse-x (.-clientX (jev/touch-pos ev))
                                :mouse-y (.-clientY (jev/touch-pos ev)) })
     (lc/transact! component [[ :orgpad.units/select {:pid (parent-id parent-view)
@@ -109,6 +128,7 @@
           :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)
           :onTouchStart #(try-move-unit component unit-tree prop pcomponent local-state %)
           :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
+          :onDoubleClick #(uedit/enable-quick-edit local-state)
           :ref "unit-node"
          }
         { :style style :className "map-view-child" :key (unit :db/id)
