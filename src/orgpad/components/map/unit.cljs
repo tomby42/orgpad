@@ -69,7 +69,6 @@
 (defn- run-dbl-click-check
   [local-state]
   (js/setTimeout (fn []
-                   (println "dbl click timeout check" (:pre-quick-edit @local-state))
                    (when (> (:pre-quick-edit @local-state) 1)
                      (uedit/enable-quick-edit local-state))
                    (swap! local-state assoc :pre-quick-edit 0))
@@ -89,7 +88,6 @@
     (when (or (=  pre-quick-edit 0)
               (not pre-quick-edit))
       (run-dbl-click-check local-state))
-    (println "try move unit" pre-quick-edit)
     (swap! local-state merge { :local-mode :try-unit-move
                                :selected-unit [unit-tree prop parent-view component]
                                :selected-node new-node
