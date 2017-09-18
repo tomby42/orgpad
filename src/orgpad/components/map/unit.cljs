@@ -47,8 +47,8 @@
         mus   (into {} (map (fn [u] [(ot/uid u) u])) m-units)]
     (map (fn [l]
            (let [refs (-> l :unit :orgpad/refs)
-                 id1 (-> refs (nth 0) ot/uid)
-                 id2 (-> refs (nth 1) ot/uid)]
+                 id1 (-> refs (nth 0) ot/uid-safe)
+                 id2 (-> refs (nth 1) ot/uid-safe)]
              [l { :start-pos (get-pos (mus id1) view-name pid)
                   :end-pos (get-pos (mus id2) view-name pid)
                   :cyclic? (= id1 id2) }]))
@@ -202,12 +202,12 @@
 
 (def ^:private link-eq-fns [identical? = identical? identical? identical? identical? identical?])
 
-(defn- update-geocahce-for-link-changes
+(defn- update-geocache-for-link-changes
   [component pid view-name uid start-pos end-pos mid-pt-rel refs]
   (let [global-cache (lc/get-global-cache component)
         bbox (geom/link-bbox start-pos end-pos mid-pt-rel)
-        id1 (-> refs (nth 0) ot/uid)
-        id2 (-> refs (nth 1) ot/uid)
+        id1 (-> refs (nth 0) ot/uid-safe)
+        id2 (-> refs (nth 1) ot/uid-safe)
         pos (bbox 0)
         size (geom/-- (bbox 1) (bbox 0))
         [old-pos old-size] (aget global-cache uid "link-info" view-name)]
@@ -229,7 +229,7 @@
         ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
     ;; (js/window.console.log "rendering " (unit :db/id))
     ;; ugly o'hack
-    (update-geocahce-for-link-changes pcomponent pid view-name (unit :db/id)
+    (update-geocache-for-link-changes pcomponent pid view-name (unit :db/id)
                                       start-pos end-pos (prop :orgpad/link-mid-pt)
                                       (unit :orgpad/refs))
     (html

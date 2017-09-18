@@ -7,6 +7,10 @@
   [unit]
   (-> unit :unit :db/id))
 
+(defn uid-safe
+  [unit]
+  (or (uid unit) (:db/id unit)))
+
 (defn sort-refs
   [unit]
   (into [] (sort #(compare (uid %1) (uid %2)) (unit :orgpad/refs))))

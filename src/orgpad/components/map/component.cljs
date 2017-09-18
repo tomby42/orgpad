@@ -424,6 +424,7 @@
                            (- (.-bottom bbox) (.-top bbox))]
                           (-> view-unit :orgpad/transform :scale))
             vis-units (geocache/visible-units global-cache id (:orgpad/view-name view-unit) pos size)]
+        ;; (js/console.log "vis units" vis-units global-cache)
         (map (juxt identity children-cache) vis-units))
       [])))
 
@@ -461,8 +462,7 @@
                                    :orgpad/link-color "#000000"
                                    :orgpad/link-width 2
                                    :orgpad/link-dash #js [0 0]
-                                   :orgpad/link-mid-pt [0 0] }
-                                }
+                                   :orgpad/link-mid-pt [0 0] } }
    :orgpad/needs-children-info true
    :orgpad/view-name           "Map View"
    :orgpad/visible-children-picker pick-visible-children

@@ -600,6 +600,10 @@
               [ :i.fa.fa-minus. { :style { :position "absolute" :top 19 } } ]
               [ :i.fa.fa-tint {} ]
               ]
+             [ :i.fa.fa-pencil-square-o.fa-lg
+              { :title "Edit"
+               :onMouseUp #(open-unit component unit)
+               } ]
              [ :i.fa.fa-remove.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit) } ]
            )]
 

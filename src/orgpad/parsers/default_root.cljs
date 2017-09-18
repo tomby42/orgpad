@@ -96,8 +96,11 @@
                              [:unit :orgpad/refs]
                              update idx
                              assoc :unit unit' :props props)]
-    ;; (println "old value" (aget root "value"))
-    ;; (println "new value" new-value)
+    ;; (js/console.log "update-parser-state!" idx child)
+    ;; (js/console.log unit')
+    ;; (js/console.log props)
+    ;; (js/console.log new-value)
+    ;; (js/console.log root)
     (aset child "value" (assoc (aget child "value") :unit unit' :props props))
     (aset root "children" idx child)
     (aset root "value" new-value)

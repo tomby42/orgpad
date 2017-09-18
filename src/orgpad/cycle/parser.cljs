@@ -52,6 +52,12 @@
         old-tree (aget dtree 0)
         tree'    (aget dtree 1)
         node     (.shift old-tree)]
+    ;; (js/console.log "update-parsed-query-")
+    ;; (js/console.log node)
+    ;; (js/console.log old-tree)
+    ;; (js/console.log tree)
+    ;; (when (nil? node)
+    ;;  (js* "debugger;"))
     (if (aget node "me-changed?")
       (do
         (vreset! tree #js [])
