@@ -246,7 +246,7 @@
 
 (defn- update-link-shape
   [component local-state ev]
-  (let [[unit-tree prop parent-view start-pos end-pos] (@local-state :selected-link)]
+  (let [[unit-tree prop parent-view start-pos end-pos mid-pt] (@local-state :selected-link)]
     (swap! local-state assoc :link-menu-show :none)
     (lc/transact! component
                   [[ :orgpad.units/map-view-link-shape
@@ -255,6 +255,7 @@
                       :unit-tree unit-tree
                       :start-pos start-pos
                       :end-pos end-pos
+                      :mid-pt mid-pt
                       :pos [(.-clientX ev)
                             (.-clientY ev)] }]])
     (update-mouse-position local-state ev)))

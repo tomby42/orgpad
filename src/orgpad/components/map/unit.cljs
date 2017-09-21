@@ -2,6 +2,7 @@
   orgpad.components.map.unit
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
+            [com.rpl.specter :as s :refer-macros [select transform]]
             [orgpad.cycle.life :as lc]
             [orgpad.components.registry :as registry]
             [orgpad.components.node :as node]
@@ -216,6 +217,19 @@
                           pos size old-pos old-size
                           #js[id1 id2])))
 
+(defn- mk-lnk-vtx-prop
+  [component {:keys [props unit path-info] :as unit-tree} view-name pid mid-pt]
+  (let [prop (ot/get-props-view-child props view-name pid :orgpad.map-view/vertex-props)]
+    (when (nil? prop)
+      (js/setTimeout
+       (fn []
+         (lc/transact! component [[:orgpad.units/make-lnk-vtx-prop
+                                   {:pos mid-pt
+                                    :context-unit pid
+                                    :view-name view-name
+                                    :unit-tree unit-tree
+                                    }]])) 0))))
+
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic?]} app-state pcomponent view-name pid local-state]
   (let [prop (ot/get-props-view-child props view-name pid :orgpad.map-view/link-props)
@@ -228,10 +242,12 @@
         ctl-style (css/transform {:translate (geom/-- mid-pt [10 10])})
         ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
     ;; (js/window.console.log "rendering " (unit :db/id))
-    ;; ugly o'hack
+    ;; ugly o'hacks
     (update-geocache-for-link-changes pcomponent pid view-name (unit :db/id)
                                       start-pos end-pos (prop :orgpad/link-mid-pt)
                                       (unit :orgpad/refs))
+    (when (ot/get-props-no-ctx (:orgpad/props-refs unit) view-name :orgpad/atomic-view :orgpad/unit-view)
+      (mk-lnk-vtx-prop component unit-tree view-name pid mid-pt))
     (html
      [ :div {}
        (if cyclic?
@@ -244,7 +260,8 @@
        (when (= (app-state :mode) :write)
          [ :div { :className "map-view-child link-control" :style ctl-style
                   :onMouseDown #(start-change-link-shape unit-tree prop pcomponent start-pos end-pos mid-pt local-state %)
-                  :onTouchStart #(start-change-link-shape unit-tree prop pcomponent start-pos end-pos mid-pt local-state %) } ]) ])))
+                  :onTouchStart #(start-change-link-shape unit-tree prop pcomponent start-pos end-pos mid-pt local-state %) } ])
+      ])))
 
 (def map-link-mem
   (colls/memoize' map-link {:key-fn #(-> % first ot/uid)

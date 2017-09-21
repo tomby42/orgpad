@@ -377,12 +377,18 @@
     { :state new-state }))
 
 (defmethod mutate :orgpad.units/map-view-link-shape
-  [{:keys [state]} _ {:keys [prop parent-view unit-tree pos start-pos end-pos]}]
+  [{:keys [state]} _ {:keys [prop parent-view unit-tree pos start-pos end-pos mid-pt]}]
   (let [id (prop :db/id)
         tr (parent-view :orgpad/transform)
         pos' (geom/screen->canvas tr pos)
-        mid-pt (geom/-- pos' (geom/*c (geom/++ start-pos end-pos) 0.5))]
-    { :state (store/transact state [[:db/add id :orgpad/link-mid-pt mid-pt]]) }))
+        mid-pt' (geom/-- pos' (geom/*c (geom/++ start-pos end-pos) 0.5))
+        vprop (ot/get-props-view-child (:props unit-tree) (:orgpad/view-name parent-view)
+                                       (-> parent-view :orgpad/refs first :db/id) :orgpad.map-view/vertex-props)]
+    { :state (store/transact state (into [[:db/add id :orgpad/link-mid-pt mid-pt']]
+                                         (when (-> vprop nil? not)
+                                           [[:db/add (:db/id vprop) :orgpad/unit-position (geom/++ (:orgpad/unit-position vprop)
+                                                                                                   (geom/-- pos' mid-pt))]]))
+                             ) }))
 
 (defmethod mutate :orgpad.units/map-view-unit-border-color
   [env _ {:keys [color] :as payload}]
@@ -619,3 +625,37 @@
                     :parent-view (:view unit-tree)
                     :unit-tree (ot/get-ref-by-uid unit-tree uid)
                     prop-name prop-val})))
+
+(defn- nop
+  []
+  )
+
+(defmethod mutate :orgpad.units/make-lnk-vtx-prop
+  [{:keys [state] :as env} _ {:keys [unit-tree context-unit pos view-name]}]
+  (let [info (registry/get-component-info :orgpad/map-view)
+        default-props (-> info
+                          :orgpad/child-props-default
+                          :orgpad.map-view/vertex-props)
+        new-state
+        (-> state
+            (store/with-history-mode {:new-record true
+                                      :mode :acc})
+            (store/transact
+             [(merge default-props
+                     { :db/id -1
+                       :orgpad/refs (ot/uid unit-tree)
+                       :orgpad/type :orgpad/unit-view-child
+                       :orgpad/view-name view-name
+                       :orgpad/unit-position pos
+                       :orgpad/context-unit context-unit
+                       :orgpad/unit-visibility true } )
+              [:db/add (ot/uid unit-tree) :orgpad/props-refs -1]])
+            (as-> s
+                (mutate (assoc env :state s :force-update! nop)
+                        :orgpad/root-view-conf [unit-tree
+                                                { :attr :orgpad/view-type
+                                                  :value :orgpad/atomic-view }]))
+            :state
+            (store/with-history-mode :add)
+            )]
+    { :state new-state } ))

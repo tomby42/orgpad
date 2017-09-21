@@ -602,7 +602,7 @@
               ]
              [ :i.fa.fa-pencil-square-o.fa-lg
               { :title "Edit"
-               :onMouseUp #(open-unit component unit)
+               :onMouseUp #(open-unit component (assoc-in unit [:view :orgpad/view-type] :orgpad/atomic-view))
                } ]
              [ :i.fa.fa-remove.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit) } ]
            )]

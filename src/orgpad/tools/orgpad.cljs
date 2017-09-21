@@ -87,17 +87,27 @@
                  [(?contains-text ?a)]]
                [rules uid (partial contains-pattern? pattern)]))
 
-(defn props-pred
-  [ctx-unit view-name view-type type v]
+(defn props-pred-no-ctx
+  [view-name view-type type v]
   (and v
-       (= (v :orgpad/context-unit) ctx-unit)
        (= (v :orgpad/view-type) view-type)
        (= (v :orgpad/type) type)
        (= (v :orgpad/view-name) view-name)))
 
+(defn props-pred
+  [ctx-unit view-name view-type type v]
+  (and (props-pred-no-ctx view-name view-type type v)
+       (= (v :orgpad/context-unit) ctx-unit)))
+
 (defn props-pred-view-child
   [ctx-unit view-name view-type v]
   (props-pred ctx-unit view-name view-type :orgpad/unit-view-child v))
+
+(defn get-props-no-ctx
+  [props view-name prop-name prop-type]
+  (->> props
+       (drop-while #(not (props-pred-no-ctx view-name prop-name prop-type %)))
+       first))
 
 (defn get-props
   [props view-name pid prop-name prop-type]

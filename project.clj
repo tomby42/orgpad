@@ -27,7 +27,7 @@
                        ["babel-polyfill" "6.23.0"]]}
 
   :plugins [[lein-cljsbuild "1.1.7"]
-            [lein-figwheel "0.5.12"] ;; needs update to lein 2.5.3 at least
+            [lein-figwheel "0.5.13"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             [lein-localrepo "0.5.3"]
             [lein-doo "0.1.7"]
@@ -45,7 +45,7 @@
   :profiles {:dev
              {:dependencies [[com.cemerick/piggieback "0.2.1"]
                              [org.clojure/tools.nrepl "0.2.12"]
-                             [figwheel-sidecar        "0.5.12"]
+                             [figwheel-sidecar        "0.5.13"]
                              [binaryage/devtools      "0.9.4"]]
               }
 
