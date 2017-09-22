@@ -137,7 +137,7 @@
   [unit-tree & [selection]]
   (child-vertex-props (fn [prop]
                         (when prop
-                          (let [bw (:orgpad/unit-border-width prop)]
+                          (let [bw (* 2 (:orgpad/unit-border-width prop))]
                             [(:orgpad/unit-position prop)
                              (geom/++ (:orgpad/unit-position prop)
                                       [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]
