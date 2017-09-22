@@ -7,6 +7,7 @@
             [orgpad.components.menu.circle.component :as mc]
             [orgpad.components.node :as node]
             [orgpad.components.map.unit :as munit]
+            [orgpad.components.sidebar.sidebar :as sidebar]
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.orgpad :as ot]
@@ -305,6 +306,10 @@
                                         :height height}
                                        (css/transform {:translate pos}))}]))
 
+(defn- render-selection-list
+  [component unit-tree app-state]
+  (sidebar/sidebar-component :left))
+
 (defn- render-write-mode
   [component unit-tree app-state]
   (let [local-state (trum/comp->local-state component)]
@@ -325,6 +330,8 @@
        (render-local-menu component unit-tree app-state local-state)
        (when (= (:local-mode @local-state) :choose-selection)
          (render-selection-box @local-state (:view unit-tree)))
+      (if (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
+        (render-selection-list component unit-tree app-state))
       ])))
 
 (defn- render-read-mode
