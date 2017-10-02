@@ -184,10 +184,11 @@
 
   (let [value (aget node "value")
         changed-datom-entities (aget changed-entities "datom")
-        unit (value :unit)]
-    (or (force-update-part (unit :db/id))
-        (aget changed-datom-entities (unit :db/id))
-        (some #(aget changed-datom-entities (% :db/id)) (unit :orgpad/props-refs)))))
+        unit (:unit value)]
+    (or (nil? unit)
+        (force-update-part (:db/id unit))
+        (aget changed-datom-entities (:db/id unit))
+        (some #(aget changed-datom-entities (:db/id %)) (:orgpad/props-refs unit)))))
 ;;; Clone of unit view
 
 (defn- clone-view

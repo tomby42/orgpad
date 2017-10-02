@@ -11,6 +11,7 @@
             [orgpad.tools.geocache :as geocache]
             [orgpad.tools.dscript :as ds]
             [orgpad.tools.jcolls :as jcolls]
+            [orgpad.tools.dom :as dom]
             [orgpad.parsers.default-unit :as dp :refer [read mutate]]))
 
 (def ^:private propagated-query
@@ -329,7 +330,7 @@
          (filter (fn [u] (first (sequence xform (u :props)))))
          first)))
 
-(defn- update-geocahce-after-new-link
+(defn- update-geocache-after-new-link
   [state global-cache parent-id uid view-name begin-unit-id closest-unit mid-pt]
   (let [bu (store/query state [:entity begin-unit-id])
         pred (vertex-props-pred view-name)
@@ -370,7 +371,7 @@
                       [:db/add parent-id :orgpad/refs -1]])
                     state)]
     (when closest-unit
-      (update-geocahce-after-new-link state global-cache (ot/uid map-unit-tree)
+      (update-geocache-after-new-link state global-cache (ot/uid map-unit-tree)
                                       (get (store/tempids new-state) -1)
                                       (ot/view-name map-unit-tree)
                                       begin-unit-id closest-unit mid-pt-rel))
@@ -626,9 +627,7 @@
                     :unit-tree (ot/get-ref-by-uid unit-tree uid)
                     prop-name prop-val})))
 
-(defn- nop
-  []
-  )
+(defn- nop [])
 
 (defmethod mutate :orgpad.units/make-lnk-vtx-prop
   [{:keys [state] :as env} _ {:keys [unit-tree context-unit pos view-name]}]
@@ -659,3 +658,40 @@
             (store/with-history-mode :add)
             )]
     { :state new-state } ))
+
+(defmethod mutate :orgpad.units/map-move-to-unit
+  [{:keys [state global-cache]} _ {:keys [uid vprop parent-view]}]
+  (let [parent-id (-> parent-view :orgpad/refs first :db/id)
+        position (:orgpad/unit-position vprop)
+        transform (:orgpad/transform parent-view)
+        bb (dom/dom-bb->bb (aget global-cache parent-id "bbox"))
+        [w h] (geom/-- (bb 1) (bb 0))
+        new-translate (geom/-- [(/ w 2) (/ h 2)] position)
+        new-transformation (merge transform { :translate new-translate })]
+    {:state (if (:db/id parent-view)
+              (store/transact state [[:db/add (:db/id parent-view) :orgpad/transform new-transformation]])
+              (store/transact state [(merge parent-view
+                                            {:db/id -1
+                                             :orgpad/refs parent-id
+                                             :orgpad/transform new-transformation
+                                             :orgpad/type :orgpad/unit-view })
+                                      [:db/add parent-id :orgpad/props-refs -1]]))}))
+
+(defmethod read :orgpad/selection-vertex-props
+  [{ :keys [state query] :as env } _ {:keys [selection id view]}]
+  (group-by first
+            (ot/get-child-props-from-db state id
+                                        [[:orgpad/type :orgpad/unit-view-child]
+                                         [:orgpad/view-name (:orgpad/view-name view)]
+                                         [:orgpad/view-type :orgpad.map-view/vertex-props]
+                                         [:orgpad/context-unit id]]
+                                        selection)))
+
+(defmethod read :orgpad/selection-text-props
+  [{ :keys [state query] :as env } _ {:keys [selection id view]}]
+  (group-by first
+            (ot/get-descendant-props-from-db state id
+                                             [[:orgpad/type :orgpad/unit-view]
+                                              [:orgpad/view-name (:orgpad/view-name view)]
+                                              [:orgpad/view-type :orgpad/atomic-view]]
+                                             selection)))

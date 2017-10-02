@@ -47,17 +47,17 @@
           :params (aget node "params") }))
 
 (defn- update-parsed-query-
-  [{:keys [read tree] :as env}]
+  [{:keys [read tree] :as env} & [key params]]
   (let [dtree    @tree
         old-tree (aget dtree 0)
         tree'    (aget dtree 1)
-        node     (.shift old-tree)]
+        node     (or (.shift old-tree) #js {:me-changed true :key key :params params :children #js [] :value {}})]
     ;; (js/console.log "update-parsed-query-")
     ;; (js/console.log node)
     ;; (js/console.log old-tree)
     ;; (js/console.log tree)
     ;; (when (nil? node)
-    ;;  (js* "debugger;"))
+    ;;   (js* "debugger;"))
     (if (aget node "me-changed?")
       (do
         (vreset! tree #js [])

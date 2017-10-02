@@ -369,7 +369,7 @@
     :show-border-radius render-border-radius
     :show-border-style render-border-style })
 
-(def ^:private bb-border [20 20])
+(def ^:private bb-border [300 300])
 
 (defn compute-bb
   [component unit-tree selection]
@@ -380,11 +380,11 @@
         bb (geom/bbs-bbox bbs)
         transf (-> unit-tree :view :orgpad/transform)
         bb-screen-coord (mapv (partial geom/canvas->screen transf) bb)
-        inside? (every? (partial geom/insideBB screen-bbox) bb-screen-coord)]
+        inside? (every? (partial geom/insideBB bb-screen-coord) screen-bbox)]
     (if inside?
-      bb
       (mapv (partial geom/screen->canvas transf) [(geom/++ (screen-bbox 0) bb-border)
-                                                  (geom/-- (screen-bbox 1) bb-border)]))))
+                                                  (geom/-- (screen-bbox 1) bb-border)])
+      bb)))
 
 (defn- nodes-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state parent-view prop]

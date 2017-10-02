@@ -21,7 +21,7 @@
   [{:keys [unit view]} app-state]
   (atom-editor/atom-editor (unit :db/id) view (view :orgpad/atom) :inline))
 
-(defn- render-read-mode
+(defn render-read-mode
   [{:keys [view]} app-state]
     [ :div { :className "atomic-view" }
       (when (and (view :orgpad/desc) (not= (view :orgpad/desc) ""))

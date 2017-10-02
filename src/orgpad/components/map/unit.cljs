@@ -7,6 +7,8 @@
             [orgpad.components.registry :as registry]
             [orgpad.components.node :as node]
             [orgpad.components.map.unit-editor :as uedit]
+            [orgpad.components.sidebar.sidebar :as sidebar]
+            [orgpad.components.atomic.component :as catomic]
             [orgpad.tools.css :as css]
             [orgpad.tools.colls :as colls]
             [orgpad.tools.rum :as trum]
@@ -38,10 +40,6 @@
 (def mapped-children-mem
   (memoize mapped-children))
 
-(defn- get-pos
-  [u view-name pid]
-  (-> u :props (ot/get-props-view-child view-name pid :orgpad.map-view/vertex-props) :orgpad/unit-position))
-
 (defn- mapped-links
   [unit-tree view-name pid m-units]
   (let [links (mapped? unit-tree view-name :orgpad.map-view/link-props)
@@ -50,8 +48,8 @@
            (let [refs (-> l :unit :orgpad/refs)
                  id1 (-> refs (nth 0) ot/uid-safe)
                  id2 (-> refs (nth 1) ot/uid-safe)]
-             [l { :start-pos (get-pos (mus id1) view-name pid)
-                  :end-pos (get-pos (mus id2) view-name pid)
+             [l { :start-pos (ot/get-pos (mus id1) view-name pid)
+                  :end-pos (ot/get-pos (mus id2) view-name pid)
                   :cyclic? (= id1 id2) }]))
          links)))
 
@@ -154,7 +152,10 @@
            { :style { :top -10 :left -10 }
              :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)
              :onTouchStart #(try-move-unit component unit-tree prop pcomponent local-state %)
-             :onMouseUp #(open-unit pcomponent unit-tree local-state) } ]
+            :onMouseUp #(open-unit pcomponent unit-tree local-state) }
+         (when (contains? selections (:db/id unit))
+           [:span.fa.fa-check-circle.fa-lg.select-check {:style {:left (- (prop :orgpad/unit-width) 10)
+                                                                 :top 15}}])]
          )
       ])))
 
@@ -283,3 +284,34 @@
                    (map #(map-unit-mem % app-state component view-name pid local-state) m-units))
       (when (= (app-state :mode) :write)
         (uedit/unit-editor unit-tree app-state local-state)))) ))
+
+(defn- do-move-to-unit
+  [component params ev]
+  (.stopPropagation ev)
+  (lc/transact! component [[:orgpad.units/map-move-to-unit params]]))
+
+(defn- render-selected-unit
+  [component app-state parent-view [uid vprop tprops]]
+  [:div.map-selected-unit {:key uid
+                           :onMouseDown jev/stop-propagation
+                           :onClick (partial do-move-to-unit component {:uid uid
+                                                                        :vprop (get-in vprop [0 1])
+                                                                        :parent-view parent-view})}
+   (map (fn [prop]
+          [:div {:key (:db/id prop)}
+           (catomic/render-read-mode {:view (prop 1)} app-state)]) tprops)])
+
+(defn render-selected-children-units
+  [component {:keys [view unit props]} app-state local-state]
+  (let [selection (get-in app-state [:selections (:db/id unit)])
+        vertex-props (lc/query component :orgpad/selection-vertex-props
+                               {:id (:db/id unit) :view view :selection selection} true)
+        text-props (lc/query component :orgpad/selection-text-props
+                             {:id (:db/id unit) :view view :selection selection} true)]
+    (js/console.log "vertex props" vertex-props)
+    (js/console.log "text props" text-props)
+    (js/console.log "unit" unit)
+    (apply sidebar/sidebar-component :left
+           (map (comp (partial render-selected-unit component app-state view)
+                      (juxt identity vertex-props text-props))
+                selection))))
