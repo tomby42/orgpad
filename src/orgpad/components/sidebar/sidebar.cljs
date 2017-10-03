@@ -1,7 +1,7 @@
 (ns ^{:doc "Sidebar component"}
   orgpad.components.sidebar.sidebar
   (:require [rum.core :as rum]
-            [sablono.core :as html :refer-macros [html]]
+            [orgpad.tools.sablono :as html] 
             [orgpad.tools.js-events :as jev]))
 
 (rum/defcs sidebar-component < (rum/local false)
@@ -19,4 +19,6 @@
                          "fa fa-angle-right fa-lg"
                          "fa fa-angle-left fa-lg") } ] ]
     [ :div { :key "sidebar-childrens" }
-      (html children) ] ] ] )
+     (when @local
+       (js/console.log "bbb")
+       (html/shtml children)) ] ] ] )

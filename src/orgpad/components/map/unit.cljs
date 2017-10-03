@@ -18,6 +18,7 @@
             [orgpad.tools.bezier :as bez]
             [orgpad.tools.math :as math]
             [orgpad.tools.geocache :as geocache]
+            [orgpad.tools.func :as func]
             [orgpad.components.graphics.primitives :as g]))
 
 (defn- parent-id
@@ -160,8 +161,8 @@
       ])))
 
 (def map-unit-mem
-  (colls/memoize' map-unit {:key-fn #(-> % first ot/uid)
-                            :eq-fns [identical? identical? identical? identical? identical? identical?]}))
+  (func/memoize' map-unit {:key-fn #(-> % first ot/uid)
+                           :eq-fns [identical? identical? identical? identical? identical? identical?]}))
 
 (defn- start-change-link-shape
   [unit-tree prop component start-pos end-pos mid-pt local-state ev]
@@ -265,8 +266,8 @@
       ])))
 
 (def map-link-mem
-  (colls/memoize' map-link {:key-fn #(-> % first ot/uid)
-                            :eq-fns link-eq-fns}))
+  (func/memoize' map-link {:key-fn #(-> % first ot/uid)
+                           :eq-fns link-eq-fns}))
 
 (defn render-mapped-children-units
   [component {:keys [unit view props] :as unit-tree} app-state local-state]
@@ -308,7 +309,17 @@
                                {:id (:db/id unit) :view view :selection selection} true)
         text-props (lc/query component :orgpad/selection-text-props
                              {:id (:db/id unit) :view view :selection selection} true)]
-    (apply sidebar/sidebar-component :left
-           (map (comp (partial render-selected-unit component app-state view)
-                      (juxt identity vertex-props text-props))
-                selection))))
+    (js/console.log "ccc")
+    (sidebar/sidebar-component :left
+                               (fn []
+                                 (js/console.log "aaa")
+                                 (map (comp (partial render-selected-unit component app-state view)
+                                            (juxt identity vertex-props text-props))
+                                      selection)))))
+
+(comment
+(def ^:private selection-eq-fns [identical? = identical? identical?])
+(def render-selected-children-units
+  (func/memoize' render-selected-children-units- {:key-fn #(-> % second ot/uid)
+                                                  :eq-fns selection-eq-fns}))
+)

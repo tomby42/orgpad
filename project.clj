@@ -67,8 +67,8 @@
                         :output-dir "resources/public/js/compiled/out"
                         :source-map-timestamp true
                         :language-in :ecmascript5
-                        :externs ["node_modules/jupyter-js-services/dist/index.js"]
-                        :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
+                        :externs ["node_modules/@jupyterlab/services/dist/index.js"]
+                        :foreign-libs [{:file "node_modules/@jupyterlab/services/dist/index.js"
                                         :provides ["jupyter.services"]}]
 
                         }}
@@ -82,10 +82,10 @@
                         :optimizations :whitespace
                         :pretty-print true
                         :language-in :ecmascript5
-                        :externs ["node_modules/babel-polyfill/dist/polyfill.js", "node_modules/jupyter-js-services/dist/index.js"]
+                        :externs ["node_modules/babel-polyfill/dist/polyfill.js", "node_modules/@jupyterlab/services/dist/index.js"]
                         :foreign-libs [{:file "node_modules/babel-polyfill/dist/polyfill.js"
                                         :provides ["babel.polyfill"]},
-                                       {:file "node_modules/jupyter-js-services/dist/index.js"
+                                       {:file "node_modules/@jupyterlab/services/dist/index.js"
                                         :provides ["jupyter.services"]}
                                        ]
                         }}
@@ -98,8 +98,8 @@
                         :pretty-print false
                         :language-in :ecmascript5
                         :closure-warnings {:externs-validation :off :non-standard-jsdoc :off}
-                        :externs ["node_modules/jupyter-js-services/dist/index.js"]
-                        :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
+                        :externs ["node_modules/@jupyterlab/services/dist/index.js"]
+                        :foreign-libs [{:file "node_modules/@jupyterlab/services/dist/index.js"
                                         :provides ["jupyter.services"]}]
                         }}]
 
