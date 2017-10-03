@@ -308,9 +308,6 @@
                                {:id (:db/id unit) :view view :selection selection} true)
         text-props (lc/query component :orgpad/selection-text-props
                              {:id (:db/id unit) :view view :selection selection} true)]
-    (js/console.log "vertex props" vertex-props)
-    (js/console.log "text props" text-props)
-    (js/console.log "unit" unit)
     (apply sidebar/sidebar-component :left
            (map (comp (partial render-selected-unit component app-state view)
                       (juxt identity vertex-props text-props))
