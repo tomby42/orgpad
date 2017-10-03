@@ -20,6 +20,8 @@ Universal tool for thoughts managing and co-sharing.
   * run `lein localrepo install -p dev-resources/local-repo/react-motion-0.3.1-0.pom dev-resources/local-repo/react-motion-0.3.1-0.jar cljsjs/react-motion 0.3.1-0`
   * run `lein localrepo install -p dev-resources/local-repo/latlon-geohash-1.1.0-0.pom dev-resources/local-repo/latlon-geohash-1.1.0-0.jar cljsjs/latlon-geohash 1.1.0-0`
   * run `lein deps`
+  * run `lein npm install`
+  * run `lein less once`
  
 * Running dev env
   * run `lein figwheel` and connect from your web browser to `http://localhost:3449`
