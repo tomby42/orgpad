@@ -19,6 +19,7 @@ Universal tool for thoughts managing and co-sharing.
   * run `lein deps`
   * run `lein npm install`
   * run `lein less once`
+  * run `mkdir sandbox`
  
 * Running dev env
   * run `lein figwheel` and connect from your web browser to `http://localhost:3449`
