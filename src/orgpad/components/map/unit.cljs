@@ -302,24 +302,23 @@
           [:div {:key (:db/id prop)}
            (catomic/render-read-mode {:view (prop 1)} app-state)]) tprops)])
 
-(defn render-selected-children-units
+(defn- render-selection-
   [component {:keys [view unit props]} app-state local-state]
   (let [selection (get-in app-state [:selections (:db/id unit)])
         vertex-props (lc/query component :orgpad/selection-vertex-props
                                {:id (:db/id unit) :view view :selection selection} true)
         text-props (lc/query component :orgpad/selection-text-props
                              {:id (:db/id unit) :view view :selection selection} true)]
-    (js/console.log "ccc")
-    (sidebar/sidebar-component :left
-                               (fn []
-                                 (js/console.log "aaa")
-                                 (map (comp (partial render-selected-unit component app-state view)
-                                            (juxt identity vertex-props text-props))
-                                      selection)))))
+    (map (comp (partial render-selected-unit component app-state view)
+               (juxt identity vertex-props text-props))
+         selection)))
 
-(comment
 (def ^:private selection-eq-fns [identical? = identical? identical?])
-(def render-selected-children-units
-  (func/memoize' render-selected-children-units- {:key-fn #(-> % second ot/uid)
-                                                  :eq-fns selection-eq-fns}))
-)
+(def ^:private render-selection
+  (func/memoize' render-selection- {:key-fn #(-> % second ot/uid)
+                                    :eq-fns selection-eq-fns}))
+
+(defn render-selected-children-units
+  [component unit-tree app-state local-state]
+  (sidebar/sidebar-component :left
+                             #(render-selection component unit-tree app-state local-state)))

@@ -20,5 +20,4 @@
                          "fa fa-angle-left fa-lg") } ] ]
     [ :div { :key "sidebar-childrens" }
      (when @local
-       (js/console.log "bbb")
        (html/shtml children)) ] ] ] )
