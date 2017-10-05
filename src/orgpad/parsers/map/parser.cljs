@@ -695,3 +695,15 @@
                                               [:orgpad/view-name (:orgpad/view-name view)]
                                               [:orgpad/view-type :orgpad/atomic-view]]
                                              selection)))
+
+(defmethod mutate :orgpad.units/map-view-canvas-zoom
+  [{:keys [state global-cache]} _ {:keys [view parent-id translate scale]}]
+  (let [transf {:translate translate :scale scale}]
+    {:state (if (:db/id view)
+              (store/transact state [[:db/add (:db/id view) :orgpad/transform transf]])
+              (store/transact state [(merge view
+                                            {:db/id -1
+                                             :orgpad/refs parent-id
+                                             :orgpad/transform transf
+                                             :orgpad/type :orgpad/unit-view })
+                                     [:db/add parent-id :orgpad/props-refs -1]]))}))

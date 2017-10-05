@@ -305,6 +305,25 @@
                                         :height height}
                                        (css/transform {:translate pos}))}]))
 
+(defn normalize-mouse-data
+  [ev]
+  (let [evt (.-nativeEvent ev)]
+    (if (zero? (.-detail evt))
+      (.-wheelDelta evt)
+      (* -120 (.-detail evt)))))
+
+(defn- handle-wheel
+  [component {:keys [unit view] :as unit-tree} app-state ev]
+  (let [zoom (if (< (normalize-mouse-data ev) 0) 0.95 1.05)
+        x (.-clientX ev)
+        y (.-clientY ev)
+        z (* (-> view :orgpad/transform :scale) zoom)
+        p (geom/screen->canvas (:orgpad/transform view) [x y])
+        p' (geom/*c p z)]
+    (lc/transact! component [[:orgpad.units/map-view-canvas-zoom {:view view
+                                                                  :parent-id (:db/id unit)
+                                                                  :translate (geom/-- p p')
+                                                                  :scale z}]])))
 
 (defn- render-write-mode
   [component unit-tree app-state]
@@ -321,7 +340,8 @@
               :onMouseUp #(handle-mouse-up component unit-tree app-state %)
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
               :onBlur #(handle-blur component unit-tree app-state %)
-              :onMouseLeave #(handle-blur component unit-tree app-state %) }
+              :onMouseLeave #(handle-blur component unit-tree app-state %)
+              :onWheel #(handle-wheel component unit-tree app-state %) }
        (munit/render-mapped-children-units component unit-tree app-state local-state)
        (render-local-menu component unit-tree app-state local-state)
        (when (= (:local-mode @local-state) :choose-selection)
