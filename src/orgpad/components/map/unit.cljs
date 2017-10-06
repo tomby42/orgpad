@@ -99,6 +99,12 @@
     (lc/transact! component [[ :orgpad.units/select {:pid (parent-id parent-view)
                                                      :uid (ot/uid unit-tree)} ]])))
 
+(defn- format-color
+  [c]
+  (if (= (.-length c) 9)
+    (css/hex-color->rgba c)
+    c))
+
 (rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} app-state pcomponent view-name pid local-state]
   (let [prop (ot/get-props-view-child props view-name pid :orgpad.map-view/vertex-props)
@@ -110,10 +116,10 @@
                        :height (prop :orgpad/unit-height)
                        :borderWidth (prop :orgpad/unit-border-width)
                        :borderStyle (prop :orgpad/unit-border-style)
-                       :borderColor (prop :orgpad/unit-border-color)
+                       :borderColor (-> prop :orgpad/unit-border-color format-color)
                        :borderRadius (str (prop :orgpad/unit-corner-x) "px "
                                           (prop :orgpad/unit-corner-y) "px")
-                       :backgroundColor (prop :orgpad/unit-bg-color) }
+                       :backgroundColor (-> prop :orgpad/unit-bg-color format-color) }
                      (css/transform { :translate pos })
                      (when (and selected? (:quick-edit @local-state)) {:zIndex 2})) ]
     ;;(js/window.console.log "rendering " (unit :db/id) (and selected? (:quick-edit @local-state)))

@@ -60,7 +60,7 @@
                                                               (conj! ret1 (aget info idx1))))]
                                           (conj! ret' (js/parseInt (aget ids idx)))))))
                            (transient (avl/sorted-set)) vis-places))]
-    ;; (println "vis-places" id pos size vis-places vis-units)
+    ;; (println "vis-places" geocache id pos size vis-places vis-units)
     vis-units))
 
 (defn has-geocache?

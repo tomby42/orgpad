@@ -56,3 +56,15 @@
                           :translate (translate-str v)
                           :scale (scale-str v))))
                  "" t)))
+
+(defn hex-color->rgba
+  [hex-color]
+  (let [c (js/parseInt (str "0x" (.substring hex-color 1)) 16)]
+    (if (= (.-length hex-color) 7)
+      (str "rgb(" (-> c (bit-shift-right 16) (bit-and 255))
+           "," (-> c (bit-shift-right 8) (bit-and 255))
+           "," (-> c (bit-and 255)) ")")
+      (str "rgba(" (-> c (bit-shift-right 24) (bit-and 255))
+           "," (-> c (bit-shift-right 16) (bit-and 255))
+           "," (-> c (bit-shift-right 8) (bit-and 255))
+           "," (/ (-> c (bit-and 255)) 255)")"))))

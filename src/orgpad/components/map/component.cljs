@@ -314,16 +314,12 @@
 
 (defn- handle-wheel
   [component {:keys [unit view] :as unit-tree} app-state ev]
-  (let [zoom (if (< (normalize-mouse-data ev) 0) 0.95 1.05)
-        x (.-clientX ev)
-        y (.-clientY ev)
-        z (* (-> view :orgpad/transform :scale) zoom)
-        p (geom/screen->canvas (:orgpad/transform view) [x y])
-        p' (geom/*c p z)]
-    (lc/transact! component [[:orgpad.units/map-view-canvas-zoom {:view view
-                                                                  :parent-id (:db/id unit)
-                                                                  :translate (geom/-- p p')
-                                                                  :scale z}]])))
+  (let [zoom (if (< (normalize-mouse-data ev) 0) 0.95 1.05)]
+    (lc/transact! component [[:orgpad.units/map-view-canvas-zoom
+                              {:view view
+                               :parent-id (:db/id unit)
+                               :pos [(.-clientX ev) (.-clientY ev)]
+                               :zoom zoom}]])))
 
 (defn- render-write-mode
   [component unit-tree app-state]
@@ -443,12 +439,14 @@
                                         (assoc! m (-> n (aget "value") ot/uid) n))
                                       (transient {}) (aget old-node "children")))
                              {})
-            pos (-> view-unit :orgpad/transform :translate)
+            iz (/ 1 (-> view-unit :orgpad/transform :scale))
+            pos (geom/*c (-> view-unit :orgpad/transform :translate)
+                         iz)
             bbox (or (aget global-cache id "bbox")
                      (get-default-bbox))
             size (geom/*c [(- (.-right bbox) (.-left bbox))
                            (- (.-bottom bbox) (.-top bbox))]
-                          (-> view-unit :orgpad/transform :scale))
+                          iz)
             vis-units (geocache/visible-units global-cache id (:orgpad/view-name view-unit) pos size)]
         ;; (js/console.log "vis units" vis-units global-cache)
         (map (juxt identity children-cache) vis-units))

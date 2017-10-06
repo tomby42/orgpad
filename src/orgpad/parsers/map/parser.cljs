@@ -697,8 +697,12 @@
                                              selection)))
 
 (defmethod mutate :orgpad.units/map-view-canvas-zoom
-  [{:keys [state global-cache]} _ {:keys [view parent-id translate scale]}]
-  (let [transf {:translate translate :scale scale}]
+  [{:keys [state global-cache]} _ {:keys [view parent-id pos zoom]}]
+  (let [z (* (-> view :orgpad/transform :scale) zoom)
+        z' (if (< z 0.3) 0.3 z)
+        p (geom/screen->canvas (:orgpad/transform view) pos)
+        translate (geom/-- pos (geom/*c p z'))
+        transf {:translate translate :scale z'}]
     {:state (if (:db/id view)
               (store/transact state [[:db/add (:db/id view) :orgpad/transform transf]])
               (store/transact state [(merge view
