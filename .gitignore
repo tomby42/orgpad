@@ -18,3 +18,4 @@ figwheel_server.log
 .cljs_rhino_repl
 resources/public/css/
 node_modules/
+.swp
