@@ -48,11 +48,13 @@
         x' (+ x w)
         y' (+ y h)
         [dx dy] (steps' res')
-        dx2 (/ dx 2)
-        dy2 (/ dy 2)
+        dx2 (/ dx 1.9)
+        dy2 (/ dy 1.9)
         cp (hash->pos (pos->hash x y res'))]
+    ;; (js/console.log "bhi" x y w h x' y' dx dy cp)
     (loop [yc (cp 1)
            hs []]
+      ;; (js/console.log "bhl" yc dy2 y' cp)
       (if (> yc (+ dy2 y'))
         hs
         (recur (+ yc dy)

@@ -448,7 +448,7 @@
                            (- (.-bottom bbox) (.-top bbox))]
                           iz)
             vis-units (geocache/visible-units global-cache id (:orgpad/view-name view-unit) pos size)]
-        ;; (js/console.log "vis units" vis-units global-cache)
+        ;; (js/console.log "vis units" unit view-unit vis-units global-cache)
         (map (juxt identity children-cache) vis-units))
       [])))
 

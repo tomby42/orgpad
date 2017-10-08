@@ -38,6 +38,7 @@
                                           (old-size 0) (old-size 1))
                      [])]
     ;; (println "update-box!" places old-places)
+    ;; (js/console.log uid places old-places pos size old-pos old-size)
     (doseq [h old-places]
       (del-from-place! geocache h uid))
     (doseq [h places]
