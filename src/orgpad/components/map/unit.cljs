@@ -243,7 +243,7 @@
   (let [prop (ot/get-props-view-child props view-name pid :orgpad.map-view/link-props)
         mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
         style { :css { :zIndex -1 }
-                :canvas { :strokeStyle (prop :orgpad/link-color)
+                :canvas { :strokeStyle (format-color (prop :orgpad/link-color))
                           :lineWidth (prop :orgpad/link-width)
                           :lineCap "round"
                           :lineDash (prop :orgpad/link-dash) } }
