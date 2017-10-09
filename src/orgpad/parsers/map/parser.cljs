@@ -149,7 +149,10 @@
 
 (defn- propagated-prop
   [{:keys [unit]} prop view]
-  (if (and (-> unit :orgpad/refs empty? not) view (contains? view :orgpad/active-unit))
+  ;; FIXME: update of propageted props should be done when switching view types
+  ;; when we have mix of units with vertex props and units wihout it is not clear what to do
+  (if (and (-> unit :orgpad/refs empty? not) view (contains? view :orgpad/active-unit)
+           (< (:orgpad/active-unit view) (count (:orgpad/refs unit))))
     (let [child-unit (-> unit ot/sort-refs (nth (view :orgpad/active-unit)))
           prop (first
                 (filter (fn [p]
