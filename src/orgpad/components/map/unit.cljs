@@ -191,7 +191,7 @@
         p2 (geom/++ ptmp (geom/*c n 10))
         p3 (geom/++ ptmp (geom/*c (geom/-- n) 10))
         style { :css { :zIndex -1 }
-                :canvas { :strokeStyle (prop :orgpad/link-color)
+                :canvas { :strokeStyle (-> prop :orgpad/link-color format-color)
                           :lineWidth (prop :orgpad/link-width)
                           :lineCap "round" } }]
     (g/poly-line [p2 p1 p3] style)))
@@ -204,7 +204,7 @@
         p1 (geom/++ (geom/*c dir 10) s')
         p2 (geom/++ (geom/*c dir -10) s')
         style { :css { :zIndex -1 }
-                :canvas { :strokeStyle (prop :orgpad/link-color)
+                :canvas { :strokeStyle (-> prop :orgpad/link-color format-color)
                           :lineWidth (prop :orgpad/link-width)
                           :lineCap "round" } }]
     (g/poly-line [p1 s p2] style)))
