@@ -19,42 +19,6 @@
 (def ^:private padding 20)
 (def ^:private diam (- (* padding 2) 5))
 
-(def ^:private menu-conf {
-  :always-open? true
-  :init-state true
-  :init-rotate -135
-  :init-scale 0.5
-  :child-init-scale 0.2
-  :child-init-rotation -180
-  :main-spring-config #js [500 30]
-  :child-diam diam
-  :main-diam diam
-  :offset 0.4
-  :child-class "circle-menu-child"
-  :main-class "circle-menu-child"
-  :final-child-pos-fn mc/final-child-delta-fix-pos
-  :child-spring-config #js [800 50]
-})
-
-(def ^:private prop-menu-conf {
-  :always-open? false
-  :init-state true
-  :init-rotate -135
-  :init-scale 0.5
-  :main-spring-config #js [500 30]
-  :fly-out-radius 50
-  :base-angle 30
-  :separation-angle 50
-  :child-diam 35
-  :child-init-scale 0.2
-  :child-init-rotation -180
-  :main-diam 40
-  :offset 0.4
-  :child-class "circle-menu-child"
-  :final-child-pos-fn mc/final-child-delta-pos-rot
-  :child-spring-config #js [400 28]
-})
-
 (def ^:private edge-menu-conf {
   :always-open? false
   :init-state true
@@ -73,35 +37,6 @@
   :final-child-pos-fn mc/final-child-delta-pos-rot
   :child-spring-config #js [400 28]
 })
-
-(defn- compute-children-position
-  [prop]
-  (let [w (prop :orgpad/unit-width)
-        h (prop :orgpad/unit-height)
-        bw (prop :orgpad/unit-border-width)
-        bw2 (* 2 bw)]
-    [{ :dx (- (+ (/ w 2) bw))
-       :dy padding }
-     { :dx (- (+ w padding bw2))
-       :dy padding }
-     { :dx (- (+ w padding bw2))
-       :dy (- (+ h (* 1.2 padding) bw2)) }
-     { :dx padding
-       :dy (- (+ h (* 1.2 padding) bw2)) }
-     { :dx (- (+ (/ w 2) bw))
-       :dy (- (+ h (* 1.2 padding) bw2)) }
-     ]))
-
-(defn- compute-children-position-nodes
-  [bb]
-  (let [[w h] (geom/-- (bb 1) (bb 0))]
-    [{ :dx (- (+ w padding))
-       :dy padding }
-     { :dx (- (+ w padding))
-       :dy (- (+ h (* 1.2 padding))) }
-     { :dx padding
-       :dy (- (+ h (* 1.2 padding))) }
-     ]))
 
 (defn- selected-unit-prop
   [{:keys [unit] :as unit-tree} unit-id prop-id]
@@ -126,84 +61,6 @@
                                                          :orgpad/view-type view-type
                                                          :orgpad/view-path view-path } ]])))
 
-(def ^:private closed-editors { :show-color-picker false
-                                :show-border-width false
-                                :show-border-radius false
-                                :show-border-style false })
-
-(defn- close-props-menu
-  [local-state]
-  (js/setTimeout #(swap! local-state merge closed-editors
-                         { :show-props-menu false }) 200))
-
-(defn- toggle-color-picker
-  [local-state action]
-  (let [{:keys [show-color-picker color-picker-action]} @local-state]
-    (swap! local-state merge closed-editors
-           { :show-color-picker (if (= action color-picker-action) (not show-color-picker) true)
-             :color-picker-action action })))
-
-(defn- toggle-border-editor
-  [local-state type]
-  (swap! local-state merge closed-editors
-         { type (not (@local-state type)) }))
-
-(defn- get-props-menu-pos
-  [prop]
-  (let [pos (prop :orgpad/unit-position)
-        h   (prop :orgpad/unit-width)
-        bw  (* 2(prop :orgpad/unit-border-width))]
-    [(+ (pos 0) padding h bw) (- (pos 1) padding)]))
-
-(defn- render-props-menu
-  [pos local-state]
-  (mc/circle-menu
-   (merge prop-menu-conf {:center-x (pos 0)
-                          :center-y (pos 1)
-                          :onMouseDown jev/block-propagation
-                          :onMouseUp jev/block-propagation })
-   [ :i { :title "Properties" :className "fa fa-cogs fa-lg" :onMouseDown #(close-props-menu local-state) } ]
-   [ :span { :title "Border color" :onMouseDown #(toggle-color-picker local-state :orgpad.units/map-view-unit-border-color) }
-    [ :i { :className "fa fa-square-o" :style { :position "absolute" :top 10 :left 10 } } ]
-    [ :i { :className "fa fa-paint-brush" :style { :position "absolute" :top 10 :left 10 } } ] ]
-   [ :span { :title "Background color" :onMouseDown #(toggle-color-picker local-state :orgpad.units/map-view-unit-bg-color) }
-    [ :i { :className "fa fa-square" :style { :position "absolute" :top 15 :left 10 } } ]
-    [ :i { :className "fa fa-paint-brush" :style { :position "absolute" :top 10 :left 10 :color "#030303" } } ] ]
-   [ :span { :title "Border width" :onMouseDown #(toggle-border-editor local-state :show-border-width) }
-    [ :i { :className "fa fa-minus" :style { :position "absolute" :top 20 :left 11 } } ]
-    [ :i { :className "fa fa-minus fa-lg" :style { :position "absolute" :top 15 :left 9 } } ]
-    [ :i { :className "fa fa-minus fa-2x" :style { :position "absolute" :top 0 :left 5 } } ] ]
-   [ :i { :title "Border radius" :className "fa fa-square-o fa-lg" :onMouseDown #(toggle-border-editor local-state :show-border-radius) } ]
-   [ :span { :title "Border style" :onMouseDown #(toggle-border-editor local-state :show-border-style) }
-    [ :i.fa.fa-square-o.fa-lg { :style { :position "absolute" :left 10 :top 10 } } ]
-    [ :i.fa.fa-tint { :style { :position "absolute" } } ] ] ))
-
-(defn- render-color-picker
-  [{:keys [component unit prop parent-view local-state selection]}]
-  (let [pos (prop :orgpad/unit-position)
-        h   (prop :orgpad/unit-width)
-        action (@local-state :color-picker-action)
-        color (if (= action :orgpad.units/map-view-unit-border-color)
-                (prop :orgpad/unit-border-color)
-                (prop :orgpad/unit-bg-color))
-        on-change (if (nil? selection)
-                    (fn [c]
-                      (lc/transact! component [[action {:prop prop
-                                                        :parent-view parent-view
-                                                        :unit-tree unit
-                                                        :color c}]]))
-                    (fn [c]
-                      (lc/transact! component [[:orgpad.units/map-view-units-change-props
-                                                {:selection selection
-                                                 :action action
-                                                 :unit-tree unit
-                                                 :prop-name :color
-                                                 :prop-val c}]])))]
-    [ :div.map-view-border-edit { :style { :width 210 :position "absolute" :top (- (pos 1) 300) :left (+ (pos 0) h -235)  } }
-     [ :div.center (if (= action :orgpad.units/map-view-unit-border-color)
-                     "Border Color"
-                     "Background Color") ]
-     (cpicker/color-picker color {} on-change) ] ))
 
 (defn- mouse-down-default
   [local-state ev]
@@ -245,66 +102,8 @@
                     :onChange on-change
  } ] ] ) )
 
-
-(defn- render-border-width
-  [{:keys [prop] :as params}]
-  (let [pos (prop :orgpad/unit-position)
-        h   (prop :orgpad/unit-width)]
-    [ :div.map-view-border-edit { :style { :position "absolute" :top (- (pos 1) 170) :left (+ (pos 0) h) } }
-     [:div.center "Border Width"]
-     (render-slider (merge params {:max 20
-                                   :prop-name :orgpad/unit-border-width
-                                   :action :orgpad.units/map-view-unit-border-width })) ]))
-
-(defn- render-border-radius
-  [{:keys [prop] :as params}]
-  (let [pos (prop :orgpad/unit-position)
-        h   (prop :orgpad/unit-width)]
-    [ :div.map-view-border-edit { :style { :position "absolute" :top (- (pos 1) 210) :left (+ (pos 0) h)  } }
-     [ :div.center "Border Radius" ]
-     (render-slider (merge params
-                           {:max 50
-                            :prop-name :orgpad/unit-corner-x
-                            :action :orgpad.units/map-view-unit-border-radius }))
-     (render-slider (merge params
-                           {:max 50
-                            :prop-name :orgpad/unit-corner-y
-                            :action :orgpad.units/map-view-unit-border-radius })) ]))
-
 (def ^:private border-styles
   [ "none" "solid" "dotted" "dashed" "double" "groove" "ridge" "inset" "outset" ])
-
-(defn- render-border-style
-  [{:keys [component unit prop parent-view local-state selection]}]
-  (let [pos (prop :orgpad/unit-position)
-        h   (prop :orgpad/unit-width)
-        style (prop :orgpad/unit-border-style)
-        on-change (if (nil? selection)
-                    (fn [ev]
-                      (lc/transact! component
-                                    [[:orgpad.units/map-view-unit-border-style
-                                      {:prop prop
-                                       :parent-view parent-view
-                                       :unit-tree unit
-                                       :orgpad/unit-border-style (-> ev .-target .-value) } ]]))
-                    (fn [ev]
-                      (lc/transact! component
-                                    [[:orgpad.units/map-view-units-change-props
-                                      {:action :orgpad.units/map-view-unit-border-style
-                                       :selection selection
-                                       :unit-tree unit
-                                       :prop-name :orgpad/unit-border-style
-                                       :prop-val (-> ev .-target .-value) } ]])))]
-    [ :div.-100.map-view-border-edit { :style { :width 100 :position "absolute" :top (- (pos 1) 155) :left (+ (pos 0) h) } }
-      [ :div.center "Border Style" ]
-     (into
-      [ :select.fake-center
-       { :onMouseDown (partial mouse-down-default local-state)
-         :onBlur jev/stop-propagation
-         :onChange on-change } ]
-      (map (fn [s]
-             [ :option (if (= s style) { :selected true } {}) s ])
-           border-styles) ) ] ))
 
 (defn- remove-unit
   [component id]
@@ -365,12 +164,6 @@
   (swap! local-state merge {:local-mode :make-links
                             :selected-units [unit-tree selection]}))
 
-(def ^:private prop-editors
-  { :show-color-picker render-color-picker
-    :show-border-width render-border-width
-    :show-border-radius render-border-radius
-    :show-border-style render-border-style })
-
 (def ^:private bb-border [300 300])
 
 (defn compute-bb
@@ -387,129 +180,6 @@
       (mapv (partial geom/screen->canvas transf) [(geom/++ (screen-bbox 0) bb-border)
                                                   (geom/-- (screen-bbox 1) bb-border)])
       bb)))
-
-(defn- nodes-unit-editor
-  [component {:keys [view] :as unit-tree} app-state local-state parent-view prop]
-  (let [selection (get-in app-state [:selections (ot/uid unit-tree)])
-        bb (compute-bb component unit-tree selection)
-        pos (bb 0)
-        [width height] (geom/-- (bb 1) (bb 0))
-        style (merge {:width width
-                      :height height}
-                     (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))
-        prop' (merge prop {:orgpad/unit-position (bb 0)
-                           :orgpad/unit-width width})
-        render-params {:component component :unit unit-tree :prop prop'
-                       :parent-view view :local-state local-state
-                       :selection selection}]
-    (into
-     [:div {:key "nodes-unit-editor"}
-      [ :div {:className "map-view-unit-selected"
-              :style style
-              :key 0
-              :onMouseDown (jev/make-block-propagation #(start-units-move unit-tree selection local-state %))
-              :onTouchStart (jev/make-block-propagation #(start-units-move unit-tree selection local-state (aget % "touches" 0)))
-              :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))} ]
-
-      (mc/circle-menu
-       (merge menu-conf {:center-x (- (pos 0) padding)
-                         :center-y (- (pos 1) padding)
-                         :children-positions (compute-children-position-nodes bb)
-                         :onMouseDown jev/block-propagation
-                         :onTouchStart jev/block-propagation
-                         :onMouseUp jev/block-propagation })
-       [ :i { :title "Move"
-             :className "fa fa-arrows fa-lg"
-             :onMouseDown #(start-units-move unit-tree selection local-state %)
-             :onTouchStart #(start-units-move unit-tree selection local-state (aget % "touches" 0))
-             :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
-       [ :i { :title "Properties" :className "fa fa-cogs fa-lg"
-             :onMouseUp #(swap! local-state assoc :show-props-menu true) } ]
-       [ :i { :title "Link" :className "fa fa-link fa-lg"
-             :onMouseDown #(start-links unit-tree selection local-state %)
-             :onTouchStart #(start-links unit-tree selection local-state (aget % "touches" 0)) } ]
-       [ :i { :title "Remove" :className "fa fa-remove fa-lg"
-             :onMouseDown #(remove-units component (ot/uid unit-tree) selection) } ]
-       )
-      (when (= (@local-state :local-mode) :make-links)
-        (let [tr (parent-view :orgpad/transform)]
-          (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
-                  (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
-                  {:css {:zIndex 2}})))
-      (when (@local-state :show-props-menu)
-        (render-props-menu [(+ (>- bb 1 0) padding) (- (>- bb 0 1) padding)] local-state))]
-
-     (map (fn [[key render-fn]]
-            (when (@local-state key)
-              (render-fn render-params))) prop-editors)
-     )))
-
-
-(defn- node-unit-editor
-  [component {:keys [view] :as unit-tree} app-state local-state]
-  (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
-        [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
-    (when (and prop unit)
-      (if (not= (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
-        (nodes-unit-editor component unit-tree app-state local-state parent-view prop)
-        (let [pos (prop :orgpad/unit-position)
-              width (prop :orgpad/unit-width) height (prop :orgpad/unit-height)
-              bw (prop :orgpad/unit-border-width)
-              style (merge { :width (+ width (* 2 bw))
-                             :height (+ height (* 2 bw)) }
-                           (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))
-              render-params {:component component :unit unit :prop prop :parent-view view :local-state local-state}]
-          (into
-           [:div {:key "node-unit-editor"}
-            [ :div {:className "map-view-unit-selected"
-                    :style style
-                    :key 0
-                    :onDoubleClick #(enable-quick-edit local-state)
-                    :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
-                    :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
-                    :onMouseUp (jev/make-block-propagation #(swap! local-state merge {:local-mode :none}))} ]
-
-            (mc/circle-menu
-             (merge menu-conf { :center-x (- (pos 0) padding)
-                               :center-y (- (pos 1) padding)
-                               :children-positions (compute-children-position prop)
-                               :onMouseDown jev/block-propagation
-                               :onTouchStart jev/block-propagation
-                               :onMouseUp jev/block-propagation })
-             [ :i { :title "Move"
-                   :className "fa fa-arrows fa-lg"
-                   :onMouseDown #(start-unit-move local-state %)
-                   :onTouchStart #(start-unit-move local-state (aget % "touches" 0))
-                   :onMouseUp #(swap! local-state merge { :local-mode :none }) } ]
-             [ :i { :title "Edit"
-                   :className "fa fa-pencil-square-o fa-lg"
-                   :onMouseUp #(open-unit component unit)
-                   } ]
-             [ :i { :title "Properties" :className "fa fa-cogs fa-lg"
-                   :onMouseUp #(swap! local-state assoc :show-props-menu true) } ]
-             [ :i { :title "Resize"
-                   :className "fa fa-arrows-alt fa-lg"
-                   :onMouseDown #(start-unit-resize local-state %)
-                   :onTouchStart #(start-unit-resize local-state (aget % "touches" 0))
-                   :onMouseUp #(swap! local-state merge { :local-mode :none })} ]
-             [ :i { :title "Link" :className "fa fa-link fa-lg"
-                   :onMouseDown #(start-link local-state %)
-                   :onTouchStart #(start-link local-state (aget % "touches" 0)) } ]
-             [ :i { :title "Remove" :className "fa fa-remove fa-lg"
-                   :onMouseDown #(remove-unit component (ot/uid unit))  } ]
-             )
-            (when (= (@local-state :local-mode) :make-link)
-              (let [tr (parent-view :orgpad/transform)]
-                (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
-                        (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
-                        {:css {:zIndex 2}})))
-            (when (@local-state :show-props-menu)
-              (render-props-menu (get-props-menu-pos prop) local-state))]
-
-           (map (fn [[key render-fn]]
-                  (when (@local-state key)
-                    (render-fn render-params))) prop-editors)))))))
-
 
 (defn- nodes-unit-editor1
   [component {:keys [view] :as unit-tree} app-state local-state parent-view prop]
