@@ -461,7 +461,6 @@
         (let [params {:component component :unit unit-tree :prop prop
                       :parent-view view :local-state local-state
                       :selection selection}]
-          (js/console.log "multi")
           (render-props-menu1 params))
         (let [params {:component component :unit unit :prop prop :parent-view view :local-state local-state}]
           (render-props-menu1 params))))))
