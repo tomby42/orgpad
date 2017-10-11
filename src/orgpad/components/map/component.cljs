@@ -194,7 +194,7 @@
 (defn- canvas-move
   [component { :keys [unit view] :as unit-tree } app-state local-state ev]
   (let [pel (-> component rum/state deref (trum/ref-node "component-node"))
-        el (aget pel "children" 0)
+        el (aget pel "children" 0 "children" 0)
         tr (aget el "style" "transform")
         t (.exec tr-rex tr)
         s (.exec sc-rex tr)

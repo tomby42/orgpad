@@ -75,7 +75,7 @@
                  dbl-click-timeout))
 
 (defn- try-move-unit
-  [component unit-tree prop pcomponent local-state ev]
+  [component unit-tree app-state prop pcomponent local-state ev]
   (.stopPropagation ev)
   (let [old-node (:selected-node @local-state)
         new-node (-> component rum/state deref (trum/ref-node "unit-node"))
@@ -85,8 +85,9 @@
       (aset old-node "style" "z-index" "0"))
     (when new-node
       (aset new-node "style" "z-index" (if (:quick-edit @local-state) "2" "1")))
-    (when (or (=  pre-quick-edit 0)
-              (not pre-quick-edit))
+    (when (and (= (:mode app-state) :write)
+               (or (=  pre-quick-edit 0)
+                   (not pre-quick-edit)))
       (run-dbl-click-check local-state))
     (swap! local-state merge { :local-mode :try-unit-move
                                :selected-unit [unit-tree prop parent-view component]
@@ -129,15 +130,15 @@
      [ :div
       (if (= (app-state :mode) :write)
         { :style style :className "map-view-child" :key (unit :db/id)
-          :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)
-          :onTouchStart #(try-move-unit component unit-tree prop pcomponent local-state %)
+          :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+          :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
           :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
           :onDoubleClick #(uedit/enable-quick-edit local-state)
           :ref "unit-node"
          }
         { :style style :className "map-view-child" :key (unit :db/id)
-          :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)
-          :onTouchStart #(try-move-unit component unit-tree prop pcomponent local-state %)
+          :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+          :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
           :ref "unit-node"
          })
       (node/node unit-tree
@@ -152,13 +153,13 @@
            {:style {:top 0
                     :width (prop :orgpad/unit-width)
                     :height (prop :orgpad/unit-height) }
-            :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)}
+            :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)}
            (when (contains? selections (:db/id unit))
              [:span.fa.fa-check-circle.fa-lg.select-check])])
         [ :div.map-view-child.leader-control
            { :style { :top -10 :left -10 }
-             :onMouseDown #(try-move-unit component unit-tree prop pcomponent local-state %)
-             :onTouchStart #(try-move-unit component unit-tree prop pcomponent local-state %)
+             :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+             :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
             :onMouseUp #(open-unit pcomponent unit-tree local-state) }
          (when (contains? selections (:db/id unit))
            [:span.fa.fa-check-circle.fa-lg.select-check {:style {:left (- (prop :orgpad/unit-width) 10)
@@ -285,12 +286,15 @@
         m-links (mapped-links-mem unit view-name pid m-units)]
     (aset component "parent-view" view)
     (html
-     (conj
-      (colls/minto [ :div { :className "map-view-canvas" :style style } ]
-                   (map #(map-link-mem (% 0) (% 1) app-state component view-name pid local-state) m-links)
-                   (map #(map-unit-mem % app-state component view-name pid local-state) m-units))
+     [:div
+      (conj
+       (colls/minto [ :div { :className "map-view-canvas" :style style } ]
+                    (map #(map-link-mem (% 0) (% 1) app-state component view-name pid local-state) m-links)
+                    (map #(map-unit-mem % app-state component view-name pid local-state) m-units))
+       (when (= (app-state :mode) :write)
+         (uedit/unit-editor unit-tree app-state local-state)))
       (when (= (app-state :mode) :write)
-        (uedit/unit-editor unit-tree app-state local-state)))) ))
+         (uedit/unit-editor-static unit-tree app-state local-state))])))
 
 (defn- do-move-to-unit
   [component params ev]
