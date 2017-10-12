@@ -63,6 +63,14 @@
   [props]
   (str "rotate(" (aget props "rotate") "deg) scale(" (aget props "scale") ")"))
 
+(defn- mk-handler
+  [child cfg name]
+  #(do
+     (when (get-in child [1 name])
+       ((get-in child [1 name]) %))
+     (when (name cfg)
+       ((name cfg) %))))
+
 (defn- render-children
   [open? children cfg]
   (let [target-styles (clj->js
@@ -105,25 +113,31 @@
         [ :div {}
           (.map interpolated-styles
                 (fn [props idx]
-                  (html
-                   [ :div
-                    { :className (or (and (cfg :children-classes)
-                                          ((cfg :children-classes) idx))
-                                     (cfg :child-class))
-                      :key idx
-                      :style #js { :left (aget props "left")
+                  (let [child (get children idx)
+                        on-mouse-down (mk-handler child cfg :onMouseDown)
+                        on-mouse-up (mk-handler child cfg :onMouseUp)
+                        on-click (mk-handler child cfg :onClick)
+                        child' (-> child
+                                   (update-in [1] dissoc :onMouseUp :onMouseDown :onClick))]
+                    (html
+                     [ :div
+                      { :className (or (and (cfg :children-classes)
+                                            ((cfg :children-classes) idx))
+                                       (cfg :child-class))
+                       :key idx
+                       :style #js { :left (aget props "left")
                                    :top (aget props "top")
                                    :height (aget props "height")
                                    :width (aget props "width")
                                    :transform (transform props)
-                                  }
-                      :onMouseDown (:onMouseDown cfg)
-                      :onMouseUp (:onMouseUp cfg)
-                      :onClick (:onClick cfg)
-                     }
-                    (get children idx)
-                   ])
-                 ))
+                                   }
+                       :onMouseDown on-mouse-down
+                       :onMouseUp on-mouse-up
+                       :onClick on-click
+                       }
+                      child'
+                      ])
+                 )))
          ])
        ))
     ))
@@ -152,18 +166,25 @@
        js/ReactMotion.Motion
        #js { :style main-transf :key 1 }
        (fn [props]
+         (let [child (first children)
+               on-mouse-down (mk-handler child config :onMouseDown)
+               on-mouse-up (mk-handler child config :onMouseUp)
+               on-click (mk-handler child config :onClick)
+               child' (-> child
+                          (update-in [1] dissoc :onMouseUp :onMouseDown :onClick))]
+
          (html
           [ :div { :className (or (config :main-class) "circle-menu-main")
                    :style (let [style (main-style config)]
                             (doto style
                               (aset "transform" (transform props)) ))
-                   :onMouseDown (:onMouseDown config)
-                   :onMouseUp (:onMouseUp config)
+                   :onMouseDown on-mouse-down
+                   :onMouseUp on-mouse-up
                    :onClick (fn [ev]
                               (when-not (and always-open? @local) (swap! local not))
-                              (when (:onCLick config) ((:onCLick config) ev))
+                              (on-click ev)
                               ) }
-           (first children) ] ) ) ) ]
+           child' ] ) ) ) ) ]
     ))
 
 (comment

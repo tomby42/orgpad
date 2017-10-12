@@ -253,70 +253,16 @@
                        (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
                        {:css {:zIndex 2}})))])))))
 
-(def ^:private link-closed-editors { :show-link-color-picker false
-                                     :show-link-width false
-                                     :show-link-style false })
-
 (defn- close-link-menu
   [local-state]
+  (js/console.log "close link menu")
   (js/setTimeout
-   #(swap! local-state merge { :link-menu-show :none } link-closed-editors) 200))
-
-(defn- render-link-color-picker
-  [component unit prop parent-view local-state mid-pt]
-  (let [color (prop :orgpad/link-color)]
-    [ :div.map-view-border-edit { :style { :width 210 :position "absolute" :top (- (mid-pt 1) 300) :left (- (mid-pt 0) 235) } }
-     [ :div.center "Line Color" ]
-     (cpicker/color-picker color {} (fn [c]
-                                      (lc/transact! component [[ :orgpad.units/map-view-link-color
-                                                                { :prop prop
-                                                                  :parent-view parent-view
-                                                                  :unit-tree unit
-                                                                  :color c } ]]))) ] ))
-
-(defn- render-link-width
-  [component unit prop parent-view local-state mid-pt]
-  [ :div.map-view-border-edit { :style { :position "absolute" :top (- (mid-pt 1) 170) :left (mid-pt 0) } }
-   [:div.center "Line Width"]
-   (render-slider {:component component :unit unit :prop prop
-                   :parent-view parent-view :local-state local-state
-                   :max 20
-                   :prop-name :orgpad/link-width
-                   :action :orgpad.units/map-view-line-width }) ])
-
-(defn- render-link-style
-  [component unit prop parent-view local-state mid-pt]
-  [ :div.map-view-border-edit { :style { :position "absolute" :top (- (mid-pt 1) 210) :left (mid-pt 0) } }
-   [ :div.center "Line style" ]
-   (render-slider {:component component :unit unit
-                   :prop (assoc prop :orgpad/link-style-1
-                                (or (-> prop :orgpad/link-dash (aget 0)) 0))
-                   :parent-view parent-view :local-state local-state
-                   :max 50
-                   :prop-name :orgpad/link-style-1
-                   :action :orgpad.units/map-view-link-style })
-   (render-slider {:component component :unit unit
-                   :prop (assoc prop :orgpad/link-style-2
-                                (or (-> prop :orgpad/link-dash (aget 1)) 0))
-                   :parent-view parent-view :local-state local-state
-                   :max 50
-                   :prop-name :orgpad/link-style-2
-                   :action :orgpad.units/map-view-link-style }) ])
+   #(swap! local-state merge { :link-menu-show :none }) 200))
 
 (defn- remove-link
-  [component unit]
+  [component unit local-state]
+  (swap! local-state assoc :selected-link nil)
   (lc/transact! component [[ :orgpad.units/map-view-link-remove (ot/uid unit) ]]))
-
-
-(def ^:private link-prop-editors
-  { :show-link-color-picker render-link-color-picker
-    :show-link-width render-link-width
-    :show-link-style render-link-style })
-
-(defn- toggle-link-editor
-  [local-state type]
-  (swap! local-state merge link-closed-editors
-         { type (not (@local-state type)) }))
 
 (defn- edge-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
@@ -325,7 +271,6 @@
       (let [[old-unit old-prop _ _ _ mid-pt] select-link
             [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
         (when (and prop unit)
-          (into
            [:div {}
             (mc/circle-menu
              (merge edge-menu-conf { :center-x (mid-pt 0)
@@ -333,30 +278,13 @@
                                      :onMouseDown jev/block-propagation
                                      ;; :onMouseUp jev/block-propagation
                                     })
-             [ :i.fa.fa-cogs.fa-lg { :title "Properties" :onMouseDown #(close-link-menu local-state) } ]
-             [ :span { :title "Line Color" :onMouseDown #(toggle-link-editor local-state :show-link-color-picker) }
-              [ :i.fa.fa-minus { :style { :position "absolute" :top 20 } } ]
-              [ :i.fa.fa-paint-brush]
-              ]
-             [ :span { :title "Line Width" :onMouseDown #(toggle-link-editor local-state :show-link-width) }
-              [ :i { :className "fa fa-minus" :style { :position "absolute" :top 20 :left 11 } } ]
-              [ :i { :className "fa fa-minus fa-lg" :style { :position "absolute" :top 15 :left 9 } } ]
-              [ :i { :className "fa fa-minus fa-2x" :style { :position "absolute" :top 0 :left 5 } } ] ]
-             [ :span { :title "Line Style" :onMouseDown #(toggle-link-editor local-state :show-link-style) }
-              [ :i.fa.fa-minus. { :style { :position "absolute" :top 19 } } ]
-              [ :i.fa.fa-tint {} ]
-              ]
-             [ :i.fa.fa-pencil-square-o.fa-lg
-              { :title "Edit"
+             [:i.fa.fa-cogs.fa-lg { :title "Properties" :onMouseDown #(close-link-menu local-state) } ]
+             [:i.fa.fa-pencil-square-o.fa-lg
+              {:title "Edit"
                :onMouseUp #(open-unit component (assoc-in unit [:view :orgpad/view-type] :orgpad/atomic-view))
                } ]
-             [ :i.fa.fa-remove.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit) } ]
-           )]
-
-           (map (fn [[key render-fn]]
-                  (when (@local-state key)
-                    (render-fn component unit prop view local-state mid-pt))) link-prop-editors)
-      ))))))
+             [:i.fa.fa-remove.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit local-state) } ]
+           )])))))
 
 (rum/defcc unit-editor < lc/parser-type-mixin-context
   [component unit-tree app-state local-state]
@@ -451,7 +379,7 @@
    (render-border-radius1 params)
    (render-border-style1 params)])
 
-(defn node-unit-editor-static
+(defn- node-unit-editor-static
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
         [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))
@@ -465,10 +393,66 @@
         (let [params {:component component :unit unit :prop prop :parent-view view :local-state local-state}]
           (render-props-menu1 params))))))
 
+(defn- render-link-color-picker1
+  [{:keys [component unit prop parent-view local-state]}]
+  (let [color (prop :orgpad/link-color)]
+    [ :div.map-view-border-edit {}
+     [ :div.center "Line Color" ]
+     (cpicker/color-picker color {} (fn [c]
+                                      (lc/transact! component [[ :orgpad.units/map-view-link-color
+                                                                { :prop prop
+                                                                  :parent-view parent-view
+                                                                  :unit-tree unit
+                                                                  :color c } ]]))) ] ))
+
+(defn- render-link-width1
+  [{:keys [component unit prop parent-view local-state]}]
+  [ :div.map-view-border-edit {}
+   [:div.center "Line Width"]
+   (render-slider {:component component :unit unit :prop prop
+                   :parent-view parent-view :local-state local-state
+                   :max 20
+                   :prop-name :orgpad/link-width
+                   :action :orgpad.units/map-view-line-width }) ])
+
+(defn- render-link-style1
+  [{:keys [component unit prop parent-view local-state]}]
+  [ :div.map-view-border-edit {}
+   [ :div.center "Line style" ]
+   (render-slider {:component component :unit unit
+                   :prop (assoc prop :orgpad/link-style-1
+                                (or (-> prop :orgpad/link-dash (aget 0)) 0))
+                   :parent-view parent-view :local-state local-state
+                   :max 50
+                   :prop-name :orgpad/link-style-1
+                   :action :orgpad.units/map-view-link-style })
+   (render-slider {:component component :unit unit
+                   :prop (assoc prop :orgpad/link-style-2
+                                (or (-> prop :orgpad/link-dash (aget 1)) 0))
+                   :parent-view parent-view :local-state local-state
+                   :max 50
+                   :prop-name :orgpad/link-style-2
+                   :action :orgpad.units/map-view-link-style }) ])
+
+(defn- render-edge-prop-menu
+  [params]
+  [:div.map-props-toolbar
+   (render-link-color-picker1 params)
+   (render-link-width1 params)
+   (render-link-style1 params)])
+
+(defn- edge-unit-editor-static
+  [component {:keys [unit view] :as unit-tree} app-state local-state]
+  (let [select-link (@local-state :selected-link)]
+    (when select-link
+      (let [[old-unit old-prop _ _ _ mid-pt] select-link
+            [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))
+            params {:component component :unit unit :prop prop :parent-view view :local-state local-state}]
+        (render-edge-prop-menu params)))))
+
 (rum/defcc unit-editor-static < lc/parser-type-mixin-context
   [component unit-tree app-state local-state]
-  (let [select-unit (@local-state :selected-unit)
-        ]
+  (let [select-unit (@local-state :selected-unit)]
     (if select-unit
       (node-unit-editor-static component unit-tree app-state local-state)
-      nil)))
+      (edge-unit-editor-static component unit-tree app-state local-state))))
