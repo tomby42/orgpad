@@ -3,11 +3,11 @@
   :url "http://www.orgpad.org/"
 
   :dependencies [[org.clojure/clojure         "1.8.0"]
-                 [org.clojure/clojurescript   "1.9.908"]
+                 [org.clojure/clojurescript   "1.9.946"]
                  [org.clojure/core.async      "0.3.443"]
                  [org.clojure/test.check      "0.9.0"]
                  [datascript                  "0.16.2"]
-                 [com.rpl/specter             "1.0.2"]
+                 [com.rpl/specter             "1.0.3"]
                  ;; [rum                         "0.9.1"] ;; local modified copy src/rum 0.10.8
                  [sablono                     "0.7.7"]
                  [com.cemerick/url            "0.1.1"]
@@ -20,7 +20,7 @@
                  [cljsjs/react-motion         "0.3.1-0"]  ;; *
                  [cljsjs/react-select         "1.0.0-rc.3"]
                  [cljsjs/latlon-geohash       "1.1.0-0"] ;; *
-                 [doo                         "0.1.7"]
+                 [doo                         "0.1.8"]
                  [org.clojure/data.avl        "0.0.17"]]
 
   :npm {:dependencies [;;["jupyter-js-services" "0.48.0"]

@@ -145,14 +145,12 @@
 
 (defn- start-unit-resize
   [local-state ev]
-  (.stopPropagation ev)
   (swap! local-state merge { :local-mode :unit-resize
                              :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))
 
 (defn- start-link
   [local-state ev]
-  (.stopPropagation ev)
   (swap! local-state merge { :local-mode :make-link
                              :link-start-x (.-clientX ev)
                              :link-start-y (.-clientY ev)
@@ -171,7 +169,7 @@
   (let [id (ot/uid unit-tree)
         global-cache (lc/get-global-cache component)
         screen-bbox (dom/dom-bb->bb (aget global-cache id "bbox"))
-        bbs (ot/child-bbs unit-tree selection)
+        bbs (map :bb (ot/child-bbs unit-tree selection))
         bb (geom/bbs-bbox bbs)
         transf (-> unit-tree :view :orgpad/transform)
         bb-screen-coord (mapv (partial geom/canvas->screen transf) bb)
@@ -203,8 +201,8 @@
                                         :onMouseDown #(remove-units component (ot/uid unit-tree) selection)}]
       [:span.fa.fa-link.fa-lg.link-handle
        {:title "Link"
-        :onMouseDown #(start-links unit-tree selection local-state %)
-        :onTouchStart #(start-links unit-tree selection local-state (aget % "touches" 0))}]]
+        :onMouseDown (jev/make-block-propagation #(start-links unit-tree selection local-state %))
+        :onTouchStart (jev/make-block-propagation #(start-links unit-tree selection local-state (aget % "touches" 0)))}]]
 
      (when (= (@local-state :local-mode) :make-links)
        (let [tr (parent-view :orgpad/transform)]
@@ -236,13 +234,13 @@
             [:span.frame]
             [:span.fa.fa-remove.fa-lg.rm-btn {:title "Remove"
                                               :onMouseDown #(remove-unit component (ot/uid unit))}]
-            [:span.resize-handle {:onMouseDown #(start-unit-resize local-state %)
-                                  :onTouchStart #(start-unit-resize local-state (aget % "touches" 0))
-                                  :onMouseUp #(swap! local-state merge { :local-mode :none })}]
+            [:span.resize-handle {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
+                                  :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
+                                  :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))}]
             [:span.fa.fa-link.fa-lg.link-handle
              {:title "Link"
-              :onMouseDown #(start-link local-state %)
-              :onTouchStart #(start-link local-state (aget % "touches" 0))}]
+              :onMouseDown (jev/make-block-propagation #(start-link local-state %))
+              :onTouchStart (jev/make-block-propagation #(start-link local-state (aget % "touches" 0)))}]
             [:span.fa.fa-pencil-square-o.fa-lg.edit-btn
              {:title "Edit"
               :onMouseUp #(open-unit component unit)}]]

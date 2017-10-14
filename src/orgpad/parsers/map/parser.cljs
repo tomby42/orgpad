@@ -604,8 +604,9 @@
   [{:keys [state]} _ {:keys [unit-tree bb]}]
   (let [bbs (ot/child-bbs unit-tree)
         selected (into #{} (comp
-                            (filter #(geom/bbs-intersect? bb (second %)))
-                            (map first)) (map vector (ot/refs-uid unit-tree) bbs))]
+                            (filter #(geom/bbs-intersect? bb (:bb %)))
+                            (map :id)) bbs)]
+    (js/console.log selected)
     {:state (store/transact state [[:selections (-> unit-tree ot/uid keypath)] selected])}))
 
 (defmethod mutate :orgpad.units/remove-units

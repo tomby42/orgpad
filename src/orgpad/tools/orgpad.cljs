@@ -129,20 +129,21 @@
                    (let [prop (-> u
                                   :props
                                   (get-props-view-child name id :orgpad.map-view/vertex-props))]
-                     (prop-fn prop)))
+                     (prop-fn prop (uid u))))
                  (if selection
                    (filter #(contains? selection (uid %)) (refs unit-tree))
                    (refs unit-tree))))))
 
 (defn child-bbs
   [unit-tree & [selection]]
-  (child-vertex-props (fn [prop]
+  (child-vertex-props (fn [prop id]
                         (when prop
                           (let [bw (* 2 (:orgpad/unit-border-width prop))]
-                            [(:orgpad/unit-position prop)
-                             (geom/++ (:orgpad/unit-position prop)
-                                      [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]
-                                      [bw bw])])))
+                            {:bb [(:orgpad/unit-position prop)
+                                  (geom/++ (:orgpad/unit-position prop)
+                                           [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]
+                                           [bw bw])]
+                             :id id})))
                       unit-tree selection))
 
 (defn get-ref-by-uid
