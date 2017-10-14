@@ -13,7 +13,8 @@
             [orgpad.tools.rum :as trum]
             [orgpad.tools.geom :as geom]
             [orgpad.tools.jcolls :as jcolls]
-            [orgpad.tools.geocache :as geocache]))
+            [orgpad.tools.geocache :as geocache]
+            [orgpad.tools.colls :as colls]))
 
 (def ^:private init-state
   { :show-local-menu false
@@ -21,7 +22,9 @@
     :quick-edit false
     :canvas-mode :canvas-move
     :mouse-x 0
-    :mouse-y 0 })
+    :mouse-y 0
+    :link-start-x 0
+    :link-start-y 0})
 
 (def ^:private menu-conf {
   :always-open? true
@@ -181,7 +184,8 @@
       :make-links (make-links component unit-tree (-> @local-state :selected-units second)
                               [(.-clientX ev) (.-clientY ev)])
       nil)
-    (swap! local-state merge { :local-mode :none })))
+    (js/setTimeout
+     #(swap! local-state merge { :local-mode :none }) 0)))
 
 (defn- update-mouse-position
   [local-state ev]
@@ -452,7 +456,18 @@
         (map (juxt identity children-cache) vis-units))
       [])))
 
-(rum/defcc map-component < trum/istatic lc/parser-type-mixin-context (rum/local init-state) handle-touch-event component-size-mixin
+(def ^:private istatic-local-mode
+  {:should-update
+   (fn [old-state new-state]
+     (let [old-local (:rum/local old-state)
+           new-local (:rum/local new-state)]
+     (not
+      (and
+       (colls/shallow-eq
+        (:rum/args old-state) (:rum/args new-state))
+       (= (:local-mode @old-local) (:local-mode @new-local))))))})
+
+(rum/defcc map-component < istatic-local-mode lc/parser-type-mixin-context (rum/local init-state) handle-touch-event component-size-mixin
   [component unit-tree app-state]
   (if (= (:mode app-state) :write)
     (render-write-mode component unit-tree app-state)

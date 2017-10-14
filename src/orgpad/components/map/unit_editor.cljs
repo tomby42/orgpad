@@ -251,7 +251,7 @@
              (let [tr (parent-view :orgpad/transform)]
                (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
                        (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
-                       {:css {:zIndex 2}})))])))))
+                       {:css {:zIndex 2} :key 1})))])))))
 
 (defn- close-link-menu
   [local-state]
@@ -372,7 +372,7 @@
 
 (defn- render-props-menu1
   [params]
-  [:div.map-props-toolbar
+  [:div.map-props-toolbar {:key "prop-menu"}
    (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-border-color))
    (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-bg-color))
    (render-border-width1 params)
