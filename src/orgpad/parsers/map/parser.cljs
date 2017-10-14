@@ -606,7 +606,6 @@
         selected (into #{} (comp
                             (filter #(geom/bbs-intersect? bb (:bb %)))
                             (map :id)) bbs)]
-    (js/console.log selected)
     {:state (store/transact state [[:selections (-> unit-tree ot/uid keypath)] selected])}))
 
 (defmethod mutate :orgpad.units/remove-units
