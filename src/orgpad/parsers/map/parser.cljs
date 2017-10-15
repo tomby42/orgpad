@@ -463,10 +463,10 @@
     [?edge :orgpad/refs ?e]])
 
 (def ^:private edge-check-query
-  '[:find ?edge (count ?child)
+  '[:find ?edge ?ro
     :in $ ?edge
     :where
-    [?edge :orgpad/refs ?child]])
+    [?edge :orgpad/refs-order ?ro]])
 
 (defn- find-children-deep
   [db ids]
@@ -512,7 +512,7 @@
   (let [units-to-remove (find-children-deep state [id])
         parents (find-parents state id)
         edges (mapcat #(find-relative state % edge-check-query) (find-relative state id edge-query))
-        edges-to-remove (into [] (comp (filter (fn [[_ cnt]] (= cnt 2))) (map first)) edges)
+        edges-to-remove (into [] (comp (filter (fn [[_ ro]] (= (count ro) 2))) (map first)) edges)
         edges-props-to-remove (mapcat (fn [eid] (find-props state eid)) edges-to-remove)
         final-qry (colls/minto []
                                (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents)
