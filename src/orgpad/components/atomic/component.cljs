@@ -9,6 +9,11 @@
             [orgpad.components.atomic.desc-editor :as desc-editor]
             [orgpad.tools.rum :as trum]))
 
+(defn- update-mathjax 
+  [state]
+  (let [dom-node (trum/ref state :dom-node)]
+    (.Queue js/Mathjax.Hub "Typeset" js/Mathjax.Hub dom-node)))
+
 (defn- render-write-mode
   [{:keys [unit view]} app-state]
   [ :div { :className "atomic-view" }
@@ -23,7 +28,7 @@
 
 (defn render-read-mode
   [{:keys [view]} app-state]
-    [ :div { :className "atomic-view" }
+    [ :div { :className "atomic-view" :ref "dom-node"}
       (when (and (view :orgpad/desc) (not= (view :orgpad/desc) ""))
         [ :div { :key 0 } (view :orgpad/desc)])
       (when (and (view :orgpad/tags) (not= (view :orgpad/tags) []))
@@ -33,7 +38,7 @@
                  {:__html (view :orgpad/atom)} } ])
      ])
 
-(rum/defc atomic-component < trum/istatic lc/parser-type-mixin-context
+(rum/defc atomic-component < trum/istatic lc/parser-type-mixin-context (trum/gen-update-mixin update-mathjax)
   [unit-tree app-state]
   (if (= (:mode app-state) :write)
     (render-write-mode unit-tree app-state)
