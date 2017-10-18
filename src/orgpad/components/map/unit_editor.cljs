@@ -127,6 +127,8 @@
                              :show-local-menu false
                              :quick-edit false
                              :pre-quick-edit 0
+                             :start-mouse-x (.-clientX ev)
+                             :start-mouse-y (.-clientY ev)
                              :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))
 
@@ -139,6 +141,8 @@
                                                (inc (:pre-quick-edit @local-state))
                                                0)
                              :selected-units [unit-tree selection]
+                             :start-mouse-x (.-clientX ev)
+                             :start-mouse-y (.-clientY ev)
                              :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))
 
@@ -243,7 +247,8 @@
               :onTouchStart (jev/make-block-propagation #(start-link local-state (aget % "touches" 0)))}]
             [:span.fa.fa-pencil-square-o.fa-lg.edit-btn
              {:title "Edit"
-              :onMouseUp #(open-unit component unit)}]]
+              :onMouseDown jev/block-propagation
+              :onMouseUp (jev/make-block-propagation #(open-unit component unit))}]]
 
            (when (= (@local-state :local-mode) :make-link)
              (let [tr (parent-view :orgpad/transform)]
@@ -286,10 +291,11 @@
 
 (rum/defcc unit-editor < lc/parser-type-mixin-context
   [component unit-tree app-state local-state]
+  (when (not= (:local-mode @local-state) :unit-move)
   (let [select-unit (@local-state :selected-unit)]
     (if select-unit
       (node-unit-editor1 component unit-tree app-state local-state)
-      (edge-unit-editor component unit-tree app-state local-state))))
+      (edge-unit-editor component unit-tree app-state local-state)))))
 
 (defn- render-color-picker1
   [{:keys [component unit prop parent-view local-state selection action]}]

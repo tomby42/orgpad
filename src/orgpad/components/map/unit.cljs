@@ -95,6 +95,8 @@
                                :show-local-menu false
                                :quick-edit false
                                :pre-quick-edit (finc pre-quick-edit)
+                               :start-mouse-x (.-clientX ev)
+                               :start-mouse-y (.-clientY ev)
                                :mouse-x (.-clientX (jev/touch-pos ev))
                                :mouse-y (.-clientY (jev/touch-pos ev)) })
     (lc/transact! component [[ :orgpad.units/select {:pid (parent-id parent-view)
@@ -132,7 +134,7 @@
         { :style style :className "map-view-child" :key (unit :db/id)
           :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
           :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-          :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
+          ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
           :onDoubleClick #(uedit/enable-quick-edit local-state)
           :ref "unit-node"
          }
