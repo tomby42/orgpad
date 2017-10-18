@@ -16,11 +16,11 @@
          (.exec sc-rex tr)]))
 
 (defn update-translate
-  [el new-x new-y old-x old-y]
+  [el new-x new-y old-x old-y parent-scale]
   (let [ts (parse-transform el)
         x (js/parseInt (aget ts 0 1))
         y (js/parseInt (aget ts 0 2))]
     (aset el "style" "transform" (str "translate("
-                                      (+ x (- new-x old-x)) "px, "
-                                      (+ y (- new-y old-y)) "px) "
+                                      (+ x (/ (- new-x old-x) parent-scale)) "px, "
+                                      (+ y (/ (- new-y old-y) parent-scale)) "px) "
                                       (aget ts 1)))))

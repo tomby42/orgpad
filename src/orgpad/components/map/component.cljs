@@ -236,15 +236,15 @@
   (let [pel (-> component rum/state deref (trum/ref-node "component-node"))
         el (aget pel "children" 0 "children" 0)]
     (dom/update-translate el (.-clientX ev) (.-clientY ev)
-                          (@local-state :mouse-x) (@local-state :mouse-y))
+                          (@local-state :mouse-x) (@local-state :mouse-y) 1)
     (update-mouse-position local-state ev)))
 
 (defn- unit-move
-  [local-state ev]
+  [parent-view local-state ev]
   (let [el (or (:selected-node @local-state)
                (-> @local-state :selected-unit (get 3) rum/state deref (trum/ref-node "unit-node")))]
     (dom/update-translate el (.-clientX ev) (.-clientY ev)
-                          (@local-state :mouse-x) (@local-state :mouse-y))
+                          (@local-state :mouse-x) (@local-state :mouse-y) (-> parent-view :orgpad/transform :scale))
     (update-mouse-position local-state ev)))
 
 (defn- unit-change
@@ -307,7 +307,7 @@
   (let [local-state (trum/comp->local-state component)]
     (case (@local-state :local-mode)
       :canvas-move (canvas-move component unit-tree app-state local-state (jev/stop-propagation ev))
-      :unit-move (unit-move local-state (jev/stop-propagation ev)) ;; (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
+      :unit-move (unit-move (:view unit-tree) local-state (jev/stop-propagation ev)) ;; (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
       :unit-resize (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-resize)
       :make-link (update-mouse-position local-state (jev/stop-propagation ev))
       :link-shape (update-link-shape component local-state (jev/stop-propagation ev))
@@ -392,7 +392,8 @@
               :onMouseUp #(handle-mouse-up component unit-tree app-state %)
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
               :onBlur #(handle-blur component unit-tree app-state %)
-              :onMouseLeave #(handle-blur component unit-tree app-state %) }
+              :onMouseLeave #(handle-blur component unit-tree app-state %)
+              :onWheel #(handle-wheel component unit-tree app-state %) }
       (munit/render-mapped-children-units component unit-tree app-state local-state)
       (when (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
         (munit/render-selected-children-units component unit-tree app-state local-state))
