@@ -90,6 +90,7 @@
                    (not pre-quick-edit)))
       (run-dbl-click-check local-state))
     (swap! local-state merge { :local-mode :try-unit-move
+                               :local-move false
                                :selected-unit [unit-tree prop parent-view component]
                                :selected-node new-node
                                :show-local-menu false
@@ -151,7 +152,7 @@
                           :read)))
       (if (= (app-state :mode) :write)
         (when-not (and selected? (:quick-edit @local-state))
-          [:div.map-view-child
+          [:div.map-view-child.hat
            {:style {:top 0
                     :width (prop :orgpad/unit-width)
                     :height (prop :orgpad/unit-height) }

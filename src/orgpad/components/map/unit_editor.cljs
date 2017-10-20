@@ -135,6 +135,7 @@
 (defn- start-units-move
   [unit-tree selection local-state ev]
   (swap! local-state merge { :local-mode :units-move
+                             :local-move false
                              :show-local-menu false
                              :quick-edit false
                              :pre-quick-edit (if (:pre-quick-edit @local-state)
@@ -150,6 +151,9 @@
 (defn- start-unit-resize
   [local-state ev]
   (swap! local-state merge { :local-mode :unit-resize
+                             :local-move false
+                             :start-mouse-x (.-clientX ev)
+                             :start-mouse-y (.-clientY ev)
                              :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))
 
@@ -291,11 +295,13 @@
 
 (rum/defcc unit-editor < lc/parser-type-mixin-context
   [component unit-tree app-state local-state]
-  (when (not= (:local-mode @local-state) :unit-move)
-  (let [select-unit (@local-state :selected-unit)]
-    (if select-unit
-      (node-unit-editor1 component unit-tree app-state local-state)
-      (edge-unit-editor component unit-tree app-state local-state)))))
+  (when (not (and
+              (contains? #{:unit-move :unit-resize} (:local-mode @local-state))
+              (:local-move @local-state)))
+    (let [select-unit (@local-state :selected-unit)]
+      (if select-unit
+        (node-unit-editor1 component unit-tree app-state local-state)
+        (edge-unit-editor component unit-tree app-state local-state)))))
 
 (defn- render-color-picker1
   [{:keys [component unit prop parent-view local-state selection action]}]

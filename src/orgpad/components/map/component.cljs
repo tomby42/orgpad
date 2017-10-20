@@ -183,6 +183,18 @@
                                (@local-state :start-mouse-y)]
                      :new-pos new-pos }]])))
 
+(defn- stop-unit-resize
+  [component local-state new-pos]
+  (let [[unit-tree prop parent-view] (@local-state :selected-unit)]
+    (lc/transact! component
+                  [[:orgpad.units/map-view-unit-resize
+                    {:prop prop
+                     :parent-view parent-view
+                     :unit-tree unit-tree
+                     :old-pos [(@local-state :start-mouse-x)
+                               (@local-state :start-mouse-y)]
+                     :new-pos new-pos }]])))
+
 (defn- get-transformed-bb
   [local-state {:keys [orgpad/transform]}]
   (let [bb (geom/points-bbox [(:start-mouse-x local-state) (:start-mouse-y local-state)]
@@ -212,6 +224,7 @@
                                                                        :center-y (.-clientY ev)})
       :canvas-move (stop-canvas-move component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
       :unit-move (stop-unit-move component local-state [(.-clientX ev) (.-clientY ev)])
+      :unit-resize (stop-unit-resize component local-state [(.-clientX ev) (.-clientY ev)])
       :make-link (make-link component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
       :link-shape (when (= (@local-state :link-menu-show) :maybe)
                     (swap! local-state assoc :link-menu-show :yes))
@@ -219,14 +232,15 @@
       :make-links (make-links component unit-tree (-> @local-state :selected-units second)
                               [(.-clientX ev) (.-clientY ev)])
       nil)
-    (swap! local-state merge { :local-mode :none })
+    (swap! local-state merge { :local-mode :none :local-move false })
     (js/setTimeout
      #(swap! local-state merge { :local-mode :none }) 0)))
 
 (defn- update-mouse-position
   [local-state ev]
   (swap! local-state merge { :mouse-x (.-clientX ev)
-                             :mouse-y (.-clientY ev) }))
+                             :mouse-y (.-clientY ev)
+                             :local-move true }))
 
 (def ^:private tr-rex (js/RegExp "translate\\(([-0-9.]+)px, ([-0-9.]+)px"))
 (def ^:private sc-rex (js/RegExp "scale.*"))
@@ -244,8 +258,24 @@
   (let [el (or (:selected-node @local-state)
                (-> @local-state :selected-unit (get 3) rum/state deref (trum/ref-node "unit-node")))]
     (dom/update-translate el (.-clientX ev) (.-clientY ev)
-                          (@local-state :mouse-x) (@local-state :mouse-y) (-> parent-view :orgpad/transform :scale))
+                          (@local-state :mouse-x) (@local-state :mouse-y)
+                          (-> parent-view :orgpad/transform :scale))
     (update-mouse-position local-state ev)))
+
+(defn- unit-resize
+  [parent-view local-state ev]
+  (let [el (or (:selected-node @local-state)
+               (-> @local-state :selected-unit (get 3) rum/state deref (trum/ref-node "unit-node")))
+        hat-el (.querySelector el ".map-view-child.hat")]
+    (when hat-el
+      (dom/update-size hat-el (.-clientX ev) (.-clientY ev)
+                       (@local-state :mouse-x) (@local-state :mouse-y)
+                       (-> parent-view :orgpad/transform :scale)))
+    (dom/update-size el (.-clientX ev) (.-clientY ev)
+                     (@local-state :mouse-x) (@local-state :mouse-y)
+                     (-> parent-view :orgpad/transform :scale))
+    (update-mouse-position local-state ev)))
+
 
 (defn- unit-change
   [component local-state ev action]
@@ -308,7 +338,7 @@
     (case (@local-state :local-mode)
       :canvas-move (canvas-move component unit-tree app-state local-state (jev/stop-propagation ev))
       :unit-move (unit-move (:view unit-tree) local-state (jev/stop-propagation ev)) ;; (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
-      :unit-resize (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-resize)
+      :unit-resize (unit-resize (:view unit-tree) local-state (jev/stop-propagation ev)) ;; (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-resize)
       :make-link (update-mouse-position local-state (jev/stop-propagation ev))
       :link-shape (update-link-shape component local-state (jev/stop-propagation ev))
       :try-unit-move (do
