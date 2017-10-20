@@ -242,9 +242,6 @@
                              :mouse-y (.-clientY ev)
                              :local-move true }))
 
-(def ^:private tr-rex (js/RegExp "translate\\(([-0-9.]+)px, ([-0-9.]+)px"))
-(def ^:private sc-rex (js/RegExp "scale.*"))
-
 (defn- canvas-move
   [component { :keys [unit view] :as unit-tree } app-state local-state ev]
   (let [pel (-> component rum/state deref (trum/ref-node "component-node"))
@@ -275,7 +272,6 @@
                      (@local-state :mouse-x) (@local-state :mouse-y)
                      (-> parent-view :orgpad/transform :scale))
     (update-mouse-position local-state ev)))
-
 
 (defn- unit-change
   [component local-state ev action]
