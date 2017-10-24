@@ -189,6 +189,7 @@
         (force-update-part (:db/id unit))
         (aget changed-datom-entities (:db/id unit))
         (some #(aget changed-datom-entities (:db/id %)) (:orgpad/props-refs unit)))))
+
 ;;; Clone of unit view
 
 (defn- clone-view

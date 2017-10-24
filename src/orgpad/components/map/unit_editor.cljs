@@ -235,7 +235,7 @@
            [:div {:className "map-view-unit-selected"
                   :style style
                   :key 0
-                  :onDoubleClick #(enable-quick-edit local-state)
+                  :onDoubleClick (jev/make-block-propagation #(enable-quick-edit local-state))
                   :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
                   :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
                   :onMouseUp (jev/make-block-propagation #(swap! local-state merge {:local-mode :none}))}

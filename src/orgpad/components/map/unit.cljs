@@ -136,7 +136,7 @@
           :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
           :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
           ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
-          :onDoubleClick #(uedit/enable-quick-edit local-state)
+          :onDoubleClick (jev/make-block-propagation #(uedit/enable-quick-edit local-state))
           :ref "unit-node"
          }
         { :style style :className "map-view-child" :key (unit :db/id)
