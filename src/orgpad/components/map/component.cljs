@@ -378,6 +378,11 @@
                                :pos [(.-clientX ev) (.-clientY ev)]
                                :zoom zoom}]])))
 
+(defn- handle-double-click
+  [component unit-tree ev]
+  (do-create-pair-unit component unit-tree {:center-x (.-clientX ev)
+                                            :center-y (.-clientY ev)} ev))
+
 (defn- render-write-mode
   [component unit-tree app-state]
   (let [local-state (trum/comp->local-state component)]
@@ -394,6 +399,7 @@
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
               :onBlur #(handle-blur component unit-tree app-state %)
               :onMouseLeave #(handle-blur component unit-tree app-state %)
+              :onDoubleClick #(handle-double-click component unit-tree %)
               :onWheel #(handle-wheel component unit-tree app-state %) }
        (munit/render-mapped-children-units component unit-tree app-state local-state)
        (render-local-menu1 component unit-tree app-state local-state)
