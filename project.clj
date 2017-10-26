@@ -63,6 +63,7 @@
                         :on-jsload "orgpad.core.boot/on-js-reload" }
 
              :compiler {:main orgpad.core.boot
+                        :preloads [orgpad.dev-config]
                         :asset-path "js/compiled/out"
                         :output-to "resources/public/js/compiled/orgpad.js"
                         :output-dir "resources/public/js/compiled/out"

@@ -183,6 +183,13 @@
            [uid (-> db (store/query [:entity prop-id]) dscript/entity->map)])
          children-props)))
 
+(def ^:protect prop-rules
+  '[[(prop ?e1 ?e2 ?prop)
+     [(nil? ?e2)]
+     [?e1 :orgpad/props-refs ?prop]]
+    [(prop ?e1 ?e2 ?prop)
+     [?e2 :orgpad/props-refs ?prop]]])
+
 (defn get-descendant-props-qry
   [props-constraints]
   (into '[:find ?u1 ?u2 ?prop
@@ -191,7 +198,7 @@
           [?p :orgpad/refs ?u1]
           [(?is-selected ?u1)]
           (descendant ?u1 ?u2)
-          [?u2 :orgpad/props-refs ?prop]]
+          (prop ?u1 ?u2 ?prop)]
         (map (fn [[prop-name prop-value]]
                `[~'?prop ~prop-name ~prop-value])
              props-constraints)))
@@ -200,9 +207,34 @@
   [db pid props-constraints & [selection]]
   (let [children-props (store/query db
                                     (get-descendant-props-qry props-constraints)
-                                    [rules pid (if (nil? selection)
-                                                 (constantly true)
-                                                 selection)])]
+                                    [(into rules prop-rules) pid
+                                     (if (nil? selection)
+                                       (constantly true)
+                                       selection)])]
     (map (fn [[uid1 uid2 prop-id]]
            [uid1 (-> db (store/query [:entity prop-id]) dscript/entity->map) uid2])
          children-props)))
+
+(defn- negate-db-id
+  [u]
+  (mapv (fn [v] (-> v :db/id -)) u))
+
+(defn copy-descendants-from-db
+  [db pid props-constraints & [selection]]
+  (let [props (get-descendant-props-from-db db pid props-constraints selection)
+        units-ids (->> props (map #(or (get % 2) (get % 0))) set)]
+    (js/console.log props)
+    (into (mapv #(-> db
+                     (store/query [:entity %])
+                     dscript/entity->map
+                     (update :db/id -)
+                     (update :orgpad/refs negate-db-id)
+                     (update :orgpad/props-refs negate-db-id)
+                     (update :orgpad/refs-order (fn [refs-orders]
+                                                  (apply sorted-set
+                                                         (map (fn [[n u]]
+                                                                [n (- u)]) refs-orders))))) units-ids)
+          (map #(-> %
+                    second
+                    (update :db/id -)
+                    (update :orgpad/refs negate-db-id)) props))))

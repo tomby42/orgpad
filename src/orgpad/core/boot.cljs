@@ -6,12 +6,7 @@
             [orgpad.core.orgpad :as orgpad]
             [orgpad.parsers.default-unit :as ps]
             [cemerick.url :as url]
-            [orgpad.config]
-            [devtools.core :as devtools]
-            ))
-
-(devtools/install!)
-(enable-console-print!)
+            [orgpad.config]))
 
 (defn ^:export init [cfg]
   (let [global-cfg (into {} (map (fn [[k v]] [(keyword k) v])) (js->clj cfg))
