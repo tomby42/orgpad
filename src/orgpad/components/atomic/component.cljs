@@ -11,8 +11,11 @@
 
 (defn- update-mathjax 
   [state]
-  (let [dom-node (trum/ref state :dom-node)]
-    (js/MathJax.Hub.Queue #js ["Typeset" js/MathJax.Hub dom-node])))
+  (let [dom-node (trum/ref state :dom-node)
+        args (trum/args state)]
+    (when (and js/MathJax
+               (= (-> args second :mode) :read))
+      (js/MathJax.Hub.Queue #js ["Typeset" js/MathJax.Hub dom-node]))))
 
 (defn- render-write-mode
   [{:keys [unit view]} app-state]
