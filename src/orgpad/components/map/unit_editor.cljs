@@ -14,7 +14,8 @@
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.dom :as dom]
             [orgpad.components.graphics.primitives :as g]
-            [orgpad.components.menu.color.picker :as cpicker]))
+            [orgpad.components.menu.color.picker :as cpicker]
+            [orgpad.components.menu.direction.picker :as dpicker]))
 
 (def ^:private padding 20)
 (def ^:private diam (- (* padding 2) 5))
@@ -379,6 +380,8 @@
              [ :option (if (= s style) { :selected true } {}) s ])
            border-styles) ) ] ))
 
+(defn- render-direction-picker [params]
+  (dpicker/direction-picker #(js/console.log %) :topright))
 
 (defn- render-props-menu1
   [params]
@@ -387,7 +390,8 @@
    (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-bg-color))
    (render-border-width1 params)
    (render-border-radius1 params)
-   (render-border-style1 params)])
+   (render-border-style1 params)
+   (render-direction-picker params)])
 
 (defn- node-unit-editor-static
   [component {:keys [view] :as unit-tree} app-state local-state]
