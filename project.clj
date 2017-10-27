@@ -25,7 +25,8 @@
 
   :npm {:dependencies [;;["jupyter-js-services" "0.48.0"]
                        ["jupyter-js-services" "0.21.1"]
-                       ["babel-polyfill" "6.23.0"]]}
+                       ["babel-polyfill" "6.23.0"]
+                       ["mathjax" "2.7.2"]]}
 
   :plugins [[lein-cljsbuild "1.1.7"]
             [lein-figwheel "0.5.13"] ;; needs update to lein 2.5.3 at least
@@ -72,7 +73,6 @@
                         :externs ["node_modules/jupyter-js-services/dist/index.js"]
                         :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
                                         :provides ["jupyter.services"]}]
-
                         }}
 
             {:id "test"
@@ -88,8 +88,7 @@
                         :foreign-libs [{:file "node_modules/babel-polyfill/dist/polyfill.js"
                                         :provides ["babel.polyfill"]},
                                        {:file "node_modules/jupyter-js-services/dist/index.js"
-                                        :provides ["jupyter.services"]}
-                                       ]
+                                        :provides ["jupyter.services"]}]
                         }}
 
             {:id "prod"

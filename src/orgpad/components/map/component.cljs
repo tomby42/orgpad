@@ -252,25 +252,20 @@
 
 (defn- unit-move
   [parent-view local-state ev]
-  (let [el (or (:selected-node @local-state)
-               (-> @local-state :selected-unit (get 3) rum/state deref (trum/ref-node "unit-node")))]
-    (dom/update-translate el (.-clientX ev) (.-clientY ev)
-                          (@local-state :mouse-x) (@local-state :mouse-y)
-                          (-> parent-view :orgpad/transform :scale))
+  (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)]
+    (when el
+      (dom/update-translate el (.-clientX ev) (.-clientY ev)
+                            (@local-state :mouse-x) (@local-state :mouse-y)
+                            (-> parent-view :orgpad/transform :scale)))
     (update-mouse-position local-state ev)))
 
 (defn- unit-resize
   [parent-view local-state ev]
-  (let [el (or (:selected-node @local-state)
-               (-> @local-state :selected-unit (get 3) rum/state deref (trum/ref-node "unit-node")))
-        hat-el (.querySelector el ".map-view-child.hat")]
-    (when hat-el
-      (dom/update-size hat-el (.-clientX ev) (.-clientY ev)
+  (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)]
+    (when el
+      (dom/update-size el (.-clientX ev) (.-clientY ev)
                        (@local-state :mouse-x) (@local-state :mouse-y)
                        (-> parent-view :orgpad/transform :scale)))
-    (dom/update-size el (.-clientX ev) (.-clientY ev)
-                     (@local-state :mouse-x) (@local-state :mouse-y)
-                     (-> parent-view :orgpad/transform :scale))
     (update-mouse-position local-state ev)))
 
 (defn- unit-change

@@ -8,6 +8,8 @@
             [cemerick.url :as url]
             [orgpad.config]))
 
+(enable-console-print!)
+
 (defn ^:export init [cfg]
   (let [global-cfg (into {} (map (fn [[k v]] [(keyword k) v])) (js->clj cfg))
         init-data (-> global-cfg :storage-el .-text)

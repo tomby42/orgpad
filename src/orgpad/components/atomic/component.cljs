@@ -15,7 +15,9 @@
         args (trum/args state)]
     (when (and js/MathJax
                (= (-> args second :mode) :read))
-      (js/MathJax.Hub.Queue #js ["Typeset" js/MathJax.Hub dom-node]))))
+      (let [hub (aget js/MathJax "Hub")
+            queue (.bind (aget hub "Queue") hub)]
+        (queue #js ["Typeset" hub dom-node])))))
 
 (defn- render-write-mode
   [{:keys [unit view]} app-state]

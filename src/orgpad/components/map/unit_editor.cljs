@@ -164,6 +164,7 @@
                              :link-start-y (.-clientY ev)
                              :mouse-x (.-clientX ev)
                              :mouse-y (.-clientY ev) }))
+
 (defn- start-links
   [unit-tree selection local-state ev]
   (start-link local-state ev)
@@ -196,7 +197,7 @@
         style (merge {:width width
                       :height height}
                      (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
-    [:div {:key "node-unit-editor"}
+    [:div {:key "node-unit-editor" :ref "unit-editor-node"}
      [:div {:className "map-view-unit-selected"
             :style style
             :key 0
@@ -231,20 +232,20 @@
               style (merge { :width (+ width (* 2 bw))
                              :height (+ height (* 2 bw)) }
                            (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
-          [:div {:key "node-unit-editor"}
+          [:div {:key "node-unit-editor" :ref "unit-editor-node"}
            [:div {:className "map-view-unit-selected"
                   :style style
                   :key 0
                   :onDoubleClick (jev/make-block-propagation #(enable-quick-edit local-state))
                   :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
                   :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
-                  :onMouseUp (jev/make-block-propagation #(swap! local-state merge {:local-mode :none}))}
+                  }
             [:span.frame]
             [:span.fa.fa-remove.fa-lg.rm-btn {:title "Remove"
                                               :onMouseDown #(remove-unit component (ot/uid unit))}]
             [:span.resize-handle {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
                                   :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
-                                  :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))}]
+                                  }]
             [:span.fa.fa-link.fa-lg.link-handle
              {:title "Link"
               :onMouseDown (jev/make-block-propagation #(start-link local-state %))
@@ -293,15 +294,17 @@
              [:i.fa.fa-remove.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit local-state) } ]
            )])))))
 
-(rum/defcc unit-editor < lc/parser-type-mixin-context
+(defn- update-ref
+  [state]
+  (let [local-state (-> state :rum/args last)]
+    (swap! local-state assoc :unit-editor-node (trum/ref-node state "unit-editor-node"))))
+
+(rum/defcc unit-editor < lc/parser-type-mixin-context (trum/gen-update-mixin update-ref)
   [component unit-tree app-state local-state]
-  (when (not (and
-              (contains? #{:unit-move :unit-resize} (:local-mode @local-state))
-              (:local-move @local-state)))
-    (let [select-unit (@local-state :selected-unit)]
-      (if select-unit
-        (node-unit-editor1 component unit-tree app-state local-state)
-        (edge-unit-editor component unit-tree app-state local-state)))))
+  (let [select-unit (@local-state :selected-unit)]
+    (if select-unit
+      (node-unit-editor1 component unit-tree app-state local-state)
+      (edge-unit-editor component unit-tree app-state local-state))))
 
 (defn- render-color-picker1
   [{:keys [component unit prop parent-view local-state selection action]}]
