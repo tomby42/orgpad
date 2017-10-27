@@ -466,6 +466,7 @@
 (rum/defcc unit-editor-static < lc/parser-type-mixin-context
   [component unit-tree app-state local-state]
   (let [select-unit (@local-state :selected-unit)]
-    (if select-unit
-      (node-unit-editor-static component unit-tree app-state local-state)
-      (edge-unit-editor-static component unit-tree app-state local-state))))
+    [:div {:onMouseDown jev/block-propagation}
+     (if select-unit
+       (node-unit-editor-static component unit-tree app-state local-state)
+       (edge-unit-editor-static component unit-tree app-state local-state))]))
