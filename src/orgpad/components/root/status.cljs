@@ -185,7 +185,7 @@
 
      (ci/dialog-panel unit-tree app-state msg-list)
 
-     [ :div { :className "status-menu" }
+     [ :div { :className "status-menu" :onMouseDown jev/block-propagation }
       [ :div { :className "tools-menu" :title "Actions" }
        [ :div { :className "tools-button" :onClick #(swap! local-state update-in [:unroll] not) }
         [ :i { :className "fa fa-navicon fa-lg" } ] ]

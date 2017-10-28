@@ -13,8 +13,8 @@
         app-state (lc/query component :orgpad/app-state [])]
     [ :div { :className "root-view" }
       ;; (rum/with-key (sidebar/sidebar-component) 0)
-      (rum/with-key (node/node unit-tree app-state) 1)
-      (rum/with-key (st/status unit-tree app-state) 2)
+      (rum/with-key (node/node unit-tree app-state) "root-view-part")
+      (rum/with-key (st/status unit-tree app-state) "status-part")
       (when (app-state :loading)
         [ :div.loading
          [ :div.status

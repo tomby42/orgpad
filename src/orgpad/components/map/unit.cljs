@@ -294,10 +294,9 @@
        (colls/minto [ :div { :className "map-view-canvas" :style style } ]
                     (map #(map-link-mem (% 0) (% 1) app-state component view-name pid local-state) m-links)
                     (map #(map-unit-mem % app-state component view-name pid local-state) m-units))
-       (when (= (app-state :mode) :write)
-         (uedit/unit-editor unit-tree app-state local-state)))
+       (uedit/unit-editor unit-tree app-state local-state))
       (when (= (app-state :mode) :write)
-         (uedit/unit-editor-static unit-tree app-state local-state))])))
+        (uedit/unit-editor-static unit-tree app-state local-state))])))
 
 (defn- do-move-to-unit
   [component params ev]

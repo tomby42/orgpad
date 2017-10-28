@@ -261,6 +261,26 @@
                        (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
                        {:css {:zIndex 2} :key 1})))])))))
 
+(defn- simple-node-unit-editor
+  [component {:keys [view] :as unit-tree} app-state local-state]
+  (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
+        [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
+    (when (and prop unit)
+      (let [pos (prop :orgpad/unit-position)
+            width (prop :orgpad/unit-width) height (prop :orgpad/unit-height)
+            bw (prop :orgpad/unit-border-width)
+            style (merge {:width (+ width (* 2 bw))
+                          :height (+ height (* 2 bw))}
+                         (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
+        [:div {:key "node-unit-editor" :ref "unit-editor-node"}
+         [:div {:className "map-view-unit-selected"
+                :style style
+                :key 0
+                :onDoubleClick (jev/make-block-propagation #(enable-quick-edit local-state))
+                :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
+                :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
+                }]]))))
+
 (defn- close-link-menu
   [local-state]
   (js/console.log "close link menu")
@@ -296,15 +316,22 @@
 
 (defn- update-ref
   [state]
-  (let [local-state (-> state :rum/args last)]
-    (swap! local-state assoc :unit-editor-node (trum/ref-node state "unit-editor-node"))))
+  (let [local-state (-> state :rum/args last)
+        new-node (trum/ref-node state "unit-editor-node")]
+    (when (and new-node
+               (not= (:unit-editor-node @local-state) new-node))
+      (swap! local-state assoc :unit-editor-node new-node))))
 
 (rum/defcc unit-editor < lc/parser-type-mixin-context (trum/gen-update-mixin update-ref)
   [component unit-tree app-state local-state]
   (let [select-unit (@local-state :selected-unit)]
-    (if select-unit
-      (node-unit-editor1 component unit-tree app-state local-state)
-      (edge-unit-editor component unit-tree app-state local-state))))
+    (if (= (:mode app-state) :write)
+      (if select-unit
+        (node-unit-editor1 component unit-tree app-state local-state)
+        (edge-unit-editor component unit-tree app-state local-state))
+      (when (and select-unit
+                 (contains? #{:unit-move} (:local-mode @local-state)))
+        (simple-node-unit-editor component unit-tree app-state local-state)))))
 
 (defn- render-color-picker1
   [{:keys [component unit prop parent-view local-state selection action]}]
