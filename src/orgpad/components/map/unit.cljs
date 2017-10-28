@@ -333,4 +333,4 @@
 (defn render-selected-children-units
   [component unit-tree app-state local-state]
   (sidebar/sidebar-component :left
-                             #(render-selection component unit-tree app-state local-state)))
+                             #(render-selection- component unit-tree app-state local-state)))
