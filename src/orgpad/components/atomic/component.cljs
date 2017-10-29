@@ -33,7 +33,7 @@
 
 (defn render-read-mode
   [{:keys [view]} app-state]
-    [ :div { :className "atomic-view" :ref "dom-node"}
+    [ :div { :className "atomic-view" :ref "dom-node" }
       (when (and (view :orgpad/desc) (not= (view :orgpad/desc) ""))
         [ :div { :key 0 } (view :orgpad/desc)])
       (when (and (view :orgpad/tags) (not= (view :orgpad/tags) []))

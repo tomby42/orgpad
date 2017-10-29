@@ -133,6 +133,7 @@
 (defn handle-mouse-down
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
+    (jev/block-propagation ev)
     (swap! local-state merge { :mouse-x (.-clientX ev)
                                :mouse-y (.-clientY ev)
                                :start-mouse-x (.-clientX ev)
@@ -341,7 +342,8 @@
       :make-links (update-mouse-position local-state (jev/stop-propagation ev))
       nil)
     (when (not= (@local-state :local-mode) :default-mode)
-      (.preventDefault ev))))
+      (jev/block-propagation ev))
+    ))
 
 (defn- handle-blur
   [component unit-tree app-state ev]
@@ -361,7 +363,9 @@
   [ev]
   (let [evt (.-nativeEvent ev)]
     (if (zero? (.-detail evt))
-      (.-wheelDelta evt)
+      (if (.-wheelDelta evt)
+        (.-wheelDelta evt)
+        (js* "evt.deltaX  || evt.deltaY || evt.deltaZ"))
       (* -120 (.-detail evt)))))
 
 (defn- handle-wheel
@@ -395,7 +399,7 @@
               :onBlur #(handle-blur component unit-tree app-state %)
               :onMouseLeave #(handle-blur component unit-tree app-state %)
               :onDoubleClick #(handle-double-click component unit-tree %)
-              :onWheel #(handle-wheel component unit-tree app-state %) }
+              :onWheel (jev/make-block-propagation #(handle-wheel component unit-tree app-state %)) }
        (munit/render-mapped-children-units component unit-tree app-state local-state)
        (render-local-menu1 component unit-tree app-state local-state)
        (when (= (:local-mode @local-state) :choose-selection)
@@ -420,7 +424,7 @@
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
               :onBlur #(handle-blur component unit-tree app-state %)
               :onMouseLeave #(handle-blur component unit-tree app-state %)
-              :onWheel #(handle-wheel component unit-tree app-state %) }
+              :onWheel (jev/make-block-propagation #(handle-wheel component unit-tree app-state %)) }
       (munit/render-mapped-children-units component unit-tree app-state local-state)
       (when (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
         (munit/render-selected-children-units component unit-tree app-state local-state))

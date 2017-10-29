@@ -76,7 +76,7 @@
 
 (defn- try-move-unit
   [component unit-tree app-state prop pcomponent local-state ev]
-  (.stopPropagation ev)
+  (jev/block-propagation ev)
   (let [old-node (:selected-node @local-state)
         new-node (-> component rum/state deref (trum/ref-node "unit-node"))
         parent-view (aget pcomponent "parent-view")
@@ -137,11 +137,13 @@
           :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
           ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
           :onDoubleClick (jev/make-block-propagation #(uedit/enable-quick-edit local-state))
+          :onWheel jev/stop-propagation
           :ref "unit-node"
          }
         { :style style :className "map-view-child" :key (unit :db/id)
           :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
           :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+          :onWheel jev/stop-propagation
           :ref "unit-node"
          })
       (node/node unit-tree
