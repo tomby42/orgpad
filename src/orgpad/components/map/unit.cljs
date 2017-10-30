@@ -305,6 +305,7 @@
   (.stopPropagation ev)
   (lc/transact! component [[:orgpad.units/map-move-to-unit params]]))
 
+
 (defn- render-selected-unit
   [component app-state parent-view [uid vprop tprops]]
   [:div.map-selected-unit {:key uid
@@ -313,8 +314,8 @@
                                                                         :vprop (get-in vprop [0 1])
                                                                         :parent-view parent-view})}
    (map (fn [prop]
-          [:div {:key (:db/id prop)}
-           (catomic/render-read-mode {:view (prop 1)} app-state)]) tprops)])
+          [:div {:key (-> prop second :db/id)}
+           (catomic/render-read-mode {:view (prop 1)} app-state true)]) tprops)])
 
 (defn- render-selection-
   [component {:keys [view unit props]} app-state local-state]

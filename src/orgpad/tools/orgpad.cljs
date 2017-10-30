@@ -223,7 +223,6 @@
   [db pid props-constraints & [selection]]
   (let [props (get-descendant-props-from-db db pid props-constraints selection)
         units-ids (->> props (map #(or (get % 2) (get % 0))) set)]
-    (js/console.log props)
     (into (mapv #(-> db
                      (store/query [:entity %])
                      dscript/entity->map

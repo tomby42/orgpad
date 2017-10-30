@@ -606,7 +606,7 @@
         selected (into #{} (comp
                             (filter #(geom/bbs-intersect? bb (:bb %)))
                             (map :id)) bbs)]
-    (js/console.log (ot/uid unit-tree) (ot/copy-descendants-from-db state (ot/uid unit-tree) [] selected))
+    ;; (js/console.log (ot/uid unit-tree) (ot/copy-descendants-from-db state (ot/uid unit-tree) [] selected))
     {:state (store/transact state [[:selections (-> unit-tree ot/uid keypath)] selected])}))
 
 (defmethod mutate :orgpad.units/remove-units
@@ -670,7 +670,7 @@
         transform (:orgpad/transform parent-view)
         bb (dom/dom-bb->bb (aget global-cache parent-id "bbox"))
         [w h] (geom/-- (bb 1) (bb 0))
-        new-translate (geom/-- [(/ w 2) (/ h 2)] position)
+        new-translate (geom/-- [(/ w 2) (/ h 2)] (geom/*c position (-> transform :scale)))
         new-transformation (merge transform { :translate new-translate })]
     {:state (if (:db/id parent-view)
               (store/transact state [[:db/add (:db/id parent-view) :orgpad/transform new-transformation]])
