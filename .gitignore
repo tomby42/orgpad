@@ -7,7 +7,7 @@ pom.xml.asc
 /classes/
 /target/
 /checkouts/
-*compiled*
+resources/**/compiled*
 .lein-deps-sum
 .lein-repl-history
 .lein-plugins/

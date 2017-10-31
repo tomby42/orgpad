@@ -76,7 +76,7 @@
   [local-state menu-key label styles & items]
   [ :div { :className (str "menu " (styles :all)) }
    [ :span { :className (str "menu-header " (styles :header))
-             :onClick #(swap! local-state update menu-key not) }
+             :onClick #(js/setTimeout (fn [] (swap! local-state update menu-key not)) 100) }
     [ :span (str label " ")
      [ :i {:className (str "fa " (if (@local-state menu-key) "fa-caret-up" "fa-caret-down")) }] ] ]
    (into
@@ -174,7 +174,7 @@
       [ :span  (str "History " (if (:history @local-state) "off" "on")) ]]
      )))
 
-(rum/defcc status < (rum/local { :unroll false :view-menu-unroll false :typed "" :history false } ) lc/parser-type-mixin-context
+(rum/defcc status < (rum/local { :unroll false :view-menu-unroll false :typed "" :history false }) lc/parser-type-mixin-context
   [component { :keys [unit view path-info] :as unit-tree } app-state]
   (let [id (unit :db/id)
         local-state (trum/comp->local-state component)
@@ -187,7 +187,10 @@
 
      [ :div { :className "status-menu" }
       [ :div { :className "tools-menu" :title "Actions" }
-       [ :div { :className "tools-button" :onClick #(swap! local-state update-in [:unroll] not) }
+       [ :div { :className "tools-button"
+                :onClick #(js/setTimeout
+                           (fn []
+                             (swap! local-state update-in [:unroll] not)) 100) }
         [ :i { :className "fa fa-navicon fa-lg" } ] ]
        [ :div { :className (str "tools" (when (@local-state :unroll) " more-current")) }
         (render-file-menu component unit-tree local-state)
