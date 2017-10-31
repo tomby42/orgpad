@@ -11,12 +11,16 @@
 (def ^:private decode (aget js/Geohash "decode"))
 (def ^:private adjacent (aget js/Geohash "adjacent"))
 
+(defn- or'
+  [x y]
+  (if x x y))
+
 (defn pos->hash
   "Map x, y coords to geohash with hash length res."
   [x y & [res]]
   (let [lon (/ (+ x COORD-CENTER) MAX-COORD)
         lat (/ (+ y COORD-CENTER) MAX-COORD)]
-    (encode lat lon (or res MAX-RESOLUTION))))
+    (encode lat lon (or' res MAX-RESOLUTION))))
 
 (defn- lalo->px
   [l]
@@ -44,7 +48,7 @@
 (defn box->hashes
   "Returns collection of hashes containing given box"
   [x y w h & [res]]
-  (let [res' (or res BOX-RESOLUTION)
+  (let [res' (or' res BOX-RESOLUTION)
         x' (+ x w)
         y' (+ y h)
         [dx dy] (steps' res')

@@ -96,8 +96,8 @@
                                :show-local-menu false
                                :quick-edit false
                                :pre-quick-edit (finc pre-quick-edit)
-                               :start-mouse-x (.-clientX ev)
-                               :start-mouse-y (.-clientY ev)
+                               :start-mouse-x (.-clientX (jev/touch-pos ev))
+                               :start-mouse-y (.-clientY (jev/touch-pos ev))
                                :mouse-x (.-clientX (jev/touch-pos ev))
                                :mouse-y (.-clientY (jev/touch-pos ev)) })
     (lc/transact! component [[ :orgpad.units/select {:pid (parent-id parent-view)

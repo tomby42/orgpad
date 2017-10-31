@@ -115,7 +115,7 @@
 
 (defn- render-local-menu1
   [component unit-tree app-state local-state-atom]
-  [:div.map-local-menu {:onMouseDown jev/block-propagation}
+  [:div.map-local-menu {:onMouseDown jev/block-propagation :onTouchStart jev/block-propagation }
    [:span {:className (if (= (:canvas-mode @local-state-atom) :canvas-create-unit) "active" "")
            :title "Create unit mode"
            :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-create-unit)}
@@ -133,7 +133,7 @@
 (defn handle-mouse-down
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
-    (jev/block-propagation ev)
+    ;; (jev/block-propagation ev)
     (swap! local-state merge { :mouse-x (.-clientX ev)
                                :mouse-y (.-clientY ev)
                                :start-mouse-x (.-clientX ev)
@@ -213,8 +213,9 @@
                      :bb bb}]])))
 
 (defn- resolve-mouse-down
-  [component unit-tree local-state pos]
-  (when (= (:canvas-mode @local-state) :canvas-create-unit)
+  [component unit-tree local-state pos ev]
+  (when (and (= (:canvas-mode @local-state) :canvas-create-unit)
+             (not (.-isTouch ev)))
     (create-pair-unit component unit-tree pos)))
 
 (defn- handle-mouse-up
@@ -222,7 +223,7 @@
   (let [local-state (trum/comp->local-state component)]
     (case (:local-mode @local-state)
       :mouse-down (resolve-mouse-down component unit-tree local-state {:center-x (.-clientX ev)
-                                                                       :center-y (.-clientY ev)})
+                                                                       :center-y (.-clientY ev)} ev)
       :canvas-move (stop-canvas-move component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
       :unit-move (stop-unit-move component local-state [(.-clientX ev) (.-clientY ev)])
       :unit-resize (stop-unit-resize component local-state [(.-clientX ev) (.-clientY ev)])
@@ -390,11 +391,13 @@
               :ref "component-node"
               :onMouseDown #(do
                               (handle-mouse-down component unit-tree app-state %)
-                              (.stopPropagation %))
+                              (jev/block-propagation %))
               :onTouchStart #(do
                                (handle-mouse-down component unit-tree app-state (aget % "touches" 0))
-                               (.stopPropagation %))
-              :onMouseUp #(handle-mouse-up component unit-tree app-state %)
+                               (jev/block-propagation %))
+              :onMouseUp #(do
+                            (handle-mouse-up component unit-tree app-state %)
+                            (jev/block-propagation %))
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
               :onBlur #(handle-blur component unit-tree app-state %)
               :onMouseLeave #(handle-blur component unit-tree app-state %)
@@ -416,11 +419,13 @@
               :ref "component-node"
               :onMouseDown #(do
                               (handle-mouse-down component unit-tree app-state %)
-                              (.stopPropagation %))
+                              (jev/block-propagation %))
               :onTouchStart #(do
                                (handle-mouse-down component unit-tree app-state (aget % "touches" 0))
-                               (.stopPropagation %))
-              :onMouseUp #(handle-mouse-up component unit-tree app-state %)
+                               (jev/block-propagation %))
+             :onMouseUp #(do
+                           (handle-mouse-up component unit-tree app-state %)
+                           (jev/block-propagation %))
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
               :onBlur #(handle-blur component unit-tree app-state %)
               :onMouseLeave #(handle-blur component unit-tree app-state %)
@@ -459,6 +464,7 @@
                 (handle-mouse-up component unit-tree app-state
                                  #js { :preventDefault (prevent-default ev)
                                        :stopPropagation (fn [] (.stopPropagation ev))
+                                       :isTouch true
                                        :clientX (-> state :rum/local deref :mouse-x)
                                        :clientY (-> state :rum/local deref :mouse-y) })))]
         (swap! (state :rum/local) merge { :touch-move-event-handler move-cb

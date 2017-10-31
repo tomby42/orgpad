@@ -179,13 +179,13 @@
   (let [id (unit :db/id)
         local-state (trum/comp->local-state component)
         msg-list (lc/query component :orgpad.ci/msg-list [])]
-    [:div
+    [:div {:onMouseDown jev/block-propagation :onTouchStart jev/block-propagation}
      (when (:history @local-state)
        (render-history component local-state))
 
      (ci/dialog-panel unit-tree app-state msg-list)
 
-     [ :div { :className "status-menu" :onMouseDown jev/block-propagation }
+     [ :div { :className "status-menu" }
       [ :div { :className "tools-menu" :title "Actions" }
        [ :div { :className "tools-button" :onClick #(swap! local-state update-in [:unroll] not) }
         [ :i { :className "fa fa-navicon fa-lg" } ] ]

@@ -127,10 +127,10 @@
                              :show-local-menu false
                              :quick-edit false
                              :pre-quick-edit 0
-                             :start-mouse-x (.-clientX ev)
-                             :start-mouse-y (.-clientY ev)
-                             :mouse-x (.-clientX ev)
-                             :mouse-y (.-clientY ev) }))
+                             :start-mouse-x (.-clientX (jev/touch-pos ev))
+                             :start-mouse-y (.-clientY (jev/touch-pos ev))
+                             :mouse-x (.-clientX (jev/touch-pos ev))
+                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
 
 (defn- start-units-move
   [unit-tree selection local-state ev]
@@ -142,28 +142,28 @@
                                                (inc (:pre-quick-edit @local-state))
                                                0)
                              :selected-units [unit-tree selection]
-                             :start-mouse-x (.-clientX ev)
-                             :start-mouse-y (.-clientY ev)
-                             :mouse-x (.-clientX ev)
-                             :mouse-y (.-clientY ev) }))
+                             :start-mouse-x (.-clientX (jev/touch-pos ev))
+                             :start-mouse-y (.-clientY (jev/touch-pos ev))
+                             :mouse-x (.-clientX (jev/touch-pos ev))
+                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
 
 
 (defn- start-unit-resize
   [local-state ev]
   (swap! local-state merge { :local-mode :unit-resize
                              :local-move false
-                             :start-mouse-x (.-clientX ev)
-                             :start-mouse-y (.-clientY ev)
-                             :mouse-x (.-clientX ev)
-                             :mouse-y (.-clientY ev) }))
+                             :start-mouse-x (.-clientX (jev/touch-pos ev))
+                             :start-mouse-y (.-clientY (jev/touch-pos ev))
+                             :mouse-x (.-clientX (jev/touch-pos ev))
+                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
 
 (defn- start-link
   [local-state ev]
   (swap! local-state merge { :local-mode :make-link
-                             :link-start-x (.-clientX ev)
-                             :link-start-y (.-clientY ev)
-                             :mouse-x (.-clientX ev)
-                             :mouse-y (.-clientY ev) }))
+                             :link-start-x (.-clientX (jev/touch-pos ev))
+                             :link-start-y (.-clientY (jev/touch-pos ev))
+                             :mouse-x (.-clientX (jev/touch-pos ev))
+                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
 
 (defn- start-links
   [unit-tree selection local-state ev]
@@ -493,7 +493,7 @@
 (rum/defcc unit-editor-static < lc/parser-type-mixin-context
   [component unit-tree app-state local-state]
   (let [select-unit (@local-state :selected-unit)]
-    [:div {:onMouseDown jev/block-propagation}
+    [:div {:onMouseDown jev/block-propagation :onTouchStart jev/block-propagation}
      (if select-unit
        (node-unit-editor-static component unit-tree app-state local-state)
        (edge-unit-editor-static component unit-tree app-state local-state))]))
