@@ -18,43 +18,13 @@
             [orgpad.tools.dom :as dom]))
 
 (def ^:private init-state
-  { :show-local-menu false
-    :local-mode :none
+  { :local-mode :none
     :quick-edit false
     :canvas-mode :canvas-move
     :mouse-x 0
     :mouse-y 0
     :link-start-x 0
     :link-start-y 0})
-
-(def ^:private menu-conf {
-  :always-open? true
-  :init-state true
-  :init-rotate -135
-  :init-scale 0.5
-  :main-spring-config #js [500 30]
-  :fly-out-radius 50
-  :base-angle 30
-  :separation-angle 50
-  :child-diam 35
-  :child-init-scale 0.2
-  :child-init-rotation -180
-  :main-diam 40
-  :offset 0.4
-  :child-class "circle-menu-child"
-  :final-child-pos-fn mc/final-child-delta-pos-rot
-  :child-spring-config #js [400 28]
-})
-
-(defn- hide-local-menu
-  [component]
-  (let [local-state (trum/comp->local-state component)]
-    (swap! local-state merge { :show-local-menu false })))
-
-(defn- show-local-menu
-  [component]
-  (let [local-state (trum/comp->local-state component)]
-    (swap! local-state merge { :show-local-menu false })))
 
 (defn- create-pair-unit
   [component {:keys [unit view] :as unit-tree} pos]
@@ -69,7 +39,6 @@
   [local-state-atom ev]
   (swap! local-state-atom
          merge { :local-mode :canvas-move
-                 :show-local-menu false
                  :start-mouse-x (.-clientX ev)
                  :start-mouse-y (.-clientY ev)
                  :mouse-x (.-clientX ev)
@@ -78,40 +47,11 @@
 (defn- do-create-pair-unit
   [component unit-tree pos ev]
   (create-pair-unit component unit-tree pos)
-  (hide-local-menu component)
   (.stopPropagation ev))
 
 (defn- toggle-canvas-mode
   [local-state]
   (swap! local-state update :canvas-mode #(if (= % :canvas-move) :canvas-select :canvas-move)))
-
-(defn render-local-menu
-  [component unit-tree app-state local-state-atom]
-  (let [local-state @local-state-atom]
-    (when (or (local-state :show-local-menu) (= (local-state :local-mode) :canvas-move))
-      (let [pos { :center-x (local-state :mouse-x)
-                  :center-y (local-state :mouse-y) }]
-        [:div { :style { :display (if (= (local-state :local-mode) :canvas-move) "none" "block") } }
-        (mc/circle-menu (merge menu-conf pos { :onMouseDown jev/block-propagation
-                                               :onTouchStart jev/block-propagation
-                                               :onTouchEnd jev/block-propagation
-                                               :onMouseUp jev/block-propagation })
-                        [ :i { :className "fa fa-file-text-o fa-lg"
-                               :title "Create new unit"
-                               :onMouseDown #(.stopPropagation %)
-                               :onMouseUp #(do-create-pair-unit component unit-tree pos %)
-                              }
-]
-                        [ :i { :className (if (= (:canvas-mode local-state) :canvas-select) "fa fa-crop fa-lg" "fa fa-arrows fa-lg")
-                               :title (if (= (:canvas-mode local-state) :canvas-select) "Toggle to move mode" "Toggle to select mode")
-                               :onClick #(toggle-canvas-mode local-state-atom)
- } ]
-                        [ :i { :className "fa fa-plus fa-lg" :title "Zoom in" } ]
-                        [ :i { :className "fa fa-minus fa-lg" :title "Zoom out" } ]
-                        [ :i { :className "fa fa-close fa-lg"
-                               :title "Hide menu"
-                               :onMouseUp #(hide-local-menu component) } ] ) ]
-        ) )))
 
 (defn- render-local-menu1
   [component unit-tree app-state local-state-atom]
@@ -143,8 +83,7 @@
                                :local-mode (if (= (app-state :mode) :write)
                                              :mouse-down
                                              :canvas-move)
-                               :quick-edit false
-                               :show-local-menu false })
+                               :quick-edit false })
     (lc/transact! component [[ :orgpad.units/deselect-all {:pid (ot/uid unit-tree)} ]])))
 
 (defn- make-link
@@ -169,8 +108,7 @@
                      :unit-id (unit :db/id)
                      :old-pos [(@local-state :start-mouse-x)
                                (@local-state :start-mouse-y)]
-                     :new-pos new-pos }]])
-  (swap! local-state merge { :show-local-menu false }))
+                     :new-pos new-pos }]]))
 
 (defn- stop-unit-move
   [component local-state new-pos]
@@ -331,7 +269,6 @@
   [local-state ev]
   (if (= (:canvas-mode @local-state) :canvas-select)
     (swap! local-state merge {:local-mode :choose-selection
-                              :show-local-menu false
                               :start-mouse-x (.-clientX ev)
                               :start-mouse-y (.-clientY ev)
                               :mouse-x (.-clientX ev)

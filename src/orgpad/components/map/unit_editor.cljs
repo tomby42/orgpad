@@ -124,7 +124,6 @@
 (defn- start-unit-move
   [local-state ev]
   (swap! local-state merge { :local-mode :unit-move
-                             :show-local-menu false
                              :quick-edit false
                              :pre-quick-edit 0
                              :start-mouse-x (.-clientX (jev/touch-pos ev))
@@ -136,7 +135,6 @@
   [unit-tree selection local-state ev]
   (swap! local-state merge { :local-mode :units-move
                              :local-move false
-                             :show-local-menu false
                              :quick-edit false
                              :pre-quick-edit (if (:pre-quick-edit @local-state)
                                                (inc (:pre-quick-edit @local-state))

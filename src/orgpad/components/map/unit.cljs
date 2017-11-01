@@ -93,7 +93,6 @@
                                :local-move false
                                :selected-unit [unit-tree prop parent-view component]
                                :selected-node new-node
-                               :show-local-menu false
                                :quick-edit false
                                :pre-quick-edit (finc pre-quick-edit)
                                :start-mouse-x (.-clientX (jev/touch-pos ev))
