@@ -349,7 +349,8 @@
       :link-shape (update-link-shape component local-state (jev/stop-propagation ev))
       :try-unit-move (do
                        (swap! local-state assoc :local-mode :unit-move :pre-quick-edit 0)
-                       (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move))
+                       (unit-move (:view unit-tree) local-state (jev/stop-propagation ev)) ;; (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
+                       )
       :units-move (unit-move (:view unit-tree) local-state (jev/stop-propagation ev)) ;; (units-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
       :mouse-down (try-start-selection local-state (jev/stop-propagation ev))
       :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
