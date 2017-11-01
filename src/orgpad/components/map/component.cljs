@@ -49,10 +49,6 @@
   (create-pair-unit component unit-tree pos)
   (.stopPropagation ev))
 
-(defn- toggle-canvas-mode
-  [local-state]
-  (swap! local-state update :canvas-mode #(if (= % :canvas-move) :canvas-select :canvas-move)))
-
 (defn- render-local-menu1
   [component unit-tree app-state local-state-atom]
   [:div.map-local-menu {:onMouseDown jev/block-propagation :onTouchStart jev/block-propagation }
