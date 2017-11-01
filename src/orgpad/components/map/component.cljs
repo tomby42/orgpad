@@ -184,6 +184,18 @@
                                (@local-state :start-mouse-y)]
                      :new-pos new-pos }]])))
 
+(defn- stop-units-move
+  [component local-state new-pos]
+  (let [[unit-tree selection] (@local-state :selected-units)]
+    (lc/transact! component
+                  [[ :orgpad.units/map-view-repeat-action
+                    { :unit-tree unit-tree
+                      :selection selection
+                      :action :orgpad.units/map-view-unit-move
+                      :old-pos [(@local-state :start-mouse-x)
+                                (@local-state :start-mouse-y)]
+                      :new-pos new-pos }]])))
+
 (defn- stop-unit-resize
   [component local-state new-pos]
   (let [[unit-tree prop parent-view] (@local-state :selected-unit)]
@@ -227,6 +239,7 @@
       :canvas-move (stop-canvas-move component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
       :unit-move (stop-unit-move component local-state [(.-clientX ev) (.-clientY ev)])
       :unit-resize (stop-unit-resize component local-state [(.-clientX ev) (.-clientY ev)])
+      :units-move (stop-units-move component local-state [(.-clientX ev) (.-clientY ev)])
       :make-link (make-link component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
       :link-shape (when (= (@local-state :link-menu-show) :maybe)
                     (swap! local-state assoc :link-menu-show :yes))
@@ -337,7 +350,7 @@
       :try-unit-move (do
                        (swap! local-state assoc :local-mode :unit-move :pre-quick-edit 0)
                        (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move))
-      :units-move (units-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
+      :units-move (unit-move (:view unit-tree) local-state (jev/stop-propagation ev)) ;; (units-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
       :mouse-down (try-start-selection local-state (jev/stop-propagation ev))
       :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
       :make-links (update-mouse-position local-state (jev/stop-propagation ev))
