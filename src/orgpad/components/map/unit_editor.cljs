@@ -16,9 +16,6 @@
             [orgpad.components.graphics.primitives :as g]
             [orgpad.components.menu.color.picker :as cpicker]))
 
-(def ^:private padding 20)
-(def ^:private diam (- (* padding 2) 5))
-
 (def ^:private edge-menu-conf {
   :always-open? false
   :init-state true
