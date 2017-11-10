@@ -44,6 +44,9 @@
   [unit idx]
   (get (sort-refs unit) idx))
 
+(defn- get-sheet-number [{ :keys [unit view]}]
+  [(-> view :orgpad/active-unit inc) (-> unit :orgpad/refs count)])
+
 (defn update-unit-view-query
   [unit-id view key val]
   (if (view :db/id)

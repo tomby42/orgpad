@@ -12,9 +12,12 @@
             [orgpad.tools.rum :as trum]
             [orgpad.tools.geom :as geom]
             [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.dom :as dom]
             [orgpad.components.graphics.primitives :as g]
-            [orgpad.components.menu.color.picker :as cpicker]))
+            [orgpad.components.menu.color.picker :as cpicker]
+            [goog.string :as gstring]
+            [goog.string.format]))
 
 (def ^:private edge-menu-conf {
   :always-open? false
@@ -214,6 +217,37 @@
                  (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
                  {:css {:zIndex 2}})))]))
 
+(defn- add-view-buttons
+  [unit component]
+	(let [view (ot/view-type unit)
+		  class-notebook (str "fa fa-file-text-o fa-lg notebook-btn" (when (= view :orgpad/map-tuple-view) " active"))
+		  class-map (str "fa fa-window-restore fa-lg map-btn" (when (= view :orgpad/map-view) " active"))]
+	[:span
+	  [:span
+	    { :className class-notebook
+        :title "Notebook"
+        :onMouseDown #(omt/change-view-type unit component :orgpad/map-tuple-view) }]
+	  [:span
+	    { :className class-map
+        :title "Map"
+        :onMouseDown #(omt/change-view-type unit component :orgpad/map-view) }]
+	  (when (= view :orgpad/map-tuple-view)
+      [:span.notebook-manipulation
+        [:span.fa.fa-caret-left.fa-lg
+          { :title "Previous page"
+            :onMouseDown #(omt/switch-active-sheet unit component -1) }]
+        [:span.fa.fa-caret-right.fa-lg
+          { :title "Next page"
+            :onMouseDown #(omt/switch-active-sheet unit component 1) }]
+        [:span (apply gstring/format "%d/%d" (ot/get-sheet-number unit))]
+        [:span.fa.fa-plus-circle.fa-lg
+          { :title "Add page"
+            :onMouseDown #(omt/new-sheet unit component) }]
+        [:span.fa.fa-minus-circle.fa-lg
+          { :title "Remove page"
+            :onMouseDown #(omt/remove-active-sheet unit component) }]])
+     ]))
+
 (defn- node-unit-editor1
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
@@ -248,7 +282,8 @@
             [:span.fa.fa-pencil-square-o.fa-lg.edit-btn
              {:title "Edit"
               :onMouseDown jev/block-propagation
-              :onMouseUp (jev/make-block-propagation #(open-unit component unit))}]]
+              :onMouseUp (jev/make-block-propagation #(open-unit component unit))}]
+			(add-view-buttons unit component)]
 
            (when (= (@local-state :local-mode) :make-link)
              (let [tr (parent-view :orgpad/transform)]

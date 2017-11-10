@@ -84,7 +84,8 @@
         }
         margin: -8px;
     }
-    .edit-btn {
+    
+	.edit-btn {
         position: absolute;
         left: 25px;
         top: -15px;
@@ -93,6 +94,48 @@
         }
         margin: -2px;
     }
+    
+	.notebook-btn {
+        position: absolute;
+        left: 50px;
+        top: -16px;
+        &:hover {
+            background-color: #ddd;
+        }
+		&.active {
+	        background-color: red;
+		}
+        margin: -2px;
+    }
+	
+	.map-btn {
+		position: absolute;
+        left: 70px;
+        top: -15px;
+        &:hover {
+            background-color: #ddd;
+        }
+		&.active {
+	        background-color: red;
+		}
+        margin: -2px;
+    }
+	
+	.notebook-manipulation {
+        position: absolute;
+        left: 100px;
+        top: -16px;
+        & > span {
+            float: left;
+			margin-left: 3px;
+			margin-right: 3px;
+        }
+        & > span:hover {
+            background-color: #ddd;
+        }
+        margin: -2px;
+    }
+	
   }
 
   .slider {
