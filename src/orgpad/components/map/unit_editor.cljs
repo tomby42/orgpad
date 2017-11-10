@@ -220,33 +220,75 @@
 (defn- add-view-buttons
   [unit component]
 	(let [view (ot/view-type unit)
-		  class-notebook (str "fa fa-file-text-o fa-lg notebook-btn" (when (= view :orgpad/map-tuple-view) " active"))
-		  class-map (str "fa fa-window-restore fa-lg map-btn" (when (= view :orgpad/map-view) " active"))]
+		  class-notebook (str "lft-btn" (when (= view :orgpad/map-tuple-view) " active"))
+		  class-map (str "lft-btn" (when (= view :orgpad/map-view) " active"))]
 	[:span
 	  [:span
 	    { :className class-notebook
         :title "Notebook"
-        :onMouseDown #(omt/change-view-type unit component :orgpad/map-tuple-view) }]
+        :onMouseDown #(omt/change-view-type unit component :orgpad/map-tuple-view) }
+		[:i.fa.fa-file-text-o.fa-lg]]
 	  [:span
 	    { :className class-map
         :title "Map"
-        :onMouseDown #(omt/change-view-type unit component :orgpad/map-view) }]
+        :onMouseDown #(omt/change-view-type unit component :orgpad/map-view) }
+		[:i.fa.fa-window-restore.fa-lg]]
 	  (when (= view :orgpad/map-tuple-view)
-      [:span.notebook-manipulation
-        [:span.fa.fa-caret-left.fa-lg
+      [:span
+        [:span.lft-sep]
+        [:span.lft-btn
           { :title "Previous page"
-            :onMouseDown #(omt/switch-active-sheet unit component -1) }]
-        [:span.fa.fa-caret-right.fa-lg
+            :onMouseDown #(omt/switch-active-sheet unit component -1) }
+          [:i.fa.fa-arrow-left.fa-lg]]
+        [:span.lft-btn
           { :title "Next page"
-            :onMouseDown #(omt/switch-active-sheet unit component 1) }]
-        [:span (apply gstring/format "%d/%d" (ot/get-sheet-number unit))]
-        [:span.fa.fa-plus-circle.fa-lg
+            :onMouseDown #(omt/switch-active-sheet unit component 1) }
+          [:i.fa.fa-arrow-right.fa-lg]]
+        [:span.lft-text (apply gstring/format "%d/%d" (ot/get-sheet-number unit))]
+        [:span.lft-btn
           { :title "Add page"
-            :onMouseDown #(omt/new-sheet unit component) }]
-        [:span.fa.fa-minus-circle.fa-lg
+            :onMouseDown #(omt/new-sheet unit component) }
+          [:i.fa.fa-plus-circle.fa-lg]]
+        [:span.lft-btn
           { :title "Remove page"
-            :onMouseDown #(omt/remove-active-sheet unit component) }]])
-     ]))
+            :onMouseDown #(omt/remove-active-sheet unit component) }
+          [:i.fa.fa-minus-circle.fa-lg]]])
+    [:span.lft-sep]]))
+
+(defn- node-unit-editor-style
+  [prop]
+  (let [pos (prop :orgpad/unit-position)
+        width (prop :orgpad/unit-width)
+	  	  height (prop :orgpad/unit-height)
+			  bw (prop :orgpad/unit-border-width)]
+  (merge { :width (+ width (* 2 bw))
+           :height (+ height (* 2 bw)) }
+           (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))))
+
+(defn- node-unit-editor-toolbar
+  [unit component app-state local-state]
+  [:span.toolbar
+    [:span.lft-btn
+      { :title "Link"
+        :onMouseDown (jev/make-block-propagation #(start-link local-state %))
+        :onTouchStart (jev/make-block-propagation #(start-link local-state (aget % "touches" 0)))}
+			[:i.fa.fa-link.fa-lg]]
+    [:span.lft-btn
+      { :title "Edit"
+        :onMouseDown jev/block-propagation
+        :onMouseUp (jev/make-block-propagation #(open-unit component unit))}
+			[:i.fa.fa-pencil-square-o.fa-lg]]
+    [:span.lft-sep]
+    (add-view-buttons unit component)
+
+    [:span.rt-btn
+      { :title "Remove"
+        :onMouseDown #(remove-unit component (ot/uid unit))}
+			[:i.fa.fa-remove.fa-lg]]
+
+  ]
+)
+
 
 (defn- node-unit-editor1
   [component {:keys [view] :as unit-tree} app-state local-state]
@@ -255,12 +297,7 @@
     (when (and prop unit)
       (if (not= (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
         (nodes-unit-editor1 component unit-tree app-state local-state parent-view prop)
-        (let [pos (prop :orgpad/unit-position)
-              width (prop :orgpad/unit-width) height (prop :orgpad/unit-height)
-              bw (prop :orgpad/unit-border-width)
-              style (merge { :width (+ width (* 2 bw))
-                             :height (+ height (* 2 bw)) }
-                           (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
+        (let [style (node-unit-editor-style prop)]
           [:div {:key "node-unit-editor" :ref "unit-editor-node"}
            [:div {:className "map-view-unit-selected"
                   :style style
@@ -269,27 +306,19 @@
                   :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
                   :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
                   }
-            [:span.frame]
-            [:span.fa.fa-remove.fa-lg.rm-btn {:title "Remove"
-                                              :onMouseDown #(remove-unit component (ot/uid unit))}]
-            [:span.resize-handle {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
-                                  :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
-                                  }]
-            [:span.fa.fa-link.fa-lg.link-handle
-             {:title "Link"
-              :onMouseDown (jev/make-block-propagation #(start-link local-state %))
-              :onTouchStart (jev/make-block-propagation #(start-link local-state (aget % "touches" 0)))}]
-            [:span.fa.fa-pencil-square-o.fa-lg.edit-btn
-             {:title "Edit"
-              :onMouseDown jev/block-propagation
-              :onMouseUp (jev/make-block-propagation #(open-unit component unit))}]
-			(add-view-buttons unit component)]
-
+           ; add other resize directions
+           [:span.resize-handle-corner {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
+                                 :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
+                                 }]
+           [:span.resize-handle-bottom {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
+                                 :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
+                                 }]
+           (node-unit-editor-toolbar unit component app-state local-state)
            (when (= (@local-state :local-mode) :make-link)
              (let [tr (parent-view :orgpad/transform)]
                (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
                        (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
-                       {:css {:zIndex 2} :key 1})))])))))
+                       {:css {:zIndex 2} :key 1})))]])))))
 
 (defn- simple-node-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
