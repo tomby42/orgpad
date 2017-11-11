@@ -40,59 +40,101 @@
   }
 
   .map-view-unit-selected {
-    position: absolute;
-    border: 2px dashed #e42c2c;
-    z-index: 1;
+      position: absolute;
+      border-bottom: 2px dashed #e42c2c;
+      border-left: 2px dashed #e42c2c;
+      border-right: 2px dashed #e42c2c;
+      margin-top: 2px;
+      z-index: 1;
 
-    .frame {
-        position: absolute;
-        width: 100%;
-        height: 20px;
-        top: -24px;
-        left: -2px;
-        background-color: #fff;
-        border-top: 2px dashed red;
-        border-left: 2px dashed red;
-        border-right: 2px dashed red;
-    }
+      &.simple {
+          border-top: 2px dashed #e42c2c;
+      }
 
-    .rm-btn {
-        position: absolute;
-        top: -19px;
-        right: 3px;
-        &:hover {
-            background-color: #ddd;
-        }
-    }
+      .toolbar {
+          position: absolute;
+          width: 100%;
+          min-width: 300px;
+          height: 24px;
+          top: -28px;
+          left: -2px;
+          background-color: #fff;
+          border: 2px dashed red;
+          white-space: nowrap;
+      }
 
-    .resize-handle {
-        position: absolute;
-        bottom: 0px;
-        // background-color: #ddd;
-        cursor: nwse-resize;
-        right: 0px;
-        width: 20px;
-        height: 20px;
-    }
+      .lft-btn {
+          float: left;
+          text-align: center;
+          width: 18px;
+          height: 18px;
+          padding: 3px;
+          display: inline-block;
+          &:hover {
+              background-color: #ccc;
+          }
+          &.active {
+              background-color: #aaa;
+          }
+      }
 
-    .link-handle {
-        position: absolute;
-        left: 10px;
-        top: -10px;
-        &:hover {
-            background-color: #ddd;
-        }
-        margin: -8px;
-    }
-    .edit-btn {
-        position: absolute;
-        left: 25px;
-        top: -15px;
-        &:hover {
-            background-color: #ddd;
-        }
-        margin: -2px;
-    }
+      .rt-btn {
+          float: right;
+          text-align: center;
+          width: 18px;
+          height: 18px;
+          padding: 3px;
+          display: block;
+          &:hover {
+              background-color: #ccc;
+          }
+          &.active {
+              background-color: #aaa;
+          }
+      }
+
+      .lft-sep {
+          float: left;
+          background-color: red;
+          width: 2px;
+          height: 18px;
+          margin: 3px;
+      }
+
+      .rt-sep {
+          float: right;
+          background-color: red;
+          width: 2px;
+          height: 18px;
+          margin: 3px;
+      }
+
+      .lft-text {
+          float: left;
+          font-size: 12pt;
+          padding-top: 5px;
+          padding-bottom: 5px;
+      }
+
+      .resize-handle-corner {
+          position: absolute;
+          bottom: 0px;
+          cursor: nwse-resize;
+          right: 0px;
+          width: 20px;
+          height: 20px;
+          z-index: 3;
+      }
+
+      .resize-handle-bottom {
+          position: absolute;
+          bottom: 0px;
+          cursor: row-resize;
+          left: 0px;
+          width: 100%;
+          height: 20px;
+          z-index: 2;
+      }
   }
 
   .slider {
@@ -168,6 +210,7 @@
       }
   }
 }
+
 
 .map-tuple-sheet-number {
     z-index: 1;
