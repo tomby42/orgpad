@@ -2,7 +2,8 @@
   orgpad.tools.orgpad
   (:require [orgpad.core.store :as store]
             [orgpad.tools.dscript :as dscript]
-            [orgpad.tools.geom :as geom]))
+            [orgpad.tools.colls :as colls]
+            [orgpad.tools.geom :refer [++ -- *c] :as geom]))
 
 (defn uid
   [unit]
@@ -140,9 +141,9 @@
                         (when prop
                           (let [bw (* 2 (:orgpad/unit-border-width prop))]
                             {:bb [(:orgpad/unit-position prop)
-                                  (geom/++ (:orgpad/unit-position prop)
-                                           [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]
-                                           [bw bw])]
+                                  (++ (:orgpad/unit-position prop)
+                                      [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]
+                                      [bw bw])]
                              :id id})))
                       unit-tree selection))
 
@@ -219,21 +220,60 @@
   [u]
   (mapv (fn [v] (-> v :db/id -)) u))
 
+(defn- get-roots
+  [db pid selection]
+  (if (nil? selection)
+    (into #{} (map (comp - :db/id) (-> db (store/query [:entity pid])) :orgpad/refs))
+    (into #{} (map -) selection)))
+
 (defn copy-descendants-from-db
   [db pid props-constraints & [selection]]
   (let [props (get-descendant-props-from-db db pid props-constraints selection)
         units-ids (->> props (map #(or (get % 2) (get % 0))) set)]
-    (into (mapv #(-> db
-                     (store/query [:entity %])
-                     dscript/entity->map
-                     (update :db/id -)
-                     (update :orgpad/refs negate-db-id)
-                     (update :orgpad/props-refs negate-db-id)
-                     (update :orgpad/refs-order (fn [refs-orders]
-                                                  (apply sorted-set
-                                                         (map (fn [[n u]]
-                                                                [n (- u)]) refs-orders))))) units-ids)
-          (map #(-> %
-                    second
-                    (update :db/id -)
-                    (update :orgpad/refs negate-db-id)) props))))
+    {:entities
+     (colls/minto
+      #{}
+      (map #(-> db
+                (store/query [:entity %])
+                dscript/entity->map
+                (update :db/id -)
+                (update :orgpad/refs negate-db-id)
+                (update :orgpad/props-refs negate-db-id)
+                (update :orgpad/refs-order (fn [refs-orders]
+                                             (apply sorted-set
+                                                    (map (fn [[n u]]
+                                                           [n (- u)]) refs-orders))))) units-ids)
+      (map #(-> %
+                second
+                (update :db/id -)
+                (update :orgpad/refs negate-db-id)) props))
+     :roots (get-roots db pid selection)}))
+
+(defn past-descendants-to-db
+  [db pid {:keys [entities roots]}]
+  (let [db1 (store/transact db (colls/minto [] entities (map #(vector :db/add pid :orgpad/refs %) roots)))
+        temp->ids (store/tempids db1)
+        db2 (store/transact db1 (into [] (comp (filter :orgpad/refs-order)
+                                               (map (fn [unit]
+                                                      [:db/add (temp->ids (:db/id unit))
+                                                       :orgpad/refs-order
+                                                       (apply sorted-set
+                                                              (map (fn [[n u]]
+                                                                     [n (temp->ids u)]) (:orgpad/refs-order unit)))])))
+                                      entities))]
+    db2))
+
+(defn update-children-position
+  [{:keys [entities roots]} new-pos weight]
+  (let [bb (apply geom/points-bbox
+                  (sequence
+                   (comp (filter #(and (contains? roots (-> % :orgpad/refs first :db/id))
+                                       (contains? % :orgpad/unit-position)))
+                         (map :orgpad/unit-position))
+                   entities))
+        delta (-- new-pos (*c (++ (bb 0) (bb 1)) weight))]
+    (map (fn [e]
+           (if (and (contains? roots (-> e :orgpad/refs first :db/id))
+                    (contains? e :orgpad/unit-position))
+             (update e :orgpad/unit-position #(++ % delta))
+             e)) entities)))

@@ -199,7 +199,8 @@
             :onMouseDown (jev/make-block-propagation #(start-units-move unit-tree selection local-state %))
             :onTouchStart (jev/make-block-propagation #(start-units-move unit-tree selection local-state
                                                                          (aget % "touches" 0)))
-            :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))}
+            ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
+            }
       [:span.frame]
       [:span.fa.fa-remove.fa-lg.rm-btn {:title "Remove"
                                         :onMouseDown #(remove-units component (ot/uid unit-tree) selection)}]
