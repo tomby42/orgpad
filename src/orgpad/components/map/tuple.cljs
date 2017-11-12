@@ -31,16 +31,16 @@
       [ :i { :className "fa fa-cogs fa-lg" } ] ]
      [ :div { :className (str "tools" (when (@local-state :unroll) " more-4")) }
       [ :div { :className "tools-button" :title "New sheet"
-               :onClick #(otm/new-sheet unit-tree component) }
+               :onClick #(otm/new-sheet component unit-tree) }
        [ :i { :className "fa fa-plus-circle fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Previous"
-               :onClick #(otm/switch-active-sheet unit-tree component -1) }
+               :onClick #(otm/switch-active-sheet component unit-tree -1) }
        [ :i { :className "fa fa-caret-left fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Next"
-               :onClick #(otm/switch-active-sheet unit-tree component 1) }
+               :onClick #(otm/switch-active-sheet component unit-tree 1) }
        [ :i { :className "fa fa-caret-right fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Remove"
-               :onClick #(otm/remove-active-sheet unit-tree component) }
+               :onClick #(otm/remove-active-sheet component unit-tree) }
        [ :i { :className "fa fa-remove fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Edit" }
        [ :i { :className "fa fa-pencil-square-o fa-lg"
@@ -96,7 +96,7 @@
              :onMouseUp (fn [e]
                           (when (and (< (- (t/now) (@local-state :time-stamp)) CLICK-DELTA)
                                      (not= (:mode app-state) :quick-write))
-                            (otm/switch-active-sheet unit-tree component (comp-dir e)))) }
+                            (otm/switch-active-sheet component unit-tree (comp-dir e)))) }
      (when child-tree
        (rum/with-key (node/node child-tree app-state) 2))
      [ :div.map-tuple-clicker-left ]

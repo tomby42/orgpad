@@ -229,20 +229,20 @@
      [:span.lft-sep]
      [:span.lft-btn
       { :title "Previous page"
-       :onMouseDown #(omt/switch-active-sheet unit component -1) }
+       :onMouseDown #(omt/switch-active-sheet component unit -1) }
       [:i.fa.fa-arrow-left.fa-lg]]
      [:span.lft-btn
       { :title "Next page"
-       :onMouseDown #(omt/switch-active-sheet unit component 1) }
+       :onMouseDown #(omt/switch-active-sheet component unit 1) }
       [:i.fa.fa-arrow-right.fa-lg]]
      [:span.lft-text (apply gstring/format "%d/%d" (ot/get-sheet-number unit))]
      [:span.lft-btn
       { :title "Add page"
-       :onMouseDown #(omt/new-sheet unit component) }
+       :onMouseDown #(omt/new-sheet component unit) }
       [:i.fa.fa-plus-circle.fa-lg]]
      [:span.lft-btn
       { :title "Remove page"
-       :onMouseDown #(omt/remove-active-sheet unit component) }
+       :onMouseDown #(omt/remove-active-sheet component unit) }
       [:i.fa.fa-minus-circle.fa-lg]]]))
 
 (defn- add-view-buttons
@@ -254,12 +254,12 @@
      [:span
       { :className class-notebook
        :title "Notebook"
-       :onMouseDown #(omt/change-view-type unit component :orgpad/map-tuple-view) }
+       :onMouseDown #(omt/change-view-type component unit :orgpad/map-tuple-view) }
       [:i.fa.fa-file-text-o.fa-lg]]
      [:span
       { :className class-map
        :title "Map"
-       :onMouseDown #(omt/change-view-type unit component :orgpad/map-view) }
+       :onMouseDown #(omt/change-view-type component unit :orgpad/map-view) }
       [:i.fa.fa-window-restore.fa-lg]]
      (add-notebook-manipulators unit view component)
      [:span.lft-sep]]))
