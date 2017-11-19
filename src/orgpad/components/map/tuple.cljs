@@ -57,14 +57,9 @@
     ]
   ))
 
-(defn- active-child-tree
-  [unit view]
-  (let [active-child (-> view :orgpad/active-unit)]
-    (-> unit ot/sort-refs (get active-child))))
-
 (defn- render-write-mode
   [component { :keys [unit view props] :as unit-tree } app-state local-state]
-  (let [child-tree (active-child-tree unit view)]
+  (let [child-tree (ot/active-child-tree unit view)]
     [ :div { :className "map-tuple" }
       (render-local-menu component unit-tree app-state local-state)
       (render-sheet-number unit-tree)
@@ -90,7 +85,7 @@
 
 (defn- render-read-mode
   [component { :keys [unit view] :as unit-tree } app-state local-state]
-  (let [child-tree (active-child-tree unit view)]
+  (let [child-tree (ot/active-child-tree unit view)]
     [ :div { :className "map-tuple"
              :onMouseDown #(swap! local-state merge { :time-stamp (t/now) })
              :onMouseUp (fn [e]

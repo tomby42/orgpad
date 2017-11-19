@@ -7,7 +7,7 @@
             [orgpad.cycle.life :as lc]))
 
 (defn change-view-type
-  [component unit view-type]
+  [component unit-tree view-type]
 	(lc/transact! component 
 	  [[:orgpad/root-view-conf [unit
       { :attr :orgpad/view-type
@@ -15,17 +15,17 @@
 )
 
 (defn switch-active-sheet
-  [component unit dir]
+  [component unit-tree dir]
   (lc/transact! component [[ :orgpad.sheet/switch-active
-                            { :unit-tree unit
+                            { :unit-tree unit-tree
                               :direction dir
                               :nof-sheets (ot/refs-count unit) } ]]))
 
 (defn new-sheet
-  [component unit]
-  (lc/transact! component [[ :orgpad.units/new-sheet unit ]]))
+  [component unit-tree]
+  (lc/transact! component [[ :orgpad.units/new-sheet unit-tree ]]))
 
 (defn remove-active-sheet
-  [component unit]
-  (lc/transact! component [[ :orgpad.units/remove-active-sheet-unit unit ]]))
+  [component unit-tree]
+  (lc/transact! component [[ :orgpad.units/remove-active-sheet-unit unit-tree ]]))
 

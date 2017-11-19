@@ -223,62 +223,85 @@
                  {:css {:zIndex 2}})))]))
 
 (defn add-notebook-manipulators
-  [unit component view]
+  [component {:keys [unit view] :as unit-tree}]
   [:span
     [:span.lft-sep]
      [:span.lft-btn
       {:title "Previous page"
-       :onMouseDown #(omt/switch-active-sheet component unit -1) }
+       :onMouseDown #(omt/switch-active-sheet component unit-tree -1) }
       [:i.fa.fa-arrow-left.fa-lg]]
      [:span.lft-btn
       {:title "Next page"
-       :onMouseDown #(omt/switch-active-sheet component unit 1) }
+       :onMouseDown #(omt/switch-active-sheet component unit-tree 1) }
       [:i.fa.fa-arrow-right.fa-lg]]
-     [:span.lft-text (apply gstring/format "%d/%d" (ot/get-sheet-number unit))]
+     [:span.lft-text (apply gstring/format "%d/%d" (ot/get-sheet-number unit-tree))]
      [:span.lft-btn
       {:title "Add page"
-       :onMouseDown #(omt/new-sheet component unit) }
+       :onMouseDown #(omt/new-sheet component unit-tree) }
       [:i.fa.fa-plus-circle.fa-lg]]
      [:span.lft-btn
       {:title "Remove page"
-       :onMouseDown #(omt/remove-active-sheet component unit) }
+       :onMouseDown #(omt/remove-active-sheet component unit-tree) }
       [:i.fa.fa-minus-circle.fa-lg]]
-     (let [ as-unit (ot/get-sorted-ref (get unit :unit) (view :orgpad/active-unit))
-            as-view-type (ot/view-type as-unit )
-            class-sheet (str "lft-btn" (when (= as-view-type :orgpad/atomic-view) " active"))
-            class-map (str "lft-btn" (when (= as-view-type :orgpad/map-view) " active"))]
-       (js/console.log as-unit)
+     (let [ ac-unit-tree (ot/active-child-tree unit view)
+            ac-view-type (ot/view-type ac-unit-tree)
+            class-sheet (str "lft-btn" (when (= ac-view-type :orgpad/atomic-view) " active"))
+            class-map (str "lft-btn" (when (= ac-view-type :orgpad/map-view) " active"))]
        (list
          [:span
           {:className class-sheet
            :title "Sheet"
-           :onMouseDown #(omt/change-view-type component as-unit :orgpad/map-tuple-view) }
+           :onMouseDown #(omt/change-view-type component ac-unit-tree :orgpad/atomic-view) }
            [:i.fa.fa-file-text-o.fa-lg]]
          [:span
           {:className class-map
            :title "Map"
-           :onMouseDown #(omt/change-view-type component as-unit :orgpad/map-view) }
+           :onMouseDown #(omt/change-view-type component ac-unit-tree :orgpad/map-view) }
           [:i.fa.fa-window-restore.fa-lg]]))])
 
 (defn- add-view-buttons
-  [unit component view]
-  (let [view-type (ot/view-type unit)
+  [component unit-tree]
+  (let [view-type (ot/view-type unit-tree)
         class-notebook (str "lft-btn" (when (= view-type :orgpad/map-tuple-view) " active"))
         class-map (str "lft-btn" (when (= view-type :orgpad/map-view) " active"))]
     [:span
      [:span
       { :className class-notebook
        :title "Notebook"
-       :onMouseDown #(omt/change-view-type component unit :orgpad/map-tuple-view) }
-      [:i.fa.fa-file-text-o.fa-lg]]
+       :onMouseDown #(omt/change-view-type component unit-tree :orgpad/map-tuple-view) }
+      [:i.fa.fa-columns.fa-lg]]
      [:span
       { :className class-map
        :title "Map"
-       :onMouseDown #(omt/change-view-type component unit :orgpad/map-view) }
+       :onMouseDown #(omt/change-view-type component unit-tree :orgpad/map-view) }
       [:i.fa.fa-window-restore.fa-lg]]
      (when (= view-type :orgpad/map-tuple-view)
-      (add-notebook-manipulators unit component view))
+      (add-notebook-manipulators component unit-tree))
      [:span.lft-sep]]))
+
+(defn- node-unit-editor-toolbar
+  [component unit-tree app-state local-state]
+  [:span.toolbar
+    [:span.lft-btn
+      { :title "Link"
+        :onMouseDown (jev/make-block-propagation #(start-link local-state %))
+        :onTouchStart (jev/make-block-propagation #(start-link local-state (aget % "touches" 0)))}
+     [:i.fa.fa-link.fa-lg]]
+    [:span.lft-btn
+      { :title "Edit"
+        :onMouseDown jev/block-propagation
+        :onMouseUp (jev/make-block-propagation #(open-unit component unit-tree))}
+     [:i.fa.fa-pencil-square-o.fa-lg]]
+    [:span.lft-sep]
+    (add-view-buttons component unit-tree)
+
+    [:span.rt-btn
+      { :title "Remove"
+        :onMouseDown #(remove-unit component (ot/uid unit-tree))}
+     [:i.fa.fa-remove.fa-lg]]
+
+  ]
+)
 
 (defn- node-unit-editor-style
   [prop]
@@ -290,35 +313,11 @@
            :height (+ height (* 2 bw)) }
            (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))))
 
-(defn- node-unit-editor-toolbar
-  [unit component view app-state local-state]
-  [:span.toolbar
-    [:span.lft-btn
-      { :title "Link"
-        :onMouseDown (jev/make-block-propagation #(start-link local-state %))
-        :onTouchStart (jev/make-block-propagation #(start-link local-state (aget % "touches" 0)))}
-     [:i.fa.fa-link.fa-lg]]
-    [:span.lft-btn
-      { :title "Edit"
-        :onMouseDown jev/block-propagation
-        :onMouseUp (jev/make-block-propagation #(open-unit component unit))}
-     [:i.fa.fa-pencil-square-o.fa-lg]]
-    [:span.lft-sep]
-    (add-view-buttons unit component view)
-
-    [:span.rt-btn
-      { :title "Remove"
-        :onMouseDown #(remove-unit component (ot/uid unit))}
-     [:i.fa.fa-remove.fa-lg]]
-
-  ]
-)
-
 (defn- node-unit-editor1
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
-        [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
-    (when (and prop unit)
+        [sel-unit-tree prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
+    (when (and prop sel-unit-tree)
       (if (not= (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
         (nodes-unit-editor1 component unit-tree app-state local-state parent-view prop)
         (let [style (node-unit-editor-style prop)]
@@ -337,7 +336,7 @@
            [:span.resize-handle-bottom {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
                                  :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
                                  }]
-           (node-unit-editor-toolbar unit component view app-state local-state)]
+           (node-unit-editor-toolbar component sel-unit-tree app-state local-state)]
            (when (= (@local-state :local-mode) :make-link)
              (let [tr (parent-view :orgpad/transform)]
                (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
