@@ -715,3 +715,16 @@
                                              :orgpad/transform transf
                                              :orgpad/type :orgpad/unit-view })
                                      [:db/add parent-id :orgpad/props-refs -1]]))}))
+
+(defmethod mutate :orgpad.units/paste-to-map
+  [{:keys [state global-cache]} _ {:keys [pid data position view-name transform]}]
+  (let [pos (geom/screen->canvas transform position)
+        data' (assoc data :entities (ot/update-children-position data pos 0.5))
+        {:keys [db temp->ids]} (ot/past-descendants-to-db state pid data')]
+    (js/console.log "paste" pid position data' db)
+    (doseq [u (ot/get-paste-children-bbox data')]
+      (js/console.log "updateing bbox" u)
+      (geocache/update-box! global-cache pid view-name
+                            (-> u :uid temp->ids) (:pos u)
+                            (:size u)))
+    {:state db}))
