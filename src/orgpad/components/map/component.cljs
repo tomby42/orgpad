@@ -50,9 +50,30 @@
   (create-pair-unit component unit-tree pos)
   (.stopPropagation ev))
 
+
+(defn- copy-units-to-clipboard
+  [component unit-tree app-state]
+  (let [selection (get-in app-state [:selections (ot/uid unit-tree)])]
+    (when (and selection
+               (-> selection empty? not))
+      (lc/transact! component [[:orgpad.units/copy {:pid (ot/uid unit-tree)
+                                                    :selection selection}]]))))
+
+(defn- paste-units-from-clipbord
+  [component unit-tree app-state pos]
+  (let [data (get-in app-state [:clipboards (ot/uid unit-tree)])]
+    (when data
+      (lc/transact! component [[:orgpad.units/paste-to-map {:pid (ot/uid unit-tree)
+                                                            :data data
+                                                            :view-name (ot/view-name unit-tree)
+                                                            :transform (-> unit-tree :view :orgpad/transform)
+                                                            :position pos}]]))))
+
+
 (defn- render-local-menu1
   [component unit-tree app-state local-state-atom]
-  [:div.map-local-menu {:onMouseDown jev/block-propagation :onTouchStart jev/block-propagation }
+  [:div.map-local-menu {:onMouseDown jev/block-propagation :onTouchStart jev/block-propagation
+                        :onMouseUp jev/block-propagation}
    [:span {:className (if (= (:canvas-mode @local-state-atom) :canvas-create-unit) "active" "")
            :title "Create unit mode"
            :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-create-unit)}
@@ -65,6 +86,14 @@
            :title "Select mode"
            :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-select)}
     [:i {:className "fa fa-crop fa-lg"}]]
+   [:i "| "]
+   [:span {:title "Copy"
+           :onClick #(copy-units-to-clipboard component unit-tree app-state)}
+    [:i {:className "fa fa-copy fa-lg"}]]
+   [:span {:className (if (= (:local-mode @local-state-atom) :canvas-paste) "active" "")
+           :title "Paste"
+           :onMouseDown #(swap! local-state-atom assoc :local-mode :canvas-paste)}
+    [:i {:className "fa fa-paste fa-lg"}]]
    ])
 
 (defn handle-mouse-down
@@ -78,7 +107,9 @@
                                :selected-unit nil
                                :selected-link nil
                                :local-mode (if (= (app-state :mode) :write)
-                                             :mouse-down
+                                             (if (= (:local-mode @local-state) :canvas-paste)
+                                               :canvas-paste
+                                               :mouse-down)
                                              :canvas-move)
                                :quick-edit false })
     (lc/transact! component [[ :orgpad.units/deselect-all {:pid (ot/uid unit-tree)} ]])))
@@ -181,6 +212,7 @@
       :choose-selection (select-units-by-bb component unit-tree local-state)
       :make-links (make-links component unit-tree (-> @local-state :selected-units second)
                               [(.-clientX ev) (.-clientY ev)])
+      :canvas-paste (paste-units-from-clipbord component unit-tree app-state [(.-clientX ev) (.-clientY ev)])
       nil)
     (swap! local-state merge { :local-mode :none :local-move false })
     (js/setTimeout
@@ -332,27 +364,16 @@
   [component unit-tree ev]
   (do-create-pair-unit component unit-tree {:center-x (.-clientX ev)
                                             :center-y (.-clientY ev)} ev))
-
 (defn- handle-key-down
   [component unit-tree app-state local-state ev]
   (when (= (:mode app-state) :write)
     (when (or (.-ctrlKey ev) (.-metaKey ev))
-      (let [selection (get-in app-state [:selections (ot/uid unit-tree)])
+      (let [
             data (get-in app-state [:clipboards (ot/uid unit-tree)])]
         (case (.-code ev)
-          "KeyC" (when (and selection
-                            (-> selection empty? not))
-                   (lc/transact! component [[:orgpad.units/copy {:pid (ot/uid unit-tree)
-                                                                 :selection selection}]]))
-          "KeyV" (when data
-                   (js/console.log @local-state)
-                   (lc/transact! component [[:orgpad.units/paste-to-map {:pid (ot/uid unit-tree)
-                                                                         :data data
-                                                                         :view-name (ot/view-name unit-tree)
-                                                                         :transform (-> unit-tree :view :orgpad/transform)
-                                                                         :position [(:mouse-x @mouse-pos) (:mouse-y @mouse-pos)]}]]))
-          nil))))
-  (js/console.log ev))
+          "KeyC" (copy-units-to-clipboard component unit-tree app-state)
+          "KeyV" (paste-units-from-clipbord component unit-tree app-state [(:mouse-x @mouse-pos) (:mouse-y @mouse-pos)])
+          nil)))))
 
 (defn- render-write-mode
   [component unit-tree app-state]
