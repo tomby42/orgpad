@@ -191,22 +191,62 @@
   .map-local-menu {
       position: absolute;
       top: 0px;
-      left: 49%;
-      border: 1px solid;
-      padding: 5px;
-      & > span {
-          margin-right: 5px;
-          padding: 5px;
+      left: 0px;
+      border: 3px solid;
+	  border-color: red;
+	  font-size: 13pt;
 
+      .lft-btn {
+          float: left;
+          text-align: center;
+          width: 23px;
+          height: 23px;
+          padding: 3px;
+          display: inline-block;
+          &:hover {
+              background-color: #6df;
+          }
+          &.active {
+              background-color: #33adff;
+          }
       }
-      & > span:last-child {
-          margin-right: 0px;
+
+      .rt-btn {
+          float: right;
+          text-align: center;
+          width: 23px;
+          height: 23px;
+          padding: 3px;
+          display: block;
+          &:hover {
+              background-color: #ccc;
+          }
+          &.active {
+              background-color: #aaa;
+          }
       }
-      & > span:hover {
-          background-color: #ccc;
+
+      .lft-sep {
+          float: left;
+          background-color: red;
+          width: 3px;
+          height: 23px;
+          margin: 3px;
       }
-      & > span.active {
-          background-color: #aaa;
+
+      .rt-sep {
+          float: right;
+          background-color: red;
+          width: 2px;
+          height: 23px;
+          margin: 3px;
+      }
+
+      .lft-text {
+          float: left;
+          font-size: 12pt;
+          padding-top: 5px;
+          padding-bottom: 5px;
       }
   }
 }

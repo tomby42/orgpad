@@ -18,7 +18,7 @@
 
 (defn- open-unit
   [component {:keys [unit view]}]
-  (uedit/open-unit component
+  (otm/open-unit component
                    (ot/get-sorted-ref unit
                                       (view :orgpad/active-unit))))
 
