@@ -50,7 +50,6 @@
   (create-pair-unit component unit-tree pos)
   (.stopPropagation ev))
 
-
 (defn- copy-units-to-clipboard
   [component unit-tree app-state]
   (let [selection (get-in app-state [:selections (ot/uid unit-tree)])]
@@ -68,7 +67,6 @@
                                                             :view-name (ot/view-name unit-tree)
                                                             :transform (-> unit-tree :view :orgpad/transform)
                                                             :position pos}]]))))
-
 
 (defn- render-local-menu1
   [component unit-tree app-state local-state-atom]
