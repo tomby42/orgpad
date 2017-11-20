@@ -225,3 +225,9 @@
     {:state (store/transact state [[:selections (keypath pid)] (set (map first selected-units))])
      :response (str "Selected " cnt
                     (if (< cnt 2) " unit." " units."))}))
+
+(defmethod mutate :orgpad.units/copy
+  [{:keys [state]} _ {:keys [pid selection]}]
+  (let [data (ot/copy-descendants-from-db state pid [] selection)]
+    (js/console.log "copying " data)
+    {:state (store/transact state [[:clipboards (keypath pid)] data])}))

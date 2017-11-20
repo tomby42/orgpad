@@ -231,13 +231,20 @@
 (defn- get-roots
   [db pid selection]
   (if (nil? selection)
-    (into #{} (map (comp - :db/id) (-> db (store/query [:entity pid])) :orgpad/refs))
+    (into #{} (map (comp - :db/id) (-> db (store/query [:entity pid]) :orgpad/refs)))
     (into #{} (map -) selection)))
+
+(defn- update-refs-order
+  [update-uid refs-orders]
+  (apply sorted-set
+         (map (fn [[n uid]]
+                [n (update-uid uid)]) refs-orders)))
 
 (defn copy-descendants-from-db
   [db pid props-constraints & [selection]]
   (let [props (get-descendant-props-from-db db pid props-constraints selection)
-        units-ids (->> props (map #(or (get % 2) (get % 0))) set)]
+        units-ids (->> props (map #(or (get % 2) (get % 0))) set)
+        update-refs-order' (partial update-refs-order -)]
     {:entities
      (colls/minto
       #{}
@@ -245,12 +252,11 @@
                 (store/query [:entity %])
                 dscript/entity->map
                 (update :db/id -)
-                (update :orgpad/refs negate-db-id)
-                (update :orgpad/props-refs negate-db-id)
-                (update :orgpad/refs-order (fn [refs-orders]
-                                             (apply sorted-set
-                                                    (map (fn [[n u]]
-                                                           [n (- u)]) refs-orders))))) units-ids)
+                (as-> e
+                    (cond-> e
+                      (:orgpad/refs e) (update :orgpad/refs negate-db-id)
+                      (:orgpad/props-refs e) (update :orgpad/props-refs negate-db-id)
+                      (:orgpad/refs-order e) (update :orgpad/refs-order update-refs-order')))) units-ids)
       (map #(-> %
                 second
                 (update :db/id -)
@@ -261,27 +267,39 @@
   [db pid {:keys [entities roots]}]
   (let [db1 (store/transact db (colls/minto [] entities (map #(vector :db/add pid :orgpad/refs %) roots)))
         temp->ids (store/tempids db1)
-        db2 (store/transact db1 (into [] (comp (filter :orgpad/refs-order)
-                                               (map (fn [unit]
-                                                      [:db/add (temp->ids (:db/id unit))
-                                                       :orgpad/refs-order
-                                                       (apply sorted-set
-                                                              (map (fn [[n u]]
-                                                                     [n (temp->ids u)]) (:orgpad/refs-order unit)))])))
-                                      entities))]
-    db2))
+        ref-orders-qupdate (into [] (comp (filter :orgpad/refs-order)
+                                          (map (fn [unit]
+                                                 [:db/add (temp->ids (:db/id unit))
+                                                  :orgpad/refs-order
+                                                  (update-refs-order temp->ids (:orgpad/refs-order unit))
+                                                  ])))
+                                 entities)
+        db2 (if (empty? ref-orders-qupdate) db1 (store/transact db1 ref-orders-qupdate))]
+    {:db db2 :temp->ids temp->ids}))
+
+(defn- is-vertex-prop
+  [roots p]
+  (and (contains? roots (-> p :orgpad/refs first))
+       (contains? p :orgpad/unit-position)))
 
 (defn update-children-position
   [{:keys [entities roots]} new-pos weight]
   (let [bb (apply geom/points-bbox
                   (sequence
-                   (comp (filter #(and (contains? roots (-> % :orgpad/refs first :db/id))
-                                       (contains? % :orgpad/unit-position)))
+                   (comp (filter #(is-vertex-prop roots %))
                          (map :orgpad/unit-position))
                    entities))
         delta (-- new-pos (*c (++ (bb 0) (bb 1)) weight))]
     (map (fn [e]
-           (if (and (contains? roots (-> e :orgpad/refs first :db/id))
-                    (contains? e :orgpad/unit-position))
+           (if (is-vertex-prop roots e)
              (update e :orgpad/unit-position #(++ % delta))
              e)) entities)))
+
+(defn get-paste-children-bbox
+  [{:keys [entities roots]}]
+  (sequence
+   (comp (filter #(is-vertex-prop roots %))
+         (map #(hash-map :uid (-> % :orgpad/refs first)
+                         :pos (:orgpad/unit-position %)
+                         :size [(:orgpad/unit-width %) (:orgpad/unit-height %)])))
+   entities))

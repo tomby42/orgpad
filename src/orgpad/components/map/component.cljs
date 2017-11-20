@@ -26,6 +26,8 @@
     :link-start-x 0
     :link-start-y 0})
 
+(def ^:private mouse-pos (volatile! nil))
+
 (defn- create-pair-unit
   [component {:keys [unit view] :as unit-tree} pos]
   (lc/transact! component
@@ -271,7 +273,9 @@
       :mouse-down (try-start-selection local-state (jev/stop-propagation ev))
       :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
       :make-links (update-mouse-position local-state (jev/stop-propagation ev))
-      nil)
+      (vreset! mouse-pos {:mouse-x (.-clientX ev)
+                          :mouse-y (.-clientY ev)}))
+
     (when (not= (@local-state :local-mode) :default-mode)
       (jev/block-propagation ev))
     ))
@@ -313,12 +317,34 @@
   (do-create-pair-unit component unit-tree {:center-x (.-clientX ev)
                                             :center-y (.-clientY ev)} ev))
 
+(defn- handle-key-down
+  [component unit-tree app-state local-state ev]
+  (when (= (:mode app-state) :write)
+    (when (or (.-ctrlKey ev) (.-metaKey ev))
+      (let [selection (get-in app-state [:selections (ot/uid unit-tree)])
+            data (get-in app-state [:clipboards (ot/uid unit-tree)])]
+        (case (.-code ev)
+          "KeyC" (when (and selection
+                            (-> selection empty? not))
+                   (lc/transact! component [[:orgpad.units/copy {:pid (ot/uid unit-tree)
+                                                                 :selection selection}]]))
+          "KeyV" (when data
+                   (js/console.log @local-state)
+                   (lc/transact! component [[:orgpad.units/paste-to-map {:pid (ot/uid unit-tree)
+                                                                         :data data
+                                                                         :view-name (ot/view-name unit-tree)
+                                                                         :transform (-> unit-tree :view :orgpad/transform)
+                                                                         :position [(:mouse-x @mouse-pos) (:mouse-y @mouse-pos)]}]]))
+          nil))))
+  (js/console.log ev))
+
 (defn- render-write-mode
   [component unit-tree app-state]
   (let [local-state (trum/comp->local-state component)]
     (html
      [ :div { :className "map-view"
               :ref "component-node"
+              :tabIndex "1"
               :onMouseDown #(do
                               (handle-mouse-down component unit-tree app-state %)
                               (jev/block-propagation %))
@@ -396,11 +422,22 @@
                                        :stopPropagation (fn [] (.stopPropagation ev))
                                        :isTouch true
                                        :clientX (-> state :rum/local deref :mouse-x)
-                                       :clientY (-> state :rum/local deref :mouse-y) })))]
+                                       :clientY (-> state :rum/local deref :mouse-y) })))
+            key-down-cb
+            (fn [ev]
+              (let [component (state :rum/react-component)
+                    state' @(rum/state component)
+                    [unit-tree app-state] (state' :rum/args)]
+                (handle-key-down component unit-tree app-state (-> state :rum/local ) ev)
+                ))]
         (swap! (state :rum/local) merge { :touch-move-event-handler move-cb
-                                          :touch-end-event-handler end-cb })
+                                          :touch-end-event-handler end-cb
+                                          :key-down-event-handler key-down-cb})
         (js/document.addEventListener "touchmove" move-cb)
-        (js/document.addEventListener "touchend" end-cb))
+        (js/document.addEventListener "touchend" end-cb)
+        (js/document.addEventListener "keydown" key-down-cb)
+        )
+
 
       state)
 
@@ -408,8 +445,10 @@
     (fn [state]
       (js/document.removeEventListener "touchmove" (-> state :rum/local deref :touch-move-event-handler))
       (js/document.removeEventListener "touchend" (-> state :rum/local deref :touch-end-event-handler))
+      (js/document.removeEventListener "keydown" (-> state :rum/local deref :key-down-event-handler))
       (swap! (state :rum/local) dissoc :touch-move-event-handler)
       (swap! (state :rum/local) dissoc :touch-end-event-handler)
+      (swap! (state :rum/local) dissoc :key-down-event-handler)
       state)
    })
 
