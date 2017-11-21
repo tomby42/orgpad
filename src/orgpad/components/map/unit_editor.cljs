@@ -476,7 +476,6 @@
              [ :option (if (= s style) { :selected true } {}) s ])
            border-styles) ) ] ))
 
-
 (defn- render-props-menu1
   [params]
   [:div.map-props-toolbar {:key "prop-menu"}
