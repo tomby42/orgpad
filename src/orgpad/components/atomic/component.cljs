@@ -15,7 +15,9 @@
         args (trum/args state)]
     (when (and js/MathJax
                (= (-> args second :mode) :read))
-      (js/MathJax.Hub.Queue #js ["Typeset" js/MathJax.Hub dom-node]))))
+      (let [hub (aget js/MathJax "Hub")
+            queue (.bind (aget hub "Queue") hub)]
+        (queue #js ["Typeset" hub dom-node])))))
 
 (defn- render-write-mode
   [{:keys [unit view]} app-state]
@@ -30,8 +32,8 @@
   (atom-editor/atom-editor (unit :db/id) view (view :orgpad/atom) :inline))
 
 (defn render-read-mode
-  [{:keys [view]} app-state]
-    [ :div { :className "atomic-view" :ref "dom-node"}
+  [{:keys [view]} app-state & [no-ref?]]
+    [ :div (-> { :className "atomic-view" } (as-> x (if no-ref? x (assoc x :ref "dom-node"))))
       (when (and (view :orgpad/desc) (not= (view :orgpad/desc) ""))
         [ :div { :key 0 } (view :orgpad/desc)])
       (when (and (view :orgpad/tags) (not= (view :orgpad/tags) []))

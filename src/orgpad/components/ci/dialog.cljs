@@ -9,9 +9,10 @@
 (def ^:private component-scroll-down
   (trum/gen-update-mixin
    (fn [state]
-     (let [node (trum/ref-node state "list-node")]
+     (let [node (trum/ref-node state "list-node")
+           animate (.bind (aget node "animate") node)]
        (aset node "scrollTop" (- (aget node "scrollHeight") (aget node "clientHeight")))
-       (.animate node #js {:scrollTop (aget node "scrollHeight")})))))
+       (animate node #js {:scrollTop (aget node "scrollHeight")})))))
 
 (rum/defc msg-list < rum/static component-scroll-down
   [msgs]

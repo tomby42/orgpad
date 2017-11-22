@@ -2,7 +2,8 @@
   orgpad.tools.orgpad
   (:require [orgpad.core.store :as store]
             [orgpad.tools.dscript :as dscript]
-            [orgpad.tools.geom :as geom]))
+            [orgpad.tools.colls :as colls]
+            [orgpad.tools.geom :refer [++ -- *c] :as geom]))
 
 (defn uid
   [unit]
@@ -43,6 +44,9 @@
 (defn get-sorted-ref
   [unit idx]
   (get (sort-refs unit) idx))
+
+(defn- get-sheet-number [{ :keys [unit view]}]
+  [(-> view :orgpad/active-unit inc) (-> unit :orgpad/refs count)])
 
 (defn update-unit-view-query
   [unit-id view key val]
@@ -140,9 +144,9 @@
                         (when prop
                           (let [bw (* 2 (:orgpad/unit-border-width prop))]
                             {:bb [(:orgpad/unit-position prop)
-                                  (geom/++ (:orgpad/unit-position prop)
-                                           [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]
-                                           [bw bw])]
+                                  (++ (:orgpad/unit-position prop)
+                                      [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]
+                                      [bw bw])]
                              :id id})))
                       unit-tree selection))
 
@@ -183,6 +187,13 @@
            [uid (-> db (store/query [:entity prop-id]) dscript/entity->map)])
          children-props)))
 
+(def ^:protect prop-rules
+  '[[(prop ?e1 ?e2 ?prop)
+     [(nil? ?e2)]
+     [?e1 :orgpad/props-refs ?prop]]
+    [(prop ?e1 ?e2 ?prop)
+     [?e2 :orgpad/props-refs ?prop]]])
+
 (defn get-descendant-props-qry
   [props-constraints]
   (into '[:find ?u1 ?u2 ?prop
@@ -191,7 +202,7 @@
           [?p :orgpad/refs ?u1]
           [(?is-selected ?u1)]
           (descendant ?u1 ?u2)
-          [?u2 :orgpad/props-refs ?prop]]
+          (prop ?u1 ?u2 ?prop)]
         (map (fn [[prop-name prop-value]]
                `[~'?prop ~prop-name ~prop-value])
              props-constraints)))
@@ -200,9 +211,90 @@
   [db pid props-constraints & [selection]]
   (let [children-props (store/query db
                                     (get-descendant-props-qry props-constraints)
-                                    [rules pid (if (nil? selection)
-                                                 (constantly true)
-                                                 selection)])]
+                                    [(into rules prop-rules) pid
+                                     (if (nil? selection)
+                                       (constantly true)
+                                       selection)])]
     (map (fn [[uid1 uid2 prop-id]]
            [uid1 (-> db (store/query [:entity prop-id]) dscript/entity->map) uid2])
          children-props)))
+
+(defn- negate-db-id
+  [u]
+  (mapv (fn [v] (-> v :db/id -)) u))
+
+(defn- get-roots
+  [db pid selection]
+  (if (nil? selection)
+    (into #{} (map (comp - :db/id) (-> db (store/query [:entity pid]) :orgpad/refs)))
+    (into #{} (map -) selection)))
+
+(defn- update-refs-order
+  [update-uid refs-orders]
+  (apply sorted-set
+         (map (fn [[n uid]]
+                [n (update-uid uid)]) refs-orders)))
+
+(defn copy-descendants-from-db
+  [db pid props-constraints & [selection]]
+  (let [props (get-descendant-props-from-db db pid props-constraints selection)
+        units-ids (->> props (map #(or (get % 2) (get % 0))) set)
+        update-refs-order' (partial update-refs-order -)]
+    {:entities
+     (colls/minto
+      #{}
+      (map #(-> db
+                (store/query [:entity %])
+                dscript/entity->map
+                (update :db/id -)
+                (as-> e
+                    (cond-> e
+                      (:orgpad/refs e) (update :orgpad/refs negate-db-id)
+                      (:orgpad/props-refs e) (update :orgpad/props-refs negate-db-id)
+                      (:orgpad/refs-order e) (update :orgpad/refs-order update-refs-order')))) units-ids)
+      (map #(-> %
+                second
+                (update :db/id -)
+                (update :orgpad/refs negate-db-id)) props))
+     :roots (get-roots db pid selection)}))
+
+(defn past-descendants-to-db
+  [db pid {:keys [entities roots]}]
+  (let [db1 (store/transact db (colls/minto [] entities (map #(vector :db/add pid :orgpad/refs %) roots)))
+        temp->ids (store/tempids db1)
+        ref-orders-qupdate (into [] (comp (filter :orgpad/refs-order)
+                                          (map (fn [unit]
+                                                 [:db/add (temp->ids (:db/id unit))
+                                                  :orgpad/refs-order
+                                                  (update-refs-order temp->ids (:orgpad/refs-order unit))
+                                                  ])))
+                                 entities)
+        db2 (if (empty? ref-orders-qupdate) db1 (store/transact db1 ref-orders-qupdate))]
+    {:db db2 :temp->ids temp->ids}))
+
+(defn- is-vertex-prop
+  [roots p]
+  (and (contains? roots (-> p :orgpad/refs first))
+       (contains? p :orgpad/unit-position)))
+
+(defn update-children-position
+  [{:keys [entities roots]} new-pos weight]
+  (let [bb (apply geom/points-bbox
+                  (sequence
+                   (comp (filter #(is-vertex-prop roots %))
+                         (map :orgpad/unit-position))
+                   entities))
+        delta (-- new-pos (*c (++ (bb 0) (bb 1)) weight))]
+    (map (fn [e]
+           (if (is-vertex-prop roots e)
+             (update e :orgpad/unit-position #(++ % delta))
+             e)) entities)))
+
+(defn get-paste-children-bbox
+  [{:keys [entities roots]}]
+  (sequence
+   (comp (filter #(is-vertex-prop roots %))
+         (map #(hash-map :uid (-> % :orgpad/refs first)
+                         :pos (:orgpad/unit-position %)
+                         :size [(:orgpad/unit-width %) (:orgpad/unit-height %)])))
+   entities))

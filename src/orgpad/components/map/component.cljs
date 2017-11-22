@@ -4,7 +4,6 @@
             [sablono.core :as html :refer-macros [html]]
             [orgpad.cycle.life :as lc]
             [orgpad.components.registry :as registry]
-            [orgpad.components.menu.circle.component :as mc]
             [orgpad.components.node :as node]
             [orgpad.components.map.unit :as munit]
             [orgpad.tools.css :as css]
@@ -18,8 +17,7 @@
             [orgpad.tools.dom :as dom]))
 
 (def ^:private init-state
-  { :show-local-menu false
-    :local-mode :none
+  { :local-mode :none
     :quick-edit false
     :canvas-mode :canvas-move
     :mouse-x 0
@@ -27,34 +25,7 @@
     :link-start-x 0
     :link-start-y 0})
 
-(def ^:private menu-conf {
-  :always-open? true
-  :init-state true
-  :init-rotate -135
-  :init-scale 0.5
-  :main-spring-config #js [500 30]
-  :fly-out-radius 50
-  :base-angle 30
-  :separation-angle 50
-  :child-diam 35
-  :child-init-scale 0.2
-  :child-init-rotation -180
-  :main-diam 40
-  :offset 0.4
-  :child-class "circle-menu-child"
-  :final-child-pos-fn mc/final-child-delta-pos-rot
-  :child-spring-config #js [400 28]
-})
-
-(defn- hide-local-menu
-  [component]
-  (let [local-state (trum/comp->local-state component)]
-    (swap! local-state merge { :show-local-menu false })))
-
-(defn- show-local-menu
-  [component]
-  (let [local-state (trum/comp->local-state component)]
-    (swap! local-state merge { :show-local-menu false })))
+(def ^:private mouse-pos (volatile! nil))
 
 (defn- create-pair-unit
   [component {:keys [unit view] :as unit-tree} pos]
@@ -69,7 +40,6 @@
   [local-state-atom ev]
   (swap! local-state-atom
          merge { :local-mode :canvas-move
-                 :show-local-menu false
                  :start-mouse-x (.-clientX ev)
                  :start-mouse-y (.-clientY ev)
                  :mouse-x (.-clientX ev)
@@ -78,44 +48,30 @@
 (defn- do-create-pair-unit
   [component unit-tree pos ev]
   (create-pair-unit component unit-tree pos)
-  (hide-local-menu component)
   (.stopPropagation ev))
 
-(defn- toggle-canvas-mode
-  [local-state]
-  (swap! local-state update :canvas-mode #(if (= % :canvas-move) :canvas-select :canvas-move)))
+(defn- copy-units-to-clipboard
+  [component unit-tree app-state]
+  (let [selection (get-in app-state [:selections (ot/uid unit-tree)])]
+    (when (and selection
+               (-> selection empty? not))
+      (lc/transact! component [[:orgpad.units/copy {:pid (ot/uid unit-tree)
+                                                    :selection selection}]]))))
 
-(defn render-local-menu
-  [component unit-tree app-state local-state-atom]
-  (let [local-state @local-state-atom]
-    (when (or (local-state :show-local-menu) (= (local-state :local-mode) :canvas-move))
-      (let [pos { :center-x (local-state :mouse-x)
-                  :center-y (local-state :mouse-y) }]
-        [:div { :style { :display (if (= (local-state :local-mode) :canvas-move) "none" "block") } }
-        (mc/circle-menu (merge menu-conf pos { :onMouseDown jev/block-propagation
-                                               :onTouchStart jev/block-propagation
-                                               :onTouchEnd jev/block-propagation
-                                               :onMouseUp jev/block-propagation })
-                        [ :i { :className "fa fa-file-text-o fa-lg"
-                               :title "Create new unit"
-                               :onMouseDown #(.stopPropagation %)
-                               :onMouseUp #(do-create-pair-unit component unit-tree pos %)
-                              }
-]
-                        [ :i { :className (if (= (:canvas-mode local-state) :canvas-select) "fa fa-crop fa-lg" "fa fa-arrows fa-lg")
-                               :title (if (= (:canvas-mode local-state) :canvas-select) "Toggle to move mode" "Toggle to select mode")
-                               :onClick #(toggle-canvas-mode local-state-atom)
- } ]
-                        [ :i { :className "fa fa-plus fa-lg" :title "Zoom in" } ]
-                        [ :i { :className "fa fa-minus fa-lg" :title "Zoom out" } ]
-                        [ :i { :className "fa fa-close fa-lg"
-                               :title "Hide menu"
-                               :onMouseUp #(hide-local-menu component) } ] ) ]
-        ) )))
+(defn- paste-units-from-clipbord
+  [component unit-tree app-state pos]
+  (let [data (get-in app-state [:clipboards (ot/uid unit-tree)])]
+    (when data
+      (lc/transact! component [[:orgpad.units/paste-to-map {:pid (ot/uid unit-tree)
+                                                            :data data
+                                                            :view-name (ot/view-name unit-tree)
+                                                            :transform (-> unit-tree :view :orgpad/transform)
+                                                            :position pos}]]))))
 
 (defn- render-local-menu1
   [component unit-tree app-state local-state-atom]
-  [:div.map-local-menu {:onMouseDown jev/block-propagation}
+  [:div.map-local-menu {:onMouseDown jev/block-propagation :onTouchStart jev/block-propagation
+                        :onMouseUp jev/block-propagation}
    [:span {:className (if (= (:canvas-mode @local-state-atom) :canvas-create-unit) "active" "")
            :title "Create unit mode"
            :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-create-unit)}
@@ -128,11 +84,20 @@
            :title "Select mode"
            :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-select)}
     [:i {:className "fa fa-crop fa-lg"}]]
+   [:i "| "]
+   [:span {:title "Copy"
+           :onClick #(copy-units-to-clipboard component unit-tree app-state)}
+    [:i {:className "fa fa-copy fa-lg"}]]
+   [:span {:className (if (= (:local-mode @local-state-atom) :canvas-paste) "active" "")
+           :title "Paste"
+           :onMouseDown #(swap! local-state-atom assoc :local-mode :canvas-paste)}
+    [:i {:className "fa fa-paste fa-lg"}]]
    ])
 
 (defn handle-mouse-down
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
+    ;; (jev/block-propagation ev)
     (swap! local-state merge { :mouse-x (.-clientX ev)
                                :mouse-y (.-clientY ev)
                                :start-mouse-x (.-clientX ev)
@@ -140,10 +105,11 @@
                                :selected-unit nil
                                :selected-link nil
                                :local-mode (if (= (app-state :mode) :write)
-                                             :mouse-down
+                                             (if (= (:local-mode @local-state) :canvas-paste)
+                                               :canvas-paste
+                                               :mouse-down)
                                              :canvas-move)
-                               :quick-edit false
-                               :show-local-menu false })
+                               :quick-edit false })
     (lc/transact! component [[ :orgpad.units/deselect-all {:pid (ot/uid unit-tree)} ]])))
 
 (defn- make-link
@@ -168,8 +134,7 @@
                      :unit-id (unit :db/id)
                      :old-pos [(@local-state :start-mouse-x)
                                (@local-state :start-mouse-y)]
-                     :new-pos new-pos }]])
-  (swap! local-state merge { :show-local-menu false }))
+                     :new-pos new-pos }]]))
 
 (defn- stop-unit-move
   [component local-state new-pos]
@@ -182,6 +147,18 @@
                      :old-pos [(@local-state :start-mouse-x)
                                (@local-state :start-mouse-y)]
                      :new-pos new-pos }]])))
+
+(defn- stop-units-move
+  [component local-state new-pos]
+  (let [[unit-tree selection] (@local-state :selected-units)]
+    (lc/transact! component
+                  [[ :orgpad.units/map-view-repeat-action
+                    { :unit-tree unit-tree
+                      :selection selection
+                      :action :orgpad.units/map-view-unit-move
+                      :old-pos [(@local-state :start-mouse-x)
+                                (@local-state :start-mouse-y)]
+                      :new-pos new-pos }]])))
 
 (defn- stop-unit-resize
   [component local-state new-pos]
@@ -212,8 +189,9 @@
                      :bb bb}]])))
 
 (defn- resolve-mouse-down
-  [component unit-tree local-state pos]
-  (when (= (:canvas-mode @local-state) :canvas-create-unit)
+  [component unit-tree local-state pos ev]
+  (when (and (= (:canvas-mode @local-state) :canvas-create-unit)
+             (not (.-isTouch ev)))
     (create-pair-unit component unit-tree pos)))
 
 (defn- handle-mouse-up
@@ -221,16 +199,18 @@
   (let [local-state (trum/comp->local-state component)]
     (case (:local-mode @local-state)
       :mouse-down (resolve-mouse-down component unit-tree local-state {:center-x (.-clientX ev)
-                                                                       :center-y (.-clientY ev)})
+                                                                       :center-y (.-clientY ev)} ev)
       :canvas-move (stop-canvas-move component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
       :unit-move (stop-unit-move component local-state [(.-clientX ev) (.-clientY ev)])
       :unit-resize (stop-unit-resize component local-state [(.-clientX ev) (.-clientY ev)])
+      :units-move (stop-units-move component local-state [(.-clientX ev) (.-clientY ev)])
       :make-link (make-link component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
       :link-shape (when (= (@local-state :link-menu-show) :maybe)
                     (swap! local-state assoc :link-menu-show :yes))
       :choose-selection (select-units-by-bb component unit-tree local-state)
       :make-links (make-links component unit-tree (-> @local-state :selected-units second)
                               [(.-clientX ev) (.-clientY ev)])
+      :canvas-paste (paste-units-from-clipbord component unit-tree app-state [(.-clientX ev) (.-clientY ev)])
       nil)
     (swap! local-state merge { :local-mode :none :local-move false })
     (js/setTimeout
@@ -252,25 +232,20 @@
 
 (defn- unit-move
   [parent-view local-state ev]
-  (let [el (or (:selected-node @local-state)
-               (-> @local-state :selected-unit (get 3) rum/state deref (trum/ref-node "unit-node")))]
-    (dom/update-translate el (.-clientX ev) (.-clientY ev)
-                          (@local-state :mouse-x) (@local-state :mouse-y)
-                          (-> parent-view :orgpad/transform :scale))
+  (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)]
+    (when el
+      (dom/update-translate el (.-clientX ev) (.-clientY ev)
+                            (@local-state :mouse-x) (@local-state :mouse-y)
+                            (-> parent-view :orgpad/transform :scale)))
     (update-mouse-position local-state ev)))
 
 (defn- unit-resize
   [parent-view local-state ev]
-  (let [el (or (:selected-node @local-state)
-               (-> @local-state :selected-unit (get 3) rum/state deref (trum/ref-node "unit-node")))
-        hat-el (.querySelector el ".map-view-child.hat")]
-    (when hat-el
-      (dom/update-size hat-el (.-clientX ev) (.-clientY ev)
+  (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)]
+    (when el
+      (dom/update-size el (.-clientX ev) (.-clientY ev)
                        (@local-state :mouse-x) (@local-state :mouse-y)
                        (-> parent-view :orgpad/transform :scale)))
-    (dom/update-size el (.-clientX ev) (.-clientY ev)
-                     (@local-state :mouse-x) (@local-state :mouse-y)
-                     (-> parent-view :orgpad/transform :scale))
     (update-mouse-position local-state ev)))
 
 (defn- unit-change
@@ -321,7 +296,6 @@
   [local-state ev]
   (if (= (:canvas-mode @local-state) :canvas-select)
     (swap! local-state merge {:local-mode :choose-selection
-                              :show-local-menu false
                               :start-mouse-x (.-clientX ev)
                               :start-mouse-y (.-clientY ev)
                               :mouse-x (.-clientX ev)
@@ -339,14 +313,18 @@
       :link-shape (update-link-shape component local-state (jev/stop-propagation ev))
       :try-unit-move (do
                        (swap! local-state assoc :local-mode :unit-move :pre-quick-edit 0)
-                       (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move))
-      :units-move (units-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
+                       (unit-move (:view unit-tree) local-state (jev/stop-propagation ev)) ;; (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
+                       )
+      :units-move (unit-move (:view unit-tree) local-state (jev/stop-propagation ev)) ;; (units-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
       :mouse-down (try-start-selection local-state (jev/stop-propagation ev))
       :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
       :make-links (update-mouse-position local-state (jev/stop-propagation ev))
-      nil)
+      (vreset! mouse-pos {:mouse-x (.-clientX ev)
+                          :mouse-y (.-clientY ev)}))
+
     (when (not= (@local-state :local-mode) :default-mode)
-      (.preventDefault ev))))
+      (jev/block-propagation ev))
+    ))
 
 (defn- handle-blur
   [component unit-tree app-state ev]
@@ -366,7 +344,9 @@
   [ev]
   (let [evt (.-nativeEvent ev)]
     (if (zero? (.-detail evt))
-      (.-wheelDelta evt)
+      (if (.-wheelDelta evt)
+        (.-wheelDelta evt)
+        (js* "evt.deltaX  || evt.deltaY || evt.deltaZ"))
       (* -120 (.-detail evt)))))
 
 (defn- handle-wheel
@@ -378,23 +358,42 @@
                                :pos [(.-clientX ev) (.-clientY ev)]
                                :zoom zoom}]])))
 
+(defn- handle-double-click
+  [component unit-tree ev]
+  (do-create-pair-unit component unit-tree {:center-x (.-clientX ev)
+                                            :center-y (.-clientY ev)} ev))
+(defn- handle-key-down
+  [component unit-tree app-state local-state ev]
+  (when (= (:mode app-state) :write)
+    (when (or (.-ctrlKey ev) (.-metaKey ev))
+      (let [
+            data (get-in app-state [:clipboards (ot/uid unit-tree)])]
+        (case (.-code ev)
+          "KeyC" (copy-units-to-clipboard component unit-tree app-state)
+          "KeyV" (paste-units-from-clipbord component unit-tree app-state [(:mouse-x @mouse-pos) (:mouse-y @mouse-pos)])
+          nil)))))
+
 (defn- render-write-mode
   [component unit-tree app-state]
   (let [local-state (trum/comp->local-state component)]
     (html
      [ :div { :className "map-view"
               :ref "component-node"
+              :tabIndex "1"
               :onMouseDown #(do
                               (handle-mouse-down component unit-tree app-state %)
-                              (.stopPropagation %))
+                              (jev/block-propagation %))
               :onTouchStart #(do
                                (handle-mouse-down component unit-tree app-state (aget % "touches" 0))
-                               (.stopPropagation %))
-              :onMouseUp #(handle-mouse-up component unit-tree app-state %)
+                               (jev/block-propagation %))
+              :onMouseUp #(do
+                            (handle-mouse-up component unit-tree app-state %)
+                            (jev/block-propagation %))
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
               :onBlur #(handle-blur component unit-tree app-state %)
               :onMouseLeave #(handle-blur component unit-tree app-state %)
-              :onWheel #(handle-wheel component unit-tree app-state %) }
+              :onDoubleClick #(handle-double-click component unit-tree %)
+              :onWheel (jev/make-block-propagation #(handle-wheel component unit-tree app-state %)) }
        (munit/render-mapped-children-units component unit-tree app-state local-state)
        (render-local-menu1 component unit-tree app-state local-state)
        (when (= (:local-mode @local-state) :choose-selection)
@@ -411,15 +410,17 @@
               :ref "component-node"
               :onMouseDown #(do
                               (handle-mouse-down component unit-tree app-state %)
-                              (.stopPropagation %))
+                              (jev/block-propagation %))
               :onTouchStart #(do
                                (handle-mouse-down component unit-tree app-state (aget % "touches" 0))
-                               (.stopPropagation %))
-              :onMouseUp #(handle-mouse-up component unit-tree app-state %)
+                               (jev/block-propagation %))
+             :onMouseUp #(do
+                           (handle-mouse-up component unit-tree app-state %)
+                           (jev/block-propagation %))
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
               :onBlur #(handle-blur component unit-tree app-state %)
               :onMouseLeave #(handle-blur component unit-tree app-state %)
-              :onWheel #(handle-wheel component unit-tree app-state %) }
+              :onWheel (jev/make-block-propagation #(handle-wheel component unit-tree app-state %)) }
       (munit/render-mapped-children-units component unit-tree app-state local-state)
       (when (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
         (munit/render-selected-children-units component unit-tree app-state local-state))
@@ -454,12 +455,24 @@
                 (handle-mouse-up component unit-tree app-state
                                  #js { :preventDefault (prevent-default ev)
                                        :stopPropagation (fn [] (.stopPropagation ev))
+                                       :isTouch true
                                        :clientX (-> state :rum/local deref :mouse-x)
-                                       :clientY (-> state :rum/local deref :mouse-y) })))]
+                                       :clientY (-> state :rum/local deref :mouse-y) })))
+            key-down-cb
+            (fn [ev]
+              (let [component (state :rum/react-component)
+                    state' @(rum/state component)
+                    [unit-tree app-state] (state' :rum/args)]
+                (handle-key-down component unit-tree app-state (-> state :rum/local ) ev)
+                ))]
         (swap! (state :rum/local) merge { :touch-move-event-handler move-cb
-                                          :touch-end-event-handler end-cb })
+                                          :touch-end-event-handler end-cb
+                                          :key-down-event-handler key-down-cb})
         (js/document.addEventListener "touchmove" move-cb)
-        (js/document.addEventListener "touchend" end-cb))
+        (js/document.addEventListener "touchend" end-cb)
+        (js/document.addEventListener "keydown" key-down-cb)
+        )
+
 
       state)
 
@@ -467,8 +480,10 @@
     (fn [state]
       (js/document.removeEventListener "touchmove" (-> state :rum/local deref :touch-move-event-handler))
       (js/document.removeEventListener "touchend" (-> state :rum/local deref :touch-end-event-handler))
+      (js/document.removeEventListener "keydown" (-> state :rum/local deref :key-down-event-handler))
       (swap! (state :rum/local) dissoc :touch-move-event-handler)
       (swap! (state :rum/local) dissoc :touch-end-event-handler)
+      (swap! (state :rum/local) dissoc :key-down-event-handler)
       state)
    })
 

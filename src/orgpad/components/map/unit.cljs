@@ -76,7 +76,7 @@
 
 (defn- try-move-unit
   [component unit-tree app-state prop pcomponent local-state ev]
-  (.stopPropagation ev)
+  (jev/block-propagation ev)
   (let [old-node (:selected-node @local-state)
         new-node (-> component rum/state deref (trum/ref-node "unit-node"))
         parent-view (aget pcomponent "parent-view")
@@ -93,11 +93,10 @@
                                :local-move false
                                :selected-unit [unit-tree prop parent-view component]
                                :selected-node new-node
-                               :show-local-menu false
                                :quick-edit false
                                :pre-quick-edit (finc pre-quick-edit)
-                               :start-mouse-x (.-clientX ev)
-                               :start-mouse-y (.-clientY ev)
+                               :start-mouse-x (.-clientX (jev/touch-pos ev))
+                               :start-mouse-y (.-clientY (jev/touch-pos ev))
                                :mouse-x (.-clientX (jev/touch-pos ev))
                                :mouse-y (.-clientY (jev/touch-pos ev)) })
     (lc/transact! component [[ :orgpad.units/select {:pid (parent-id parent-view)
@@ -136,12 +135,14 @@
           :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
           :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
           ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
-          :onDoubleClick #(uedit/enable-quick-edit local-state)
+          :onDoubleClick (jev/make-block-propagation #(uedit/enable-quick-edit local-state))
+          :onWheel jev/stop-propagation
           :ref "unit-node"
          }
         { :style style :className "map-view-child" :key (unit :db/id)
           :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
           :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+          :onWheel jev/stop-propagation
           :ref "unit-node"
          })
       (node/node unit-tree
@@ -294,15 +295,15 @@
        (colls/minto [ :div { :className "map-view-canvas" :style style } ]
                     (map #(map-link-mem (% 0) (% 1) app-state component view-name pid local-state) m-links)
                     (map #(map-unit-mem % app-state component view-name pid local-state) m-units))
-       (when (= (app-state :mode) :write)
-         (uedit/unit-editor unit-tree app-state local-state)))
+       (uedit/unit-editor unit-tree app-state local-state))
       (when (= (app-state :mode) :write)
-         (uedit/unit-editor-static unit-tree app-state local-state))])))
+        (uedit/unit-editor-static unit-tree app-state local-state))])))
 
 (defn- do-move-to-unit
   [component params ev]
   (.stopPropagation ev)
   (lc/transact! component [[:orgpad.units/map-move-to-unit params]]))
+
 
 (defn- render-selected-unit
   [component app-state parent-view [uid vprop tprops]]
@@ -312,8 +313,8 @@
                                                                         :vprop (get-in vprop [0 1])
                                                                         :parent-view parent-view})}
    (map (fn [prop]
-          [:div {:key (:db/id prop)}
-           (catomic/render-read-mode {:view (prop 1)} app-state)]) tprops)])
+          [:div {:key (-> prop second :db/id)}
+           (catomic/render-read-mode {:view (prop 1)} app-state true)]) tprops)])
 
 (defn- render-selection-
   [component {:keys [view unit props]} app-state local-state]
@@ -334,4 +335,4 @@
 (defn render-selected-children-units
   [component unit-tree app-state local-state]
   (sidebar/sidebar-component :left
-                             #(render-selection component unit-tree app-state local-state)))
+                             #(render-selection- component unit-tree app-state local-state)))

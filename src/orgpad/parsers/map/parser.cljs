@@ -606,6 +606,7 @@
         selected (into #{} (comp
                             (filter #(geom/bbs-intersect? bb (:bb %)))
                             (map :id)) bbs)]
+    ;; (js/console.log (ot/uid unit-tree) (ot/copy-descendants-from-db state (ot/uid unit-tree) [] selected))
     {:state (store/transact state [[:selections (-> unit-tree ot/uid keypath)] selected])}))
 
 (defmethod mutate :orgpad.units/remove-units
@@ -669,7 +670,7 @@
         transform (:orgpad/transform parent-view)
         bb (dom/dom-bb->bb (aget global-cache parent-id "bbox"))
         [w h] (geom/-- (bb 1) (bb 0))
-        new-translate (geom/-- [(/ w 2) (/ h 2)] position)
+        new-translate (geom/-- [(/ w 2) (/ h 2)] (geom/*c position (-> transform :scale)))
         new-transformation (merge transform { :translate new-translate })]
     {:state (if (:db/id parent-view)
               (store/transact state [[:db/add (:db/id parent-view) :orgpad/transform new-transformation]])
@@ -714,3 +715,14 @@
                                              :orgpad/transform transf
                                              :orgpad/type :orgpad/unit-view })
                                      [:db/add parent-id :orgpad/props-refs -1]]))}))
+
+(defmethod mutate :orgpad.units/paste-to-map
+  [{:keys [state global-cache]} _ {:keys [pid data position view-name transform]}]
+  (let [pos (geom/screen->canvas transform position)
+        data' (assoc data :entities (ot/update-children-position data pos 0.5))
+        {:keys [db temp->ids]} (ot/past-descendants-to-db state pid data')]
+    (doseq [u (ot/get-paste-children-bbox data')]
+      (geocache/update-box! global-cache pid view-name
+                            (-> u :uid temp->ids) (:pos u)
+                            (:size u)))
+    {:state db}))

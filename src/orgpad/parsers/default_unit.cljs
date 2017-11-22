@@ -189,6 +189,7 @@
         (force-update-part (:db/id unit))
         (aget changed-datom-entities (:db/id unit))
         (some #(aget changed-datom-entities (:db/id %)) (:orgpad/props-refs unit)))))
+
 ;;; Clone of unit view
 
 (defn- clone-view
@@ -200,41 +201,42 @@
    [:db/add (unit :db/id) :orgpad/props-refs @indexer]])
 
 (defn- clone-props
-  [refs view-name view-type type indexer new-view-name]
-  (let [filter-fn (make-view-type-name-filter type view-type view-name)
+  [state uid view-name view-type type indexer new-view-name]
+  (let [props (ot/get-child-props-from-db state uid [[:orgpad/view-type view-type]
+                                                     [:orgpad/type type]
+                                                     [:orgpad/view-name view-name]])
         xform
-        (comp
-         (mapcat #(filter filter-fn (% :props)))
-         (mapcat (fn [u] [(merge u { :db/id (vswap! indexer dec)
-                                     :orgpad/refs (mapv :db/id (u :orgpad/refs))
-                                     :orgpad/view-name new-view-name })
-                          [:db/add (-> u :orgpad/refs first :db/id) :orgpad/props-refs @indexer]])))]
-    (into [] xform refs)))
+        (mapcat (fn [[id prop]]
+                  [(merge prop {:db/id (vswap! indexer dec)
+                                :orgpad/refs (mapv :db/id (:orgpad/refs prop))
+                                :orgpad/view-name new-view-name})
+                   [:db/add id :orgpad/props-refs @indexer]]))]
+    (into [] xform props)))
 
 (defn- clone-child-props
-  [info {:keys [unit view]} new-view-name indexer]
+  [state info {:keys [unit view]} new-view-name indexer]
   (if (info :orgpad/needs-children-info)
     (into []
           (mapcat
            (fn [type]
-             (clone-props (unit :orgpad/refs) (view :orgpad/view-name) type
+             (clone-props state (:db/id unit) ( :orgpad/view-name view) type
                           :orgpad/unit-view-child indexer new-view-name)))
           (info :orgpad/child-props-types))
     []))
 
 (defn- clone-propagated-child-props
-  [info {:keys [unit view]} new-view-name indexer]
+  [state info {:keys [unit view]} new-view-name indexer]
   (if (info :orgpad/needs-children-info)
-    (into []
-          (mapcat (fn [u-tree]
-                    (into []
-                          (mapcat
-                           (fn [type]
-                             (clone-props (-> u-tree :unit :orgpad/refs) (view :orgpad/view-name)
-                                          type
-                                          :orgpad/unit-view-child-propagated indexer new-view-name)))
-                          (info :orgpad/child-props-types))))
-          (unit :orgpad/refs))
+    (let [unit' (-> state (store/query [:entity (:db/id unit)]) ds/entity->map)]
+      (into []
+            (mapcat (fn [u]
+                      (into []
+                            (mapcat
+                             (fn [type]
+                               (clone-props state (:db/id u) (:orgpad/view-name view) type
+                                            :orgpad/unit-view-child-propagated indexer new-view-name)))
+                            (info :orgpad/child-props-types))))
+            (:orgpad/refs unit')))
     []))
 
 (defmethod mutate :orgpad.units/clone-view
@@ -242,8 +244,9 @@
   (let [indexer (volatile! 0)
         info (registry/get-component-info (-> unit-tree :view :orgpad/view-type))
         cloned-view (clone-view unit-tree new-view-name indexer)
-        cloned-child-props (clone-child-props info unit-tree new-view-name indexer)
-        cloned-propagated-child-props (clone-propagated-child-props info unit-tree new-view-name indexer)]
+        cloned-child-props (clone-child-props state info unit-tree new-view-name indexer)
+        cloned-propagated-child-props (clone-propagated-child-props state info unit-tree
+                                                                    new-view-name indexer)]
     (geocache/copy global-cache (ot/uid unit-tree) (-> unit-tree :view :orgpad/view-name) new-view-name)
     { :state
       (store/transact state (colls/minto cloned-view cloned-child-props cloned-propagated-child-props)) }))

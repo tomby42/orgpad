@@ -12,10 +12,12 @@
             [orgpad.tools.rum :as trum]
             [orgpad.tools.geom :as geom]
             [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.dom :as dom]
             [orgpad.components.graphics.primitives :as g]
-            [orgpad.components.menu.color.picker :as cpicker]
-            [orgpad.components.menu.direction.picker :as dpicker]))
+            [orgpad.components.map.props-editor :as pedit]
+            [goog.string :as gstring]
+            [goog.string.format]))
 
 (def ^:private padding 20)
 (def ^:private diam (- (* padding 2) 5))
@@ -63,49 +65,6 @@
                                                          :orgpad/view-path view-path } ]])))
 
 
-(defn- mouse-down-default
-  [local-state ev]
-  (swap! local-state assoc :local-mode :default-mode)
-  (.stopPropagation ev))
-
-(defn- normalize-range
-  [min max val]
-  (-> (if (= val "") "0" val)
-      js/parseInt
-      (js/Math.max min)
-      (js/Math.min max)))
-
-(defn- render-slider
-  [{:keys [component unit prop parent-view local-state max prop-name action selection]}]
-  (let [on-change
-        (if (nil? selection)
-          (fn [ev]
-            (lc/transact! component [[action
-                                      {:prop prop
-                                       :parent-view parent-view
-                                       :unit-tree unit
-                                       prop-name (normalize-range 0 max (-> ev .-target .-value)) } ]]))
-          (fn [ev]
-            (lc/transact! component [[:orgpad.units/map-view-units-change-props
-                                      {:action action
-                                       :selection selection
-                                       :unit-tree unit
-                                       :prop-name prop-name
-                                       :prop-val (normalize-range 0 max (-> ev .-target .-value)) } ]])))]
-    [ :div.slider
-     [ :input { :type "range" :min 0 :max max :step 1 :value (prop prop-name)
-                :onMouseDown (partial mouse-down-default local-state)
-                :onBlur jev/stop-propagation
-                :onChange on-change } ]
-     [ :input.val { :type "text" :value (prop prop-name)
-                    :onBlur jev/stop-propagation
-                    :onMouseDown jev/stop-propagation
-                    :onChange on-change
- } ] ] ) )
-
-(def ^:private border-styles
-  [ "none" "solid" "dotted" "dashed" "double" "groove" "ridge" "inset" "outset" ])
-
 (defn- remove-unit
   [component id]
   (lc/transact! component [[ :orgpad.units/remove-unit
@@ -125,46 +84,45 @@
 (defn- start-unit-move
   [local-state ev]
   (swap! local-state merge { :local-mode :unit-move
-                             :show-local-menu false
                              :quick-edit false
                              :pre-quick-edit 0
-                             :start-mouse-x (.-clientX ev)
-                             :start-mouse-y (.-clientY ev)
-                             :mouse-x (.-clientX ev)
-                             :mouse-y (.-clientY ev) }))
+                             :start-mouse-x (.-clientX (jev/touch-pos ev))
+                             :start-mouse-y (.-clientY (jev/touch-pos ev))
+                             :mouse-x (.-clientX (jev/touch-pos ev))
+                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
 
 (defn- start-units-move
   [unit-tree selection local-state ev]
   (swap! local-state merge { :local-mode :units-move
                              :local-move false
-                             :show-local-menu false
                              :quick-edit false
                              :pre-quick-edit (if (:pre-quick-edit @local-state)
                                                (inc (:pre-quick-edit @local-state))
                                                0)
                              :selected-units [unit-tree selection]
-                             :start-mouse-x (.-clientX ev)
-                             :start-mouse-y (.-clientY ev)
-                             :mouse-x (.-clientX ev)
-                             :mouse-y (.-clientY ev) }))
+                             :start-mouse-x (.-clientX (jev/touch-pos ev))
+                             :start-mouse-y (.-clientY (jev/touch-pos ev))
+                             :mouse-x (.-clientX (jev/touch-pos ev))
+                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
 
 
 (defn- start-unit-resize
   [local-state ev]
   (swap! local-state merge { :local-mode :unit-resize
                              :local-move false
-                             :start-mouse-x (.-clientX ev)
-                             :start-mouse-y (.-clientY ev)
-                             :mouse-x (.-clientX ev)
-                             :mouse-y (.-clientY ev) }))
+                             :start-mouse-x (.-clientX (jev/touch-pos ev))
+                             :start-mouse-y (.-clientY (jev/touch-pos ev))
+                             :mouse-x (.-clientX (jev/touch-pos ev))
+                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
 
 (defn- start-link
   [local-state ev]
   (swap! local-state merge { :local-mode :make-link
-                             :link-start-x (.-clientX ev)
-                             :link-start-y (.-clientY ev)
-                             :mouse-x (.-clientX ev)
-                             :mouse-y (.-clientY ev) }))
+                             :link-start-x (.-clientX (jev/touch-pos ev))
+                             :link-start-y (.-clientY (jev/touch-pos ev))
+                             :mouse-x (.-clientX (jev/touch-pos ev))
+                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
+
 (defn- start-links
   [unit-tree selection local-state ev]
   (start-link local-state ev)
@@ -197,27 +155,108 @@
         style (merge {:width width
                       :height height}
                      (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
-    [:div {:key "node-unit-editor"}
+    [:div {:key "node-unit-editor" :ref "unit-editor-node"}
      [:div {:className "map-view-unit-selected"
             :style style
             :key 0
             :onMouseDown (jev/make-block-propagation #(start-units-move unit-tree selection local-state %))
             :onTouchStart (jev/make-block-propagation #(start-units-move unit-tree selection local-state
                                                                          (aget % "touches" 0)))
-            :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))}
-      [:span.frame]
-      [:span.fa.fa-remove.fa-lg.rm-btn {:title "Remove"
-                                        :onMouseDown #(remove-units component (ot/uid unit-tree) selection)}]
-      [:span.fa.fa-link.fa-lg.link-handle
-       {:title "Link"
-        :onMouseDown (jev/make-block-propagation #(start-links unit-tree selection local-state %))
-        :onTouchStart (jev/make-block-propagation #(start-links unit-tree selection local-state (aget % "touches" 0)))}]]
+            ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
+            }
+        [:span.toolbar
+         [:span.lft-btn
+          {:title "Link"
+           :onMouseDown (jev/make-block-propagation #(start-links unit-tree selection local-state %))
+           :onTouchStart (jev/make-block-propagation #(start-links unit-tree selection local-state (aget % "touches" 0)))}
+          [:i.fa.fa-link.fa-lg]]
+
+         [:span.rt-btn
+          {:title "Remove"
+           :onMouseDown #(remove-units component (ot/uid unit-tree) selection)}
+          [:i.fa.fa-remove.fa-lg]]]]
 
      (when (= (@local-state :local-mode) :make-links)
        (let [tr (parent-view :orgpad/transform)]
          (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
                  (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
                  {:css {:zIndex 2}})))]))
+
+(defn add-notebook-manipulators
+  [unit view component]
+  (when (= view :orgpad/map-tuple-view)
+    [:span
+     [:span.lft-sep]
+     [:span.lft-btn
+      { :title "Previous page"
+       :onMouseDown #(omt/switch-active-sheet component unit -1) }
+      [:i.fa.fa-arrow-left.fa-lg]]
+     [:span.lft-btn
+      { :title "Next page"
+       :onMouseDown #(omt/switch-active-sheet component unit 1) }
+      [:i.fa.fa-arrow-right.fa-lg]]
+     [:span.lft-text (apply gstring/format "%d/%d" (ot/get-sheet-number unit))]
+     [:span.lft-btn
+      { :title "Add page"
+       :onMouseDown #(omt/new-sheet component unit) }
+      [:i.fa.fa-plus-circle.fa-lg]]
+     [:span.lft-btn
+      { :title "Remove page"
+       :onMouseDown #(omt/remove-active-sheet component unit) }
+      [:i.fa.fa-minus-circle.fa-lg]]]))
+
+(defn- add-view-buttons
+  [unit component]
+  (let [view (ot/view-type unit)
+        class-notebook (str "lft-btn" (when (= view :orgpad/map-tuple-view) " active"))
+        class-map (str "lft-btn" (when (= view :orgpad/map-view) " active"))]
+    [:span
+     [:span
+      { :className class-notebook
+       :title "Notebook"
+       :onMouseDown #(omt/change-view-type component unit :orgpad/map-tuple-view) }
+      [:i.fa.fa-file-text-o.fa-lg]]
+     [:span
+      { :className class-map
+       :title "Map"
+       :onMouseDown #(omt/change-view-type component unit :orgpad/map-view) }
+      [:i.fa.fa-window-restore.fa-lg]]
+     (add-notebook-manipulators unit view component)
+     [:span.lft-sep]]))
+
+(defn- node-unit-editor-style
+  [prop]
+  (let [pos (prop :orgpad/unit-position)
+        width (prop :orgpad/unit-width)
+	  	  height (prop :orgpad/unit-height)
+			  bw (prop :orgpad/unit-border-width)]
+  (merge { :width (+ width (* 2 bw))
+           :height (+ height (* 2 bw)) }
+           (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))))
+
+(defn- node-unit-editor-toolbar
+  [unit component app-state local-state]
+  [:span.toolbar
+    [:span.lft-btn
+      { :title "Link"
+        :onMouseDown (jev/make-block-propagation #(start-link local-state %))
+        :onTouchStart (jev/make-block-propagation #(start-link local-state (aget % "touches" 0)))}
+     [:i.fa.fa-link.fa-lg]]
+    [:span.lft-btn
+      { :title "Edit"
+        :onMouseDown jev/block-propagation
+        :onMouseUp (jev/make-block-propagation #(open-unit component unit))}
+     [:i.fa.fa-pencil-square-o.fa-lg]]
+    [:span.lft-sep]
+    (add-view-buttons unit component)
+
+    [:span.rt-btn
+      { :title "Remove"
+        :onMouseDown #(remove-unit component (ot/uid unit))}
+     [:i.fa.fa-remove.fa-lg]]
+
+  ]
+)
 
 (defn- node-unit-editor1
   [component {:keys [view] :as unit-tree} app-state local-state]
@@ -226,40 +265,48 @@
     (when (and prop unit)
       (if (not= (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
         (nodes-unit-editor1 component unit-tree app-state local-state parent-view prop)
-        (let [pos (prop :orgpad/unit-position)
-              width (prop :orgpad/unit-width) height (prop :orgpad/unit-height)
-              bw (prop :orgpad/unit-border-width)
-              style (merge { :width (+ width (* 2 bw))
-                             :height (+ height (* 2 bw)) }
-                           (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
-          [:div {:key "node-unit-editor"}
+        (let [style (node-unit-editor-style prop)]
+          [:div {:key "node-unit-editor" :ref "unit-editor-node"}
            [:div {:className "map-view-unit-selected"
                   :style style
                   :key 0
-                  :onDoubleClick #(enable-quick-edit local-state)
+                  :onDoubleClick (jev/make-block-propagation #(enable-quick-edit local-state))
                   :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
                   :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
-                  :onMouseUp (jev/make-block-propagation #(swap! local-state merge {:local-mode :none}))}
-            [:span.frame]
-            [:span.fa.fa-remove.fa-lg.rm-btn {:title "Remove"
-                                              :onMouseDown #(remove-unit component (ot/uid unit))}]
-            [:span.resize-handle {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
-                                  :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
-                                  :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))}]
-            [:span.fa.fa-link.fa-lg.link-handle
-             {:title "Link"
-              :onMouseDown (jev/make-block-propagation #(start-link local-state %))
-              :onTouchStart (jev/make-block-propagation #(start-link local-state (aget % "touches" 0)))}]
-            [:span.fa.fa-pencil-square-o.fa-lg.edit-btn
-             {:title "Edit"
-              :onMouseDown jev/block-propagation
-              :onMouseUp (jev/make-block-propagation #(open-unit component unit))}]]
-
+                  }
+           ; add other resize directions
+           [:span.resize-handle-corner {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
+                                 :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
+                                 }]
+           [:span.resize-handle-bottom {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
+                                 :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
+                                 }]
+           (node-unit-editor-toolbar unit component app-state local-state)]
            (when (= (@local-state :local-mode) :make-link)
              (let [tr (parent-view :orgpad/transform)]
                (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
                        (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
                        {:css {:zIndex 2} :key 1})))])))))
+
+(defn- simple-node-unit-editor
+  [component {:keys [view] :as unit-tree} app-state local-state]
+  (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
+        [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
+    (when (and prop unit)
+      (let [pos (prop :orgpad/unit-position)
+            width (prop :orgpad/unit-width) height (prop :orgpad/unit-height)
+            bw (prop :orgpad/unit-border-width)
+            style (merge {:width (+ width (* 2 bw))
+                          :height (+ height (* 2 bw))}
+                         (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
+        [:div {:key "node-unit-editor" :ref "unit-editor-node"}
+         [:div {:className "map-view-unit-selected simple"
+                :style style
+                :key 0
+                :onDoubleClick (jev/make-block-propagation #(enable-quick-edit local-state))
+                :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
+                :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
+                }]]))))
 
 (defn- close-link-menu
   [local-state]
@@ -294,104 +341,24 @@
              [:i.fa.fa-remove.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit local-state) } ]
            )])))))
 
-(rum/defcc unit-editor < lc/parser-type-mixin-context
+(defn- update-ref
+  [state]
+  (let [local-state (-> state :rum/args last)
+        new-node (trum/ref-node state "unit-editor-node")]
+    (when (and new-node
+               (not= (:unit-editor-node @local-state) new-node))
+      (swap! local-state assoc :unit-editor-node new-node))))
+
+(rum/defcc unit-editor < lc/parser-type-mixin-context (trum/gen-update-mixin update-ref)
   [component unit-tree app-state local-state]
-  (when (not (and
-              (contains? #{:unit-move :unit-resize} (:local-mode @local-state))
-              (:local-move @local-state)))
-    (let [select-unit (@local-state :selected-unit)]
+  (let [select-unit (@local-state :selected-unit)]
+    (if (= (:mode app-state) :write)
       (if select-unit
         (node-unit-editor1 component unit-tree app-state local-state)
-        (edge-unit-editor component unit-tree app-state local-state)))))
-
-(defn- render-color-picker1
-  [{:keys [component unit prop parent-view local-state selection action]}]
-  (let [color (if (= action :orgpad.units/map-view-unit-border-color)
-                (prop :orgpad/unit-border-color)
-                (prop :orgpad/unit-bg-color))
-        on-change (if (nil? selection)
-                    (fn [c]
-                      (lc/transact! component [[action {:prop prop
-                                                        :parent-view parent-view
-                                                        :unit-tree unit
-                                                        :color c}]]))
-                    (fn [c]
-                      (lc/transact! component [[:orgpad.units/map-view-units-change-props
-                                                {:selection selection
-                                                 :action action
-                                                 :unit-tree unit
-                                                 :prop-name :color
-                                                 :prop-val c}]])))]
-    [ :div.map-view-border-edit {}
-     [ :div.center (if (= action :orgpad.units/map-view-unit-border-color)
-                     "Border Color"
-                     "Background Color") ]
-     (cpicker/color-picker color {} on-change) ] ))
-
-(defn- render-border-width1
-  [{:keys [prop] :as params}]
-  [ :div.map-view-border-edit {}
-   [:div.center "Border Width"]
-   (render-slider (merge params {:max 20
-                                 :prop-name :orgpad/unit-border-width
-                                 :action :orgpad.units/map-view-unit-border-width })) ])
-
-
-(defn- render-border-radius1
-  [{:keys [prop] :as params}]
-  [ :div.map-view-border-edit {}
-   [ :div.center "Border Radius" ]
-   (render-slider (merge params
-                         {:max 50
-                          :prop-name :orgpad/unit-corner-x
-                          :action :orgpad.units/map-view-unit-border-radius }))
-   (render-slider (merge params
-                         {:max 50
-                          :prop-name :orgpad/unit-corner-y
-                          :action :orgpad.units/map-view-unit-border-radius })) ])
-
-(defn- render-border-style1
-  [{:keys [component unit prop parent-view local-state selection]}]
-  (let [style (prop :orgpad/unit-border-style)
-        on-change (if (nil? selection)
-                    (fn [ev]
-                      (lc/transact! component
-                                    [[:orgpad.units/map-view-unit-border-style
-                                      {:prop prop
-                                       :parent-view parent-view
-                                       :unit-tree unit
-                                       :orgpad/unit-border-style (-> ev .-target .-value) } ]]))
-                    (fn [ev]
-                      (lc/transact! component
-                                    [[:orgpad.units/map-view-units-change-props
-                                      {:action :orgpad.units/map-view-unit-border-style
-                                       :selection selection
-                                       :unit-tree unit
-                                       :prop-name :orgpad/unit-border-style
-                                       :prop-val (-> ev .-target .-value) } ]])))]
-    [ :div.-100.map-view-border-edit {}
-      [ :div.center "Border Style" ]
-     (into
-      [ :select.fake-center
-       { :onMouseDown (partial mouse-down-default local-state)
-         :onBlur jev/stop-propagation
-         :onChange on-change } ]
-      (map (fn [s]
-             [ :option (if (= s style) { :selected true } {}) s ])
-           border-styles) ) ] ))
-
-(defn- render-direction-picker [params]
-  (dpicker/direction-picker #(js/console.log %) :topright))
-
-(defn- render-props-menu1
-  [params]
-  [:div.map-props-toolbar {:key "prop-menu"}
-   (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-border-color))
-   (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-bg-color))
-   (render-border-width1 params)
-   (render-border-radius1 params)
-   (render-border-style1 params)
-   (render-direction-picker params)])
+        (edge-unit-editor component unit-tree app-state local-state))
+      (when (and select-unit
+                 (contains? #{:unit-move} (:local-mode @local-state)))
+        (simple-node-unit-editor component unit-tree app-state local-state)))))
 
 (defn- node-unit-editor-static
   [component {:keys [view] :as unit-tree} app-state local-state]
@@ -403,57 +370,9 @@
         (let [params {:component component :unit unit-tree :prop prop
                       :parent-view view :local-state local-state
                       :selection selection}]
-          (render-props-menu1 params))
+          (pedit/render-node-props-editor params))
         (let [params {:component component :unit unit :prop prop :parent-view view :local-state local-state}]
-          (render-props-menu1 params))))))
-
-(defn- render-link-color-picker1
-  [{:keys [component unit prop parent-view local-state]}]
-  (let [color (prop :orgpad/link-color)]
-    [ :div.map-view-border-edit {}
-     [ :div.center "Line Color" ]
-     (cpicker/color-picker color {} (fn [c]
-                                      (lc/transact! component [[ :orgpad.units/map-view-link-color
-                                                                { :prop prop
-                                                                  :parent-view parent-view
-                                                                  :unit-tree unit
-                                                                  :color c } ]]))) ] ))
-
-(defn- render-link-width1
-  [{:keys [component unit prop parent-view local-state]}]
-  [ :div.map-view-border-edit {}
-   [:div.center "Line Width"]
-   (render-slider {:component component :unit unit :prop prop
-                   :parent-view parent-view :local-state local-state
-                   :max 20
-                   :prop-name :orgpad/link-width
-                   :action :orgpad.units/map-view-line-width }) ])
-
-(defn- render-link-style1
-  [{:keys [component unit prop parent-view local-state]}]
-  [ :div.map-view-border-edit {}
-   [ :div.center "Line style" ]
-   (render-slider {:component component :unit unit
-                   :prop (assoc prop :orgpad/link-style-1
-                                (or (-> prop :orgpad/link-dash (aget 0)) 0))
-                   :parent-view parent-view :local-state local-state
-                   :max 50
-                   :prop-name :orgpad/link-style-1
-                   :action :orgpad.units/map-view-link-style })
-   (render-slider {:component component :unit unit
-                   :prop (assoc prop :orgpad/link-style-2
-                                (or (-> prop :orgpad/link-dash (aget 1)) 0))
-                   :parent-view parent-view :local-state local-state
-                   :max 50
-                   :prop-name :orgpad/link-style-2
-                   :action :orgpad.units/map-view-link-style }) ])
-
-(defn- render-edge-prop-menu
-  [params]
-  [:div.map-props-toolbar
-   (render-link-color-picker1 params)
-   (render-link-width1 params)
-   (render-link-style1 params)])
+          (pedit/render-node-props-editor params))))))
 
 (defn- edge-unit-editor-static
   [component {:keys [unit view] :as unit-tree} app-state local-state]
@@ -462,11 +381,12 @@
       (let [[old-unit old-prop _ _ _ mid-pt] select-link
             [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))
             params {:component component :unit unit :prop prop :parent-view view :local-state local-state}]
-        (render-edge-prop-menu params)))))
+        (pedit/render-edge-prop-editor params)))))
 
 (rum/defcc unit-editor-static < lc/parser-type-mixin-context
   [component unit-tree app-state local-state]
   (let [select-unit (@local-state :selected-unit)]
-    (if select-unit
-      (node-unit-editor-static component unit-tree app-state local-state)
-      (edge-unit-editor-static component unit-tree app-state local-state))))
+    [:div {:onMouseDown jev/block-propagation :onTouchStart jev/block-propagation}
+     (if select-unit
+       (node-unit-editor-static component unit-tree app-state local-state)
+       (edge-unit-editor-static component unit-tree app-state local-state))]))

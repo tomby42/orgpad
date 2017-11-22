@@ -11,30 +11,16 @@
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.rum :as trum]
-            [orgpad.tools.orgpad :as ot]))
+            [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.orgpad-manipulation :as otm]))
 
 (def ^:private CLICK-DELTA 250)
-
-(defn- new-sheet
-  [component unit-tree]
-  (lc/transact! component [[ :orgpad.units/new-sheet unit-tree ]]))
-
-(defn- switch-active-sheet
-  [component unit-tree dir]
-  (lc/transact! component [[ :orgpad.sheet/switch-active
-                            { :unit-tree unit-tree
-                              :direction dir
-                              :nof-sheets (ot/refs-count unit-tree) } ]]))
 
 (defn- open-unit
   [component {:keys [unit view]}]
   (uedit/open-unit component
                    (ot/get-sorted-ref unit
                                       (view :orgpad/active-unit))))
-
-(defn- remove-unit
-  [component unit-tree]
-  (lc/transact! component [[ :orgpad.units/remove-active-sheet-unit unit-tree ]]))
 
 (defn- render-local-menu
   [component unit-tree app-state local-state]
@@ -45,16 +31,16 @@
       [ :i { :className "fa fa-cogs fa-lg" } ] ]
      [ :div { :className (str "tools" (when (@local-state :unroll) " more-4")) }
       [ :div { :className "tools-button" :title "New sheet"
-               :onClick #(new-sheet component unit-tree) }
+               :onClick #(otm/new-sheet component unit-tree) }
        [ :i { :className "fa fa-plus-circle fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Previous"
-               :onClick #(switch-active-sheet component unit-tree -1) }
+               :onClick #(otm/switch-active-sheet component unit-tree -1) }
        [ :i { :className "fa fa-caret-left fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Next"
-               :onClick #(switch-active-sheet component unit-tree 1) }
+               :onClick #(otm/switch-active-sheet component unit-tree 1) }
        [ :i { :className "fa fa-caret-right fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Remove"
-               :onClick #(remove-unit component unit-tree) }
+               :onClick #(otm/remove-active-sheet component unit-tree) }
        [ :i { :className "fa fa-remove fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Edit" }
        [ :i { :className "fa fa-pencil-square-o fa-lg"
@@ -108,8 +94,9 @@
     [ :div { :className "map-tuple"
              :onMouseDown #(swap! local-state merge { :time-stamp (t/now) })
              :onMouseUp (fn [e]
-                          (when (< (- (t/now) (@local-state :time-stamp)) CLICK-DELTA)
-                            (switch-active-sheet component unit-tree (comp-dir e)))) }
+                          (when (and (< (- (t/now) (@local-state :time-stamp)) CLICK-DELTA)
+                                     (not= (:mode app-state) :quick-write))
+                            (otm/switch-active-sheet component unit-tree (comp-dir e)))) }
      (when child-tree
        (rum/with-key (node/node child-tree app-state) 2))
      [ :div.map-tuple-clicker-left ]

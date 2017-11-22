@@ -28,8 +28,12 @@
     (.render pal dom-node)
     (let [lid (js/goog.events.listen pal js/goog.ui.Component.EventType.ACTION
                                      (fn [e]
-                                       (let [on-change (-> component rum/state deref :rum/args (nth 2))]
-                                         (on-change (-> e .-target .getColorRgbaHex)))))]
+                                       (let [args (-> component rum/state deref :rum/args)
+                                             on-change (nth args 2)
+                                             color (nth args 0)
+                                             new-color (-> e .-target .getColorRgbaHex)]
+                                         (when (not= color new-color)
+                                           (on-change new-color)))))]
       (-> state
           (assoc :palette pal)
           (assoc :lid lid)))))

@@ -19,5 +19,5 @@
                          "fa fa-angle-right fa-lg"
                          "fa fa-angle-left fa-lg") } ] ]
     [ :div { :key "sidebar-childrens" }
-     (when @local
+     (when (and @local children)
        (html/shtml children)) ] ] ] )

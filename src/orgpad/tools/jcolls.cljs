@@ -16,13 +16,17 @@
 (defn aget-safe
   "Returns the value at the index."
   ([array i]
-   (or (cljs.core/aget array i) #js {}))
+   (if (nil? array)
+     nil
+     (or (cljs.core/aget array i) #js {})))
 
   ([array i & idxs]
-   (let [a (aget array i)]
-     (if a
-       (apply aget-safe a idxs)
-       #js {}))))
+   (if (nil? array)
+     nil
+     (let [a (aget array i)]
+       (if a
+         (apply aget-safe a idxs)
+         #js {})))))
 
 (defn aget-nil
   "Returns the value at the index."

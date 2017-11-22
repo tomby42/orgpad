@@ -21,5 +21,6 @@
 (defn make-block-propagation
   [f]
   (fn [ev]
-    (.stopPropagation ev)
+    ;; (.stopPropagation ev)
+    (block-propagation ev)
     (f ev)))
