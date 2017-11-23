@@ -9,18 +9,18 @@
 
 (defn change-view-type
   [component unit-tree view-type]
-	(lc/transact! component 
-	  [[:orgpad/root-view-conf [unit
-      { :attr :orgpad/view-type
-		 	  :value view-type }]]])
-)
+  (lc/transact! component 
+                [[:orgpad/root-view-conf [unit-tree
+                                          { :attr :orgpad/view-type
+                                           :value view-type }]]])
+  )
 
 (defn switch-active-sheet
   [component unit-tree dir]
   (lc/transact! component [[ :orgpad.sheet/switch-active
                             { :unit-tree unit-tree
                               :direction dir
-                              :nof-sheets (ot/refs-count unit) } ]]))
+                              :nof-sheets (ot/refs-count unit-tree) } ]]))
 
 (defn new-sheet
   [component unit-tree]

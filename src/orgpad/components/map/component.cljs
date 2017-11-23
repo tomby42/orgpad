@@ -6,7 +6,7 @@
             [orgpad.components.registry :as registry]
             [orgpad.components.node :as node]
             [orgpad.components.map.unit :as munit]
-			[orgpad.components.map.toolbar :as tbar]
+            [orgpad.components.map.toolbar :as tbar]
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.orgpad :as ot]
