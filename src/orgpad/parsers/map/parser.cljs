@@ -418,11 +418,12 @@
 
 ;; 'not' and 'or' is not properly supported in ds query yet
 (def ^:private parents-props-query
-  '[:find ?parent ?t
+  '[:find ?parent ?t ?i
     :in $ ?e
     :where
     [?parent :orgpad/refs ?e]
-    [?parent :orgpad/type ?t]])
+    [?parent :orgpad/type ?t]
+    [?parent :orgpad/independent ?i]])
 
 (defn- find-relative
   [db id qry]
@@ -446,7 +447,7 @@
 
 (defn- find-props
   [db id]
-  (find-parents-or-props db id (comp not parent?)))
+  (find-parents-or-props db id #(and (-> % parent? not) (-> % (get 2) not))))
 
 (def ^:private child-query
   '[:find [?child ...]

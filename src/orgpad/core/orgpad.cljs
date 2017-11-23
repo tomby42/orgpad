@@ -41,6 +41,9 @@
    :orgpad/text        {}
    :orgpad/response    {}
    :orgpad/parameters  {}
+   :orgpad/independent {}
+   :orgpad/view-style {}
+   :orgpad/style-name {}
    })
 
 (defn empty-orgpad-db

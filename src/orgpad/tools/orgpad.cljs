@@ -97,7 +97,8 @@
   (and v
        (= (v :orgpad/view-type) view-type)
        (= (v :orgpad/type) type)
-       (= (v :orgpad/view-name) view-name)))
+       (or (= (v :orgpad/view-name) view-name)
+           (= (v :orgpad/view-name) "*"))))
 
 (defn props-pred
   [ctx-unit view-name view-type type v]
@@ -120,9 +121,22 @@
        (drop-while #(not (props-pred pid view-name prop-name prop-type %)))
        first))
 
+(defn get-props-all
+  [props view-name prop-name prop-type]
+  (filter (partial props-pred-no-ctx view-name prop-name prop-type) props))
+
 (defn get-props-view-child
   [props view-name pid prop-name]
   (get-props props view-name pid prop-name :orgpad/unit-view-child))
+
+(defn get-props-view-child-all
+  [props view-name prop-name]
+  (get-props-all props view-name prop-name :orgpad/unit-view-child))
+
+(defn get-style
+  [props style-name]
+  (let [styles (get-props-view-child-all props "*" :orgpad.map-view/vertex-props-style)]
+    (->> styles (drop-while #(not= (:style-name %) style-name)) first)))
 
 (defn child-vertex-props
   [prop-fn unit-tree & [selection]]
@@ -132,8 +146,9 @@
             (map (fn [u]
                    (let [prop (-> u
                                   :props
-                                  (get-props-view-child name id :orgpad.map-view/vertex-props))]
-                     (prop-fn prop (uid u))))
+                                  (get-props-view-child name id :orgpad.map-view/vertex-props))
+                         style (get-style (:props u) (:orgpad/view-style prop))]
+                     (prop-fn (merge style prop) (uid u))))
                  (if selection
                    (filter #(contains? selection (uid %)) (refs unit-tree))
                    (refs unit-tree))))))

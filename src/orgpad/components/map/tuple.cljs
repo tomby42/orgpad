@@ -125,7 +125,7 @@
 
    :orgpad/propagate-props-from-children? true
    :orgpad/propagated-props-from-children { :orgpad.map-view/vertex-props
-                                             [:orgpad/view-type :orgpad/view-name
+                                             [:orgpad/view-type :orgpad/view-name :orgpad/view-style
                                               :orgpad/unit-width :orgpad/unit-height
                                               :orgpad/unit-border-color :orgpad/unit-bg-color
                                               :orgpad/unit-border-width :orgpad/unit-corner-x

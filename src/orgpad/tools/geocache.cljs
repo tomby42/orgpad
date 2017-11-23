@@ -100,7 +100,18 @@
       [pos size])
     [nil nil]))
 
-(defn- make-vertex-query
+(def ^:private vertex-rules
+  '[[(size ?unit ?map-prop ?w ?h)
+     [?map-prop :orgpad/unit-width ?w]
+     [?map-prop :orgpad/unit-height ?h]]
+    [(size ?unit ?map-prop ?w ?h)
+     [?unit :orgpad/refs ?style]
+     [?map-prop :orgpad/view-style ?style-name]
+     [?style :orgpad/style-name ?style-name]
+     [?style :orgpad/unit-width ?w]
+     [?style :orgpad/unit-height ?h]]])
+
+(defn- make-vertex-query-old
   [& params]
   (into []
         (concat
@@ -119,6 +130,25 @@
            [?map-prop :orgpad/unit-position ?pos]
            [?map-prop :orgpad/unit-width ?w]
            [?map-prop :orgpad/unit-height ?h]])))
+
+(defn- make-vertex-query
+  [& params]
+  (into []
+        (concat
+         '[:find]
+         (if (empty? params)
+           '[?parent ?unit ?view-name ?pos ?w ?h]
+           '[[?parent ?unit ?view-name ?pos ?w ?h]])
+         '[:in $ %] params
+         '[:where
+           [?unit :orgpad/props-refs ?map-prop]
+           [?map-prop :orgpad/refs ?unit]
+           [?map-prop :orgpad/type :orgpad/unit-view-child]
+           [?map-prop :orgpad/view-type :orgpad.map-view/vertex-props]
+           [?map-prop :orgpad/view-name ?view-name]
+           [?map-prop :orgpad/context-unit ?parent]
+           [?map-prop :orgpad/unit-position ?pos]
+           (size ?unit ?map-prop ?w ?h)])))
 
 (defn- make-link-query
   [& params]
@@ -147,7 +177,7 @@
 
 (defn rebuild!
   [global-cache db]
-  (let [vertices (store/query db vertex-all-query)
+  (let [vertices (store/query db vertex-all-query [vertex-rules])
         edges (store/query db link-all-query)
         vertices-map (into {} (map (fn [vinfo] [(subvec vinfo 0 3) vinfo])) vertices)
         parent-views (into #{} (map (fn [vinfo] [(nth vinfo 0) (nth vinfo 2)])) vertices)]
@@ -189,7 +219,7 @@
 
 (defn- get-vertex-info
   [db uid]
-  (or (store/query db vertex-unit-query [uid]) (store/query db vertex-prop-query [uid])))
+  (or (store/query db vertex-unit-query [vertex-rules uid]) (store/query db vertex-prop-query [vertex-rules uid])))
 
 (defn- get-link-info
   [db uid]
