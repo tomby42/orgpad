@@ -6,6 +6,7 @@
             [orgpad.components.registry :as registry]
             [orgpad.components.node :as node]
             [orgpad.components.map.unit :as munit]
+			[orgpad.components.map.toolbar :as tbar]
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.orgpad :as ot]
@@ -67,32 +68,6 @@
                                                             :view-name (ot/view-name unit-tree)
                                                             :transform (-> unit-tree :view :orgpad/transform)
                                                             :position pos}]]))))
-
-(defn- render-local-menu1
-  [component unit-tree app-state local-state-atom]
-  [:div.map-local-menu {:onMouseDown jev/block-propagation :onTouchStart jev/block-propagation
-                        :onMouseUp jev/block-propagation}
-   [:span {:className (if (= (:canvas-mode @local-state-atom) :canvas-create-unit) "active" "")
-           :title "Create unit mode"
-           :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-create-unit)}
-    [:i {:className "fa fa-file-text-o fa-lg "}]]
-   [:span {:className (if (= (:canvas-mode @local-state-atom) :canvas-move) "active" "")
-           :title "Move mode"
-           :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-move)}
-    [:i {:className "fa fa-arrows fa-lg"}]]
-   [:span {:className (if (= (:canvas-mode @local-state-atom) :canvas-select) "active" "")
-           :title "Select mode"
-           :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-select)}
-    [:i {:className "fa fa-crop fa-lg"}]]
-   [:i "| "]
-   [:span {:title "Copy"
-           :onClick #(copy-units-to-clipboard component unit-tree app-state)}
-    [:i {:className "fa fa-copy fa-lg"}]]
-   [:span {:className (if (= (:local-mode @local-state-atom) :canvas-paste) "active" "")
-           :title "Paste"
-           :onMouseDown #(swap! local-state-atom assoc :local-mode :canvas-paste)}
-    [:i {:className "fa fa-paste fa-lg"}]]
-   ])
 
 (defn handle-mouse-down
   [component unit-tree app-state ev]
@@ -395,7 +370,7 @@
               :onDoubleClick #(handle-double-click component unit-tree %)
               :onWheel (jev/make-block-propagation #(handle-wheel component unit-tree app-state %)) }
        (munit/render-mapped-children-units component unit-tree app-state local-state)
-       (render-local-menu1 component unit-tree app-state local-state)
+       (tbar/render-app-toolbar component unit-tree app-state local-state)
        (when (= (:local-mode @local-state) :choose-selection)
          (render-selection-box @local-state (:view unit-tree)))
       (when (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)

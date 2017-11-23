@@ -2,8 +2,8 @@
   orgpad.cycle.life
   (:require [rum.core :as rum]
             [orgpad.core.store :as store]
-            [orgpad.cycle.parser :as parser]
             [orgpad.cycle.effects :as eff]
+            [orgpad.cycle.parser :as parser]
             [orgpad.tools.jcolls :as jcolls]))
 
 (defn- bind-atom

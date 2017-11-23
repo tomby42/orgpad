@@ -45,6 +45,11 @@
   [unit idx]
   (get (sort-refs unit) idx))
 
+(defn active-child-tree
+  [unit view]
+  (let [active-child (-> view :orgpad/active-unit)]
+    (get-sorted-ref unit active-child)))
+
 (defn- get-sheet-number [{ :keys [unit view]}]
   [(-> view :orgpad/active-unit inc) (-> unit :orgpad/refs count)])
 
