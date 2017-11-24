@@ -7,7 +7,6 @@
             [orgpad.components.registry :as registry]
             [orgpad.components.menu.circle.component :as mc]
             [orgpad.components.node :as node]
-			[orgpad.components.map.toolbar :as tbar]
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.rum :as trum]
@@ -16,6 +15,7 @@
             [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.dom :as dom]
             [orgpad.components.graphics.primitives :as g]
+            [orgpad.components.menu.toolbar :as tbar]
             [orgpad.components.menu.color.picker :as cpicker]
             [goog.string :as gstring]
             [goog.string.format]))

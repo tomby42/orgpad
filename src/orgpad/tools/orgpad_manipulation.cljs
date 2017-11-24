@@ -44,6 +44,23 @@
   (lc/transact! component [[ :orgpad.units/remove-unit
                              id ]]))
 
+(defn copy-units-to-clipboard
+  [component unit-tree app-state]
+  (let [selection (get-in app-state [:selections (ot/uid unit-tree)])]
+    (when (and selection
+               (-> selection empty? not))
+      (lc/transact! component [[:orgpad.units/copy {:pid (ot/uid unit-tree)
+                                                    :selection selection}]]))))
+
+(defn paste-units-from-clipbord
+  [component unit-tree app-state pos]
+  (let [data (get-in app-state [:clipboards (ot/uid unit-tree)])]
+    (when data
+      (lc/transact! component [[:orgpad.units/paste-to-map {:pid (ot/uid unit-tree)
+                                                            :data data
+                                                            :view-name (ot/view-name unit-tree)
+                                                            :transform (-> unit-tree :view :orgpad/transform)
+                                                            :position pos}]]))))
 
 (defn open-unit
   [component { :keys [unit view path-info] }]

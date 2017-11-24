@@ -6,10 +6,11 @@
             [orgpad.components.registry :as registry]
             [orgpad.components.node :as node]
             [orgpad.components.map.unit :as munit]
-			[orgpad.components.map.toolbar :as tbar]
+            [orgpad.components.menu.toolbar :as tbar]
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.rum :as trum]
             [orgpad.tools.geom :as geom]
             [orgpad.tools.jcolls :as jcolls]
@@ -165,6 +166,7 @@
       :choose-selection (select-units-by-bb component unit-tree local-state)
       :make-links (make-links component unit-tree (-> @local-state :selected-units second)
                               [(.-clientX ev) (.-clientY ev)])
+      :canvas-paste (omt/paste-units-from-clipbord component unit-tree app-state [(.-clientX ev) (.-clientY ev)])
       nil)
     (swap! local-state merge { :local-mode :none :local-move false })
     (js/setTimeout

@@ -1,5 +1,5 @@
 (ns ^{:doc "Toolbar component"}
-  orgpad.components.map.toolbar
+  orgpad.components.menu.toolbar
   (:require-macros [orgpad.tools.colls :refer [>-]])
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
@@ -103,7 +103,7 @@
         class-create (str "lft-btn" (when (= canvas-mode :canvas-create-unit) " active"))
         class-move (str "lft-btn" (when (= canvas-mode :canvas-move) " active"))
         class-select (str "lft-btn" (when (= canvas-mode :canvas-select) " active"))]
-    (list
+    [:span
       [:span
        {:className class-create
         :title "Unit creation mode"
@@ -119,7 +119,22 @@
         :title "Selection mode"
         :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-select)}
         [:i.fa.fa-crop.fa-lg]]
-      [:span.lft-sep])))
+      [:span.lft-sep]]))
+
+(defn- render-copy-tools
+  [component unit-tree app-state local-state-atom]
+  (let [class-paste (str "lft-btn" (when (= (:local-mode @local-state-atom) :canvas-paste) " active"))]
+    [:span
+      [:span.lft-btn
+       {:title "Copy"
+        :onClick #(omt/copy-units-to-clipboard component unit-tree app-state)}
+        [:i.fa.fa-copy.fa-lg]]
+      [:span
+       {:className class-paste
+        :title "Paste"
+        :onMouseDown #(swap! local-state-atom assoc :local-mode :canvas-paste)}
+        [:i.fa.fa-paste.fa-lg]]
+      [:span.lft-sep]]))
 
 (defn render-app-toolbar
   [component unit-tree app-state local-state-atom]
@@ -127,5 +142,6 @@
    {:onMouseDown jev/block-propagation
     :onTouchStart jev/block-propagation }
     (render-map-tools local-state-atom)
+    (render-copy-tools component unit-tree app-state local-state-atom)
     (add-view-buttons component unit-tree)
     ])
