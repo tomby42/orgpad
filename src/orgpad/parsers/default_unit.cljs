@@ -41,7 +41,8 @@
           (and u
                (= (u :orgpad/view-type) view-type)
                (= (u :orgpad/type) type)
-               (= (u :orgpad/view-name) view-name))]
+               (or (= (u :orgpad/view-name) view-name)
+                   (= (u :orgpad/view-name) "*")))]
       res)))
 
 (defn- get-view-props

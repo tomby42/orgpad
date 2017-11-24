@@ -418,11 +418,12 @@
 
 ;; 'not' and 'or' is not properly supported in ds query yet
 (def ^:private parents-props-query
-  '[:find ?parent ?t
+  '[:find ?parent ?t ?i
     :in $ ?e
     :where
     [?parent :orgpad/refs ?e]
-    [?parent :orgpad/type ?t]])
+    [?parent :orgpad/type ?t]
+    [?parent :orgpad/independent ?i]])
 
 (defn- find-relative
   [db id qry]
@@ -446,7 +447,7 @@
 
 (defn- find-props
   [db id]
-  (find-parents-or-props db id (comp not parent?)))
+  (find-parents-or-props db id #(and (-> % parent? not) (-> % (get 2) not))))
 
 (def ^:private child-query
   '[:find [?child ...]
@@ -721,9 +722,7 @@
   (let [pos (geom/screen->canvas transform position)
         data' (assoc data :entities (ot/update-children-position data pos 0.5))
         {:keys [db temp->ids]} (ot/past-descendants-to-db state pid data')]
-    (js/console.log "paste" pid position data' db)
     (doseq [u (ot/get-paste-children-bbox data')]
-      (js/console.log "updateing bbox" u)
       (geocache/update-box! global-cache pid view-name
                             (-> u :uid temp->ids) (:pos u)
                             (:size u)))

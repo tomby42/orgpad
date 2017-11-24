@@ -52,6 +52,24 @@
   (create-pair-unit component unit-tree pos)
   (.stopPropagation ev))
 
+(defn- copy-units-to-clipboard
+  [component unit-tree app-state]
+  (let [selection (get-in app-state [:selections (ot/uid unit-tree)])]
+    (when (and selection
+               (-> selection empty? not))
+      (lc/transact! component [[:orgpad.units/copy {:pid (ot/uid unit-tree)
+                                                    :selection selection}]]))))
+
+(defn- paste-units-from-clipbord
+  [component unit-tree app-state pos]
+  (let [data (get-in app-state [:clipboards (ot/uid unit-tree)])]
+    (when data
+      (lc/transact! component [[:orgpad.units/paste-to-map {:pid (ot/uid unit-tree)
+                                                            :data data
+                                                            :view-name (ot/view-name unit-tree)
+                                                            :transform (-> unit-tree :view :orgpad/transform)
+                                                            :position pos}]]))))
+
 (defn handle-mouse-down
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
@@ -63,7 +81,9 @@
                                :selected-unit nil
                                :selected-link nil
                                :local-mode (if (= (app-state :mode) :write)
-                                             :mouse-down
+                                             (if (= (:local-mode @local-state) :canvas-paste)
+                                               :canvas-paste
+                                               :mouse-down)
                                              :canvas-move)
                                :quick-edit false })
     (lc/transact! component [[ :orgpad.units/deselect-all {:pid (ot/uid unit-tree)} ]])))
@@ -318,27 +338,16 @@
   [component unit-tree ev]
   (do-create-pair-unit component unit-tree {:center-x (.-clientX ev)
                                             :center-y (.-clientY ev)} ev))
-
 (defn- handle-key-down
   [component unit-tree app-state local-state ev]
   (when (= (:mode app-state) :write)
     (when (or (.-ctrlKey ev) (.-metaKey ev))
-      (let [selection (get-in app-state [:selections (ot/uid unit-tree)])
+      (let [
             data (get-in app-state [:clipboards (ot/uid unit-tree)])]
         (case (.-code ev)
-          "KeyC" (when (and selection
-                            (-> selection empty? not))
-                   (lc/transact! component [[:orgpad.units/copy {:pid (ot/uid unit-tree)
-                                                                 :selection selection}]]))
-          "KeyV" (when data
-                   (js/console.log @local-state)
-                   (lc/transact! component [[:orgpad.units/paste-to-map {:pid (ot/uid unit-tree)
-                                                                         :data data
-                                                                         :view-name (ot/view-name unit-tree)
-                                                                         :transform (-> unit-tree :view :orgpad/transform)
-                                                                         :position [(:mouse-x @mouse-pos) (:mouse-y @mouse-pos)]}]]))
-          nil))))
-  (js/console.log ev))
+          "KeyC" (copy-units-to-clipboard component unit-tree app-state)
+          "KeyV" (paste-units-from-clipbord component unit-tree app-state [(:mouse-x @mouse-pos) (:mouse-y @mouse-pos)])
+          nil)))))
 
 (defn- render-write-mode
   [component unit-tree app-state]
@@ -518,10 +527,28 @@
    :orgpad/child-default-view-info     { :orgpad/view-type :orgpad/map-tuple-view
                                          :orgpad/view-name "default" }
    :orgpad/class               map-component
-   :orgpad/child-props-types   [:orgpad.map-view/vertex-props :orgpad.map-view/link-props]
+   :orgpad/child-props-types   [:orgpad.map-view/vertex-props :orgpad.map-view/link-props
+                                :orgpad.map-view/vertex-props-style :orgpad.map-view/link-props-style]
+   :orgpad/child-props-style-types [:orgpad.map-view/vertex-props-style :orgpad.map-view/link-props-style]
    :orgpad/child-props-default { :orgpad.map-view/vertex-props
                                  { :orgpad/view-type :orgpad.map-view/vertex-props
                                    :orgpad/view-name "default"
+                                   :orgpad/view-style "default"
+                                  
+                                   :orgpad/unit-width 250
+                                   :orgpad/unit-height 60
+                                   :orgpad/unit-border-color "#009cff"
+                                   :orgpad/unit-bg-color "#ffffff"
+                                   :orgpad/unit-border-width 2
+                                   :orgpad/unit-corner-x 5
+                                   :orgpad/unit-corner-y 5
+                                   :orgpad/unit-border-style "solid" }
+
+                                :orgpad.map-view/vertex-props-style
+                                 { :orgpad/view-type :orgpad.map-view/vertex-props-style
+                                   :orgpad/independent true
+                                   :orgpad/view-name "*"
+                                   :orgpad/style-name "default"
                                    :orgpad/unit-width 250
                                    :orgpad/unit-height 60
                                    :orgpad/unit-border-color "#009cff"
@@ -534,10 +561,24 @@
                                 :orgpad.map-view/link-props
                                  { :orgpad/view-type :orgpad.map-view/link-props
                                    :orgpad/view-name "default"
+                                   :orgpad/view-style "default"
+                                  
                                    :orgpad/link-color "#000000"
                                    :orgpad/link-width 2
                                    :orgpad/link-dash #js [0 0]
-                                   :orgpad/link-mid-pt [0 0] } }
+                                   :orgpad/link-mid-pt [0 0] }
+                                
+                                :orgpad.map-view/link-props-style
+                                 { :orgpad/view-type :orgpad.map-view/link-props-style
+                                   :orgpad/view-name "*"
+                                   :orgpad/independent true
+                                   :orgpad/style-name "default"
+                                   :orgpad/link-color "#000000"
+                                   :orgpad/link-width 2
+                                   :orgpad/link-dash #js [0 0]
+                                   :orgpad/link-mid-pt [0 0] }
+                                
+                                }
    :orgpad/needs-children-info true
    :orgpad/view-name           "Map View"
    :orgpad/visible-children-picker pick-visible-children
