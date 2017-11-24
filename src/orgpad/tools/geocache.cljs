@@ -111,26 +111,6 @@
      [?style :orgpad/unit-width ?w]
      [?style :orgpad/unit-height ?h]]])
 
-(defn- make-vertex-query-old
-  [& params]
-  (into []
-        (concat
-         '[:find]
-         (if (empty? params)
-           '[?parent ?unit ?view-name ?pos ?w ?h]
-           '[[?parent ?unit ?view-name ?pos ?w ?h]])
-         '[:in $] params
-         '[:where
-           [?unit :orgpad/props-refs ?map-prop]
-           [?map-prop :orgpad/refs ?unit]
-           [?map-prop :orgpad/type :orgpad/unit-view-child]
-           [?map-prop :orgpad/view-type :orgpad.map-view/vertex-props]
-           [?map-prop :orgpad/view-name ?view-name]
-           [?map-prop :orgpad/context-unit ?parent]
-           [?map-prop :orgpad/unit-position ?pos]
-           [?map-prop :orgpad/unit-width ?w]
-           [?map-prop :orgpad/unit-height ?h]])))
-
 (defn- make-vertex-query
   [& params]
   (into []
@@ -150,6 +130,15 @@
            [?map-prop :orgpad/unit-position ?pos]
            (size ?unit ?map-prop ?w ?h)])))
 
+(def ^:private links-rules
+  '[[(mid-pt ?unit ?map-prop ?mid-pt)
+     [?map-prop :orgpad/link-mid-pt ?mid-pt]]
+    [(mid-pt ?unit ?map-prop ?mid-pt)
+     [?unit :orgpad/refs ?style]
+     [?map-prop :orgpad/view-style ?style-name]
+     [?style :orgpad/style-name ?style-name]
+     [?style :orgpad/link-mid-pt ?mid-pt]]])
+
 (defn- make-link-query
   [& params]
   (into []
@@ -158,7 +147,7 @@
          (if (empty? params)
            '[?parent ?unit ?view-name ?mid-pt ?refs-order]
            '[[?parent ?unit ?view-name ?mid-pt ?refs-order]])
-         '[:in $] params
+         '[:in $ %] params
          '[:where
            [?unit :orgpad/props-refs ?map-prop]
            [?unit :orgpad/refs-order ?refs-order]
@@ -167,7 +156,7 @@
            [?map-prop :orgpad/view-type :orgpad.map-view/link-props]
            [?map-prop :orgpad/view-name ?view-name]
            [?map-prop :orgpad/context-unit ?parent]
-           [?map-prop :orgpad/link-mid-pt ?mid-pt]])))
+           (mid-pt ?unit ?map-prop ?mid-pt)])))
 
 (def ^:private vertex-all-query
   (make-vertex-query))
@@ -178,7 +167,7 @@
 (defn rebuild!
   [global-cache db]
   (let [vertices (store/query db vertex-all-query [vertex-rules])
-        edges (store/query db link-all-query)
+        edges (store/query db link-all-query [links-rules])
         vertices-map (into {} (map (fn [vinfo] [(subvec vinfo 0 3) vinfo])) vertices)
         parent-views (into #{} (map (fn [vinfo] [(nth vinfo 0) (nth vinfo 2)])) vertices)]
     (doseq [[pid view-name] parent-views]
@@ -223,7 +212,7 @@
 
 (defn- get-link-info
   [db uid]
-  (or (store/query db link-unit-query [uid]) (store/query db link-prop-query [uid])))
+  (or (store/query db link-unit-query [links-rules uid]) (store/query db link-prop-query [links-rules uid])))
 
 (defn- get-info
   [db uid]
