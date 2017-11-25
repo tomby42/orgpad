@@ -33,14 +33,36 @@
          (when text [:span.btn-text text])])))
 
 (defn- add-test-roll-button []
-  [:span.lft-roll-btn
-   {:title "Roll test" }
-    [:i { :className "fa fa-plus-circle fa-lg fa-fw" }]
-    ;[:span.btn-icon-text "Roll button"]
-    [:i { :className "fa fa-caret-down" }]
+  [:span.lft-roll
+    [:span.lft-roll-btn
+     {:title "Roll test"
+      :onMouseDown #(js/console.log "Roll button pressed")}
+      [:i { :className "fa fa-plus-circle fa-lg fa-fw" }]
+      [:span.btn-icon-text "Roll button"]
+      [:i { :className "fa fa-caret-down" }]]
     [:span.roll-items
-      [:span.roll-item "Test"]
-      [:span.roll-item "Very long test"]
+      [:span.roll-item
+       {:title "Roll item 1"
+        :onMouseDown #(js/console.log "Roll item 1 pressed")}
+        [:i.fa.fa-columns.fa-lg.fa-fw]
+        [:span.roll-icon-label "Notebook view"]]
+      [:span.roll-item
+       {:title "Roll item 2"
+        :onMouseDown #(js/console.log "Roll item 2 pressed")}
+        [:i.fa.fa-window-restore.fa-lg.fa-fw]
+        [:span.roll-icon-label "Map view"]]
+      [:span.roll-item
+       {:title "Roll item 3"
+        :onMouseDown #(js/console.log "Roll item 3 pressed")}
+        [:span.roll-label "Very long test"]]
+      [:span.roll-item
+       {:title "Roll item 4"
+        :onMouseDown #(js/console.log "Roll item 4 pressed")}
+        [:span.roll-label "A"]]
+      [:span.roll-item
+       {:title "Roll item 5"
+        :onMouseDown #(js/console.log "Roll item 5 pressed")}
+        [:span.roll-label "B"]]
       ]])
 
 (defn- add-notebook-manipulators

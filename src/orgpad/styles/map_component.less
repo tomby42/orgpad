@@ -224,16 +224,21 @@
           padding-right: 7px;
           padding-left: 7px;
       }
-      
-      .lft-roll-btn {
+     
+      .lft-roll {
           position: relative;
           float: left;
+          display: block;
+      }
+
+      .lft-roll-btn {
+          position: relative;
           text-align: center;
           height: 23px;
+          display: block;
           padding-top: 3px;
           padding-bottom: 3px;
           padding-right: 3px;
-          display: block;
           &:hover {
               background-color: #6df;
           }
@@ -243,22 +248,35 @@
       }
 
       .roll-items {
+          display: flex;
+          flex-direction: column;
           text-align: left;
           position: absolute;
           left: 0px;
-          top: 29px;
-          background-color: #6df;
-          border: 1px;
-          border-color: black;
+          top: 31px;
+          border: 1px solid black;
           white-space: nowrap;
       }
 
       .roll-item {
-          float: left;
-          width: 100%;
-          padding-left: 3px;
-          padding-right: 3px;
+          height: 26px;
           display: inline-block;
+          &:hover {
+              background-color: #6df;
+          }
+          &.active {
+              background-color: #33adff;
+          }
+      }
+      
+      .roll-label {
+          padding-left: 7px;
+          padding-right: 7px;
+      }
+      
+      .roll-icon-label {
+          padding-left: 3px;
+          padding-right: 7px;
       }
 
       .rt-btn {
