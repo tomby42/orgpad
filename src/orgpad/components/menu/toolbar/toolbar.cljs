@@ -32,38 +32,50 @@
          :onMouseDown on-mouse-down }
          (when text [:span.btn-text text])])))
 
-(defn- add-test-roll-button []
+(defn- toggle-open-state
+  [open clicked-roll]
+  (if (= open clicked-roll) nil clicked-roll))
+
+(defn- close-roll
+  [open f]
+  (reset! open nil)
+  (js/console.log (pr-str f))
+  f)
+
+(defn- add-test-roll-button
+  [open]
   [:span.lft-roll
     [:span.lft-roll-btn
      {:title "Roll test"
-      :onMouseDown #(js/console.log "Roll button pressed")}
+      :onMouseDown (jev/make-block-propagation #(swap! open toggle-open-state :test))}
       [:i { :className "fa fa-plus-circle fa-lg fa-fw" }]
       [:span.btn-icon-text "Roll button"]
       [:i { :className "fa fa-caret-down" }]]
-    [:span.roll-items
-      [:span.roll-item
-       {:title "Roll item 1"
-        :onMouseDown #(js/console.log "Roll item 1 pressed")}
-        [:i.fa.fa-columns.fa-lg.fa-fw]
-        [:span.roll-icon-label "Notebook view"]]
-      [:span.roll-item
-       {:title "Roll item 2"
-        :onMouseDown #(js/console.log "Roll item 2 pressed")}
-        [:i.fa.fa-window-restore.fa-lg.fa-fw]
-        [:span.roll-icon-label "Map view"]]
-      [:span.roll-item
-       {:title "Roll item 3"
-        :onMouseDown #(js/console.log "Roll item 3 pressed")}
-        [:span.roll-label "Very long test"]]
-      [:span.roll-item
-       {:title "Roll item 4"
-        :onMouseDown #(js/console.log "Roll item 4 pressed")}
-        [:span.roll-label "A"]]
-      [:span.roll-item
-       {:title "Roll item 5"
-        :onMouseDown #(js/console.log "Roll item 5 pressed")}
-        [:span.roll-label "B"]]
-      ]])
+    (when (= @open :test)
+      [:span.roll-items
+        [:span.roll-item
+         {:title "Roll item 1"
+          :onMouseDown #(close-roll open (fn [] js/console.log "Roll item 1 pressed"))}
+          [:i.fa.fa-columns.fa-lg.fa-fw]
+          [:span.roll-icon-label "Notebook view"]]
+        [:span.roll-item
+         {:title "Roll item 2"
+          :onMouseDown #(js/console.log "Roll item 2 pressed")}
+          [:i.fa.fa-window-restore.fa-lg.fa-fw]
+          [:span.roll-icon-label "Map view"]]
+        [:span.roll-item
+         {:title "Roll item 3"
+          :onMouseDown #(js/console.log "Roll item 3 pressed")}
+          [:span.roll-label "Very long test"]]
+        [:span.roll-item
+         {:title "Roll item 4"
+          :onMouseDown #(js/console.log "Roll item 4 pressed")}
+          [:span.roll-label "A"]]
+        [:span.roll-item
+         {:title "Roll item 5"
+          :onMouseDown #(js/console.log "Roll item 5 pressed")}
+          [:span.roll-label "B"]]
+        ])])
 
 (defn- add-notebook-manipulators
   [component {:keys [unit view] :as unit-tree}]
@@ -182,6 +194,12 @@
         [:i.fa.fa-paste.fa-lg.fa-fw]]
       [:span.lft-sep]]))
 
+(rum/defcs app-toolbar < (rum/local nil ::open)
+  [toolbar-state component unit-tree app-state local-state-atom]
+  (let [ open (::open toolbar-state) ]
+    (add-test-roll-button open)
+  ))
+
 (defn render-app-toolbar
   [component unit-tree app-state local-state-atom]
   [:div.map-local-menu
@@ -193,5 +211,4 @@
     (add-left-button "Test" "fa-plus" "Another test" #(js/console.log "Test") true )
     (add-left-button "Test" "fa-chevron-right" nil #(js/console.log "Test") nil)
     (add-left-button "Test" nil "Just text" #(js/console.log "Test") true )
-    (add-test-roll-button)
-    ])
+    (app-toolbar component unit-tree app-state local-state-atom)])
