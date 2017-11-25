@@ -54,7 +54,7 @@
       .toolbar {
           position: absolute;
           width: 100%;
-          min-width: 263px;
+          min-width: 325px;
           height: 24px;
           top: -28px;
           left: -2px;
@@ -66,9 +66,9 @@
       .lft-btn {
           float: left;
           text-align: center;
-          width: 18px;
           height: 18px;
-          padding: 3px;
+          padding-top: 3px;
+          padding-bottom: 3px;
           display: inline-block;
           &:hover {
               background-color: #6df;
@@ -81,15 +81,15 @@
       .rt-btn {
           float: right;
           text-align: center;
-          width: 18px;
           height: 18px;
-          padding: 3px;
+          padding-top: 3px;
+          padding-bottom: 3px;
           display: block;
           &:hover {
-              background-color: #ccc;
+              background-color: #6df;
           }
           &.active {
-              background-color: #aaa;
+              background-color: #33adff;
           }
       }
 
@@ -199,9 +199,9 @@
       .lft-btn {
           float: left;
           text-align: center;
-          width: 23px;
           height: 23px;
-          padding: 3px;
+          padding-top: 3px;
+          padding-bottom: 3px;
           display: inline-block;
           &:hover {
               background-color: #6df;
@@ -209,6 +209,56 @@
           &.active {
               background-color: #33adff;
           }
+      }
+      
+      .btn-icon-text {
+          text-align: left;
+          padding-top: 3px;
+          padding-right: 7px;
+          padding-left: 3px;
+      }
+      
+      .btn-text {
+          text-align: left;
+          padding-top: 3px;
+          padding-right: 7px;
+          padding-left: 7px;
+      }
+      
+      .lft-roll-btn {
+          position: relative;
+          float: left;
+          text-align: center;
+          height: 23px;
+          padding-top: 3px;
+          padding-bottom: 3px;
+          padding-right: 3px;
+          display: block;
+          &:hover {
+              background-color: #6df;
+          }
+          &.active {
+              background-color: #33adff;
+          }
+      }
+
+      .roll-items {
+          text-align: left;
+          position: absolute;
+          left: 0px;
+          top: 29px;
+          background-color: #6df;
+          border: 1px;
+          border-color: black;
+          white-space: nowrap;
+      }
+
+      .roll-item {
+          float: left;
+          width: 100%;
+          padding-left: 3px;
+          padding-right: 3px;
+          display: inline-block;
       }
 
       .rt-btn {
