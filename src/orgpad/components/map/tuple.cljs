@@ -28,22 +28,22 @@
    [ :div { :className "map-tuple-menu" }
     [ :div { :className "tools-menu" :title "Actions" }
      [ :div { :className "tools-button" :onClick #(swap! local-state update-in [:unroll] not) }
-      [ :i { :className "fa fa-cogs fa-lg" } ] ]
+      [ :i { :className "far fa-cogs fa-lg" } ] ]
      [ :div { :className (str "tools" (when (@local-state :unroll) " more-4")) }
       [ :div { :className "tools-button" :title "New sheet"
                :onClick #(otm/new-sheet component unit-tree) }
-       [ :i { :className "fa fa-plus-circle fa-lg" } ] ]
+       [ :i { :className "far fa-plus-circle fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Previous"
                :onClick #(otm/switch-active-sheet component unit-tree -1) }
-       [ :i { :className "fa fa-caret-left fa-lg" } ] ]
+       [ :i { :className "far fa-caret-left fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Next"
                :onClick #(otm/switch-active-sheet component unit-tree 1) }
-       [ :i { :className "fa fa-caret-right fa-lg" } ] ]
+       [ :i { :className "far fa-caret-right fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Remove"
                :onClick #(otm/remove-active-sheet component unit-tree) }
-       [ :i { :className "fa fa-remove fa-lg" } ] ]
+       [ :i { :className "far fa-times fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Edit" }
-       [ :i { :className "fa fa-pencil-square-o fa-lg"
+       [ :i { :className "far fa-file-edit fa-lg"
               :onClick #(open-unit component unit-tree)
              } ] ]
       ]

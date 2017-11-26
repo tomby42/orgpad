@@ -187,12 +187,12 @@
           {:title "Link"
            :onMouseDown (jev/make-block-propagation #(start-links unit-tree selection local-state %))
            :onTouchStart (jev/make-block-propagation #(start-links unit-tree selection local-state (aget % "touches" 0)))}
-          [:i.fa.fa-link.fa-lg]]
+          [:i.far.fa-link.fa-lg]]
 
          [:span.rt-btn
           {:title "Remove"
            :onMouseDown #(remove-units component (ot/uid unit-tree) selection)}
-          [:i.fa.fa-remove.fa-lg]]]]
+          [:i.far.fa-remove.fa-lg]]]]
 
      (when (= (@local-state :local-mode) :make-links)
        (let [tr (parent-view :orgpad/transform)]
@@ -285,12 +285,12 @@
                                      :onMouseDown jev/block-propagation
                                      ;; :onMouseUp jev/block-propagation
                                     })
-             [:i.fa.fa-cogs.fa-lg { :title "Properties" :onMouseDown #(close-link-menu local-state) } ]
-             [:i.fa.fa-pencil-square-o.fa-lg
+             [:i.far.fa-cogs.fa-lg { :title "Properties" :onMouseDown #(close-link-menu local-state) } ]
+             [:i.far.fa-file-edit.fa-lg
               {:title "Edit"
                :onMouseUp #(omt/open-unit component (assoc-in unit [:view :orgpad/view-type] :orgpad/atomic-view))
                } ]
-             [:i.fa.fa-remove.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit local-state) } ]
+             [:i.far.fa-times.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit local-state) } ]
            )])))))
 
 (defn- update-ref

@@ -16,21 +16,50 @@
             [goog.string :as gstring]
             [goog.string.format]))
 
-(defn- add-left-button
-  [title icon text on-mouse-down active]
-  (let [button-class (str "lft-btn" (when active " active"))]
+;; input format for toolbar
+;; two lists, one for left-aligned buttons, one for right-aligned buttons
+;;
+;; each list contains one element for each group of buttons
+;;
+;; each group of buttons is represented by a nested list
+;;
+;; each button is represented by the following map
+;;  {:type (:btn|:roll) 
+;;   :key             ...   identificator
+;;   :title           ...   tooltip hint
+;;   :icon            ...   font-awesome style name or nil for no icon
+;;   :label           ...   displayed label or nil for no label
+;;   :on-mouse-down   ...   function on mouse down
+;;   :active          ...   should button be active
+;;
+;;   for :roll only
+;;   :roll-items      ...   list of all roll items
+;;  }
+;;
+;; each roll item is represented by the following map
+;;  {:key             ...   identificator
+;;   :title           ...   tooltip hint
+;;   :icon            ...   font-awesome style name or nil for no icon
+;;   :label           ...   displayed label or nil for no label
+;;   :on-mouse-down   ...   function on mouse down
+;;   :active          ...   should button be active
+;;  }
+
+(defn- gen-button
+  [alignment title icon label on-mouse-down active]
+  (let [button-class (str (if (= alignment :left) "lft-btn" "rt-btn") (when active " active"))]
     (if icon
       [:span
         {:className button-class
          :title title
          :onMouseDown on-mouse-down }
          [:i { :className (str "fa " icon " fa-lg fa-fw") }]
-         (when text [:span.btn-icon-text text])]
+         (when label [:span.btn-icon-label label])]
       [:span
         {:className button-class
          :title title
          :onMouseDown on-mouse-down }
-         (when text [:span.btn-text text])])))
+         (when label [:span.btn-label label])])))
 
 (defn- toggle-open-state
   [open clicked-roll]
@@ -39,8 +68,7 @@
 (defn- close-roll
   [open f]
   (reset! open nil)
-  (js/console.log (pr-str f))
-  f)
+  (f))
 
 (defn- add-test-roll-button
   [open]
@@ -55,7 +83,7 @@
       [:span.roll-items
         [:span.roll-item
          {:title "Roll item 1"
-          :onMouseDown #(close-roll open (fn [] js/console.log "Roll item 1 pressed"))}
+          :onMouseDown #(close-roll open (fn [] (js/console.log "Roll item 1 pressed")))}
           [:i.fa.fa-columns.fa-lg.fa-fw]
           [:span.roll-icon-label "Notebook view"]]
         [:span.roll-item
@@ -208,7 +236,7 @@
     (render-map-tools local-state-atom)
     (render-copy-tools component unit-tree app-state local-state-atom)
     (add-view-buttons component unit-tree)
-    (add-left-button "Test" "fa-plus" "Another test" #(js/console.log "Test") true )
-    (add-left-button "Test" "fa-chevron-right" nil #(js/console.log "Test") nil)
-    (add-left-button "Test" nil "Just text" #(js/console.log "Test") true )
+    (gen-button :left "Test" "fa-plus" "Another test" #(js/console.log "Test") true )
+    (gen-button :left "Test" "fa-chevron-right" nil #(js/console.log "Test") nil)
+    (gen-button :left "Test" nil "Just text" #(js/console.log "Test") true )
     (app-toolbar component unit-tree app-state local-state-atom)])

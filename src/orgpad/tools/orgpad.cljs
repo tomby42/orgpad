@@ -139,9 +139,15 @@
   (get-props-all props view-name prop-name :orgpad/unit-view-child))
 
 (defn get-style
-  [props style-name]
-  (let [styles (get-props-view-child-all props "*" :orgpad.map-view/vertex-props-style)]
+  [props style-name style-type]
+  (let [styles (get-props-view-child-all props "*" style-type)]
     (->> styles (drop-while #(not= (:style-name %) style-name)) first)))
+
+(defn get-props-view-child-styled
+  [props view-name pid prop-name style-type]
+  (let [prop (get-props-view-child props view-name pid prop-name)
+        style (get-style props (:orgpad/view-style prop) style-type)]
+    (merge style prop)))
 
 (defn child-vertex-props
   [prop-fn unit-tree & [selection]]
@@ -151,9 +157,10 @@
             (map (fn [u]
                    (let [prop (-> u
                                   :props
-                                  (get-props-view-child name id :orgpad.map-view/vertex-props))
-                         style (get-style (:props u) (:orgpad/view-style prop))]
-                     (prop-fn (merge style prop) (uid u))))
+                                  (get-props-view-child-styled name id
+                                                               :orgpad.map-view/vertex-props
+                                                               :orgpad.map-view/vertex-props-style))]
+                     (prop-fn prop (uid u))))
                  (if selection
                    (filter #(contains? selection (uid %)) (refs unit-tree))
                    (refs unit-tree))))))
