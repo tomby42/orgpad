@@ -78,7 +78,7 @@
    [ :span { :className (str "menu-header " (styles :header))
              :onClick #(js/setTimeout (fn [] (swap! local-state update menu-key not)) 100) }
     [ :span (str label " ")
-     [ :i {:className (str "fa " (if (@local-state menu-key) "fa-caret-up" "fa-caret-down")) }] ] ]
+     [ :i {:className (str "far " (if (@local-state menu-key) "fa-caret-up" "fa-caret-down")) }] ] ]
    (into
     [ :ul { :className (str "menu-body " (styles :body) " " (when (@local-state menu-key) (styles :open))) } ]
     (map (fn [item] [ :li item ]) items)) ])
@@ -92,7 +92,7 @@
                                           :open "open-view" }
         [ :div { :className "view-name" }
          (render-view-names component unit-tree local-state)
-         [ :span { :className "fa fa-plus-circle view-name-add"
+         [ :span { :className "far fa-plus-circle view-name-add"
                    :title "New view"
                    :onClick #(lc/transact! component
                                            [[:orgpad/root-new-view [unit-tree
@@ -191,7 +191,7 @@
                 :onClick #(js/setTimeout
                            (fn []
                              (swap! local-state update-in [:unroll] not)) 100) }
-        [ :i { :className "fa fa-navicon fa-lg" } ] ]
+        [ :i { :className "far fa-bars fa-lg" } ] ]
        [ :div { :className (str "tools" (when (@local-state :unroll) " more-current")) }
         (render-file-menu component unit-tree local-state)
         (render-edit-menu component unit-tree local-state)
@@ -208,7 +208,7 @@
                           component
                           [[:orgpad/app-state
                             [[:mode] (next-mode (:mode app-state))]]]) }
-       [ :i { :className (str "fa "  (mode-icons (:mode app-state)) " fa-lg") } ] ]
+       [ :i { :className (str "far "  (mode-icons (:mode app-state)) " fa-lg") } ] ]
 
 
       (when (not= id 0)
@@ -220,4 +220,4 @@
                                                         :orgpad/view-name (view :orgpad/view-name)
                                                         :orgpad/view-type (view :orgpad/view-type)
                                                         :orgpad/view-path (path-info :orgpad/view-path) }]])}
-         [ :i { :className "fa fa-check-circle-o fa-lg" } ] ] ) ] ] ) )
+         [ :i { :className "far fa-check-circle fa-lg" } ] ] ) ] ] ) )

@@ -209,12 +209,12 @@
           {:title "Link"
            :onMouseDown (jev/make-block-propagation #(start-links unit-tree selection local-state %))
            :onTouchStart (jev/make-block-propagation #(start-links unit-tree selection local-state (aget % "touches" 0)))}
-          [:i.fa.fa-link.fa-lg]]
+          [:i.far.fa-link.fa-lg]]
 
          [:span.rt-btn
           {:title "Remove"
            :onMouseDown #(remove-units component (ot/uid unit-tree) selection)}
-          [:i.fa.fa-remove.fa-lg]]]]
+          [:i.far.fa-remove.fa-lg]]]]
 
      (when (= (@local-state :local-mode) :make-links)
        (let [tr (parent-view :orgpad/transform)]
@@ -230,20 +230,20 @@
      [:span.lft-btn
       { :title "Previous page"
        :onMouseDown #(omt/switch-active-sheet component unit -1) }
-      [:i.fa.fa-arrow-left.fa-lg]]
+      [:i.far.fa-arrow-left.fa-lg]]
      [:span.lft-btn
       { :title "Next page"
        :onMouseDown #(omt/switch-active-sheet component unit 1) }
-      [:i.fa.fa-arrow-right.fa-lg]]
+      [:i.far.fa-arrow-right.fa-lg]]
      [:span.lft-text (apply gstring/format "%d/%d" (ot/get-sheet-number unit))]
      [:span.lft-btn
       { :title "Add page"
        :onMouseDown #(omt/new-sheet component unit) }
-      [:i.fa.fa-plus-circle.fa-lg]]
+      [:i.far.fa-plus-circle.fa-lg]]
      [:span.lft-btn
       { :title "Remove page"
        :onMouseDown #(omt/remove-active-sheet component unit) }
-      [:i.fa.fa-minus-circle.fa-lg]]]))
+      [:i.far.fa-minus-circle.fa-lg]]]))
 
 (defn- add-view-buttons
   [unit component]
@@ -255,12 +255,12 @@
       { :className class-notebook
        :title "Notebook"
        :onMouseDown #(omt/change-view-type component unit :orgpad/map-tuple-view) }
-      [:i.fa.fa-file-text-o.fa-lg]]
+      [:i.far.fa-file-alt.fa-lg]]
      [:span
       { :className class-map
        :title "Map"
        :onMouseDown #(omt/change-view-type component unit :orgpad/map-view) }
-      [:i.fa.fa-window-restore.fa-lg]]
+      [:i.far.fa-window-restore.fa-lg]]
      (add-notebook-manipulators unit view component)
      [:span.lft-sep]]))
 
@@ -281,19 +281,19 @@
       { :title "Link"
         :onMouseDown (jev/make-block-propagation #(start-link local-state %))
         :onTouchStart (jev/make-block-propagation #(start-link local-state (aget % "touches" 0)))}
-     [:i.fa.fa-link.fa-lg]]
+     [:i.far.fa-link.fa-lg]]
     [:span.lft-btn
       { :title "Edit"
         :onMouseDown jev/block-propagation
         :onMouseUp (jev/make-block-propagation #(open-unit component unit))}
-     [:i.fa.fa-pencil-square-o.fa-lg]]
+     [:i.far.fa-file-edit.fa-lg]]
     [:span.lft-sep]
     (add-view-buttons unit component)
 
     [:span.rt-btn
       { :title "Remove"
         :onMouseDown #(remove-unit component (ot/uid unit))}
-     [:i.fa.fa-remove.fa-lg]]
+     [:i.far.fa-times.fa-lg]]
 
   ]
 )
@@ -373,12 +373,12 @@
                                      :onMouseDown jev/block-propagation
                                      ;; :onMouseUp jev/block-propagation
                                     })
-             [:i.fa.fa-cogs.fa-lg { :title "Properties" :onMouseDown #(close-link-menu local-state) } ]
-             [:i.fa.fa-pencil-square-o.fa-lg
+             [:i.far.fa-cogs.fa-lg { :title "Properties" :onMouseDown #(close-link-menu local-state) } ]
+             [:i.far.fa-file-edit.fa-lg
               {:title "Edit"
                :onMouseUp #(open-unit component (assoc-in unit [:view :orgpad/view-type] :orgpad/atomic-view))
                } ]
-             [:i.fa.fa-remove.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit local-state) } ]
+             [:i.far.fa-times.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit local-state) } ]
            )])))))
 
 (defn- update-ref

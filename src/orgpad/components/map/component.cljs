@@ -75,23 +75,23 @@
    [:span {:className (if (= (:canvas-mode @local-state-atom) :canvas-create-unit) "active" "")
            :title "Create unit mode"
            :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-create-unit)}
-    [:i {:className "fa fa-file-text-o fa-lg "}]]
+    [:i {:className "far fa-file-alt fa-lg "}]]
    [:span {:className (if (= (:canvas-mode @local-state-atom) :canvas-move) "active" "")
            :title "Move mode"
            :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-move)}
-    [:i {:className "fa fa-arrows fa-lg"}]]
+    [:i {:className "far fa-arrows fa-lg"}]]
    [:span {:className (if (= (:canvas-mode @local-state-atom) :canvas-select) "active" "")
            :title "Select mode"
            :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-select)}
-    [:i {:className "fa fa-crop fa-lg"}]]
+    [:i {:className "far fa-crop fa-lg"}]]
    [:i "| "]
    [:span {:title "Copy"
            :onClick #(copy-units-to-clipboard component unit-tree app-state)}
-    [:i {:className "fa fa-copy fa-lg"}]]
+    [:i {:className "far fa-copy fa-lg"}]]
    [:span {:className (if (= (:local-mode @local-state-atom) :canvas-paste) "active" "")
            :title "Paste"
            :onMouseDown #(swap! local-state-atom assoc :local-mode :canvas-paste)}
-    [:i {:className "fa fa-paste fa-lg"}]]
+    [:i {:className "far fa-paste fa-lg"}]]
    ])
 
 (defn handle-mouse-down
