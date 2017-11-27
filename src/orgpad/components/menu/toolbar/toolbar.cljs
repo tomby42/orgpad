@@ -187,7 +187,7 @@
 
 (defn render-unit-editor-toolbar
   [component unit-tree app-state local-state]
-  [:span.toolbar
+  [:span.uedit-toolbar
     [:span.lft-btn
       { :title "Link"
         :onMouseDown (jev/make-block-propagation #(omt/start-link local-state %))
@@ -247,68 +247,16 @@
 
 
 (rum/defcs app-toolbar < (rum/local nil ::open)
-  [toolbar-state component unit-tree app-state local-state-atom]
-;  [toolbar-state params left-data right-data]
+  [toolbar-state params left-data right-data]
   (let [ open (::open toolbar-state)]
-    [:div.map-local-menu
+    [:div.toolbar
      {:onMouseDown jev/block-propagation
       :onTouchStart jev/block-propagation }
+      (gen-side open params left-data)
+      [:span.fill]
+      (gen-side open params right-data)
+
       ;(render-map-tools local-state-atom)
       ;(render-copy-tools component unit-tree app-state local-state-atom)
       ;(add-view-buttons component unit-tree)
-      (gen-side open nil
-        [
-          [
-           {:elem :btn
-            :id "poo"
-            :title "Poo"
-            :icon "far fa-poo"
-            :label "Poo"
-            :on-mouse-down #(js/console.log "Added poo") }
-           {:elem :roll
-            :id "file"
-            ;:title "File"
-            :icon "far fa-save"
-            :label "File"
-            :roll-items [
-             {:id "save"
-              ;:title "Save"
-              :icon "far fa-download"
-              :label "Save"
-              :on-mouse-down #(js/console.log "Save")}
-             {:id "load"
-              ;:title "Load"
-              :icon "far fa-upload"
-              :label "Load"
-              :on-mouse-down #(js/console.log "Load")}
-             {:id "tohtml"
-              ;:title "Export to HTML"
-              :label "Export to HTML"
-              :on-mouse-down #(js/console.log "Export to HTML")}
-             ]}
-           {:elem :roll
-            :id "test"
-            :title "Test"
-            :icon "far fa-gift"
-            :roll-items [
-             {:id "save"
-              :title "Save"
-              :icon "far fa-download"
-              :label "Save"
-              :on-mouse-down #(js/console.log "Save")}
-             {:id "load"
-              :title "Load"
-              :icon "far fa-upload"
-              :label "Load"
-              :on-mouse-down #(js/console.log "Load")}
-             {:id "tohtml"
-              :title "Export to HTML"
-              :label "Export to HTML"
-              :on-mouse-down #(js/console.log "Export to HTML")}
-             ]}
-          ]
-          [
-           {:elem :text
-            :label "Separated"}]])
-      [:span.fill]
-      ]))
+    ]))

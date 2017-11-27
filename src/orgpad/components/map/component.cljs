@@ -371,7 +371,60 @@
               :onDoubleClick #(handle-double-click component unit-tree %)
               :onWheel (jev/make-block-propagation #(handle-wheel component unit-tree app-state %)) }
        (munit/render-mapped-children-units component unit-tree app-state local-state)
-       (tbar/app-toolbar component unit-tree app-state local-state)
+       (tbar/app-toolbar {:component component
+                          :unit-tree unit-tree
+                          :app-state app-state
+                          :local-state local-state}
+        [
+          [
+           {:elem :btn
+            :id "poo"
+            :title "Poo"
+            :icon "far fa-poo"
+            :label "Poo"
+            :on-mouse-down #(js/console.log "Added poo") }
+           {:elem :roll
+            :id "file"
+            ;:title "File"
+            :icon "far fa-save"
+            :label "File"
+            :roll-items [
+             {:id "save"
+              ;:title "Save"
+              :icon "far fa-download"
+              :label "Save"
+              :on-mouse-down #(js/console.log "Save")}
+             {:id "load"
+              ;:title "Load"
+              :icon "far fa-upload"
+              :label "Load"
+              :on-mouse-down #(js/console.log "Load")}
+             {:id "tohtml"
+              ;:title "Export to HTML"
+              :label "Export to HTML"
+              :on-mouse-down #(js/console.log "Export to HTML")}
+             ]}
+           {:elem :roll
+            :id "test"
+            :title "Test"
+            :icon "far fa-gift"
+            :roll-items [
+             {:id "save"
+              :title "Save"
+              :icon "far fa-download"
+              :label "Save"
+              :on-mouse-down #(js/console.log "Save")}
+             {:id "load"
+              :title "Load"
+              :icon "far fa-upload"
+              :label "Load"
+              :on-mouse-down #(js/console.log "Load")}
+             {:id "tohtml"
+              :title "Export to HTML"
+              :label "Export to HTML"
+              :on-mouse-down #(js/console.log "Export to HTML")}
+             ]}
+          ]] nil)
        (when (= (:local-mode @local-state) :choose-selection)
          (render-selection-box @local-state (:view unit-tree)))
       (when (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
