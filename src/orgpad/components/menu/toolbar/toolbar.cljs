@@ -24,86 +24,79 @@
 ;; each group of buttons is represented by a nested list
 ;;
 ;; each button is represented by the following map
-;;  {:type (:btn|:roll) 
-;;   :key             ...   identificator
+;;  {:type (:btn|:roll|:text) 
+;;   :id              ...   identificator
 ;;   :title           ...   tooltip hint
 ;;   :icon            ...   font-awesome style name or nil for no icon
 ;;   :label           ...   displayed label or nil for no label
 ;;   :on-mouse-down   ...   function on mouse down
-;;   :active          ...   should button be active
+;;   :active          ...   function returning true/false whether button should be active, possibly nil
 ;;
 ;;   for :roll only
 ;;   :roll-items      ...   list of all roll items
 ;;  }
 ;;
 ;; each roll item is represented by the following map
-;;  {:key             ...   identificator
+;;  {:id              ...   identificator
 ;;   :title           ...   tooltip hint
 ;;   :icon            ...   font-awesome style name or nil for no icon
 ;;   :label           ...   displayed label or nil for no label
 ;;   :on-mouse-down   ...   function on mouse down
-;;   :active          ...   should button be active
+;;   :active          ...   function returning true/false whether button should be active, possibly nil
 ;;  }
-
-(defn- gen-button
-  [alignment title icon label on-mouse-down active]
-  (let [button-class (str (if (= alignment :left) "lft-btn" "rt-btn") (when active " active"))]
-    (if icon
-      [:span
-        {:className button-class
-         :title title
-         :onMouseDown on-mouse-down }
-         [:i { :className (str "far " icon " fa-lg fa-fw") }]
-         (when label [:span.btn-icon-label label])]
-      [:span
-        {:className button-class
-         :title title
-         :onMouseDown on-mouse-down }
-         (when label [:span.btn-label label])])))
+;;
+;; all used functions 
 
 (defn- toggle-open-state
   [open clicked-roll]
   (if (= open clicked-roll) nil clicked-roll))
 
-(defn- close-roll
+(defn- wrap-toolbar-action
   [open f]
   (reset! open nil)
   (f))
 
-(defn- add-test-roll-button
-  [open]
-  [:span.lft-roll
-    [:span.lft-roll-btn
-     {:title "Roll test"
-      :onMouseDown (jev/make-block-propagation #(swap! open toggle-open-state :test))}
-      [:i { :className "far fa-plus-circle fa-lg fa-fw" }]
-      [:span.btn-icon-text "Roll button"]
-      [:i { :className "fa fa-caret-down" }]]
-    (when (= @open :test)
-      [:span.roll-items
-        [:span.roll-item
-         {:title "Roll item 1"
-          :onMouseDown #(close-roll open (fn [] (js/console.log "Roll item 1 pressed")))}
-          [:i.far.fa-columns.fa-lg.fa-fw]
-          [:span.roll-icon-label "Notebook view"]]
-        [:span.roll-item
-         {:title "Roll item 2"
-          :onMouseDown #(js/console.log "Roll item 2 pressed")}
-          [:i.far.fa-share-alt.fa-lg.fa-fw]
-          [:span.roll-icon-label "Map view"]]
-        [:span.roll-item
-         {:title "Roll item 3"
-          :onMouseDown #(js/console.log "Roll item 3 pressed")}
-          [:span.roll-label "Very long test"]]
-        [:span.roll-item
-         {:title "Roll item 4"
-          :onMouseDown #(js/console.log "Roll item 4 pressed")}
-          [:span.roll-label "A"]]
-        [:span.roll-item
-         {:title "Roll item 5"
-          :onMouseDown #(js/console.log "Roll item 5 pressed")}
-          [:span.roll-label "B"]]
-        ])])
+(defn- add-button
+  [open params alignment {:keys [id title icon label on-mouse-down active]}]
+  (let [is-active (when active (active params))
+        button-class (str (if (= alignment :left) "lft-btn" "rt-btn") (when is-active " active"))
+        label-class (if icon "btn-icon-label" "btn-label")]
+    [:span
+      {:key id
+       :className button-class
+       :title title
+       :onMouseDown #(wrap-toolbar-action open (fn [] (on-mouse-down params))) }
+       (when icon [:i { :className (str icon " fa-lg fa-fw") }])
+       (when label [:span { :className label-class } label])]))
+ 
+(defn- gen-roll-item
+  [open params {:keys [id title icon label on-mouse-down active]}]
+  (let [is-active (when active (active params))
+        label-class (if icon "roll-icon-label" "roll-label")]
+    [:span.roll-item
+      {:key id
+       :title title
+       :onMouseDown #(wrap-toolbar-action open (fn [] (on-mouse-down params))) }
+       (when icon [:i { :className (str icon " fa-lg fa-fw") }])
+       (when label [:span { :className label-class } label])]))
+
+(defn- add-roll
+  [open params alignment {:keys [id title icon label active roll-items] :as data}]
+  (let [is-active (when active (active params))
+        roll-class (if (= alignment :left) "lft-roll" "rt-roll")
+        button-class (str (if (= alignment :left) "lft-roll-btn" "rt-roll-btn") (when is-active " active"))
+        label-class (if icon "btn-icon-label" "btn-label")]
+    [:span {:className roll-class :key id}
+      [:span 
+       {:className button-class
+        :title title
+        :onMouseDown (jev/make-block-propagation #(swap! open toggle-open-state id))}
+        (when icon [:i { :className (str icon " fa-lg fa-fw") }])
+        (when label [:span { :className label-class } label])
+        [:i { :className "fa fa-caret-down" }]]
+      (when (= @open id)
+        [:span.roll-items
+          (map (partial gen-roll-item open params) roll-items)])]))
 
 (defn- add-notebook-manipulators
   [component {:keys [unit view] :as unit-tree}]
@@ -222,21 +215,61 @@
         [:i.far.fa-paste.fa-lg.fa-fw]]
       [:span.lft-sep]]))
 
+
 (rum/defcs app-toolbar < (rum/local nil ::open)
   [toolbar-state component unit-tree app-state local-state-atom]
-  (let [ open (::open toolbar-state) ]
-    (add-test-roll-button open)
-  ))
-
-(defn render-app-toolbar
-  [component unit-tree app-state local-state-atom]
-  [:div.map-local-menu
-   {:onMouseDown jev/block-propagation
-    :onTouchStart jev/block-propagation }
-    (render-map-tools local-state-atom)
-    (render-copy-tools component unit-tree app-state local-state-atom)
-    (add-view-buttons component unit-tree)
-    (gen-button :left "Test" "fa-plus" "Another test" #(js/console.log "Test") true )
-    (gen-button :left "Test" "fa-chevron-right" nil #(js/console.log "Test") nil)
-    (gen-button :left "Test" nil "Just text" #(js/console.log "Test") true )
-    (app-toolbar component unit-tree app-state local-state-atom)])
+  (let [ open (::open toolbar-state)]
+    [:div.map-local-menu
+     {:onMouseDown jev/block-propagation
+      :onTouchStart jev/block-propagation }
+      (render-map-tools local-state-atom)
+      (render-copy-tools component unit-tree app-state local-state-atom)
+      (add-view-buttons component unit-tree)
+      (add-button open nil :left
+       {:id "poo"
+        :title "Poo"
+        :icon "far fa-poo"
+        :label "Poo"
+        :on-mouse-down #(js/console.log "Added poo") })
+      (add-roll open nil :left
+       {:id "file"
+        :title "File"
+        :icon "far fa-save"
+        :label "File"
+        :roll-items [
+         {:id "save"
+          :title "Save"
+          :icon "far fa-download"
+          :label "Save"
+          :on-mouse-down #(js/console.log "Save")}
+         {:id "load"
+          :title "Load"
+          :icon "far fa-upload"
+          :label "Load"
+          :on-mouse-down #(js/console.log "Load")}
+         {:id "tohtml"
+          :title "Export to HTML"
+          :label "Export to HTML"
+          :on-mouse-down #(js/console.log "Export to HTML")}
+         ]})
+      (add-roll open nil :left
+       {:id "test"
+        :title "Test"
+        :icon "far fa-gift"
+        :roll-items [
+         {:id "save"
+          :title "Save"
+          :icon "far fa-download"
+          :label "Save"
+          :on-mouse-down #(js/console.log "Save")}
+         {:id "load"
+          :title "Load"
+          :icon "far fa-upload"
+          :label "Load"
+          :on-mouse-down #(js/console.log "Load")}
+         {:id "tohtml"
+          :title "Export to HTML"
+          :label "Export to HTML"
+          :on-mouse-down #(js/console.log "Export to HTML")}
+         ]})
+      ]))

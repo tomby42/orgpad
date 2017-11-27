@@ -371,7 +371,7 @@
               :onDoubleClick #(handle-double-click component unit-tree %)
               :onWheel (jev/make-block-propagation #(handle-wheel component unit-tree app-state %)) }
        (munit/render-mapped-children-units component unit-tree app-state local-state)
-       (tbar/render-app-toolbar component unit-tree app-state local-state)
+       (tbar/app-toolbar component unit-tree app-state local-state)
        (when (= (:local-mode @local-state) :choose-selection)
          (render-selection-box @local-state (:view unit-tree)))
       (when (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
