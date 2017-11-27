@@ -16,7 +16,9 @@
             [goog.string :as gstring]
             [goog.string.format]))
 
-;; input format for toolbar
+;; input format for toolbar data
+;; =============================
+;;
 ;; two lists, one for left-aligned buttons, one for right-aligned buttons
 ;;
 ;; each list contains one element for each group of buttons
@@ -24,7 +26,7 @@
 ;; each group of buttons is represented by a nested list
 ;;
 ;; each button is represented by the following map
-;;  {:type (:btn|:roll|:text) 
+;;  {:elem (:btn|:roll|:text) 
 ;;   :id              ...   identificator
 ;;   :title           ...   tooltip hint
 ;;   :icon            ...   font-awesome style name or nil for no icon
@@ -45,21 +47,24 @@
 ;;   :active          ...   function returning true/false whether button should be active, possibly nil
 ;;  }
 ;;
-;; all used functions 
+;; all used functions are unary, having access to the map param given on the input
 
 (defn- toggle-open-state
+  "Toggle which roll is open. Opens clicked-roll unless it is already opened, in which case it is closed."
   [open clicked-roll]
   (if (= open clicked-roll) nil clicked-roll))
 
 (defn- wrap-toolbar-action
+  "Close any open roll and proceed with function f."
   [open f]
   (reset! open nil)
   (f))
 
-(defn- add-button
-  [open params alignment {:keys [id title icon label on-mouse-down active]}]
+(defn- gen-button
+  "Generates one button from the input data."
+  [open params {:keys [id title icon label on-mouse-down active]}]
   (let [is-active (when active (active params))
-        button-class (str (if (= alignment :left) "lft-btn" "rt-btn") (when is-active " active"))
+        button-class (str "btn" (when is-active " active"))
         label-class (if icon "btn-icon-label" "btn-label")]
     [:span
       {:key id
@@ -70,6 +75,7 @@
        (when label [:span { :className label-class } label])]))
  
 (defn- gen-roll-item
+  "Generates one roll item from the input data."
   [open params {:keys [id title icon label on-mouse-down active]}]
   (let [is-active (when active (active params))
         label-class (if icon "roll-icon-label" "roll-label")]
@@ -80,13 +86,13 @@
        (when icon [:i { :className (str icon " fa-lg fa-fw") }])
        (when label [:span { :className label-class } label])]))
 
-(defn- add-roll
-  [open params alignment {:keys [id title icon label active roll-items] :as data}]
+(defn- gen-roll
+  "Generates one roll from the input data."
+  [open params {:keys [id title icon label active roll-items] :as data}]
   (let [is-active (when active (active params))
-        roll-class (if (= alignment :left) "lft-roll" "rt-roll")
-        button-class (str (if (= alignment :left) "lft-roll-btn" "rt-roll-btn") (when is-active " active"))
+        button-class (str "btn" (when (or is-active (= @open id)) " active"))
         label-class (if icon "btn-icon-label" "btn-label")]
-    [:span {:className roll-class :key id}
+    [:span.roll {:key id}
       [:span 
        {:className button-class
         :title title
@@ -97,6 +103,30 @@
       (when (= @open id)
         [:span.roll-items
           (map (partial gen-roll-item open params) roll-items)])]))
+
+(defn- gen-text
+  "Generates one text from the input data."
+  [open params {:keys [label]}]
+  [:span.text label])
+
+(defn- gen-element
+  "Generates one element of arbitrary type from the input data."
+  [open params {:keys [elem] :as data}]
+  (case elem
+    :btn (gen-button open params data)
+    :roll (gen-roll open params data)
+    :text (gen-text open params data)))
+
+(defn- gen-section
+  "Generates one section of the toolbar (between two separators) from the input data."
+  [open params data]
+  (map (partial gen-element open params) data))
+
+(defn- gen-side
+  "Generates one side of the toolbar from the input data."
+  [open params data]
+  (interpose [:span.sep]
+    (map (partial gen-section open params) data)))
 
 (defn- add-notebook-manipulators
   [component {:keys [unit view] :as unit-tree}]
@@ -218,58 +248,67 @@
 
 (rum/defcs app-toolbar < (rum/local nil ::open)
   [toolbar-state component unit-tree app-state local-state-atom]
+;  [toolbar-state params left-data right-data]
   (let [ open (::open toolbar-state)]
     [:div.map-local-menu
      {:onMouseDown jev/block-propagation
       :onTouchStart jev/block-propagation }
-      (render-map-tools local-state-atom)
-      (render-copy-tools component unit-tree app-state local-state-atom)
-      (add-view-buttons component unit-tree)
-      (add-button open nil :left
-       {:id "poo"
-        :title "Poo"
-        :icon "far fa-poo"
-        :label "Poo"
-        :on-mouse-down #(js/console.log "Added poo") })
-      (add-roll open nil :left
-       {:id "file"
-        :title "File"
-        :icon "far fa-save"
-        :label "File"
-        :roll-items [
-         {:id "save"
-          :title "Save"
-          :icon "far fa-download"
-          :label "Save"
-          :on-mouse-down #(js/console.log "Save")}
-         {:id "load"
-          :title "Load"
-          :icon "far fa-upload"
-          :label "Load"
-          :on-mouse-down #(js/console.log "Load")}
-         {:id "tohtml"
-          :title "Export to HTML"
-          :label "Export to HTML"
-          :on-mouse-down #(js/console.log "Export to HTML")}
-         ]})
-      (add-roll open nil :left
-       {:id "test"
-        :title "Test"
-        :icon "far fa-gift"
-        :roll-items [
-         {:id "save"
-          :title "Save"
-          :icon "far fa-download"
-          :label "Save"
-          :on-mouse-down #(js/console.log "Save")}
-         {:id "load"
-          :title "Load"
-          :icon "far fa-upload"
-          :label "Load"
-          :on-mouse-down #(js/console.log "Load")}
-         {:id "tohtml"
-          :title "Export to HTML"
-          :label "Export to HTML"
-          :on-mouse-down #(js/console.log "Export to HTML")}
-         ]})
+      ;(render-map-tools local-state-atom)
+      ;(render-copy-tools component unit-tree app-state local-state-atom)
+      ;(add-view-buttons component unit-tree)
+      (gen-side open nil
+        [
+          [
+           {:elem :btn
+            :id "poo"
+            :title "Poo"
+            :icon "far fa-poo"
+            :label "Poo"
+            :on-mouse-down #(js/console.log "Added poo") }
+           {:elem :roll
+            :id "file"
+            ;:title "File"
+            :icon "far fa-save"
+            :label "File"
+            :roll-items [
+             {:id "save"
+              ;:title "Save"
+              :icon "far fa-download"
+              :label "Save"
+              :on-mouse-down #(js/console.log "Save")}
+             {:id "load"
+              ;:title "Load"
+              :icon "far fa-upload"
+              :label "Load"
+              :on-mouse-down #(js/console.log "Load")}
+             {:id "tohtml"
+              ;:title "Export to HTML"
+              :label "Export to HTML"
+              :on-mouse-down #(js/console.log "Export to HTML")}
+             ]}
+           {:elem :roll
+            :id "test"
+            :title "Test"
+            :icon "far fa-gift"
+            :roll-items [
+             {:id "save"
+              :title "Save"
+              :icon "far fa-download"
+              :label "Save"
+              :on-mouse-down #(js/console.log "Save")}
+             {:id "load"
+              :title "Load"
+              :icon "far fa-upload"
+              :label "Load"
+              :on-mouse-down #(js/console.log "Load")}
+             {:id "tohtml"
+              :title "Export to HTML"
+              :label "Export to HTML"
+              :on-mouse-down #(js/console.log "Export to HTML")}
+             ]}
+          ]
+          [
+           {:elem :text
+            :label "Separated"}]])
+      [:span.fill]
       ]))

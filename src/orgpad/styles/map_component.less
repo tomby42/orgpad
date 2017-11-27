@@ -189,15 +189,17 @@
   }
 
   .map-local-menu {
+      display: flex;
+      flex-direction: row;
       position: absolute;
       top: 0px;
       left: 0px;
-      border: 3px solid;
+      width: 100%;
+      border-bottom: 3px solid;
 	  border-color: red;
 	  font-size: 13pt;
 
-      .lft-btn {
-          float: left;
+      .btn {
           text-align: center;
           height: 23px;
           padding-top: 3px;
@@ -226,14 +228,13 @@
           padding-left: 7px;
       }
      
-      .lft-roll {
+      .roll {
           position: relative;
-          float: left;
           display: block;
           z-index: 10;
       }
 
-      .lft-roll-btn {
+      .roll-btn {
           position: relative;
           text-align: center;
           height: 23px;
@@ -284,43 +285,23 @@
           padding-left: 3px;
           padding-right: 7px;
       }
-
-      .rt-btn {
-          float: right;
-          text-align: center;
-          width: 23px;
-          height: 23px;
-          padding: 3px;
-          display: block;
-          &:hover {
-              background-color: #ccc;
-          }
-          &.active {
-              background-color: #aaa;
-          }
+      
+      .text {
+          font-size: 12pt;
+          padding-top: 5px;
+          padding-bottom: 5px;
       }
 
-      .lft-sep {
-          float: left;
+
+      .sep {
           background-color: red;
           width: 3px;
           height: 23px;
           margin: 3px;
       }
 
-      .rt-sep {
-          float: right;
-          background-color: red;
-          width: 2px;
-          height: 23px;
-          margin: 3px;
-      }
-
-      .lft-text {
-          float: left;
-          font-size: 12pt;
-          padding-top: 5px;
-          padding-bottom: 5px;
+      .fill {
+          flex-grow: 1;
       }
   }
 }
