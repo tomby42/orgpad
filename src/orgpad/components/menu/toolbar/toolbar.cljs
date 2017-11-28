@@ -78,12 +78,12 @@
  
 (defn- gen-roll-item
   "Generates one roll item from the input data, with a hack for file loading."
-  [open params {:keys [elem id title icon label on-mouse-down active] :as data}]
+  [open params {:keys [elem id title icon label on-mouse-down active]}]
   (let [is-active (when active (active params))
         label-class (if icon "roll-icon-label" "roll-label")
         icon-span (when icon [:i { :className (str icon " fa-lg fa-fw") }])
         label-span (when label [:span { :className label-class } label])]
-    (if (= :elem :load)
+    (if (= elem :load)
       (if/file-input { :on-change #(wrap-toolbar-action open (fn [] (on-mouse-down params %))) }
         {:key id :title title} icon-span label-span)
       [:span.roll-item
