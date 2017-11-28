@@ -58,13 +58,13 @@
 
 (defn- wrap-toolbar-action
   "Close any open roll and proceed with function f."
-  [open f]
-  (reset! open nil)
+  [local-state f]
+  (swap! local-state assoc-in [:open] nil)
   (f))
 
 (defn- gen-button
   "Generates one button from the input data."
-  [open params {:keys [id title icon label on-mouse-down active]}]
+  [local-state params {:keys [id title icon label on-mouse-down active]}]
   (let [is-active (when active (active params))
         button-class (str "btn" (when is-active " active"))
         label-class (if icon "btn-icon-label" "btn-label")]
@@ -72,67 +72,68 @@
       {:key id
        :className button-class
        :title title
-       :onMouseDown #(wrap-toolbar-action open (fn [] (on-mouse-down params %))) }
+       :onMouseDown #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %))) }
        (when icon [:i { :className (str icon " fa-lg fa-fw") }])
        (when label [:span { :className label-class } label])]))
  
 (defn- gen-roll-item
   "Generates one roll item from the input data, with a hack for file loading."
-  [open params {:keys [elem id title icon label on-mouse-down active]}]
+  [local-state params {:keys [elem id title icon label on-mouse-down active]}]
   (let [is-active (when active (active params))
         label-class (if icon "roll-icon-label" "roll-label")
         icon-span (when icon [:i { :className (str icon " fa-lg fa-fw") }])
         label-span (when label [:span { :className label-class } label])]
     (if (= elem :load)
-      (if/file-input { :on-change #(wrap-toolbar-action open (fn [] (on-mouse-down params %))) }
-        {:key id :title title} icon-span label-span)
+      (if/file-input { :on-change #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %)))
+                       :attr {:className "roll-item" :key id :title title} }
+        icon-span label-span)
       [:span.roll-item
         {:key id
          :title title
-         :onMouseDown #(wrap-toolbar-action open (fn [] (on-mouse-down params %))) }
+         :onMouseDown #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %))) }
          icon-span label-span])))
 
 (defn- gen-roll
   "Generates one roll from the input data."
-  [open params {:keys [id title icon label active roll-items] :as data}]
+  [local-state params {:keys [id title icon label active roll-items] :as data}]
   (let [is-active (when active (active params))
-        button-class (str "btn" (when (or is-active (= @open id)) " active"))
+        button-class (str "btn" (when (or is-active (= (:open @local-state) id)) " active"))
         label-class (if icon "btn-icon-label" "btn-label")]
     [:span.roll {:key id}
       [:span 
        {:className button-class
         :title title
-        :onMouseDown (jev/make-block-propagation #(swap! open toggle-open-state id))}
+        :onMouseDown (jev/make-block-propagation #(swap! local-state update-in [:open] toggle-open-state id))}
         (when icon [:i { :className (str icon " fa-lg fa-fw") }])
         (when label [:span { :className label-class } label])
         [:i { :className "fa fa-caret-down" }]]
-      (when (= @open id)
+      (when (= (:open @local-state) id)
         [:span.roll-items
-          (map (partial gen-roll-item open params) roll-items)])]))
+          (map (partial gen-roll-item local-state params) roll-items)])]))
 
 (defn- gen-text
   "Generates one text from the input data."
-  [open params {:keys [label]}]
+  [local-state params {:keys [label]}]
   [:span.text label])
 
 (defn- gen-element
   "Generates one element of arbitrary type from the input data."
-  [open params {:keys [elem] :as data}]
+  [local-state params {:keys [elem] :as data}]
   (case elem
-    :btn (gen-button open params data)
-    :roll (gen-roll open params data)
-    :text (gen-text open params data)))
+    :btn (gen-button local-state params data)
+    :roll (gen-roll local-state params data)
+    :text (gen-text local-state params data)))
 
 (defn- gen-section
   "Generates one section of the toolbar (between two separators) from the input data."
-  [open params data]
-  (map (partial gen-element open params) data))
+  [local-state params data]
+  (map (partial gen-element local-state params) data))
 
 (defn- gen-side
   "Generates one side of the toolbar from the input data."
-  [open params data]
+  [local-state params data]
   (interpose [:span.sep]
-    (map (partial gen-section open params) data)))
+    (map (partial gen-section local-state params) data)))
 
 (defn- add-notebook-manipulators
   [component {:keys [unit view] :as unit-tree}]
@@ -252,15 +253,18 @@
       [:span.lft-sep]]))
 
 
-(rum/defcs app-toolbar < (rum/local nil ::open)
-  [toolbar-state params left-data right-data]
-  (let [ open (::open toolbar-state)]
+(rum/defcc app-toolbar < (rum/local {:open nil}) lc/parser-type-mixin-context
+  [component params left-data right-data]
+  (let [local-state (trum/comp->local-state component)
+        extended-params (assoc params :component component)]
+    (js/console.log (str "component: " (pr component)))
+    (js/console.log (str "local-state: " (pr local-state)))
     [:div.toolbar
      {:onMouseDown jev/block-propagation
       :onTouchStart jev/block-propagation }
-      (gen-side open params left-data)
+      (gen-side local-state extended-params left-data)
       [:span.fill]
-      (gen-side open params right-data)
+      (gen-side local-state extended-params right-data)
 
       ;(render-map-tools local-state-atom)
       ;(render-copy-tools component unit-tree app-state local-state-atom)
