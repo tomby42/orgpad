@@ -7,6 +7,7 @@
             [orgpad.tools.dscript :as ds]
             [orgpad.components.registry :as registry]
             [orgpad.components.input.file :as if]
+            [orgpad.components.menu.toolbar :as tbar]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.rum :as trum]
             [orgpad.components.ci.dialog :as ci]))
@@ -114,8 +115,8 @@
     [ :span "Save" ]]
 
    [ :div.file-item
-    (if/file-input { :on-change #(lc/transact! component [[ :orgpad/load-orgpad % ]]) }
-                   [ :span { :key 1 } "Load" ])]
+    (if/file-input { :on-change #(lc/transact! component [[ :orgpad/load-orgpad % ]]) } 
+      nil [ :span { :key 1 } "Load" ])]
 
    [ :div.file-item
     { :onClick #(lc/transact! component [[ :orgpad/export-as-html ((lc/global-conf component) :storage-el) ]]) }
@@ -220,4 +221,10 @@
                                                         :orgpad/view-name (view :orgpad/view-name)
                                                         :orgpad/view-type (view :orgpad/view-type)
                                                         :orgpad/view-path (path-info :orgpad/view-path) }]])}
-         [ :i { :className "far fa-check-circle fa-lg" } ] ] ) ] ] ) )
+         [ :i { :className "far fa-check-circle fa-lg" } ] ] ) ]
+         
+       (tbar/app-toolbar {:component component} (-> :orgpad/root-view registry/get-component-info :orgpad/toolbar) nil)
+         ]
+         
+         
+         ) )

@@ -12,6 +12,7 @@
             [orgpad.tools.geom :as geom]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
+            [orgpad.components.input.file :as if]
             [orgpad.tools.dom :as dom]
             [goog.string :as gstring]
             [goog.string.format]))
@@ -39,7 +40,8 @@
 ;;  }
 ;;
 ;; each roll item is represented by the following map
-;;  {:id              ...   identificator
+;;  {:elem = :load   ... may be omitted, when load, special hack for file loading is used
+;;   :id              ...   identificator
 ;;   :title           ...   tooltip hint
 ;;   :icon            ...   font-awesome style name or nil for no icon
 ;;   :label           ...   displayed label or nil for no label
@@ -70,21 +72,25 @@
       {:key id
        :className button-class
        :title title
-       :onMouseDown #(wrap-toolbar-action open (fn [] (on-mouse-down params))) }
+       :onMouseDown #(wrap-toolbar-action open (fn [] (on-mouse-down params %))) }
        (when icon [:i { :className (str icon " fa-lg fa-fw") }])
        (when label [:span { :className label-class } label])]))
  
 (defn- gen-roll-item
-  "Generates one roll item from the input data."
-  [open params {:keys [id title icon label on-mouse-down active]}]
+  "Generates one roll item from the input data, with a hack for file loading."
+  [open params {:keys [elem id title icon label on-mouse-down active] :as data}]
   (let [is-active (when active (active params))
-        label-class (if icon "roll-icon-label" "roll-label")]
-    [:span.roll-item
-      {:key id
-       :title title
-       :onMouseDown #(wrap-toolbar-action open (fn [] (on-mouse-down params))) }
-       (when icon [:i { :className (str icon " fa-lg fa-fw") }])
-       (when label [:span { :className label-class } label])]))
+        label-class (if icon "roll-icon-label" "roll-label")
+        icon-span (when icon [:i { :className (str icon " fa-lg fa-fw") }])
+        label-span (when label [:span { :className label-class } label])]
+    (if (= :elem :load)
+      (if/file-input { :on-change #(wrap-toolbar-action open (fn [] (on-mouse-down params %))) }
+        {:key id :title title} icon-span label-span)
+      [:span.roll-item
+        {:key id
+         :title title
+         :onMouseDown #(wrap-toolbar-action open (fn [] (on-mouse-down params %))) }
+         icon-span label-span])))
 
 (defn- gen-roll
   "Generates one roll from the input data."
