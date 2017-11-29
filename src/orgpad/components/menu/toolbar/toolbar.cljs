@@ -17,39 +17,36 @@
             [goog.string :as gstring]
             [goog.string.format]))
 
-;; input format for toolbar data
+;; Input format for toolbar data
 ;; =============================
 ;;
-;; two lists, one for left-aligned buttons, one for right-aligned buttons
+;; Two lists, one for left-aligned buttons, one for right-aligned buttons.
 ;;
-;; each list contains one element for each group of buttons
+;; Each list contains one element for each group of buttons.
 ;;
-;; each group of buttons is represented by a nested list
+;; Each group of buttons is represented by a nested list.
 ;;
-;; each button is represented by the following map
+;; Each button is represented by the following map:
 ;;  {:elem (:btn|:roll|:text) 
 ;;   :id              ...   identificator
 ;;   :title           ...   tooltip hint
 ;;   :icon            ...   font-awesome style name or nil for no icon
 ;;   :label           ...   displayed label or nil for no label
-;;   :on-mouse-down   ...   function on mouse down
-;;   :active          ...   function returning true/false whether button should be active, possibly nil
+;;   :on-mouse-down   ...   binary function on mouse down
+;;   :active          ...   unary function returning true/false whether button should be active, possibly nil
+;;   :disabled        ...   unary function returning true/false whether button should be disabled, possibly nil
+;;        button is only active when it is not disabled
+;;   :load-files      ...   may be omitted, true/false, special hack for file loading is used
 ;;
 ;;   for :roll only
 ;;   :roll-items      ...   list of all roll items
 ;;  }
 ;;
-;; each roll item is represented by the following map
-;;  {:elem = :load   ... may be omitted, when load, special hack for file loading is used
-;;   :id              ...   identificator
-;;   :title           ...   tooltip hint
-;;   :icon            ...   font-awesome style name or nil for no icon
-;;   :label           ...   displayed label or nil for no label
-;;   :on-mouse-down   ...   function on mouse down
-;;   :active          ...   function returning true/false whether button should be active, possibly nil
-;;  }
+;; Each roll item is represented by the same map without elem (at least for now).  
+;; In the future, it should be possible to do a menu with multiple layers in this way.
 ;;
-;; all used functions are unary, having access to the map param given on the input
+;; The first parameter of all functions is the map param given on the input, the second parameter
+;; (if it exists) is the Javascript event.
 
 (defn- toggle-open-state
   "Toggle which roll is open. Opens clicked-roll unless it is already opened, in which case it is closed."
@@ -62,54 +59,53 @@
   (swap! local-state assoc-in [:open] nil)
   (f))
 
+(defn- get-active
+  [active is-disabled params]
+  (when (and active (not is-disabled)) (active params)))
+
+(defn- get-disabled
+  [disabled params]
+  (when disabled (disabled params)))
+
 (defn- gen-button
-  "Generates one button from the input data."
-  [local-state params {:keys [id title icon label on-mouse-down active]}]
-  (let [is-active (when active (active params))
-        button-class (str "btn" (when is-active " active"))
-        label-class (if icon "btn-icon-label" "btn-label")]
+  "Generates one button or roll item from the input data, with a hack for file loading."
+  [local-state params elem {:keys [id title icon label on-mouse-down active disabled load-files]}]
+  (let [is-disabled (get-disabled disabled params) 
+        is-active (get-active active is-disabled params)
+        button-class (str elem (when is-disabled " disabled") (when is-active " active"))
+        label-class (if icon "btn-icon-label" "btn-label")
+        icon-span (when icon [:i { :className (str icon " fa-lg fa-fw") }])
+        label-span (when label [:span { :className label-class } label])]
+    (if (and (= elem :load) (not is-disabled))
+      (if/file-input { :on-change #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %)))
+                       :attr {:className elem :key id :title title} }
+        icon-span label-span)
     [:span
       {:key id
        :className button-class
        :title title
-       :onMouseDown #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %))) }
-       (when icon [:i { :className (str icon " fa-lg fa-fw") }])
-       (when label [:span { :className label-class } label])]))
+       :onMouseDown (when (and on-mouse-down (not is-disabled))
+         #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %))))}
+      icon-span label-span])))
  
-(defn- gen-roll-item
-  "Generates one roll item from the input data, with a hack for file loading."
-  [local-state params {:keys [elem id title icon label on-mouse-down active]}]
-  (let [is-active (when active (active params))
-        label-class (if icon "roll-icon-label" "roll-label")
-        icon-span (when icon [:i { :className (str icon " fa-lg fa-fw") }])
-        label-span (when label [:span { :className label-class } label])]
-    (if (= elem :load)
-      (if/file-input { :on-change #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %)))
-                       :attr {:className "roll-item" :key id :title title} }
-        icon-span label-span)
-      [:span.roll-item
-        {:key id
-         :title title
-         :onMouseDown #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %))) }
-         icon-span label-span])))
-
 (defn- gen-roll
   "Generates one roll from the input data."
-  [local-state params {:keys [id title icon label active roll-items] :as data}]
-  (let [is-active (when active (active params))
-        button-class (str "btn" (when (or is-active (= (:open @local-state) id)) " active"))
+  [local-state params {:keys [id title icon label active disabled roll-items]}]
+  (let [is-disabled (get-disabled disabled params)
+        is-active (get-active active is-disabled params)
+        button-class (str "btn" (when is-disabled " disabled") (when (or is-active (= (:open @local-state) id)) " active"))
         label-class (if icon "btn-icon-label" "btn-label")]
     [:span.roll {:key id}
       [:span 
        {:className button-class
         :title title
-        :onMouseDown (jev/make-block-propagation #(swap! local-state update-in [:open] toggle-open-state id))}
+        :onMouseDown (when (not is-disabled) (jev/make-block-propagation #(swap! local-state update-in [:open] toggle-open-state id)))}
         (when icon [:i { :className (str icon " fa-lg fa-fw") }])
         (when label [:span { :className label-class } label])
         [:i { :className "fa fa-caret-down" }]]
       (when (= (:open @local-state) id)
         [:span.roll-items
-          (map (partial gen-roll-item local-state params) roll-items)])]))
+          (map (partial gen-button local-state params "roll-item") roll-items)])]))
 
 (defn- gen-text
   "Generates one text from the input data."
@@ -120,7 +116,7 @@
   "Generates one element of arbitrary type from the input data."
   [local-state params {:keys [elem] :as data}]
   (case elem
-    :btn (gen-button local-state params data)
+    :btn (gen-button local-state params "btn" data)
     :roll (gen-roll local-state params data)
     :text (gen-text local-state params data)))
 
@@ -257,8 +253,8 @@
   [component params left-data right-data]
   (let [local-state (trum/comp->local-state component)
         extended-params (assoc params :component component)]
-    (js/console.log (str "component: " (pr component)))
-    (js/console.log (str "local-state: " (pr local-state)))
+;    (js/console.log (str "component: " (pr component)))
+;    (js/console.log (str "local-state: " (pr local-state)))
     [:div.toolbar
      {:onMouseDown jev/block-propagation
       :onTouchStart jev/block-propagation }

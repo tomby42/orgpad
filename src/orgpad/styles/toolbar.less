@@ -17,11 +17,15 @@
     padding-bottom: 3px;
     display: inline-block;
     background-color: #fff;
-    &:hover {
+    &:hover, &.active:hover {
       background-color: #6df;
     }
     &.active {
       background-color: #33adff;
+    }
+    &.disabled {
+      background-color: #ddd;
+      color: #666;
     }
   }
   
@@ -45,23 +49,6 @@
     z-index: 10;
   }
 
-  .roll-btn {
-    position: relative;
-    text-align: center;
-    height: 23px;
-    display: block;
-    padding-top: 3px;
-    padding-bottom: 3px;
-    padding-right: 3px;
-    background-color: #fff;
-    &:hover {
-      background-color: #6df;
-    }
-    &.active {
-      background-color: #33adff;
-    }
-  }
-
   .roll-items {
     display: flex;
     flex-direction: column;
@@ -79,22 +66,16 @@
     display: inline-block;
     padding-top: 3px;
     padding-bottom: 0px;
-    &:hover {
+    &:hover, &.active:hover {
       background-color: #6df;
     }
     &.active {
       background-color: #33adff;
     }
-  }
-  
-  .roll-label {
-    padding-left: 7px;
-    padding-right: 7px;
-  }
-  
-  .roll-icon-label {
-    padding-left: 3px;
-    padding-right: 7px;
+    &.disabled {
+      background-color: #ddd;
+      color: #666;
+    }
   }
   
   .text {

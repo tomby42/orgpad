@@ -50,6 +50,20 @@
         :on-mouse-down #(lc/transact! {:component %1} [[ :orgpad/load-orgpad %2 ]]) } 
        {:id "tohtml"
         :label "Export HTML"
-        :on-mouse-down #(lc/transact! {:component %} [[ :orgpad/export-as-html ((lc/global-conf {:component %}) :storage-el) ]]) }
-       ]}]]
-  })
+        :on-mouse-down #(lc/transact! {:component %1} [[ :orgpad/export-as-html ((lc/global-conf {:component %1}) :storage-el) ]]) }
+       ]}]
+    [{:elem :btn
+      :id "history"
+      :icon "far fa-clock"
+      :title "History on/off"
+      :disabled #(= 1 1)}
+     {:elem :btn
+      :id "undo"
+      :icon "far fa-undo-alt"
+      :title "Undo"}
+     {:elem :btn
+      :id "redo"
+      :icon "far fa-redo-alt"
+      :title "Redo"}]
+  ]
+})
