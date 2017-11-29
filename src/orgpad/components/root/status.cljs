@@ -249,8 +249,6 @@
              view-types-section (gen-view-types-roll view)
              view-toolbar (-> view :orgpad/view-type registry/get-component-info :orgpad/toolbar)
              left-toolbar (concat (conj root-component-toolbar view-types-section) view-toolbar)]
-         (js/console.log (pr-str view-toolbar))
-         (js/console.log (pr-str left-toolbar))
          (tbar/app-toolbar {:component component} left-toolbar nil))
          ]
          
