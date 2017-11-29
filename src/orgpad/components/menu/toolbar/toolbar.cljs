@@ -40,6 +40,9 @@
 ;;
 ;;   for :roll only
 ;;   :roll-items      ...   list of all roll items
+;;
+;;   for :text only
+;;   :value           ...   unary function generating a string to be displayed
 ;;  }
 ;;
 ;; Each roll item is represented by the same map without elem (at least for now).  
@@ -111,8 +114,8 @@
 
 (defn- gen-text
   "Generates one text from the input data."
-  [local-state params {:keys [label]}]
-  [:span.text label])
+  [local-state params {:keys [id value] :as data}]
+  [:span.text {:key id} (when value (value params))])
 
 (defn- gen-element
   "Generates one element of arbitrary type from the input data."
@@ -120,7 +123,8 @@
   (case elem
     :btn (gen-button local-state params "btn" data)
     :roll (gen-roll local-state params data)
-    :text (gen-text local-state params data)))
+    :text (gen-text local-state params data)
+    (js/console.warn "Toolbar: No matching element to " (pr-str elem))))
 
 (defn- gen-section
   "Generates one section of the toolbar (between two separators) from the input data."

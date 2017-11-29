@@ -54,7 +54,8 @@
   (->> (dissoc (registry/get-registry) :orgpad/root-view)
        (map (fn [[view-type info]] #js { :key view-type
                                          :value (info :orgpad/view-name)
-                                         :label (info :orgpad/view-name) }))
+                                         :label (info :orgpad/view-name)
+                                         :icon (info :orgpad/view-icon) }))
        into-array))
 
 (defn- render-view-types
@@ -175,6 +176,27 @@
       [ :span  (str "History " (if (:history @local-state) "off" "on")) ]]
      )))
 
+(defn- view-types-roll-items
+  [current-type]
+  (->> (dissoc (registry/get-registry) :orgpad/root-view)
+       (map (fn [[view-type info]] { :id view-type
+                                     :label (info :orgpad/view-name)
+                                     :icon (info :orgpad/view-icon)
+                                     :active (when (= current-type view-type) #(constantly true)) }))
+       (sort-by :label)))
+
+(defn- gen-view-types-roll
+  [view]
+  (let [current-info (-> view :orgpad/view-type registry/get-component-info)
+        current-name (:orgpad/view-name current-info)
+        current-icon (:orgpad/view-icon current-info)]
+    [{:elem :roll
+      :id "views"
+      :icon current-icon
+      :title (str "Current: " current-name)
+      :roll-items (view-types-roll-items (:orgpad/view-type view))
+      }]))
+
 (rum/defcc status < (rum/local { :unroll false :view-menu-unroll false :typed "" :history false }) lc/parser-type-mixin-context
   [component { :keys [unit view path-info] :as unit-tree } app-state]
   (let [id (unit :db/id)
@@ -222,8 +244,14 @@
                                                         :orgpad/view-type (view :orgpad/view-type)
                                                         :orgpad/view-path (path-info :orgpad/view-path) }]])}
          [ :i { :className "far fa-check-circle fa-lg" } ] ] ) ]
-         
-       (tbar/app-toolbar {:component component} (-> :orgpad/root-view registry/get-component-info :orgpad/toolbar) nil)
+      
+       (let [root-component-toolbar (-> :orgpad/root-view registry/get-component-info :orgpad/toolbar)
+             view-types-section (gen-view-types-roll view)
+             view-toolbar (-> view :orgpad/view-type registry/get-component-info :orgpad/toolbar)
+             left-toolbar (concat (conj root-component-toolbar view-types-section) view-toolbar)]
+         (js/console.log (pr-str view-toolbar))
+         (js/console.log (pr-str left-toolbar))
+         (tbar/app-toolbar {:component component} left-toolbar nil))
          ]
          
          

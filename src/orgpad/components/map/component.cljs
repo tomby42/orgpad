@@ -523,17 +523,17 @@
 
 (registry/register-component-info
  :orgpad/map-view
- { :orgpad/default-view-info   { :orgpad/view-type :orgpad/map-view
+ {:orgpad/default-view-info   { :orgpad/view-type :orgpad/map-view
                                  :orgpad/view-name "default"
                                  :orgpad/transform { :translate [0 0]
                                                      :scale     1.0 } }
-   :orgpad/child-default-view-info     { :orgpad/view-type :orgpad/map-tuple-view
+  :orgpad/child-default-view-info     { :orgpad/view-type :orgpad/map-tuple-view
                                          :orgpad/view-name "default" }
-   :orgpad/class               map-component
-   :orgpad/child-props-types   [:orgpad.map-view/vertex-props :orgpad.map-view/link-props
+  :orgpad/class               map-component
+  :orgpad/child-props-types   [:orgpad.map-view/vertex-props :orgpad.map-view/link-props
                                 :orgpad.map-view/vertex-props-style :orgpad.map-view/link-props-style]
-   :orgpad/child-props-style-types [:orgpad.map-view/vertex-props-style :orgpad.map-view/link-props-style]
-   :orgpad/child-props-default { :orgpad.map-view/vertex-props
+  :orgpad/child-props-style-types [:orgpad.map-view/vertex-props-style :orgpad.map-view/link-props-style]
+  :orgpad/child-props-default { :orgpad.map-view/vertex-props
                                  { :orgpad/view-type :orgpad.map-view/vertex-props
                                    :orgpad/view-name "default"
                                    :orgpad/view-style "default"
@@ -582,7 +582,34 @@
                                    :orgpad/link-mid-pt [0 0] }
                                 
                                 }
-   :orgpad/needs-children-info true
-   :orgpad/view-name           "Map View"
-   :orgpad/visible-children-picker pick-visible-children
+  :orgpad/needs-children-info true
+  :orgpad/view-name           "Map View"
+  :orgpad/view-icon           "far fa-share-alt"
+  :orgpad/visible-children-picker pick-visible-children
+
+  :orgpad/toolbar [
+    [{:elem :btn
+      :id "unit-creation-mode"
+      :icon "far fa-plus-square"
+      :title "Unit creation mode"}
+     {:elem :btn
+      :id "moving-mode"
+      :icon "far fa-arrows"
+      :title "Moving mode"}
+     {:elem :btn
+      :id "selection-mode"
+      :icon "far fa-expand"
+      :title "Selection mode"}]
+    [{:elem :btn
+      :id "copy"
+      :icon "far fa-copy"
+      :title "Copy"}
+     {:elem :btn
+      :id "paste"
+      :icon "far fa-paste"
+      :title "Paste"}]]
   })
+
+
+
+

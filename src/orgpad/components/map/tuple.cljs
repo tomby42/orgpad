@@ -109,20 +109,44 @@
 (registry/register-component-info
  :orgpad/map-tuple-view
  {
-   :orgpad/default-view-info   { :orgpad/view-type :orgpad/map-tuple-view
+  :orgpad/default-view-info   { :orgpad/view-type :orgpad/map-tuple-view
                                  :orgpad/view-name "default"
                                  :orgpad/active-unit 0 }
-   :orgpad/child-default-view-info   { :orgpad/view-type :orgpad/atomic-view
+  :orgpad/child-default-view-info   { :orgpad/view-type :orgpad/atomic-view
                                        :orgpad/view-name "default" }
-   :orgpad/class               map-tuple-component
-   :orgpad/needs-children-info true
-   :orgpad/view-name           "Notebook View"
+  :orgpad/class               map-tuple-component
+  :orgpad/needs-children-info true
+  :orgpad/view-name           "Notebook View"
+  :orgpad/view-icon           "far fa-book"
 
-   :orgpad/propagate-props-from-children? true
-   :orgpad/propagated-props-from-children { :orgpad.map-view/vertex-props
+  :orgpad/propagate-props-from-children? true
+  :orgpad/propagated-props-from-children { :orgpad.map-view/vertex-props
                                              [:orgpad/view-type :orgpad/view-name :orgpad/view-style
                                               :orgpad/unit-width :orgpad/unit-height
                                               :orgpad/unit-border-color :orgpad/unit-bg-color
                                               :orgpad/unit-border-width :orgpad/unit-corner-x
                                               :orgpad/unit-corner-y :orgpad/unit-border-style] }
+  
+  :orgpad/toolbar [
+    [{:elem :btn
+      :id "previous-page"
+      :icon "far fa-arrow-left"
+      :title "Previous page"}
+     {:elem :btn
+      :id "next-page"
+      :icon "far fa-arrow-right"
+      :title "Next page"}
+     {:elem :btn
+      :id "add-page"
+      :icon "far fa-plus-circle"
+      :title "Add page"}
+     {:elem :btn
+      :id "remove-page"
+      :icon "far fa-minus-circle"
+      :title "Remove page"}
+     {:elem :text
+      :id "pages"
+      :value #(constantly "2/3")}     
+     ]]
+
   })

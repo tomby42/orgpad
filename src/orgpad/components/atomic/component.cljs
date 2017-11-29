@@ -58,4 +58,5 @@
    :orgpad/class               atomic-component
    :orgpad/needs-children-info false
    :orgpad/view-name           "Sheet View"
+   :orgpad/view-icon           "far fa-file-alt"
   })

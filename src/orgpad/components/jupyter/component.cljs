@@ -100,4 +100,5 @@
    :orgpad/class               jupyter-component
    :orgpad/needs-children-info false
    :orgpad/view-name           "Jupyter View"
+   :orgpad/view-icon           "far fa-server"
   })
