@@ -59,13 +59,15 @@
   (swap! local-state assoc-in [:open] nil)
   (f))
 
-(defn- get-active
-  [active is-disabled params]
-  (when (and active (not is-disabled)) (active params)))
-
 (defn- get-disabled
+  "Button is disabled if disabled function returns true."
   [disabled params]
   (when disabled (disabled params)))
+
+(defn- get-active
+  "Button is active if it is not disabled and active function returns true."
+  [active is-disabled params]
+  (when (and active (not is-disabled)) (active params)))
 
 (defn- gen-button
   "Generates one button or roll item from the input data, with a hack for file loading."
