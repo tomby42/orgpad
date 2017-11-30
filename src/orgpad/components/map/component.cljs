@@ -212,41 +212,43 @@
                               [(.-clientX ev) (.-clientY ev)])
       :canvas-paste (paste-units-from-clipbord component unit-tree app-state [(.-clientX ev) (.-clientY ev)])
       nil)
-    (swap! local-state merge { :local-mode :none :local-move false })
+    (swap! local-state merge { :local-mode :none })
     (js/setTimeout
      #(swap! local-state merge { :local-mode :none }) 0)))
 
 (defn- update-mouse-position
   [local-state ev]
   (swap! local-state merge { :mouse-x (.-clientX ev)
-                             :mouse-y (.-clientY ev)
-                             :local-move true }))
+                             :mouse-y (.-clientY ev) }))
 
 (defn- canvas-move
   [component { :keys [unit view] :as unit-tree } app-state local-state ev]
   (let [pel (-> component rum/state deref (trum/ref-node "component-node"))
         el (aget pel "children" 0 "children" 0)]
     (dom/update-translate el (.-clientX ev) (.-clientY ev)
-                          (@local-state :mouse-x) (@local-state :mouse-y) 1)
-    (update-mouse-position local-state ev)))
+                          (@mouse-pos :mouse-x) (@mouse-pos :mouse-y) 1)
+    ;; (update-mouse-position local-state ev)
+    ))
 
 (defn- unit-move
   [parent-view local-state ev]
   (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)]
     (when el
       (dom/update-translate el (.-clientX ev) (.-clientY ev)
-                            (@local-state :mouse-x) (@local-state :mouse-y)
+                            (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
                             (-> parent-view :orgpad/transform :scale)))
-    (update-mouse-position local-state ev)))
+    ;; (update-mouse-position local-state ev)
+    ))
 
 (defn- unit-resize
   [parent-view local-state ev]
   (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)]
     (when el
       (dom/update-size el (.-clientX ev) (.-clientY ev)
-                       (@local-state :mouse-x) (@local-state :mouse-y)
+                       (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
                        (-> parent-view :orgpad/transform :scale)))
-    (update-mouse-position local-state ev)))
+    ;;(update-mouse-position local-state ev)
+    ))
 
 (defn- unit-change
   [component local-state ev action]
@@ -319,8 +321,10 @@
       :mouse-down (try-start-selection local-state (jev/stop-propagation ev))
       :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
       :make-links (update-mouse-position local-state (jev/stop-propagation ev))
-      (vreset! mouse-pos {:mouse-x (.-clientX ev)
-                          :mouse-y (.-clientY ev)}))
+      nil)
+    
+    (vreset! mouse-pos {:mouse-x (.-clientX ev)
+                        :mouse-y (.-clientY ev)})
 
     (when (not= (@local-state :local-mode) :default-mode)
       (jev/block-propagation ev))
@@ -376,6 +380,7 @@
 (defn- render-write-mode
   [component unit-tree app-state]
   (let [local-state (trum/comp->local-state component)]
+    (js/console.log "aaa")
     (html
      [ :div { :className "map-view"
               :ref "component-node"

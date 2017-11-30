@@ -230,3 +230,11 @@
   [{:keys [state]} _ {:keys [pid selection]}]
   (let [data (ot/copy-descendants-from-db state pid [] selection)]
     {:state (store/transact state [[:clipboards (keypath pid)] data])}))
+
+(defmethod read :orgpad/styles
+  [{:keys [state query] :as env} _ {:keys [view-type]}]
+  (store/query state '[:find [(pull ?e [*])]
+                       :in $ ?view-type
+                       :where
+                       [?e :orgpad/view-type ?view-type]]
+               [view-type]))

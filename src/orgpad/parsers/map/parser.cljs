@@ -334,7 +334,7 @@
     (->> map-unit-tree
          :unit
          :orgpad/refs
-         (filter #(inside? map-unit-tree position %))
+         (filter #(inside? map-unit-tree pos %))
          first)))
 
 (defn- update-geocache-after-new-link
