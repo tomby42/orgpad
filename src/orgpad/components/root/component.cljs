@@ -41,16 +41,16 @@
        {:id "save"
         :icon "far fa-download"
         :label "Save"
-        :on-mouse-down #(lc/transact! {:component %1} [[ :orgpad/save-orgpad true ]]) }
+        :on-mouse-down #(lc/transact! (:component %1) [[ :orgpad/save-orgpad true ]]) }
 ;        :on-mouse-down #(js/console.log (pr-str (:component %1))) }
        {:elem :load
         :id "load"
         :icon "far fa-upload"
         :label "Load"
-        :on-mouse-down #(lc/transact! {:component %1} [[ :orgpad/load-orgpad %2 ]]) } 
+        :on-mouse-down #(lc/transact! (:component %1) [[ :orgpad/load-orgpad %2 ]]) } 
        {:id "tohtml"
         :label "Export HTML"
-        :on-mouse-down #(lc/transact! {:component %1} [[ :orgpad/export-as-html ((lc/global-conf {:component %1}) :storage-el) ]]) }
+        :on-mouse-down #(lc/transact! (:component %1) [[ :orgpad/export-as-html ((lc/global-conf {:component %1}) :storage-el) ]]) }
        ]}]
     [{:elem :btn
       :id "history"
