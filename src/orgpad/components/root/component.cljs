@@ -46,10 +46,10 @@
         :id "load"
         :icon "far fa-upload"
         :label "Load"
-        :on-mouse-down #(lc/transact! (:component %1) [[ :orgpad/load-orgpad %2 ]]) } 
+        :on-click #(lc/transact! (:component %1) [[ :orgpad/load-orgpad %2 ]]) } 
        {:id "tohtml"
         :label "Export HTML"
-        :on-mouse-down #(lc/transact! (:component %1) [[ :orgpad/export-as-html ((lc/global-conf {:component %1}) :storage-el) ]]) }
+        :on-click #(lc/transact! (:component %1) [[ :orgpad/export-as-html ((lc/global-conf (:component %1)) :storage-el) ]]) }
        ]}]
     [{:elem :btn
       :id "history"

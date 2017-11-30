@@ -32,7 +32,7 @@
 ;;   :title           ...   tooltip hint
 ;;   :icon            ...   font-awesome style name or nil for no icon
 ;;   :label           ...   displayed label or nil for no label
-;;   :on-mouse-down   ...   binary function on mouse down
+;;   :on-click        ...   binary function on click
 ;;   :active          ...   unary function returning true/false whether button should be active, possibly nil
 ;;   :disabled        ...   unary function returning true/false whether button should be disabled, possibly nil
 ;;        button is only active when it is not disabled
@@ -74,7 +74,7 @@
 
 (defn- gen-button
   "Generates one button or roll item from the input data, with a hack for file loading."
-  [local-state params elem {:keys [id title icon label on-mouse-down on-click active disabled load-files]}]
+  [local-state params elem {:keys [id title icon label on-click active disabled load-files]}]
   (let [is-disabled (get-disabled disabled params) 
         is-active (get-active active is-disabled params)
         button-class (str elem (when is-disabled " disabled") (when is-active " active"))
@@ -82,17 +82,15 @@
         icon-span (when icon [:i { :className (str icon " fa-lg fa-fw") }])
         label-span (when label [:span { :className label-class } label])]
     (if (and load-files (not is-disabled))
-      (if/file-input { :on-change #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %)))
-                       :attr {:className elem :key id :title title} }
+      (if/file-input { :on-change #(wrap-toolbar-action local-state (fn [] (on-click params %)))
+                       :attr {:className button-class :key id :title title} }
                      icon-span label-span)
     [:span
       {:key id
        :className button-class
        :title title
        :onClick (when (and on-click (not is-disabled))
-                  #(wrap-toolbar-action local-state (fn [] (on-click params %))))
-       :onMouseDown (when (and on-mouse-down (not is-disabled))
-                      #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %))))}
+                  #(wrap-toolbar-action local-state (fn [] (on-click params %))))}
       icon-span label-span])))
  
 (defn- gen-roll
@@ -106,7 +104,7 @@
       [:span 
        {:className button-class
         :title title
-        :onMouseDown (when (not is-disabled) (jev/make-block-propagation #(swap! local-state update-in [:open] toggle-open-state id)))}
+        :onClick (when (not is-disabled) (jev/make-block-propagation #(swap! local-state update-in [:open] toggle-open-state id)))}
         (when icon [:i { :className (str icon " fa-lg fa-fw") }])
         (when label [:span { :className label-class } label])
         [:i { :className "fa fa-caret-down" }]]
@@ -261,17 +259,9 @@
   [component params left-data right-data]
   (let [local-state (trum/comp->local-state component)
         extended-params (assoc params :component component)]
-;    (js/console.log (str "component: " (pr component)))
-;    (js/console.log (str "local-state: " (pr local-state)))
     [:div.toolbar
      {:onMouseDown jev/block-propagation
-      :onTouchStart jev/block-propagation
-      :onClick jev/block-propagation}
+      :onTouchStart jev/block-propagation}
       (gen-side local-state extended-params left-data)
       [:span.fill]
-      (gen-side local-state extended-params right-data)
-
-      ;(render-map-tools local-state-atom)
-      ;(render-copy-tools component unit-tree app-state local-state-atom)
-      ;(add-view-buttons component unit-tree)
-    ]))
+      (gen-side local-state extended-params right-data)]))
