@@ -74,23 +74,25 @@
 
 (defn- gen-button
   "Generates one button or roll item from the input data, with a hack for file loading."
-  [local-state params elem {:keys [id title icon label on-mouse-down active disabled load-files]}]
+  [local-state params elem {:keys [id title icon label on-mouse-down on-click active disabled load-files]}]
   (let [is-disabled (get-disabled disabled params) 
         is-active (get-active active is-disabled params)
         button-class (str elem (when is-disabled " disabled") (when is-active " active"))
         label-class (if icon "btn-icon-label" "btn-label")
         icon-span (when icon [:i { :className (str icon " fa-lg fa-fw") }])
         label-span (when label [:span { :className label-class } label])]
-    (if (and (= elem :load) (not is-disabled))
+    (if (and load-files (not is-disabled))
       (if/file-input { :on-change #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %)))
                        :attr {:className elem :key id :title title} }
-        icon-span label-span)
+                     icon-span label-span)
     [:span
       {:key id
        :className button-class
        :title title
+       :onClick (when (and on-click (not is-disabled))
+                  #(wrap-toolbar-action local-state (fn [] (on-click params %))))
        :onMouseDown (when (and on-mouse-down (not is-disabled))
-         #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %))))}
+                      #(wrap-toolbar-action local-state (fn [] (on-mouse-down params %))))}
       icon-span label-span])))
  
 (defn- gen-roll
@@ -263,7 +265,8 @@
 ;    (js/console.log (str "local-state: " (pr local-state)))
     [:div.toolbar
      {:onMouseDown jev/block-propagation
-      :onTouchStart jev/block-propagation }
+      :onTouchStart jev/block-propagation
+      :onClick jev/block-propagation}
       (gen-side local-state extended-params left-data)
       [:span.fill]
       (gen-side local-state extended-params right-data)

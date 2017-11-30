@@ -41,9 +41,8 @@
        {:id "save"
         :icon "far fa-download"
         :label "Save"
-        :on-mouse-down #(lc/transact! (:component %1) [[ :orgpad/save-orgpad true ]]) }
-;        :on-mouse-down #(js/console.log (pr-str (:component %1))) }
-       {:elem :load
+        :on-click #(lc/transact! (:component %1) [[ :orgpad/save-orgpad true ]]) }
+       {:load-files true
         :id "load"
         :icon "far fa-upload"
         :label "Load"

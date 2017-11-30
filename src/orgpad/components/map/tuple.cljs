@@ -146,7 +146,7 @@
       :title "Remove page"}
      {:elem :text
       :id "pages"
-      :value #(constantly "2/3")}     
+      :value (constantly "2/3")}     
      ]]
 
   })
