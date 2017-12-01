@@ -65,12 +65,12 @@
 (defn- get-disabled
   "Button is disabled if disabled function returns true."
   [disabled params]
-  (when disabled (disabled params)))
+  (if (fn? disabled) (disabled params) disabled))
 
 (defn- get-active
   "Button is active if it is not disabled and active function returns true."
   [active is-disabled params]
-  (when (and active (not is-disabled)) (active params)))
+  (when (not is-disabled) (if (fn? active) (active params) active)))
 
 (defn- gen-button
   "Generates one button or roll item from the input data, with a hack for file loading."
@@ -256,12 +256,38 @@
 
 
 (rum/defcc app-toolbar < (rum/local {:open nil}) lc/parser-type-mixin-context
+  "Toolbar component"
   [component params left-data right-data]
   (let [local-state (trum/comp->local-state component)
-        extended-params (assoc params :component component)]
+        params (assoc params :component component)]
     [:div.toolbar
      {:onMouseDown jev/block-propagation
       :onTouchStart jev/block-propagation}
-      (gen-side local-state extended-params left-data)
+      (gen-side local-state params left-data)
       [:span.fill]
-      (gen-side local-state extended-params right-data)]))
+      (gen-side local-state params right-data)]))
+
+(defn- view-types-roll-items
+  "Get a list of available views except :orgpad/root-view as roll items."
+  [current-type unit-tree-key]
+  (->> (dissoc (registry/get-registry) :orgpad/root-view)
+       (map (fn [[view-type info]] { :id view-type
+                                     :label (info :orgpad/view-name)
+                                     :icon (info :orgpad/view-icon)
+                                     :on-click #(omt/change-view-type (:component %1) (unit-tree-key %1) view-type) 
+                                     :active (= current-type view-type) }))
+       (sort-by :label)))
+
+(defn gen-view-types-roll
+  "Generate roll of available views, for view, where unit-tree-key is the key for unit-tree in params."
+  [view unit-tree-key title-prefix id]
+  (let [current-info (-> view :orgpad/view-type registry/get-component-info)
+        current-name (:orgpad/view-name current-info)
+        current-icon (:orgpad/view-icon current-info)]
+    {:elem :roll
+      :id id
+      :icon current-icon
+      :title (str title-prefix ": " current-name)
+      :roll-items (view-types-roll-items (:orgpad/view-type view) unit-tree-key)
+      }))
+

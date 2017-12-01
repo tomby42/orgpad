@@ -8,6 +8,8 @@
             [orgpad.components.registry :as registry]
             [orgpad.components.input.file :as if]
             [orgpad.components.menu.toolbar :as tbar]
+            [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.rum :as trum]
             [orgpad.components.ci.dialog :as ci]))
@@ -74,55 +76,23 @@
                                                                                         :value (.-key ev) }]]]))
                                  })))
 
-(defn- render-menu
-  [local-state menu-key label styles & items]
-  [ :div { :className (str "menu " (styles :all)) }
-   [ :span { :className (str "menu-header " (styles :header))
-             :onClick #(js/setTimeout (fn [] (swap! local-state update menu-key not)) 100) }
-    [ :span (str label " ")
-     [ :i {:className (str "far " (if (@local-state menu-key) "fa-caret-up" "fa-caret-down")) }] ] ]
-   (into
-    [ :ul { :className (str "menu-body " (styles :body) " " (when (@local-state menu-key) (styles :open))) } ]
-    (map (fn [item] [ :li item ]) items)) ])
-
-(defn- render-view-menu
-  [component unit-tree local-state]
-  (render-menu
-   local-state :view-menu-unroll "View" { :body "view-menu-body"
-                                          :all "view-menu-all"
-                                          :header "view-menu-header"
-                                          :open "open-view" }
-        [ :div { :className "view-name" }
-         (render-view-names component unit-tree local-state)
-         [ :span { :className "far fa-plus-circle view-name-add"
-                   :title "New view"
-                   :onClick #(lc/transact! component
-                                           [[:orgpad/root-new-view [unit-tree
-                                                                    { :attr :orgpad/view-name
-                                                                      :value (@local-state :typed) }]]]) } ] ]
-        [ :div { :className "view-type" }
-         (render-view-types component unit-tree) ]))
-
-(defn- render-file-menu
-  [component unit-tree local-state]
-  (render-menu
-   local-state :file-menu-unroll "File" { :body "file-menu-body"
-                                          :all "file-menu-all"
-                                          :header "file-menu-header"
-                                          :open "open-file" }
-
-   [ :div.file-item
-    { :onClick #(lc/transact! component [[ :orgpad/save-orgpad true ]]) }
-    [ :span "Save" ]]
-
-   [ :div.file-item
-    (if/file-input { :on-change #(lc/transact! component [[ :orgpad/load-orgpad % ]]) } 
-      nil [ :span { :key 1 } "Load" ])]
-
-   [ :div.file-item
-    { :onClick #(lc/transact! component [[ :orgpad/export-as-html ((lc/global-conf component) :storage-el) ]]) }
-    [ :span "Export html" ]]
-   ))
+;(defn- render-view-menu
+;  [component unit-tree local-state]
+;  (render-menu
+;   local-state :view-menu-unroll "View" { :body "view-menu-body"
+;                                          :all "view-menu-all"
+;                                          :header "view-menu-header"
+;                                          :open "open-view" }
+;        [ :div { :className "view-name" }
+;         (render-view-names component unit-tree local-state)
+;         [ :span { :className "far fa-plus-circle view-name-add"
+;                   :title "New view"
+;                   :onClick #(lc/transact! component
+;                                           [[:orgpad/root-new-view [unit-tree
+;                                                                    { :attr :orgpad/view-name
+;                                                                      :value (@local-state :typed) }]]]) } ] ]
+;        [ :div { :className "view-type" }
+;         (render-view-types component unit-tree) ]))
 
 (defn- normalize-range
   [min max val]
@@ -147,109 +117,44 @@
                                                                            (-> % .-target .-value))}]])
                }]]))
 
-(defn- render-edit-menu
-  [component unit-tree local-state]
-  (let [undoable (lc/query component :orgpad/undoable? [] true)
-        redoable (lc/query component :orgpad/redoable? [] true)]
-    (render-menu
-     local-state :edit-menu-unroll "Edit" { :body "edit-menu-body"
-                                            :all "edit-menu-all"
-                                            :header "edit-menu-header"
-                                            :open "open-edit" }
-
-     [ :div
-      (if undoable
-        { :className "file-item" :onClick #(lc/transact! component [[ :orgpad/undo true ]]) }
-        { :className "disabled-item" })
-      [ :span "Undo" ]]
-
-     [ :div
-      (if redoable
-        { :className "file-item" :onClick #(lc/transact! component [[ :orgpad/redo true ]]) }
-        { :className "disabled-item"})
-      [ :span  "Redo" ]]
-
-     [ :div
-      (if (or undoable redoable)
-        { :className "file-item" :onClick #(swap! local-state update :history not) }
-        { :className "disabled-item"})
-      [ :span  (str "History " (if (:history @local-state) "off" "on")) ]]
-     )))
-
-(defn- view-types-roll-items
-  [current-type]
-  (->> (dissoc (registry/get-registry) :orgpad/root-view)
-       (map (fn [[view-type info]] { :id view-type
-                                     :label (info :orgpad/view-name)
-                                     :icon (info :orgpad/view-icon)
-                                     :active (when (= current-type view-type) #(constantly true)) }))
-       (sort-by :label)))
-
-(defn- gen-view-types-roll
-  [view]
-  (let [current-info (-> view :orgpad/view-type registry/get-component-info)
-        current-name (:orgpad/view-name current-info)
-        current-icon (:orgpad/view-icon current-info)]
-    [{:elem :roll
-      :id "views"
-      :icon current-icon
-      :title (str "Current: " current-name)
-      :roll-items (view-types-roll-items (:orgpad/view-type view))
-      }]))
+(defn- gen-view-toolbar 
+  [unit view view-type]
+  (let [view-toolbar (-> view :orgpad/view-type registry/get-component-info :orgpad/toolbar)]
+    (if (= view-type :orgpad/map-tuple-view)
+      (let [ac-unit-tree (ot/active-child-tree unit view)
+            ac-view-type (ot/view-type ac-unit-tree)] 
+        (conj view-toolbar [(tbar/gen-view-types-roll (:view ac-unit-tree) :ac-unit-tree "Current page" "page-views")]))
+      view-toolbar)))
 
 (rum/defcc status < (rum/local { :unroll false :view-menu-unroll false :typed "" :history false }) lc/parser-type-mixin-context
   [component { :keys [unit view path-info] :as unit-tree } app-state]
   (let [id (unit :db/id)
         local-state (trum/comp->local-state component)
-        msg-list (lc/query component :orgpad.ci/msg-list [])]
+        msg-list (lc/query component :orgpad.ci/msg-list [])
+        view-type (ot/view-type unit-tree)]
     [:div {:onMouseDown jev/block-propagation :onTouchStart jev/block-propagation}
      (when (:history @local-state)
        (render-history component local-state))
 
      (ci/dialog-panel unit-tree app-state msg-list)
 
-     [ :div { :className "status-menu" }
-      [ :div { :className "tools-menu" :title "Actions" }
-       [ :div { :className "tools-button"
-                :onClick #(js/setTimeout
-                           (fn []
-                             (swap! local-state update-in [:unroll] not)) 100) }
-        [ :i { :className "far fa-bars fa-lg" } ] ]
-       [ :div { :className (str "tools" (when (@local-state :unroll) " more-current")) }
-        (render-file-menu component unit-tree local-state)
-        (render-edit-menu component unit-tree local-state)
-        (render-view-menu component unit-tree local-state)
-
-;;       [ :div { :className "mode-button" }
-;;        [ :i { :className (str "fa fa-leaf fa-lg") } ] ]
-        ]
-       ]
-
-      [ :div { :className "mode-button"
-               :title "Toggle mode"
-               :onClick #(lc/transact!
-                          component
-                          [[:orgpad/app-state
-                            [[:mode] (next-mode (:mode app-state))]]]) }
-       [ :i { :className (str "far "  (mode-icons (:mode app-state)) " fa-lg") } ] ]
-
-
-      (when (not= id 0)
-        [ :div { :className "done-root-unit-button"
-                 :title "Done"
-                 :onClick #(lc/transact!
-                            component
-                            [[:orgpad/root-unit-close { :db/id id
-                                                        :orgpad/view-name (view :orgpad/view-name)
-                                                        :orgpad/view-type (view :orgpad/view-type)
-                                                        :orgpad/view-path (path-info :orgpad/view-path) }]])}
-         [ :i { :className "far fa-check-circle fa-lg" } ] ] ) ]
-      
-       (let [root-component-toolbar (-> :orgpad/root-view registry/get-component-info :orgpad/toolbar)
-             view-types-section (gen-view-types-roll view)
-             view-toolbar (-> view :orgpad/view-type registry/get-component-info :orgpad/toolbar)
-             left-toolbar (concat (conj root-component-toolbar view-types-section) view-toolbar)]
-         (tbar/app-toolbar {:component component} left-toolbar nil))
+       (let [root-component-left-toolbar (-> :orgpad/root-view registry/get-component-info :orgpad/left-toolbar)
+             view-types-section [(tbar/gen-view-types-roll view :unit-tree "Current" "views")]
+             view-toolbar (gen-view-toolbar unit view view-type)
+             left-toolbar (concat (conj root-component-left-toolbar view-types-section) view-toolbar)
+             right-toolbar (-> :orgpad/root-view registry/get-component-info :orgpad/right-toolbar)
+             params { :id           id
+                      :unit-tree    unit-tree 
+                      :unit         unit
+                      :view         view
+                      :path-info    path-info
+                      :local-state  local-state
+                      :mode         (:mode app-state)
+                      :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
+                      :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view))) }
+             ]
+         (js/console.log view-types-section)
+         (tbar/app-toolbar params left-toolbar right-toolbar))
          ]
          
          

@@ -12,13 +12,15 @@
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.rum :as trum]
             [orgpad.tools.orgpad :as ot]
-            [orgpad.tools.orgpad-manipulation :as otm]))
+            [orgpad.tools.orgpad-manipulation :as omt]
+            [goog.string :as gstring]
+            [goog.string.format]))
 
 (def ^:private CLICK-DELTA 250)
 
 (defn- open-unit
   [component {:keys [unit view]}]
-  (otm/open-unit component
+  (omt/open-unit component
                    (ot/get-sorted-ref unit
                                       (view :orgpad/active-unit))))
 
@@ -31,16 +33,16 @@
       [ :i { :className "far fa-cogs fa-lg" } ] ]
      [ :div { :className (str "tools" (when (@local-state :unroll) " more-4")) }
       [ :div { :className "tools-button" :title "New sheet"
-               :onClick #(otm/new-sheet component unit-tree) }
+               :onClick #(omt/new-sheet component unit-tree) }
        [ :i { :className "far fa-plus-circle fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Previous"
-               :onClick #(otm/switch-active-sheet component unit-tree -1) }
+               :onClick #(omt/switch-active-sheet component unit-tree -1) }
        [ :i { :className "far fa-caret-left fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Next"
-               :onClick #(otm/switch-active-sheet component unit-tree 1) }
+               :onClick #(omt/switch-active-sheet component unit-tree 1) }
        [ :i { :className "far fa-caret-right fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Remove"
-               :onClick #(otm/remove-active-sheet component unit-tree) }
+               :onClick #(omt/remove-active-sheet component unit-tree) }
        [ :i { :className "far fa-times fa-lg" } ] ]
       [ :div { :className "tools-button" :title "Edit" }
        [ :i { :className "far fa-file-edit fa-lg"
@@ -91,7 +93,7 @@
              :onMouseUp (fn [e]
                           (when (and (< (- (t/now) (@local-state :time-stamp)) CLICK-DELTA)
                                      (not= (:mode app-state) :quick-write))
-                            (otm/switch-active-sheet component unit-tree (comp-dir e)))) }
+                            (omt/switch-active-sheet component unit-tree (comp-dir e)))) }
      (when child-tree
        (rum/with-key (node/node child-tree app-state) 2))
      [ :div.map-tuple-clicker-left ]
@@ -116,7 +118,7 @@
                                        :orgpad/view-name "default" }
   :orgpad/class               map-tuple-component
   :orgpad/needs-children-info true
-  :orgpad/view-name           "Notebook View"
+  :orgpad/view-name           "Book View"
   :orgpad/view-icon           "far fa-book"
 
   :orgpad/propagate-props-from-children? true
@@ -131,22 +133,26 @@
     [{:elem :btn
       :id "previous-page"
       :icon "far fa-arrow-left"
-      :title "Previous page"}
+      :title "Previous page"
+      :on-click #(omt/switch-active-sheet (:component %1) (:unit-tree %1) -1) }
      {:elem :btn
       :id "next-page"
       :icon "far fa-arrow-right"
-      :title "Next page"}
+      :title "Next page"
+      :on-click #(omt/switch-active-sheet (:component %1) (:unit-tree %1) 1) }
+     {:elem :text
+      :id "pages"
+      :value #(apply gstring/format "%d/%d" (ot/get-sheet-number (:unit-tree %1))) }
      {:elem :btn
       :id "add-page"
       :icon "far fa-plus-circle"
-      :title "Add page"}
+      :title "Add page"
+      :on-click #(omt/new-sheet (:component %1) (:unit-tree %1)) }
      {:elem :btn
       :id "remove-page"
       :icon "far fa-minus-circle"
-      :title "Remove page"}
-     {:elem :text
-      :id "pages"
-      :value (constantly "2/3")}     
+      :title "Remove page"
+      :on-click #(omt/remove-active-sheet (:component %1) (:unit-tree %1)) }
      ]]
 
   })

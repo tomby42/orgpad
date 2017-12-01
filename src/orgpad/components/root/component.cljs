@@ -14,8 +14,8 @@
         app-state (lc/query component :orgpad/app-state [])]
     [ :div { :className "root-view" }
       ;; (rum/with-key (sidebar/sidebar-component) 0)
-      (rum/with-key (node/node unit-tree app-state) "root-view-part")
       (rum/with-key (st/status unit-tree app-state) "status-part")
+      (rum/with-key (node/node unit-tree app-state) "root-view-part")
       (when (app-state :loading)
         [ :div.loading
          [ :div.status
@@ -32,7 +32,7 @@
   :orgpad/class               root-component
   :orgpad/needs-children-info true
 
-  :orgpad/toolbar [
+  :orgpad/left-toolbar [
     [{:elem :roll
       :id "file"
       :icon "far fa-save"
@@ -51,18 +51,59 @@
         :label "Export HTML"
         :on-click #(lc/transact! (:component %1) [[ :orgpad/export-as-html ((lc/global-conf (:component %1)) :storage-el) ]]) }
        ]}]
-    [{:elem :btn
+    [
+     {:elem :btn
       :id "history"
       :icon "far fa-clock"
       :title "History on/off"
-      :disabled #(= 1 1)}
+      :on-click #(swap! (:local-state %1) update :history not)
+      :disabled #(not (or (lc/query (:component %1) :orgpad/undoable? [] true)
+                      (lc/query (:component %1) :orgpad/redoable? [] true)))}
      {:elem :btn
       :id "undo"
       :icon "far fa-undo-alt"
-      :title "Undo"}
+      :title "Undo"
+      :on-click #(lc/transact! (:component %1) [[ :orgpad/undo true ]])
+      :disabled #(not (lc/query (:component %1) :orgpad/undoable? [] true))}
      {:elem :btn
       :id "redo"
       :icon "far fa-redo-alt"
-      :title "Redo"}]
+      :title "Redo"
+      :on-click #(lc/transact! (:component %1) [[ :orgpad/redo true ]])
+      :disabled #(not (lc/query (:component %1) :orgpad/redoable? [] true))}
+     ]
   ]
+
+  :orgpad/right-toolbar [
+    [{:elem :btn
+      :id "level-up"
+      :icon "far fa-level-up"
+      :title "Level up"
+      :on-click #(lc/transact! (:component %1)
+                   [[:orgpad/root-unit-close {
+                       :db/id (:id %1)
+                       :orgpad/view-name ((:view %1) :orgpad/view-name)
+                       :orgpad/view-type ((:view %1) :orgpad/view-type)
+                       :orgpad/view-path ((:path-info %1) :orgpad/view-path) }]])
+      :disabled #(= (:id %1) 0)}
+    ]
+    [{:elem :btn
+      :id "edit-mode"
+      :icon "far fa-pencil"
+      :title "Edit mode"
+      :active #(= (:mode %1) :write)
+      :on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :write]]]) }
+     {:elem :btn
+      :id "read-mode"
+      :icon "far fa-eye"
+      :title "Read mode"
+      :active #(= (:mode %1) :read)
+      :on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :read]]]) }
+    ]
+    [{:elem :btn
+      :id "help"
+      :icon "far fa-question-circle"
+      :label "Help"
+      :on-click #(js/window.open "http://pavel.klavik.cz/orgpad/index.html" "_blank")}
+  ]]
 })
