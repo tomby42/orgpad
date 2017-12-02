@@ -230,7 +230,7 @@
   (let [view-toolbar (-> view :orgpad/view-type registry/get-component-info :orgpad/uedit-toolbar)]
     (if (and (= view-type :orgpad/map-tuple-view) (not (ot/no-sheets? unit-tree)))
       (let [ac-unit-tree (ot/active-child-tree unit view)
-            ac-view-types-roll (tbar/gen-view-types-roll (:view ac-unit-tree) :ac-unit-tree "Current page" "page-views")
+            ac-view-types-roll (tbar/gen-view-types-roll (:view ac-unit-tree) :ac-unit-tree "Current page" "page-views" #(= (:mode %1) :read))
             last-sec (- (count view-toolbar) 1) ] 
         (update-in view-toolbar [last-sec] conj ac-view-types-roll ))
       view-toolbar)))
@@ -250,7 +250,7 @@
            :icon "far fa-edit"
            :title "Edit"
            :on-click #(omt/open-unit (:component %1) (:unit-tree %1))}]]
-        view-types-section [(tbar/gen-view-types-roll view :unit-tree "Current" "views")]
+        view-types-section [(tbar/gen-view-types-roll view :unit-tree "Current" "views" #(= (:mode %1) :read))]
         view-toolbar (gen-view-toolbar unit-tree view-type)
         left-toolbar (concat (conj common-left-toolbar view-types-section) view-toolbar)
         right-toolbar [

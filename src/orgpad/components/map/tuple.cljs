@@ -93,13 +93,15 @@
     :id "add-page"
     :icon "far fa-plus-circle"
     :title "Add page at the end"
-    :on-click #(omt/new-sheet (:component %1) (:unit-tree %1)) }
+    :on-click #(omt/new-sheet (:component %1) (:unit-tree %1))
+    :hidden #(= (:mode %1) :read) }
    {:elem :btn
     :id "remove-page"
     :icon "far fa-minus-circle"
     :title "Remove current page"
     :on-click #(omt/remove-active-sheet (:component %1) (:unit-tree %1))
-    :disabled #(<= ((ot/get-sheet-number (:unit-tree %1)) 1) 1) }
+    :disabled #(<= ((ot/get-sheet-number (:unit-tree %1)) 1) 1)
+    :hidden #(= (:mode %1) :read) }
    {:elem :btn 
     :id "open-page"
     :icon "far fa-sign-in-alt"

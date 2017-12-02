@@ -58,19 +58,22 @@
       :title "History on/off"
       :on-click #(swap! (:local-state %1) update :history not)
       :disabled #(not (or (lc/query (:component %1) :orgpad/undoable? [] true)
-                      (lc/query (:component %1) :orgpad/redoable? [] true)))}
+                      (lc/query (:component %1) :orgpad/redoable? [] true)))
+      :hidden #(= (:mode %1) :read)}
      {:elem :btn
       :id "undo"
       :icon "far fa-undo-alt"
       :title "Undo"
       :on-click #(lc/transact! (:component %1) [[ :orgpad/undo true ]])
-      :disabled #(not (lc/query (:component %1) :orgpad/undoable? [] true))}
+      :disabled #(not (lc/query (:component %1) :orgpad/undoable? [] true))
+      :hidden #(= (:mode %1) :read)}
      {:elem :btn
       :id "redo"
       :icon "far fa-redo-alt"
       :title "Redo"
       :on-click #(lc/transact! (:component %1) [[ :orgpad/redo true ]])
-      :disabled #(not (lc/query (:component %1) :orgpad/redoable? [] true))}
+      :disabled #(not (lc/query (:component %1) :orgpad/redoable? [] true))
+      :hidden #(= (:mode %1) :read)}
      ]
   ]
 
@@ -85,7 +88,7 @@
                        :orgpad/view-name ((:view %1) :orgpad/view-name)
                        :orgpad/view-type ((:view %1) :orgpad/view-type)
                        :orgpad/view-path ((:path-info %1) :orgpad/view-path) }]])
-      :disabled #(= (:id %1) 0)}
+      :hidden #(= (:id %1) 0)}
     ]
     [{:elem :btn
       :id "edit-mode"

@@ -33,9 +33,12 @@
 ;;   :icon            ...   font-awesome style name or nil for no icon
 ;;   :label           ...   displayed label or nil for no label
 ;;   :on-click        ...   binary function on click
-;;   :active          ...   unary function returning true/false whether button should be active, possibly nil
-;;   :disabled        ...   unary function returning true/false whether button should be disabled, possibly nil
+;;   :active          ...   true/false or a unary function returning true/false whether button should be active
+;;   :disabled        ...   true/false or a unary function returning true/false whether button should be disabled
 ;;        button is only active when it is not disabled
+;;   :hidden          ...   true/false or a unary function returning true/false whether button should be hidden
+;;        hidden buttons are completely ignored in data, when all buttons in some section are
+;;        hidden, the section is ignored
 ;;   :load-files      ...   may be omitted, true/false, special hack for file loading is used
 ;;
 ;;   for :roll only
@@ -50,6 +53,32 @@
 ;;
 ;; The first parameter of all functions is the map param given on the input, the second parameter
 ;; (if it exists) is the Javascript event.
+
+(defn- get-hidden
+  "Button is hidden if hidden is true or hidden function returns true."
+  [hidden params]
+  (if (fn? hidden) (hidden params) hidden))
+
+(defn- visible-elem?
+  "Return true/false whether element is visible."
+  [params {:keys [hidden]}]
+  (not (get-hidden hidden params)))
+
+(defn- filter-roll-items
+  "Returns data for roll with all hidden roll-items filtered out."
+  [params {:keys [roll-items] :as data}]
+  (assoc data :roll-items (filter (partial visible-elem? params) roll-items)))
+
+(defn- filter-section
+  "Returns data for section with all hidden elements filtered out."
+  [params data]
+  (filter (partial visible-elem? params)
+    (map #(if (= (:elem %) :roll) (filter-roll-items params %) %) data)))
+
+(defn- filter-side
+  "Returns data for side with hidden elements in all sections filtered out and removed empty sections."
+  [params data]
+  (filter #(> (count %) 0) (map #(filter-section params %) data)))
 
 (defn- toggle-open-state
   "Toggle which roll is open. Opens clicked-roll unless it is already opened, in which case it is closed."
@@ -74,12 +103,12 @@
     #(wrap-toolbar-action local-state (fn [] (func params %)))))
 
 (defn- get-disabled
-  "Button is disabled if disabled function returns true."
+  "Button is disabled if disabled is true or disabled function returns true."
   [disabled params]
   (if (fn? disabled) (disabled params) disabled))
 
 (defn- get-active
-  "Button is active if it is not disabled and active function returns true."
+  "Button is active if it is not disabled and active is true or active function returns true."
   [active is-disabled params]
   (when (not is-disabled) (if (fn? active) (active params) active)))
 
@@ -143,12 +172,15 @@
   [local-state params data]
   (map (partial gen-element local-state params) data))
 
+  
 (defn- gen-side
   "Generates one side of the toolbar from the input data."
   [local-state params data]
-  (interpose [:span.sep]
-    (map (partial gen-section local-state params) data)))
-
+  (let [sep-data (map #(identity [:span.sep {:key (str (:id (nth % 0)) "-sep") }]) data)]
+    (drop-last (interleave 
+      (map (partial gen-section local-state params) data)
+      sep-data))))
+     
 (defn- render-map-tools
   [local-state-atom]
   (let [canvas-mode (:canvas-mode @local-state-atom)
@@ -198,9 +230,10 @@
            :onMouseDown jev/block-propagation
            :onTouchStart jev/block-propagation
            :onDoubleClick jev/block-propagation}
-      (gen-side local-state params left-data)
+      (js/console.log (gen-side local-state params (filter-side params left-data)))
+      (gen-side local-state params (filter-side params left-data))
       [:span.fill]
-      (gen-side local-state params right-data)]))
+      (gen-side local-state params (filter-side params right-data))]))
 
 (defn- view-types-roll-items
   "Get a list of available views except :orgpad/root-view as roll items."
@@ -215,7 +248,7 @@
 
 (defn gen-view-types-roll
   "Generate roll of available views, for view, where unit-tree-key is the key for unit-tree in params."
-  [view unit-tree-key title-prefix id]
+  [view unit-tree-key title-prefix id hidden]
   (let [current-info (-> view :orgpad/view-type registry/get-component-info)
         current-name (:orgpad/view-name current-info)
         current-icon (:orgpad/view-icon current-info)]
@@ -224,5 +257,5 @@
       :icon current-icon
       :title (str title-prefix ": " current-name)
       :roll-items (view-types-roll-items (:orgpad/view-type view) unit-tree-key)
-      }))
+      :hidden hidden }))
 
