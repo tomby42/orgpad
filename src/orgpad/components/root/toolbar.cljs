@@ -1,12 +1,11 @@
-(ns ^{:doc "Root component"}
-  orgpad.components.root.status
+(ns ^{:doc "Main toolbar"}
+  orgpad.components.root.toolbar
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
             [cljsjs.react-select]
             [orgpad.cycle.life :as lc]
             [orgpad.tools.dscript :as ds]
             [orgpad.components.registry :as registry]
-            [orgpad.components.input.file :as if]
             [orgpad.components.menu.toolbar :as tbar]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
@@ -137,7 +136,7 @@
      (when (:history @local-state)
        (render-history component local-state))
 
-     (ci/dialog-panel unit-tree app-state msg-list)
+     ;(ci/dialog-panel unit-tree app-state msg-list)
 
        (let [root-component-left-toolbar (-> :orgpad/root-view registry/get-component-info :orgpad/left-toolbar)
              view-types-section [(tbar/gen-view-types-roll view :unit-tree "Current" "views" #(= (:mode %1) :read))]

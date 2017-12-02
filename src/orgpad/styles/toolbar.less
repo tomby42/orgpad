@@ -4,6 +4,8 @@
   border-bottom: 2px solid black;
   font-size: 13pt;
   background-color: #fff;
+  flex-grow: 0;
+  order: 0;
 
   .btn {
     text-align: center;
@@ -12,6 +14,7 @@
     padding-bottom: 3px;
     display: inline-block;
     background-color: #fff;
+    white-space: nowrap; 
     &:hover, &.active:hover {
       background-color: #6df;
     }
@@ -83,6 +86,7 @@
 
 
   .sep {
+    display: inline-block;
     background-color: black;
     width: 2px;
     height: 23px;

@@ -7,15 +7,17 @@
             [orgpad.components.node :as node]
             [orgpad.components.sidebar.sidebar :as sidebar]
             [orgpad.components.input.file :as if]
-            [orgpad.components.root.status :as st]))
+            [orgpad.components.root.toolbar :as tbar]
+            [orgpad.components.root.nesting :as nest]))
 
 (rum/defcc root-component < lc/parser-type-mixin-context [component]
   (let [unit-tree (lc/query component :orgpad/root-view [])
         app-state (lc/query component :orgpad/app-state [])]
-    [ :div { :className "root-view" }
+    [ :div.root-view
       ;; (rum/with-key (sidebar/sidebar-component) 0)
-      (rum/with-key (st/status unit-tree app-state) "status-part")
       (rum/with-key (node/node unit-tree app-state) "root-view-part")
+      (rum/with-key (tbar/status unit-tree app-state) "status-part")
+      (rum/with-key (nest/nesting unit-tree) "nesting-part")
       (when (app-state :loading)
         [ :div.loading
          [ :div.status
