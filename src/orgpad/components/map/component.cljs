@@ -591,23 +591,28 @@
     [{:elem :btn
       :id "unit-creation-mode"
       :icon "far fa-plus-square"
-      :title "Unit creation mode"}
+      :title "Unit creation mode"
+      :hidden #(= (:mode %1) :read)}
      {:elem :btn
       :id "moving-mode"
       :icon "far fa-arrows"
-      :title "Moving mode"}
+      :title "Moving mode"
+      :hidden #(= (:mode %1) :read)}
      {:elem :btn
       :id "selection-mode"
       :icon "far fa-expand"
-      :title "Selection mode"}]
+      :title "Selection mode"
+      :hidden #(= (:mode %1) :read)}]
     [{:elem :btn
       :id "copy"
       :icon "far fa-copy"
-      :title "Copy"}
+      :title "Copy"
+      :hidden #(= (:mode %1) :read)}
      {:elem :btn
       :id "paste"
       :icon "far fa-paste"
-      :title "Paste"}]]
+      :title "Paste"
+      :hidden #(= (:mode %1) :read)}]]
 
   :orgpad/uedit-toolbar nil
   })

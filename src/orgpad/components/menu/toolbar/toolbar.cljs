@@ -175,7 +175,7 @@
 
   
 (defn- gen-side
-  "Generates one side of the toolbar from the input data."
+  "Generates one side of the toolbar from the input data, interposing each section with separators."
   [local-state params data]
   (let [sep-data (map #(identity [:span.sep {:key (str (:id (nth % 0)) "-sep") }]) data)]
     (drop-last (interleave 
