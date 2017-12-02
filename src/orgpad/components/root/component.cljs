@@ -77,8 +77,8 @@
   :orgpad/right-toolbar [
     [{:elem :btn
       :id "level-up"
-      :icon "far fa-level-up"
-      :title "Level up"
+      :icon "far fa-sign-out-alt"
+      :title "Leave current unit"
       :on-click #(lc/transact! (:component %1)
                    [[:orgpad/root-unit-close {
                        :db/id (:id %1)

@@ -24,47 +24,10 @@
                    (ot/get-sorted-ref unit
                                       (view :orgpad/active-unit))))
 
-(defn- render-local-menu
-  [component unit-tree app-state local-state]
-  (html
-   [ :div { :className "map-tuple-menu" }
-    [ :div { :className "tools-menu" :title "Actions" }
-     [ :div { :className "tools-button" :onClick #(swap! local-state update-in [:unroll] not) }
-      [ :i { :className "far fa-cogs fa-lg" } ] ]
-     [ :div { :className (str "tools" (when (@local-state :unroll) " more-4")) }
-      [ :div { :className "tools-button" :title "New sheet"
-               :onClick #(omt/new-sheet component unit-tree) }
-       [ :i { :className "far fa-plus-circle fa-lg" } ] ]
-      [ :div { :className "tools-button" :title "Previous"
-               :onClick #(omt/switch-active-sheet component unit-tree -1) }
-       [ :i { :className "far fa-caret-left fa-lg" } ] ]
-      [ :div { :className "tools-button" :title "Next"
-               :onClick #(omt/switch-active-sheet component unit-tree 1) }
-       [ :i { :className "far fa-caret-right fa-lg" } ] ]
-      [ :div { :className "tools-button" :title "Remove"
-               :onClick #(omt/remove-active-sheet component unit-tree) }
-       [ :i { :className "far fa-times fa-lg" } ] ]
-      [ :div { :className "tools-button" :title "Edit" }
-       [ :i { :className "far fa-file-edit fa-lg"
-              :onClick #(open-unit component unit-tree)
-             } ] ]
-      ]
-     ] ] ))
-
-(defn- render-sheet-number
-  [{ :keys [unit view]}]
-  (html
-   [ :div { :className "map-tuple-sheet-number" :key 1 }
-    (str (-> view :orgpad/active-unit inc) "/" (-> unit :orgpad/refs count))
-    ]
-  ))
-
 (defn- render-write-mode
   [component { :keys [unit view props] :as unit-tree } app-state local-state]
   (let [child-tree (ot/active-child-tree unit view)]
     [ :div { :className "map-tuple" }
-      (render-local-menu component unit-tree app-state local-state)
-      (render-sheet-number unit-tree)
       (when child-tree
         (rum/with-key (node/node child-tree app-state) 2)) ]))
 
@@ -134,25 +97,35 @@
       :id "previous-page"
       :icon "far fa-arrow-left"
       :title "Previous page"
-      :on-click #(omt/switch-active-sheet (:component %1) (:unit-tree %1) -1) }
+      :on-click #(omt/switch-active-sheet (:component %1) (:unit-tree %1) -1)
+      :disabled #(ot/first-sheet? (:unit-tree %1)) }
      {:elem :btn
       :id "next-page"
       :icon "far fa-arrow-right"
       :title "Next page"
-      :on-click #(omt/switch-active-sheet (:component %1) (:unit-tree %1) 1) }
+      :on-click #(omt/switch-active-sheet (:component %1) (:unit-tree %1) 1)
+      :disabled #(ot/last-sheet? (:unit-tree %1)) }
      {:elem :text
       :id "pages"
-      :value #(apply gstring/format "%d/%d" (ot/get-sheet-number (:unit-tree %1))) }
+      :value #(if (ot/no-sheets? (:unit-tree %1))
+                "none"
+                (apply gstring/format "%d/%d" (ot/get-sheet-number (:unit-tree %1)))) }
      {:elem :btn
       :id "add-page"
       :icon "far fa-plus-circle"
-      :title "Add page"
+      :title "Add page at the end"
       :on-click #(omt/new-sheet (:component %1) (:unit-tree %1)) }
      {:elem :btn
       :id "remove-page"
       :icon "far fa-minus-circle"
-      :title "Remove page"
-      :on-click #(omt/remove-active-sheet (:component %1) (:unit-tree %1)) }
+      :title "Remove current page"
+      :on-click #(omt/remove-active-sheet (:component %1) (:unit-tree %1))
+      :disabled #(<= ((ot/get-sheet-number (:unit-tree %1)) 1) 1) }
+     {:elem :btn 
+      :id "open-page"
+      :icon "far fa-sign-in-alt"
+      :title "Open current page"
+      :on-click #(open-unit (:component %1) (:unit-tree %1)) }     
      ]]
 
   })

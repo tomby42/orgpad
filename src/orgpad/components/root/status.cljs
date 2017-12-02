@@ -122,8 +122,9 @@
   (let [view-toolbar (-> view :orgpad/view-type registry/get-component-info :orgpad/toolbar)]
     (if (= view-type :orgpad/map-tuple-view)
       (let [ac-unit-tree (ot/active-child-tree unit view)
-            ac-view-type (ot/view-type ac-unit-tree)] 
-        (conj view-toolbar [(tbar/gen-view-types-roll (:view ac-unit-tree) :ac-unit-tree "Current page" "page-views")]))
+            ac-view-types-roll (tbar/gen-view-types-roll (:view ac-unit-tree) :ac-unit-tree "Current page" "page-views")
+            last-sec (- (count view-toolbar) 1) ] 
+        (update-in view-toolbar [last-sec] conj ac-view-types-roll ))
       view-toolbar)))
 
 (rum/defcc status < (rum/local { :unroll false :view-menu-unroll false :typed "" :history false }) lc/parser-type-mixin-context
@@ -153,7 +154,6 @@
                       :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
                       :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view))) }
              ]
-         (js/console.log view-types-section)
          (tbar/app-toolbar params left-toolbar right-toolbar))
          ]
          

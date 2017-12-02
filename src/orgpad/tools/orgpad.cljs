@@ -50,8 +50,22 @@
   (let [active-child (-> view :orgpad/active-unit)]
     (get-sorted-ref unit active-child)))
 
-(defn- get-sheet-number [{ :keys [unit view]}]
+(defn get-sheet-number
+  [{ :keys [unit view]}]
   [(-> view :orgpad/active-unit inc) (-> unit :orgpad/refs count)])
+
+(defn no-sheets?
+  [unit-tree]
+  (= ((get-sheet-number unit-tree) 1) 0))
+
+(defn first-sheet?
+  [unit-tree]
+  (= ((get-sheet-number unit-tree) 0) 1))
+
+(defn last-sheet?
+  [unit-tree]
+  (let [[current-sheet sheet-count] (get-sheet-number unit-tree)]
+    (>= current-sheet sheet-count)))
 
 (defn update-unit-view-query
   [unit-id view key val]
