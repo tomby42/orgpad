@@ -119,8 +119,8 @@
         is-active (get-active active is-disabled params)
         button-class (str elem (when is-disabled " disabled") (when is-active " active"))
         label-class (if icon "btn-icon-label" "btn-label")
-        icon-span (when icon [:i { :className (str icon " fa-lg fa-fw") }])
-        label-span (when label [:span { :className label-class } label])]
+        icon-span (when icon [:i { :key (str id "-icon") :className (str icon " fa-lg fa-fw") }])
+        label-span (when label [:span { :key (str id "-label") :className label-class } label])]
     (if (and load-files (not is-disabled))
       (if/file-input { :on-change #(wrap-toolbar-action local-state (fn [] (on-click params %)))
                        :attr {:className button-class :key id :title title} }
@@ -143,14 +143,15 @@
         label-class (if icon "btn-icon-label" "btn-label")]
     [:span.roll {:key id}
       [:span 
-       {:className button-class
+       {:key (str id "-btn")
+        :className button-class
         :title title
         :onClick (when (not is-disabled) (jev/make-block-propagation #(swap! local-state update-in [:open] toggle-open-state id)))}
-        (when icon [:i { :className (str icon " fa-lg fa-fw") }])
-        (when label [:span { :className label-class } label])
-        [:i { :className "fa fa-caret-down" }]]
+        (when icon [:i { :key (str id "-icon") :className (str icon " fa-lg fa-fw") }])
+        (when label [:span { :key (str id "-label") :className label-class } label])
+        [:i { :key (str id "-caret") :className "fa fa-caret-down" }]]
       (when (= (:open @local-state) id)
-        [:span.roll-items
+        [:span.roll-items { :key (str id "-roll-items") }
           (map (partial gen-button local-state params "roll-item") roll-items)])]))
 
 (defn- gen-text
@@ -165,7 +166,7 @@
     :btn (gen-button local-state params "btn" data)
     :roll (gen-roll local-state params data)
     :text (gen-text local-state params data)
-    (js/console.warn "Toolbar: No matching element to " (pr-str elem))))
+    (js/console.warn "Toolbar gen-element: No matching element to " (pr-str elem))))
 
 (defn- gen-section
   "Generates one section of the toolbar (between two separators) from the input data."
@@ -230,7 +231,6 @@
            :onMouseDown jev/block-propagation
            :onTouchStart jev/block-propagation
            :onDoubleClick jev/block-propagation}
-      (js/console.log (gen-side local-state params (filter-side params left-data)))
       (gen-side local-state params (filter-side params left-data))
       [:span.fill]
       (gen-side local-state params (filter-side params right-data))]))
