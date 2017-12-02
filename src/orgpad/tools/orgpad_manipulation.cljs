@@ -35,6 +35,12 @@
   (lc/transact! component [[ :orgpad.units/remove-unit
                              id ]]))
 
+(defn remove-units
+  [component pid selection]
+  (lc/transact! component [[:orgpad.units/remove-units
+                            [pid selection]]]))
+
+
 (defn copy-units-to-clipboard
   [component unit-tree app-state]
   (let [selection (get-in app-state [:selections (ot/uid unit-tree)])]

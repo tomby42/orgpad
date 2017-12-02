@@ -96,11 +96,6 @@
 (def ^:private border-styles
   [ "none" "solid" "dotted" "dashed" "double" "groove" "ridge" "inset" "outset" ])
 
-(defn- remove-units
-  [component pid selection]
-  (lc/transact! component [[:orgpad.units/remove-units
-                            [pid selection]]]))
-
 (defn enable-quick-edit
   [local-state]
   (let [react-component (-> @local-state :selected-unit (nth 3) rum/state deref :rum/react-component)]
@@ -172,6 +167,28 @@
                                                   (geom/-- (screen-bbox 1) bb-border)])
       bb)))
 
+(defn- gen-nodes-toolbar
+  [{:keys [unit view] :as unit-tree} app-state local-state selection]
+  (let [left-toolbar [
+         [{:elem :btn
+           :id "link"
+           :icon "far fa-link"
+           :title "Link"
+           :on-mouse-down #(start-links (:unit-tree %1) (:selection %1) (:local-state %1) %2)
+           :on-touch-start #(start-links (:unit-tree %1) (:selection %1) (:local-state %1) (aget %2 "touches" 0))}]]
+        right-toolbar [
+          [{:elem :btn
+            :icon "far fa-trash-alt"
+            :title "Remove"
+            :on-click #(omt/remove-units (:component %1) (ot/uid (:unit-tree %1)) (:selection %1))}]]
+        params {:unit-tree    unit-tree 
+                :unit         unit
+                :view         view
+                :local-state  local-state
+                :selection    selection
+                :mode         (:mode app-state)}]
+    (tbar/toolbar "uedit-toolbar" params left-toolbar right-toolbar)))
+
 (defn- nodes-unit-editor1
   [component {:keys [view] :as unit-tree} app-state local-state parent-view prop]
   (let [selection (get-in app-state [:selections (ot/uid unit-tree)])
@@ -190,17 +207,7 @@
                                                                          (aget % "touches" 0)))
             ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
             }
-        [:span.toolbar
-         [:span.lft-btn
-          {:title "Link"
-           :onMouseDown (jev/make-block-propagation #(start-links unit-tree selection local-state %))
-           :onTouchStart (jev/make-block-propagation #(start-links unit-tree selection local-state (aget % "touches" 0)))}
-          [:i.far.fa-link.fa-lg]]
-
-         [:span.rt-btn
-          {:title "Remove"
-           :onMouseDown #(remove-units component (ot/uid unit-tree) selection)}
-          [:i.far.fa-remove.fa-lg]]]]
+        (gen-nodes-toolbar unit-tree app-state local-state selection)]
 
      (when (= (@local-state :local-mode) :make-links)
        (let [tr (parent-view :orgpad/transform)]
