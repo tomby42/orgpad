@@ -30,15 +30,6 @@
   [component unit-tree]
   (lc/transact! component [[ :orgpad.units/remove-active-sheet-unit unit-tree ]]))
 
-(defn start-link
-  [local-state ev]
-  (swap! local-state merge { :local-mode :make-link
-                             :link-start-x (.-clientX (jev/touch-pos ev))
-                             :link-start-y (.-clientY (jev/touch-pos ev))
-                             :mouse-x (.-clientX (jev/touch-pos ev))
-                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
-
-
 (defn remove-unit
   [component id]
   (lc/transact! component [[ :orgpad.units/remove-unit

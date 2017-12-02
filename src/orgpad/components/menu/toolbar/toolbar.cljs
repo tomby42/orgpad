@@ -62,6 +62,17 @@
   (swap! local-state assoc-in [:open] nil)
   (f))
 
+(defn- close-toolbar
+  "Close any open roll."
+  [local-state]
+  (swap! local-state assoc-in [:open] nil))
+
+(defn- gen-action
+  "Generate function for js-event."
+  [is-disabled func local-state params]
+  (when (and (fn? func) (not is-disabled)) 
+    #(wrap-toolbar-action local-state (fn [] (func params %)))))
+
 (defn- get-disabled
   "Button is disabled if disabled function returns true."
   [disabled params]
@@ -74,7 +85,7 @@
 
 (defn- gen-button
   "Generates one button or roll item from the input data, with a hack for file loading."
-  [local-state params elem {:keys [id title icon label on-click active disabled load-files]}]
+  [local-state params elem {:keys [id title icon label on-click on-mouse-down on-touch-start active disabled load-files]}]
   (let [is-disabled (get-disabled disabled params) 
         is-active (get-active active is-disabled params)
         button-class (str elem (when is-disabled " disabled") (when is-active " active"))
@@ -89,8 +100,9 @@
       {:key id
        :className button-class
        :title title
-       :onClick (when (and on-click (not is-disabled))
-                  #(wrap-toolbar-action local-state (fn [] (on-click params %))))}
+       :onClick (gen-action is-disabled on-click local-state params)
+       :onMouseDown (gen-action is-disabled on-mouse-down local-state params)
+       :onTouchStart (gen-action is-disabled on-touch-start local-state params)}
       icon-span label-span])))
  
 (defn- gen-roll
@@ -137,84 +149,6 @@
   (interpose [:span.sep]
     (map (partial gen-section local-state params) data)))
 
-(defn- add-notebook-manipulators
-  [component {:keys [unit view] :as unit-tree}]
-  [:span
-    [:span.lft-sep]
-     [:span.lft-btn
-      {:title "Previous page"
-       :onMouseDown #(omt/switch-active-sheet component unit-tree -1) }
-      [:i.far.fa-arrow-left.fa-lg.fa-fw]]
-     [:span.lft-btn
-      {:title "Next page"
-       :onMouseDown #(omt/switch-active-sheet component unit-tree 1) }
-      [:i.far.fa-arrow-right.fa-lg.fa-fw]]
-     [:span.lft-text (apply gstring/format "%d/%d" (ot/get-sheet-number unit-tree))]
-     [:span.lft-btn
-      {:title "Add page"
-       :onMouseDown #(omt/new-sheet component unit-tree) }
-      [:i.far.fa-plus-circle.fa-lg.fa-fw]]
-     [:span.lft-btn
-      {:title "Remove page"
-       :onMouseDown #(omt/remove-active-sheet component unit-tree) }
-      [:i.far.fa-minus-circle.fa-lg.fa-fw]]
-     (let [ ac-unit-tree (ot/active-child-tree unit view)
-            ac-view-type (ot/view-type ac-unit-tree)
-            class-sheet (str "lft-btn" (when (= ac-view-type :orgpad/atomic-view) " active"))
-            class-map (str "lft-btn" (when (= ac-view-type :orgpad/map-view) " active"))]
-       (list
-         [:span
-          {:className class-sheet
-           :title "Sheet"
-           :onMouseDown #(omt/change-view-type component ac-unit-tree :orgpad/atomic-view) }
-           [:i.far.fa-file-alt.fa-lg.fa-fw]]
-         [:span
-          {:className class-map
-           :title "Map"
-           :onMouseDown #(omt/change-view-type component ac-unit-tree :orgpad/map-view) }
-          [:i.far.fa-share-alt.fa-lg.fa-fw]]))])
-
-(defn- add-view-buttons
-  [component unit-tree]
-  (let [view-type (ot/view-type unit-tree)
-        class-notebook (str "lft-btn" (when (= view-type :orgpad/map-tuple-view) " active"))
-        class-map (str "lft-btn" (when (= view-type :orgpad/map-view) " active"))]
-    [:span
-     [:span
-      { :className class-notebook
-       :title "Notebook"
-       :onMouseDown #(omt/change-view-type component unit-tree :orgpad/map-tuple-view) }
-      [:i.far.fa-book.fa-lg.fa-fw]]
-     [:span
-      { :className class-map
-       :title "Map"
-       :onMouseDown #(omt/change-view-type component unit-tree :orgpad/map-view) }
-      [:i.far.fa-share-alt.fa-lg.fa-fw]]
-     (when (= view-type :orgpad/map-tuple-view)
-      (add-notebook-manipulators component unit-tree))
-     [:span.lft-sep]]))
-
-(defn render-unit-editor-toolbar
-  [component unit-tree app-state local-state]
-  [:span.uedit-toolbar
-    [:span.lft-btn
-      { :title "Link"
-        :onMouseDown (jev/make-block-propagation #(omt/start-link local-state %))
-        :onTouchStart (jev/make-block-propagation #(omt/start-link local-state (aget % "touches" 0)))}
-     [:i.far.fa-link.fa-lg.fa-fw]]
-    [:span.lft-btn
-      { :title "Edit"
-        :onMouseDown jev/block-propagation
-        :onMouseUp (jev/make-block-propagation #(omt/open-unit component unit-tree))}
-     [:i.far.fa-edit.fa-lg.fa-fw]]
-    [:span.lft-sep]
-    (add-view-buttons component unit-tree)
-
-    [:span.rt-btn
-      { :title "Remove"
-        :onMouseDown #(omt/remove-unit component (ot/uid unit-tree))}
-     [:i.far.fa-trash-alt.fa-lg.fa-fw]]])
-
 (defn- render-map-tools
   [local-state-atom]
   (let [canvas-mode (:canvas-mode @local-state-atom)
@@ -255,14 +189,15 @@
       [:span.lft-sep]]))
 
 
-(rum/defcc app-toolbar < (rum/local {:open nil}) lc/parser-type-mixin-context
+(rum/defcc toolbar < (rum/local {:open nil}) lc/parser-type-mixin-context
   "Toolbar component"
-  [component params left-data right-data]
+  [component toolbar-class params left-data right-data]
   (let [local-state (trum/comp->local-state component)
         params (assoc params :component component)]
-    [:div.toolbar
-     {:onMouseDown jev/block-propagation
-      :onTouchStart jev/block-propagation}
+    [:div {:className toolbar-class
+           :onMouseDown jev/block-propagation
+           :onTouchStart jev/block-propagation
+           :onDoubleClick jev/block-propagation}
       (gen-side local-state params left-data)
       [:span.fill]
       (gen-side local-state params right-data)]))

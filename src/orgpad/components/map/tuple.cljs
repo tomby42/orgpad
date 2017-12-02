@@ -71,6 +71,44 @@
       (render-write-mode component unit-tree app-state local-state)
       (render-read-mode component unit-tree app-state local-state))))
 
+(defn- gen-toolbar []
+ [[{:elem :btn
+    :id "previous-page"
+    :icon "far fa-arrow-left"
+    :title "Previous page"
+    :on-click #(omt/switch-active-sheet (:component %1) (:unit-tree %1) -1)
+    :disabled #(ot/first-sheet? (:unit-tree %1)) }
+   {:elem :btn
+    :id "next-page"
+    :icon "far fa-arrow-right"
+    :title "Next page"
+    :on-click #(omt/switch-active-sheet (:component %1) (:unit-tree %1) 1)
+    :disabled #(ot/last-sheet? (:unit-tree %1)) }
+   {:elem :text
+    :id "pages"
+    :value #(if (ot/no-sheets? (:unit-tree %1))
+              "none"
+              (apply gstring/format "%d/%d" (ot/get-sheet-number (:unit-tree %1)))) }
+   {:elem :btn
+    :id "add-page"
+    :icon "far fa-plus-circle"
+    :title "Add page at the end"
+    :on-click #(omt/new-sheet (:component %1) (:unit-tree %1)) }
+   {:elem :btn
+    :id "remove-page"
+    :icon "far fa-minus-circle"
+    :title "Remove current page"
+    :on-click #(omt/remove-active-sheet (:component %1) (:unit-tree %1))
+    :disabled #(<= ((ot/get-sheet-number (:unit-tree %1)) 1) 1) }
+   {:elem :btn 
+    :id "open-page"
+    :icon "far fa-sign-in-alt"
+    :title "Open current page"
+    :on-click #(open-unit (:component %1) (:unit-tree %1)) 
+    :disabled #(ot/no-sheets? (:unit-tree %1)) }
+  ]])
+
+
 (registry/register-component-info
  :orgpad/map-tuple-view
  {
@@ -92,40 +130,7 @@
                                               :orgpad/unit-border-width :orgpad/unit-corner-x
                                               :orgpad/unit-corner-y :orgpad/unit-border-style] }
   
-  :orgpad/toolbar [
-    [{:elem :btn
-      :id "previous-page"
-      :icon "far fa-arrow-left"
-      :title "Previous page"
-      :on-click #(omt/switch-active-sheet (:component %1) (:unit-tree %1) -1)
-      :disabled #(ot/first-sheet? (:unit-tree %1)) }
-     {:elem :btn
-      :id "next-page"
-      :icon "far fa-arrow-right"
-      :title "Next page"
-      :on-click #(omt/switch-active-sheet (:component %1) (:unit-tree %1) 1)
-      :disabled #(ot/last-sheet? (:unit-tree %1)) }
-     {:elem :text
-      :id "pages"
-      :value #(if (ot/no-sheets? (:unit-tree %1))
-                "none"
-                (apply gstring/format "%d/%d" (ot/get-sheet-number (:unit-tree %1)))) }
-     {:elem :btn
-      :id "add-page"
-      :icon "far fa-plus-circle"
-      :title "Add page at the end"
-      :on-click #(omt/new-sheet (:component %1) (:unit-tree %1)) }
-     {:elem :btn
-      :id "remove-page"
-      :icon "far fa-minus-circle"
-      :title "Remove current page"
-      :on-click #(omt/remove-active-sheet (:component %1) (:unit-tree %1))
-      :disabled #(<= ((ot/get-sheet-number (:unit-tree %1)) 1) 1) }
-     {:elem :btn 
-      :id "open-page"
-      :icon "far fa-sign-in-alt"
-      :title "Open current page"
-      :on-click #(open-unit (:component %1) (:unit-tree %1)) }     
-     ]]
+  :orgpad/toolbar (gen-toolbar)
+  :orgpad/uedit-toolbar (gen-toolbar)
 
   })

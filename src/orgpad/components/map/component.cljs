@@ -608,6 +608,8 @@
       :id "paste"
       :icon "far fa-paste"
       :title "Paste"}]]
+
+  :orgpad/uedit-toolbar nil
   })
 
 

@@ -1,6 +1,5 @@
 .toolbar {
   display: flex;
-  flex-direction: row;
   width: 100%;
   border-bottom: 2px solid black;
   font-size: 13pt;
@@ -97,6 +96,7 @@
 
 .uedit-toolbar {
   position: absolute;
+  display: flex;
   width: 100%;
   min-width: 325px;
   height: 24px;
@@ -104,59 +104,93 @@
   left: -2px;
   background-color: #fff;
   border: 2px dashed red;
-  white-space: nowrap;
 
-  .lft-btn {
-    float: left;
+  .btn {
     text-align: center;
     height: 18px;
     padding-top: 3px;
     padding-bottom: 3px;
     display: inline-block;
-    &:hover {
+    background-color: #fff;
+    &:hover, &.active:hover {
       background-color: #6df;
     }
     &.active {
       background-color: #33adff;
     }
+    &.disabled {
+      background-color: #ddd;
+      color: #666;
+    }
   }
-
-  .rt-btn {
-    float: right;
-    text-align: center;
-    height: 18px;
+  
+  .btn-icon-label {
+    text-align: left;
     padding-top: 3px;
-    padding-bottom: 3px;
+    padding-right: 7px;
+    padding-left: 3px;
+  }
+  
+  .btn-label {
+    text-align: left;
+    padding-top: 3px;
+    padding-right: 7px;
+    padding-left: 7px;
+  }
+ 
+  .roll {
+    position: relative;
     display: block;
-    &:hover {
+    z-index: 10;
+  }
+
+  .roll-items {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    position: absolute;
+    left: 0px;
+    top: 24px;
+    border: 2px solid red;
+    white-space: nowrap;
+    background-color: #fff;
+  }
+
+  .roll-item {
+    height: 20px;
+    display: inline-block;
+    padding-top: 3px;
+    padding-bottom: 0px;
+    &:hover, &.active:hover {
       background-color: #6df;
     }
     &.active {
       background-color: #33adff;
     }
+    &.disabled {
+      background-color: #ddd;
+      color: #666;
+    }
   }
-
-  .lft-sep {
-    float: left;
-    background-color: red;
-    width: 2px;
-    height: 18px;
-    margin: 3px;
-  }
-
-  .rt-sep {
-    float: right;
-    background-color: red;
-    width: 2px;
-    height: 18px;
-    margin: 3px;
-  }
-
-  .lft-text {
-    float: left;
+  
+  .text {
     font-size: 12pt;
+    padding-left: 3px;
+    padding-right: 3px;
     padding-top: 5px;
     padding-bottom: 5px;
+  }
+
+
+  .sep {
+    background-color: red;
+    width: 2px;
+    height: 18px;
+    margin: 3px;
+  }
+
+  .fill {
+    flex-grow: 1;
   }
 }
 

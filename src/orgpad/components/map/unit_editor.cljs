@@ -107,6 +107,14 @@
     (swap! local-state assoc :quick-edit true)
     (trum/force-update react-component)))
 
+(defn- start-link
+  [local-state ev]
+  (swap! local-state merge { :local-mode :make-link
+                             :link-start-x (.-clientX (jev/touch-pos ev))
+                             :link-start-y (.-clientY (jev/touch-pos ev))
+                             :mouse-x (.-clientX (jev/touch-pos ev))
+                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
+
 (defn- start-unit-move
   [local-state ev]
   (swap! local-state merge { :local-mode :unit-move
@@ -143,7 +151,7 @@
 
 (defn- start-links
   [unit-tree selection local-state ev]
-  (omt/start-link local-state ev)
+  (start-link local-state ev)
   (swap! local-state merge {:local-mode :make-links
                             :selected-units [unit-tree selection]}))
 
@@ -210,6 +218,48 @@
            :height (+ height (* 2 bw)) }
            (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))))
 
+(defn- gen-view-toolbar 
+  [{:keys [unit view] :as unit-tree} view-type]
+  (let [view-toolbar (-> view :orgpad/view-type registry/get-component-info :orgpad/uedit-toolbar)]
+    (if (and (= view-type :orgpad/map-tuple-view) (not (ot/no-sheets? unit-tree)))
+      (let [ac-unit-tree (ot/active-child-tree unit view)
+            ac-view-types-roll (tbar/gen-view-types-roll (:view ac-unit-tree) :ac-unit-tree "Current page" "page-views")
+            last-sec (- (count view-toolbar) 1) ] 
+        (update-in view-toolbar [last-sec] conj ac-view-types-roll ))
+      view-toolbar)))
+
+(defn- gen-toolbar
+  [{:keys [unit view] :as unit-tree} app-state local-state]
+  (let [view-type (ot/view-type unit-tree)
+        common-left-toolbar [
+         [{:elem :btn
+           :id "link"
+           :icon "far fa-link"
+           :title "Link"
+           :on-mouse-down #(start-link (:local-state %1) %2)
+           :on-touch-start #(start-link (:local-state %1) (aget %2 "touches" 0))}
+          {:elem :btn
+           :id "edit"
+           :icon "far fa-edit"
+           :title "Edit"
+           :on-click #(omt/open-unit (:component %1) (:unit-tree %1))}]]
+        view-types-section [(tbar/gen-view-types-roll view :unit-tree "Current" "views")]
+        view-toolbar (gen-view-toolbar unit-tree view-type)
+        left-toolbar (concat (conj common-left-toolbar view-types-section) view-toolbar)
+        right-toolbar [
+          [{:elem :btn
+            :icon "far fa-trash-alt"
+            :title "Remove"
+            :on-click #(omt/remove-unit (:component %1) (ot/uid (:unit-tree %1)))}]]
+        params {:unit-tree    unit-tree 
+                :unit         unit
+                :view         view
+                :local-state  local-state
+                :mode         (:mode app-state)
+                :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
+                :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view))) }]
+    (tbar/toolbar "uedit-toolbar" params left-toolbar right-toolbar)))
+
 (defn- node-unit-editor1
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
@@ -233,7 +283,7 @@
            [:span.resize-handle-bottom {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
                                  :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
                                  }]
-           (tbar/render-unit-editor-toolbar component sel-unit-tree app-state local-state)]
+           (gen-toolbar sel-unit-tree app-state local-state)]
            (when (= (@local-state :local-mode) :make-link)
              (let [tr (parent-view :orgpad/transform)]
                (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])

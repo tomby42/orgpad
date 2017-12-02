@@ -118,9 +118,9 @@
                }]]))
 
 (defn- gen-view-toolbar 
-  [unit view view-type]
+  [{:keys [unit view] :as unit-tree} view-type]
   (let [view-toolbar (-> view :orgpad/view-type registry/get-component-info :orgpad/toolbar)]
-    (if (= view-type :orgpad/map-tuple-view)
+    (if (and (= view-type :orgpad/map-tuple-view) (not (ot/no-sheets? unit-tree)))
       (let [ac-unit-tree (ot/active-child-tree unit view)
             ac-view-types-roll (tbar/gen-view-types-roll (:view ac-unit-tree) :ac-unit-tree "Current page" "page-views")
             last-sec (- (count view-toolbar) 1) ] 
@@ -141,7 +141,7 @@
 
        (let [root-component-left-toolbar (-> :orgpad/root-view registry/get-component-info :orgpad/left-toolbar)
              view-types-section [(tbar/gen-view-types-roll view :unit-tree "Current" "views")]
-             view-toolbar (gen-view-toolbar unit view view-type)
+             view-toolbar (gen-view-toolbar unit-tree view-type)
              left-toolbar (concat (conj root-component-left-toolbar view-types-section) view-toolbar)
              right-toolbar (-> :orgpad/root-view registry/get-component-info :orgpad/right-toolbar)
              params { :id           id
@@ -154,7 +154,7 @@
                       :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
                       :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view))) }
              ]
-         (tbar/app-toolbar params left-toolbar right-toolbar))
+         (tbar/toolbar "toolbar" params left-toolbar right-toolbar))
          ]
          
          
