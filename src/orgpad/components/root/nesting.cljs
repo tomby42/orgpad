@@ -27,7 +27,7 @@
         label-span [:span { :key (str id "-label") :className "label" } title]]
     [:span.btn
       {:key id
-       ;:onClick (gen-action is-disabled on-click local-state params)
+       ;;:onClick #(js/console.log "id 0:"  (lc/query component :orgpad/unit-view {:id 0})) ;; needs more parameters
        }
       icon-span label-span]))
 
@@ -40,7 +40,7 @@
       (map (partial gen-unit-button component) data)
       sep-data))))
 
-(rum/defc nesting < lc/parser-type-mixin-context
+(rum/defcc nesting < lc/parser-type-mixin-context
   [component {:keys [unit view path-info] :as unit-tree}]
   [:div.nesting
     (gen-unit-list component 

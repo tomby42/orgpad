@@ -15,6 +15,8 @@
         app-state (lc/query component :orgpad/app-state [])]
     [ :div.root-view
       ;; (rum/with-key (sidebar/sidebar-component) 0)
+      ;(js/console.log "Unit-tree: " unit-tree)
+      ;(js/console.log "App-state: " app-state)
       (rum/with-key (node/node unit-tree app-state) "root-view-part")
       (rum/with-key (tbar/status unit-tree app-state) "status-part")
       (rum/with-key (nest/nesting unit-tree) "nesting-part")
