@@ -49,8 +49,13 @@
         (->> sel-unit
              :props
              (filter (fn [prop] (and prop (= (prop :db/id) prop-id))))
+             first)
+        sel-style
+        (->> sel-unit
+             :props
+             (filter (fn [prop] (and prop (= (:orgpad/style-name prop) (:orgpad/view-style sel-prop)))))
              first)]
-    [sel-unit sel-prop]))
+    [sel-unit (merge sel-style sel-prop)]))
 
 (defn open-unit
   [component { :keys [unit view path-info] }]
@@ -212,7 +217,7 @@
          [:span.rt-btn
           {:title "Remove"
            :onMouseDown #(remove-units component (ot/uid unit-tree) selection)}
-          [:i.far.fa-remove.fa-lg]]]]
+          [:i.far.fa-times.fa-lg]]]]
 
      (when (= (@local-state :local-mode) :make-links)
        (let [tr (parent-view :orgpad/transform)]

@@ -229,6 +229,7 @@
 (defmethod mutate :orgpad.units/copy
   [{:keys [state]} _ {:keys [pid selection]}]
   (let [data (ot/copy-descendants-from-db state pid [] selection)]
+    (js/console.log "copy " data)
     {:state (store/transact state [[:clipboards (keypath pid)] data])}))
 
 (defmethod read :orgpad/styles
@@ -238,3 +239,12 @@
                        :where
                        [?e :orgpad/view-type ?view-type]]
                [view-type]))
+
+(defmethod read :orgpad/style
+  [{:keys [state query] :as env} _ {:keys [view-type style-name]}]
+  (store/query state '[:find (pull ?e [*]) .
+                       :in $ ?view-type ?style-name
+                       :where
+                       [?e :orgpad/view-type ?view-type]
+                       [?e :orgpad/style-name ?style-name]]
+               [view-type style-name]))

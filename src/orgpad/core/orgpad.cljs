@@ -57,7 +57,7 @@
                             (map #(assoc (-> cdef :orgpad/child-props-default %) :db/id (vswap! counter dec))
                                  (:orgpad/child-props-style-types cdef)))))
               (vals (cregistry/get-registry)))]
-    (js/console.log "insert defualt styles" qry)
+    (js/console.log "insert default styles" qry)
     (store/transact db qry)))
 
 (defn empty-orgpad-db

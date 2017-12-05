@@ -57,7 +57,8 @@
             [:db/add unit-id :orgpad/refs -1]]
            propagated-refs
            (if (-> :db/id view nil?) [[:db/add unit-id :orgpad/props-refs -2]] []))]
-          { :state (store/transact state t) }))
+    (js/console.log "new sheet" t)
+    { :state (store/transact state t) }))
 
 (defmethod mutate :orgpad.units/new-pair-unit
   [{:keys [state global-cache]} _ {:keys [parent position transform view-name style]}]
@@ -197,7 +198,7 @@
 (defn- update-propagated-prop
   [{:keys [state] :as env} {:keys [prop parent-view unit-tree] :as payload} comp-val-fn args & [global-update-fn]]
   (let [id (prop :db/id)
-        prop' (if id (store/query state [:entity id]) prop)
+        prop' (ot/get-prop-from-db-styles state (:props unit-tree) prop :orgpad.map-view/vertex-props-style) ;;(if id (store/query state [:entity id]) prop)
         info (registry/get-component-info (-> unit-tree :view :orgpad/view-type))
         sheet-view
         (sheet-view-unit state unit-tree)
@@ -205,6 +206,7 @@
         new-val (if comp-val-fn (comp-val-fn payload prop' args) args)]
     (when global-update-fn
       (global-update-fn env payload prop' new-val))
+    (js/console.log "update-propagated-prop" prop new-val)
     { :state (cond-> state
                true
                 (update-props id (ot/uid unit-tree) :orgpad/unit-view-child prop' new-val)
@@ -262,10 +264,19 @@
   [db unit props-from-children view-units]
   (let [id (unit :db/id)
         refs (ot/sort-refs unit)]
-    (into [] (mapcat (fn [vu]
-                       (child-propagated-props db id
-                                               (-> refs (get (vu :orgpad/active-unit)) ot/uid)
-                                               props-from-children (vu :orgpad/view-name))))
+    (into [] (comp
+              (mapcat (fn [vu]
+                        (child-propagated-props db id
+                                                (-> refs (get (vu :orgpad/active-unit)) ot/uid)
+                                                props-from-children (vu :orgpad/view-name))))
+              (mapcat (fn [prop]
+                        (if (contains? props-from-children (:orgpad/view-type prop))
+                          (concat [prop] (->> props-from-children
+                                              ((:orgpad/view-type prop))
+                                              (filter #(->> % (contains? prop) not))
+                                              (map (fn [prop-name]
+                                                     [:db.fn/retractAttribute (:db/id prop) prop-name]))))
+                          [prop]))))
                      view-units)))
 
 (defn- update-geocache-after-switch-active
@@ -276,11 +287,13 @@
                (geocache/has-geocache? global-cache (nth view-path (dec n)) (nth view-path n)))
       (let [parent-id (nth view-path (dec n))
             parent-name (nth view-path n)]
-        (when-let [prop (-> (filter #(= (% :orgpad/view-name) parent-name) update-trans) first)]
-          (let [e (store/query state [:entity (prop :db/id)])]
+        (when-let [prop (-> (filter #(= (:orgpad/view-name %) parent-name) update-trans) first)]
+          (let [e (ot/get-prop-from-db-styles state (:props unit-tree) prop :orgpad.map-view/vertex-props-style) ;;(store/query state [:entity (prop :db/id)])
+                prop' (merge (ot/get-prop-style state prop :orgpad.map-view/vertex-props-style) prop)]
+            (js/console.log "update-geocache-after-switch-active" e prop')
             (geocache/update-box! global-cache parent-id parent-name
                                   (ot/uid unit-tree) (e :orgpad/unit-position)
-                                  [(prop :orgpad/unit-width) (prop :orgpad/unit-height)]
+                                  [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
                                   (e :orgpad/unit-position)
                                   [(e :orgpad/unit-width) (e :orgpad/unit-height)])))))))
 
@@ -310,6 +323,7 @@
 (defmethod mutate :orgpad.sheet/switch-active
   [env _ params]
   (let [qry (switch-active env params)]
+    (js/console.log "switch active" qry)
     { :state
       (store/transact (:state env) qry) }))
 

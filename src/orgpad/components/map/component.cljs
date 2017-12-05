@@ -34,7 +34,9 @@
                    { :parent (unit :db/id)
                      :view-name (view :orgpad/view-name)
                      :transform (view :orgpad/transform)
-                     :position pos } ]] ))
+                     :position pos
+                     :style (lc/query component :orgpad/style {:view-type :orgpad.map-view/vertex-props-style
+                                                               :style-name "default"} true) } ]] ))
 
 (defn- start-canvas-move
   [local-state-atom ev]
@@ -380,7 +382,6 @@
 (defn- render-write-mode
   [component unit-tree app-state]
   (let [local-state (trum/comp->local-state component)]
-    (js/console.log "aaa")
     (html
      [ :div { :className "map-view"
               :ref "component-node"
@@ -564,24 +565,26 @@
                                    :orgpad/view-name "default"
                                    :orgpad/view-style "default"
                                   
-                                   :orgpad/unit-width 250
-                                   :orgpad/unit-height 60
-                                   :orgpad/unit-border-color "#009cff"
-                                   :orgpad/unit-bg-color "#ffffff"
-                                   :orgpad/unit-border-width 2
-                                   :orgpad/unit-corner-x 5
-                                   :orgpad/unit-corner-y 5
-                                   :orgpad/unit-border-style "solid" }
+                                   ;; :orgpad/unit-width 250
+                                   ;; :orgpad/unit-height 60
+                                   ;; :orgpad/unit-border-color "#009cffff"
+                                   ;; :orgpad/unit-bg-color "#ffffffff"
+                                   ;; :orgpad/unit-border-width 2
+                                   ;; :orgpad/unit-corner-x 5
+                                   ;; :orgpad/unit-corner-y 5
+                                   ;; :orgpad/unit-border-style "solid"
+                                  }
 
                                 :orgpad.map-view/vertex-props-style
                                  { :orgpad/view-type :orgpad.map-view/vertex-props-style
+                                   :orgpad/type :orgpad/unit-view-child
                                    :orgpad/independent true
                                    :orgpad/view-name "*"
                                    :orgpad/style-name "default"
                                    :orgpad/unit-width 250
                                    :orgpad/unit-height 60
-                                   :orgpad/unit-border-color "#009cff"
-                                   :orgpad/unit-bg-color "#ffffff"
+                                   :orgpad/unit-border-color "#009cffff"
+                                   :orgpad/unit-bg-color "#ffffffff"
                                    :orgpad/unit-border-width 2
                                    :orgpad/unit-corner-x 5
                                    :orgpad/unit-corner-y 5
@@ -592,7 +595,7 @@
                                    :orgpad/view-name "default"
                                    :orgpad/view-style "default"
                                   
-                                   :orgpad/link-color "#000000"
+                                   :orgpad/link-color "#000000ff"
                                    :orgpad/link-width 2
                                    :orgpad/link-dash #js [0 0]
                                    :orgpad/link-mid-pt [0 0] }
@@ -602,7 +605,7 @@
                                    :orgpad/view-name "*"
                                    :orgpad/independent true
                                    :orgpad/style-name "default"
-                                   :orgpad/link-color "#000000"
+                                   :orgpad/link-color "#000000ff"
                                    :orgpad/link-width 2
                                    :orgpad/link-dash #js [0 0]
                                    :orgpad/link-mid-pt [0 0] }
