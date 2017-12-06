@@ -111,6 +111,6 @@
       :id "help"
       :icon "far fa-question-circle"
       :label "Help"
-      :on-click #(js/window.open "http://pavel.klavik.cz/orgpad/index.html" "_blank")}
+      :on-click #(js/window.open "http://orgpad.org?orgpad-from=http://pavel.klavik.cz/orgpad/help.orgpad" "_blank")}
   ]]
 })
