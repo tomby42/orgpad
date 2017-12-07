@@ -33,7 +33,6 @@
                                              color (nth args 0)
                                              new-color (-> e .-target .getColorRgbaHex)]
                                          (when (not= color new-color)
-                                           (js/console.log color new-color)
                                            (on-change new-color)))))]
       (-> state
           (assoc :palette pal)

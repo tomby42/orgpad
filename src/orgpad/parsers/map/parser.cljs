@@ -57,7 +57,6 @@
             [:db/add unit-id :orgpad/refs -1]]
            propagated-refs
            (if (-> :db/id view nil?) [[:db/add unit-id :orgpad/props-refs -2]] []))]
-    (js/console.log "new sheet" t)
     { :state (store/transact state t) }))
 
 (defmethod mutate :orgpad.units/new-pair-unit
@@ -206,7 +205,6 @@
         new-val (if comp-val-fn (comp-val-fn payload prop' args) args)]
     (when global-update-fn
       (global-update-fn env payload prop' new-val))
-    (js/console.log "update-propagated-prop" prop new-val)
     { :state (cond-> state
                true
                 (update-props id (ot/uid unit-tree) :orgpad/unit-view-child prop' new-val)
@@ -290,7 +288,6 @@
         (when-let [prop (-> (filter #(= (:orgpad/view-name %) parent-name) update-trans) first)]
           (let [e (ot/get-prop-from-db-styles state (:props unit-tree) prop :orgpad.map-view/vertex-props-style) ;;(store/query state [:entity (prop :db/id)])
                 prop' (merge (ot/get-prop-style state prop :orgpad.map-view/vertex-props-style) prop)]
-            (js/console.log "update-geocache-after-switch-active" e prop')
             (geocache/update-box! global-cache parent-id parent-name
                                   (ot/uid unit-tree) (e :orgpad/unit-position)
                                   [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
@@ -323,7 +320,6 @@
 (defmethod mutate :orgpad.sheet/switch-active
   [env _ params]
   (let [qry (switch-active env params)]
-    (js/console.log "switch active" qry)
     { :state
       (store/transact (:state env) qry) }))
 
@@ -566,7 +562,7 @@
   [{:keys [state]} _ {:keys [prop parent-view unit-tree orgpad/link-style-1 orgpad/link-style-2]}]
   (let [id (prop :db/id)
         prop' (if id
-                (store/query state [:entity id])
+                (ot/get-prop-from-db-styles state (:props unit-tree) prop :orgpad.map-view/link-props-style) ;;(store/query state [:entity id])
                 (-> prop (dissoc :orgpad/link-style-2) (dissoc :orgpad/link-style-1)))
         val (aclone (prop' :orgpad/link-dash))]
     (if link-style-1
@@ -627,7 +623,6 @@
         selected (into #{} (comp
                             (filter #(geom/bbs-intersect? bb (:bb %)))
                             (map :id)) bbs)]
-    ;; (js/console.log (ot/uid unit-tree) (ot/copy-descendants-from-db state (ot/uid unit-tree) [] selected))
     {:state (store/transact state [[:selections (-> unit-tree ot/uid keypath)] selected])}))
 
 (defmethod mutate :orgpad.units/remove-units

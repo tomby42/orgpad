@@ -8,7 +8,8 @@
             [orgpad.components.sidebar.sidebar :as sidebar]
             [orgpad.components.root.status :as st]))
 
-(rum/defcc root-component < lc/parser-type-mixin-context [component]
+(rum/defcc root-component < lc/parser-type-mixin-context
+  [component]
   (let [unit-tree (lc/query component :orgpad/root-view [])
         app-state (lc/query component :orgpad/app-state [])]
     [ :div { :className "root-view" }

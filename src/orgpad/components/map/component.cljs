@@ -119,14 +119,20 @@
   (lc/transact! component [[ :orgpad.units/try-make-new-link-unit
                             { :map-unit-tree unit-tree
                               :begin-unit-id (-> @local-state :selected-unit (nth 0) ot/uid)
-                              :position pos }]]))
+                              :position pos
+                              :style (lc/query component :orgpad/style
+                                               {:view-type :orgpad.map-view/link-props-style
+                                                :style-name "default"} true)}]]))
 
 (defn- make-links
   [component unit-tree selection pos]
   (lc/transact! component  [[:orgpad.units/try-make-new-links-unit
                              {:unit-tree unit-tree
                               :selection selection
-                              :position pos}]]))
+                              :position pos
+                              :style (lc/query component :orgpad/style
+                                               {:view-type :orgpad.map-view/link-props-style
+                                                :style-name "default"} true)}]]))
 
 (defn- stop-canvas-move
   [component { :keys [unit view] } local-state new-pos]
@@ -595,13 +601,15 @@
                                    :orgpad/view-name "default"
                                    :orgpad/view-style "default"
                                   
-                                   :orgpad/link-color "#000000ff"
-                                   :orgpad/link-width 2
-                                   :orgpad/link-dash #js [0 0]
-                                   :orgpad/link-mid-pt [0 0] }
+                                   ;; :orgpad/link-color "#000000ff"
+                                   ;; :orgpad/link-width 2
+                                   ;; :orgpad/link-dash #js [0 0]
+                                   ;; :orgpad/link-mid-pt [0 0]
+                                  }
                                 
                                 :orgpad.map-view/link-props-style
                                  { :orgpad/view-type :orgpad.map-view/link-props-style
+                                   :orgpad/type :orgpad/unit-view-child
                                    :orgpad/view-name "*"
                                    :orgpad/independent true
                                    :orgpad/style-name "default"

@@ -243,6 +243,9 @@
                                     :context-unit pid
                                     :view-name view-name
                                     :unit-tree unit-tree
+                                    :style (lc/query component :orgpad/style
+                                                     {:view-type :orgpad.map-view/vertex-props-style
+                                                      :style-name "default"} true)
                                     }]])) 0))))
 
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
