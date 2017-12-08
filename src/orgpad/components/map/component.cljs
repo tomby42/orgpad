@@ -504,12 +504,12 @@
    (fn [state]
      (let [node (trum/ref-node state "component-node")
            id (-> state trum/args first ot/uid)
-           bbox (.getBoundingClientRect node)]
+           bbox (.getBoundingClientRect node)
+           component (trum/component state)]
        ;; (js/console.log bbox)
-       (lc/set-global-cache (trum/component state)
-                            id
-                            "bbox"
-                            bbox)))))
+       (lc/set-global-cache component id "component" component)
+       (lc/set-global-cache component id "bbox" bbox)))))
+
 (defn- get-default-bbox
   []
   #js { :left 0 :right js/window.innerWidth :top 0 :bottom js/window.innerHeight })
@@ -569,17 +569,7 @@
    :orgpad/child-props-default { :orgpad.map-view/vertex-props
                                  { :orgpad/view-type :orgpad.map-view/vertex-props
                                    :orgpad/view-name "default"
-                                   :orgpad/view-style "default"
-                                  
-                                   ;; :orgpad/unit-width 250
-                                   ;; :orgpad/unit-height 60
-                                   ;; :orgpad/unit-border-color "#009cffff"
-                                   ;; :orgpad/unit-bg-color "#ffffffff"
-                                   ;; :orgpad/unit-border-width 2
-                                   ;; :orgpad/unit-corner-x 5
-                                   ;; :orgpad/unit-corner-y 5
-                                   ;; :orgpad/unit-border-style "solid"
-                                  }
+                                   :orgpad/view-style "default"}
 
                                 :orgpad.map-view/vertex-props-style
                                  { :orgpad/view-type :orgpad.map-view/vertex-props-style
@@ -599,13 +589,7 @@
                                 :orgpad.map-view/link-props
                                  { :orgpad/view-type :orgpad.map-view/link-props
                                    :orgpad/view-name "default"
-                                   :orgpad/view-style "default"
-                                  
-                                   ;; :orgpad/link-color "#000000ff"
-                                   ;; :orgpad/link-width 2
-                                   ;; :orgpad/link-dash #js [0 0]
-                                   ;; :orgpad/link-mid-pt [0 0]
-                                  }
+                                   :orgpad/view-style "default"}
                                 
                                 :orgpad.map-view/link-props-style
                                  { :orgpad/view-type :orgpad.map-view/link-props-style

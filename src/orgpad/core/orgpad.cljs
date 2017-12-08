@@ -47,16 +47,35 @@
    :orgpad/style-name {}
    })
 
+(defn default-styles-qry
+  []
+  (let [counter (volatile! 0)]
+    (into [] (comp
+              (filter :orgpad/child-props-style-types)
+              (mapcat (fn [cdef]
+                        (map #(assoc (-> cdef :orgpad/child-props-default %) :db/id (vswap! counter dec))
+                             (:orgpad/child-props-style-types cdef)))))
+          (vals (cregistry/get-registry)))))
+
+(defn db-contains-styles?
+  [db]
+  (let [styles (into #{}
+                     (mapcat :orgpad/child-props-style-types)
+                     (vals (cregistry/get-registry)))]
+  (-> db
+      (store/query '[:find ?e
+                     :in $ ?contains
+                     :where
+                     [?e :orgpad/view-type ?vt]
+                     [(?contains ?vt)]]
+                   [#(contains? styles %)])
+      empty?
+      not)))
+
 (defn insert-default-styles
   [db]
   (let [counter (volatile! 0)
-        qry
-        (into [] (comp
-                  (filter :orgpad/child-props-style-types)
-                  (mapcat (fn [cdef]
-                            (map #(assoc (-> cdef :orgpad/child-props-default %) :db/id (vswap! counter dec))
-                                 (:orgpad/child-props-style-types cdef)))))
-              (vals (cregistry/get-registry)))]
+        qry (default-styles-qry)]
     (js/console.log "insert default styles" qry)
     (store/transact db qry)))
 
@@ -102,7 +121,10 @@
   (let [qry
         (colls/minto []
                      (update-refs-orders db)
-                     (unescape-atoms db))]
+                     (unescape-atoms db)
+                     (if (db-contains-styles? db)
+                       (default-styles-qry)
+                       nil))]
     (if (empty? qry)
       db
       (store/transact db qry {}))))
