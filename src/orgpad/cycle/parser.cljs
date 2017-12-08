@@ -18,14 +18,12 @@
       val)))
 
 (defn parse-query
-  [state read global-cache k params]
+  [env k params]
 
   (let [tree (volatile! #js [])]
-    (parse-query- { :state state
-                    :query parse-query-
-                    :read read
-                    :global-cache global-cache
-                    :tree tree }
+    (parse-query- (merge env
+                         { :query parse-query-
+                           :tree tree })
                  k params)
     (-> tree deref (aget 0))))
 

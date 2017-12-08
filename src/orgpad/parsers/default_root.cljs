@@ -233,7 +233,7 @@
     {:state (store/transact state [[:clipboards (keypath pid)] data])}))
 
 (defmethod read :orgpad/styles
-  [{:keys [state query] :as env} _ {:keys [view-type]}]
+  [{:keys [state]} _ {:keys [view-type]}]
   (store/query state '[:find [(pull ?e [*])]
                        :in $ ?view-type
                        :where
@@ -241,10 +241,14 @@
                [view-type]))
 
 (defmethod read :orgpad/style
-  [{:keys [state query] :as env} _ {:keys [view-type style-name]}]
+  [{:keys [state]} _ {:keys [view-type style-name]}]
   (store/query state '[:find (pull ?e [*]) .
                        :in $ ?view-type ?style-name
                        :where
                        [?e :orgpad/view-type ?view-type]
                        [?e :orgpad/style-name ?style-name]]
                [view-type style-name]))
+
+(defmethod read :orgpad/root-view-stack-info
+  [{:keys [parser-stack-info]} _ [key params]]
+  (parser-stack-info key params))
