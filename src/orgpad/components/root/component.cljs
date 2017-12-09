@@ -3,6 +3,7 @@
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
             [orgpad.cycle.life :as lc]
+            [cemerick.url :as url]
             [orgpad.components.registry :as registry]
             [orgpad.components.node :as node]
             [orgpad.components.sidebar.sidebar :as sidebar]
@@ -112,6 +113,8 @@
       :id "help"
       :icon "far fa-question-circle"
       :label "Help"
-      :on-click #(js/window.open "http://orgpad.org?u=http://pavel.klavik.cz/orgpad/help.orgpad" "_blank")}
+      :on-click #(js/window.open (str                        
+                                   (url/url (aget js/window "location" "href"))
+                                   "?u=http://pavel.klavik.cz/orgpad/help.orgpad") "_blank")}
   ]]
 })

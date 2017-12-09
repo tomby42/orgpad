@@ -23,11 +23,12 @@
                                  global-cfg)
         u (url/url (aget js/window "location" "href"))
         from (-> u .-query (get "u"))]
+    (js/console.log (str "URL: " u))
     (when from
       ((context :parser-mutate) [[ :orgpad/download-orgpad-from-url
                                    (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack
                                   ]]))
-    (.log js/console "ORGPAD 2.0 BOOT.")))
+    (.log js/console "ORGPAD BOOT.")))
 
 (defn on-js-reload []
   )
