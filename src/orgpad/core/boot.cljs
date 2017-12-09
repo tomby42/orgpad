@@ -22,9 +22,11 @@
                                  (-> :orgpad/root-view registry/get-component-info :orgpad/class)
                                  global-cfg)
         u (url/url (aget js/window "location" "href"))
-        from (-> u .-query (get "orgpad-from"))]
+        from (-> u .-query (get "u"))]
     (when from
-      ((context :parser-mutate) [[ :orgpad/download-orgpad-from-url from ]]))
+      ((context :parser-mutate) [[ :orgpad/download-orgpad-from-url
+                                   (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack
+                                  ]]))
     (.log js/console "ORGPAD 2.0 BOOT.")))
 
 (defn on-js-reload []
