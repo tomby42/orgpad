@@ -91,7 +91,6 @@
                    (not pre-quick-edit)))
       (run-dbl-click-check local-state))
     (swap! local-state merge { :local-mode :try-unit-move
-                               :local-move false
                                :selected-unit [unit-tree prop parent-view component]
                                :selected-node new-node
                                :quick-edit false
@@ -245,6 +244,9 @@
                                     :context-unit pid
                                     :view-name view-name
                                     :unit-tree unit-tree
+                                    :style (lc/query component :orgpad/style
+                                                     {:view-type :orgpad.map-view/vertex-props-style
+                                                      :style-name "default"} true)
                                     }]])) 0))))
 
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
