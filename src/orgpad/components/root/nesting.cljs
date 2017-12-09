@@ -43,6 +43,7 @@
 (rum/defcc nesting < lc/parser-type-mixin-context
   [component {:keys [unit view path-info] :as unit-tree}]
   [:div.nesting
+    (js/console.log "Nesting: " (lc/query component :orgpad/root-view-stack-info [:orgpad/root-view []]))
     (gen-unit-list component 
       [{:id "root" :icon "far fa-share-alt" :title "Root component"}
        {:id "next" :icon "far fa-book" :title "Book view"}

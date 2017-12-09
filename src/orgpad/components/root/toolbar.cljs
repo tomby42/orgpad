@@ -153,6 +153,8 @@
                       :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
                       :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view))) }
              ]
+         ;(when (= view-type :orgpad/map-view)
+         ;  (js/console.log (lc/get-global-cache component id "component")))
          (tbar/toolbar "toolbar" params left-toolbar right-toolbar))
          ]
          
