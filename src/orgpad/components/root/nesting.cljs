@@ -21,35 +21,53 @@
 ;;  :title    ...   unit title
 ;;  :pages    ...   unit pages current/total for Book view }
 
-(defn- gen-unit-button
-  [component {:keys [id icon title pages]}]
+(defn- gen-nesting-button
+  [{:keys [id icon label pages title on-click]}]
   (let [icon-span [:i { :key (str id "-icon") :className (str icon " fa-lg fa-fw") }]
-        label-span [:span { :key (str id "-label") :className "label" } title]]
+        label-span [:span { :key (str id "-label") :className "label" } label]]
     [:span.btn
       {:key id
-       ;;:onClick #(js/console.log "id 0:"  (lc/query component :orgpad/unit-view {:id 0})) ;; needs more parameters
-       }
+       :title title
+       :onClick on-click}
       icon-span label-span]))
 
-(defn- gen-unit-list
-  [component data]
+(defn- gen-nesting-list
+  [data]
   (let [sep-data (map #(identity
                           [:span.sep {:key (str (:id %) "-sep") }
                             [:i.far.fa-chevron-right.fa-lg.fa-fw]]) data)]
     (drop-last (interleave 
-      (map (partial gen-unit-button component) data)
+      (map gen-nesting-button data)
       sep-data))))
+
+(defn- gen-unit-data
+  [component {:keys [unit view path-info] :as unit-tree}]
+  (let [id (:db/id unit)
+        view-type (ot/view-type unit-tree)
+        view-info (-> view :orgpad/view-type registry/get-component-info)
+        view-name (:orgpad/view-name view-info)
+        icon (:orgpad/view-icon view-info)
+        label (str id
+                   (when (= view-type :orgpad/map-tuple-view)
+                     (str " (" (ot/sheets-to-str unit-tree) ")")))]
+   {:id id
+    :icon icon
+    :label label
+    :title view-name
+    :on-click #(lc/transact! component
+                   [[:orgpad/root-unit-close {
+                       :db/id id
+                       :orgpad/view-name (view :orgpad/view-name)
+                       :orgpad/view-type (view :orgpad/view-type)
+                       :orgpad/view-path (path-info :orgpad/view-path) }]])
+    
+    }))
 
 (rum/defcc nesting < lc/parser-type-mixin-context
   [component {:keys [unit view path-info] :as unit-tree}]
-  [:div.nesting
-    (js/console.log "Nesting: " (lc/query component :orgpad/root-view-stack-info [:orgpad/root-view []]))
-    (gen-unit-list component 
-      [{:id "root" :icon "far fa-share-alt" :title "Root component"}
-       {:id "next" :icon "far fa-book" :title "Book view"}
-       {:id "last" :icon "far fa-share-alt" :title "Map view"}
-       {:id "next2" :icon "far fa-book" :title "Book view"}
-       {:id "last2" :icon "far fa-share-alt" :title "Map view"}
-       {:id "next3" :icon "far fa-book" :title "Book view"}
-       {:id "last3" :icon "far fa-share-alt" :title "Map view"}])
-   ])
+  (let [unit-stack (concat (lc/query component :orgpad/root-view-stack-info [:orgpad/root-view []] true) [unit-tree])]
+    (when (> (count unit-stack) 1)
+      [:div.nesting
+        (js/console.log "Unit-stack: " unit-stack)
+        (gen-nesting-list (map (partial gen-unit-data component) unit-stack))
+      ])))

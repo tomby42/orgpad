@@ -23,7 +23,6 @@
                                  global-cfg)
         u (url/url (aget js/window "location" "href"))
         from (-> u .-query (get "u"))]
-    (js/console.log (str "URL: " u))
     (when from
       ((context :parser-mutate) [[ :orgpad/download-orgpad-from-url
                                    (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack

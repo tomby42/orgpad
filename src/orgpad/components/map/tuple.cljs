@@ -12,9 +12,7 @@
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.rum :as trum]
             [orgpad.tools.orgpad :as ot]
-            [orgpad.tools.orgpad-manipulation :as omt]
-            [goog.string :as gstring]
-            [goog.string.format]))
+            [orgpad.tools.orgpad-manipulation :as omt]))
 
 (def ^:private CLICK-DELTA 250)
 
@@ -86,9 +84,7 @@
     :disabled #(ot/last-sheet? (:unit-tree %1)) }
    {:elem :text
     :id "pages"
-    :value #(if (ot/no-sheets? (:unit-tree %1))
-              "none"
-              (apply gstring/format "%d/%d" (ot/get-sheet-number (:unit-tree %1)))) }
+    :value #(ot/sheets-to-str (:unit-tree %1)) }
    {:elem :btn
     :id "add-page"
     :icon "far fa-plus-circle"
