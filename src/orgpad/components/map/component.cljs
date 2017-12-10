@@ -592,26 +592,35 @@
       :id "unit-creation-mode"
       :icon "far fa-plus-square"
       :title "Unit creation mode"
+      :on-click #(swap! (trum/comp->local-state (lc/get-global-cache (:component %1) (:id %1) "component"))
+                   assoc :canvas-mode :canvas-create-unit)
       :hidden #(= (:mode %1) :read)}
      {:elem :btn
       :id "moving-mode"
       :icon "far fa-arrows"
       :title "Moving mode"
+      :on-click #(swap! (trum/comp->local-state (lc/get-global-cache (:component %1) (:id %1) "component"))
+                   assoc :canvas-mode :canvas-move)
       :hidden #(= (:mode %1) :read)}
      {:elem :btn
       :id "selection-mode"
       :icon "far fa-expand"
       :title "Selection mode"
+      :on-click #(swap! (trum/comp->local-state (lc/get-global-cache (:component %1) (:id %1) "component"))
+                   assoc :canvas-mode :canvas-select)
       :hidden #(= (:mode %1) :read)}]
     [{:elem :btn
       :id "copy"
       :icon "far fa-copy"
       :title "Copy"
+      :on-click #(omt/copy-units-to-clipboard (:component %1) (:unit-tree %1) (:app-state %1))
       :hidden #(= (:mode %1) :read)}
      {:elem :btn
       :id "paste"
       :icon "far fa-paste"
       :title "Paste"
+      :on-click #(swap! (trum/comp->local-state (lc/get-global-cache (:component %1) (:id %1) "component"))
+                   assoc :canvas-mode :canvas-paste)
       :hidden #(= (:mode %1) :read)}]]
 
   :orgpad/uedit-toolbar nil

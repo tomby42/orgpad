@@ -181,46 +181,6 @@
     (drop-last (interleave 
       (map (partial gen-section local-state params) data)
       sep-data))))
-     
-(defn- render-map-tools
-  [local-state-atom]
-  (let [canvas-mode (:canvas-mode @local-state-atom)
-        class-create (str "lft-btn" (when (= canvas-mode :canvas-create-unit) " active"))
-        class-move (str "lft-btn" (when (= canvas-mode :canvas-move) " active"))
-        class-select (str "lft-btn" (when (= canvas-mode :canvas-select) " active"))]
-    [:span
-      [:span
-       {:className class-create
-        :title "Unit creation mode"
-        :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-create-unit)}
-        [:i.far.fa-plus-square.fa-lg.fa-fw]]
-      [:span
-       {:className class-move
-        :title "Moving mode"
-        :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-move)}
-        [:i.far.fa-arrows.fa-lg.fa-fw]]
-      [:span
-       {:className class-select
-        :title "Selection mode"
-        :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-select)}
-        [:i.far.fa-expand.fa-lg.fa-fw]]
-      [:span.lft-sep]]))
-
-(defn- render-copy-tools
-  [component unit-tree app-state local-state-atom]
-  (let [class-paste (str "lft-btn" (when (= (:local-mode @local-state-atom) :canvas-paste) " active"))]
-    [:span
-      [:span.lft-btn
-       {:title "Copy"
-        :onClick #(omt/copy-units-to-clipboard component unit-tree app-state)}
-        [:i.far.fa-copy.fa-lg.fa-fw]]
-      [:span
-       {:className class-paste
-        :title "Paste"
-        :onMouseDown #(swap! local-state-atom assoc :local-mode :canvas-paste)}
-        [:i.far.fa-paste.fa-lg.fa-fw]]
-      [:span.lft-sep]]))
-
 
 (rum/defcc toolbar < (rum/local {:open nil}) lc/parser-type-mixin-context
   "Toolbar component"

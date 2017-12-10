@@ -18,11 +18,13 @@
 ;; List of units in the nesting, each unit is described by a map
 ;; {:id       ...   unit id
 ;;  :icon     ...   unit icon
-;;  :title    ...   unit title
-;;  :pages    ...   unit pages current/total for Book view }
+;;  :label    ...   unit label
+;;  :title    ...   unit tooltip help
+;;  :on-click ...   function to be called when clicked }
 
 (defn- gen-nesting-button
-  [{:keys [id icon label pages title on-click]}]
+  "Generates nesting button for one unit from data."
+  [{:keys [id icon label title on-click]}]
   (let [icon-span [:i { :key (str id "-icon") :className (str icon " fa-lg fa-fw") }]
         label-span [:span { :key (str id "-label") :className "label" } label]]
     [:span.btn
@@ -32,6 +34,7 @@
       icon-span label-span]))
 
 (defn- gen-nesting-list
+  "Generates list of nesting buttons from data, with inserted separators."
   [data]
   (let [sep-data (map #(identity
                           [:span.sep {:key (str (:id %) "-sep") }
@@ -41,6 +44,7 @@
       sep-data))))
 
 (defn- gen-unit-data
+  "Creates data for one unit from its unit-tree."
   [component {:keys [unit view path-info] :as unit-tree}]
   (let [id (:db/id unit)
         view-type (ot/view-type unit-tree)
@@ -64,10 +68,12 @@
     }))
 
 (rum/defcc nesting < lc/parser-type-mixin-context
+  "Nesting status bar component."
   [component {:keys [unit view path-info] :as unit-tree}]
-  (let [unit-stack (concat (lc/query component :orgpad/root-view-stack-info [:orgpad/root-view []] true) [unit-tree])]
+  (let [unit-stack (concat
+                     (lc/query component :orgpad/root-view-stack-info [:orgpad/root-view []] true)
+                     [unit-tree])]
     (when (> (count unit-stack) 1)
       [:div.nesting
-        (js/console.log "Unit-stack: " unit-stack)
         (gen-nesting-list (map (partial gen-unit-data component) unit-stack))
       ])))
