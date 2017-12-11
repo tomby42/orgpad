@@ -15,7 +15,7 @@
             [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.dom :as dom]
             [orgpad.components.graphics.primitives :as g]
-            [orgpad.components.menu.toolbar :as tbar]
+            [orgpad.components.menu.toolbar.component :as tbar]
             [orgpad.components.menu.color.picker :as cpicker]
             [goog.string :as gstring]
             [goog.string.format]))

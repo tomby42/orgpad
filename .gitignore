@@ -19,3 +19,4 @@ figwheel_server.log
 resources/public/css/
 node_modules/
 *.swp
+*.swo

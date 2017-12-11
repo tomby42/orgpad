@@ -1,5 +1,5 @@
 (ns ^{:doc "Toolbar component"}
-  orgpad.components.menu.toolbar
+  orgpad.components.menu.toolbar.component
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
             [orgpad.cycle.life :as lc]

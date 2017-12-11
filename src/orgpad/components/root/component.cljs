@@ -65,7 +65,8 @@
       :on-click #(swap! (:local-state %1) update :history not)
       :disabled #(not (or (lc/query (:component %1) :orgpad/undoable? [] true)
                       (lc/query (:component %1) :orgpad/redoable? [] true)))
-      :hidden #(= (:mode %1) :read)}
+      :hidden true}
+      ;:hidden #(= (:mode %1) :read)}
      {:elem :btn
       :id "undo"
       :icon "far fa-undo-alt"

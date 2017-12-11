@@ -6,7 +6,6 @@
             [orgpad.cycle.life :as lc]
             [orgpad.tools.dscript :as ds]
             [orgpad.components.registry :as registry]
-            [orgpad.components.menu.toolbar :as tbar]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.js-events :as jev]
