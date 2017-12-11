@@ -44,8 +44,8 @@
       sep-data))))
 
 (defn- gen-unit-data
-  "Creates data for one unit from its unit-tree."
-  [component {:keys [unit view path-info] :as unit-tree}]
+  "Creates data for one unit from its unit-tree where jump-up is the number of units we need to close to get back to this unit."
+  [component {:keys [unit view path-info] :as unit-tree} jump-up]
   (let [id (:db/id unit)
         view-type (ot/view-type unit-tree)
         view-info (-> view :orgpad/view-type registry/get-component-info)
@@ -59,21 +59,17 @@
     :label label
     :title view-name
     :on-click #(lc/transact! component
-                   [[:orgpad/root-unit-close {
-                       :db/id id
-                       :orgpad/view-name (view :orgpad/view-name)
-                       :orgpad/view-type (view :orgpad/view-type)
-                       :orgpad/view-path (path-info :orgpad/view-path) }]])
-    
-    }))
+                   (repeat jump-up [:orgpad/root-unit-close]))}))
 
 (rum/defcc nesting < lc/parser-type-mixin-context
   "Nesting status bar component."
   [component {:keys [unit view path-info] :as unit-tree}]
   (let [unit-stack (concat
                      (lc/query component :orgpad/root-view-stack-info [:orgpad/root-view []] true)
-                     [unit-tree])]
+                     [unit-tree])
+        level (dec (count unit-stack))
+        jumps-up (range level -1 -1)]
     (when (> (count unit-stack) 1)
       [:div.nesting
-        (gen-nesting-list (map (partial gen-unit-data component) unit-stack))
+        (gen-nesting-list (map (partial gen-unit-data component) unit-stack jumps-up))
       ])))
