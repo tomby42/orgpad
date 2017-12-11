@@ -117,7 +117,7 @@
                                  [(= ?x ?u)]] [parent uid]))))
 
 (defmethod mutate :orgpad/root-unit-close
-  [{ :keys [state parser-state-pop!] } _ {:keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
+  [{ :keys [state parser-state-pop!] } _ params]
   (let [root-view-info (find-root-view-info state)
         rvi-id (root-view-info :db/id)
         view-stack (->> root-view-info :orgpad/view-stack sort (into []))
