@@ -4,7 +4,7 @@
             [orgpad.core.store :as store]
             [orgpad.cycle.parser :as parser]
             [orgpad.cycle.effects :as eff]
-            [orgpad.tools.jcolls :as jcolls]))
+            [orgpad.tools.jcolls :as jcolls :refer [aget-safe]]))
 
 (defn- bind-atom
   [state-atom & [key]]
@@ -190,9 +190,9 @@
   ([component key]
    (let [global-cache (aget (.. component -context) "global-cache")]
      (assert (-> global-cache nil? not))
-     (aget global-cache key)))
+     (aget-safe global-cache key)))
 
   ([component key & keys]
    (let [global-cache (aget (.. component -context) "global-cache")]
      (assert (-> global-cache nil? not))
-     (apply aget global-cache key keys))))
+     (apply aget-safe global-cache key keys))))
