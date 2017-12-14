@@ -2,6 +2,7 @@
   orgpad.components.root.component
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
+            [orgpad.tools.rum :as trum]
             [orgpad.cycle.life :as lc]
             [cemerick.url :as url]
             [orgpad.components.registry :as registry]
@@ -9,16 +10,24 @@
             [orgpad.components.sidebar.sidebar :as sidebar]
             [orgpad.components.input.file :as if]
             [orgpad.components.root.toolbar :as tbar]
-            [orgpad.components.root.nesting :as nest]))
+            [orgpad.components.root.nesting :as nest]
+            [orgpad.tools.orgpad :as ot]))
 
-(rum/defcc root-component < lc/parser-type-mixin-context
+(rum/defcc root-component < lc/parser-type-mixin-context (rum/local nil)
   [component]
   (let [unit-tree (lc/query component :orgpad/root-view [])
-        app-state (lc/query component :orgpad/app-state [])]
+        app-state (lc/query component :orgpad/app-state [])
+        local-state (trum/comp->local-state component)] ;; local-state contains children component or nil
+
+    ;; TODO: hack!! We need to think about passing custom params to children and/or local states in app state
+    ;; regarding to render hierarchy.
+    (js/setTimeout #(let [c (lc/get-global-cache component (ot/uid unit-tree) "component")]
+                      (when (not= @local-state c)
+                        (js/console.log "updating child component" c)
+                        (reset! local-state c))) 0)
+
     [ :div.root-view
       ;; (rum/with-key (sidebar/sidebar-component) 0)
-      ;(js/console.log "Unit-tree: " unit-tree)
-      ;(js/console.log "App-state: " app-state)
       (rum/with-key (node/node unit-tree app-state) "root-view-part")
       (rum/with-key (tbar/status unit-tree app-state) "status-part")
       (rum/with-key (nest/nesting unit-tree) "nesting-part")
