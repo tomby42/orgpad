@@ -13,23 +13,31 @@
             [orgpad.components.root.nesting :as nest]
             [orgpad.tools.orgpad :as ot]))
 
-(rum/defcc root-component < lc/parser-type-mixin-context (rum/local nil)
+;; TODO: hack!! We need to think about passing custom params to children and/or local states in app state
+;; regarding to render hierarchy.
+(defn- update-node-component
+  [component unit-tree local-state]
+  (let [c (lc/get-global-cache component (ot/uid unit-tree) "component")]
+    (when (not= (:component @local-state) c)
+      (js/console.log "updating child component" c)
+      (swap! local-state assoc-in [:component] c)
+      (when c
+        (swap! local-state assoc-in [:node-state] (trum/comp->local-state c))))))
+
+
+(rum/defcc root-component < lc/parser-type-mixin-context (rum/local {:component nil :node-state nil})
   [component]
   (let [unit-tree (lc/query component :orgpad/root-view [])
         app-state (lc/query component :orgpad/app-state [])
         local-state (trum/comp->local-state component)] ;; local-state contains children component or nil
 
-    ;; TODO: hack!! We need to think about passing custom params to children and/or local states in app state
-    ;; regarding to render hierarchy.
-    (js/setTimeout #(let [c (lc/get-global-cache component (ot/uid unit-tree) "component")]
-                      (when (not= @local-state c)
-                        (js/console.log "updating child component" c)
-                        (reset! local-state c))) 0)
+    (js/setTimeout #(update-node-component component unit-tree local-state) 0)
+    (js/console.log "Root component: " @local-state)
 
     [ :div.root-view
       ;; (rum/with-key (sidebar/sidebar-component) 0)
       (rum/with-key (node/node unit-tree app-state) "root-view-part")
-      (rum/with-key (tbar/status unit-tree app-state) "status-part")
+      (rum/with-key (tbar/status unit-tree app-state (:node-state @local-state)) "status-part")
       (rum/with-key (nest/nesting unit-tree) "nesting-part")
       (when (app-state :loading)
         [ :div.loading

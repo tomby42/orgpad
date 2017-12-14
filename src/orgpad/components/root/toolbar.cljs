@@ -126,8 +126,8 @@
         (update-in view-toolbar [last-sec] conj ac-view-types-roll ))
       view-toolbar)))
 
-(rum/defcc status < (rum/local { :unroll false :view-menu-unroll false :typed "" :history false }) lc/parser-type-mixin-context
-  [component { :keys [unit view path-info] :as unit-tree } app-state]
+(rum/defcc status < rum/reactive (rum/local { :unroll false :view-menu-unroll false :typed "" :history false }) lc/parser-type-mixin-context
+  [component { :keys [unit view path-info] :as unit-tree } app-state node-state]
   (let [id (unit :db/id)
         local-state (trum/comp->local-state component)
         msg-list (lc/query component :orgpad.ci/msg-list [])
@@ -149,10 +149,12 @@
                       :view         view
                       :path-info    path-info
                       :local-state  local-state
+                      :node-state   node-state
                       :mode         (:mode app-state)
                       :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
                       :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view))) }
              ]
+         (js/console.log "Updating toolbar: " node-state)
          (tbar/toolbar "toolbar" params left-toolbar right-toolbar))
          ]
          

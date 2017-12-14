@@ -528,6 +528,10 @@
     (render-write-mode component unit-tree app-state)
     (render-read-mode component unit-tree app-state)))
 
+(defn- active-toolbar-btn?
+  [local-state required]
+  (when local-state (= (:canvas-mode @local-state) required)))
+
 (registry/register-component-info
  :orgpad/map-view
  {:orgpad/default-view-info   { :orgpad/view-type :orgpad/map-view
@@ -587,22 +591,22 @@
       :id "unit-creation-mode"
       :icon "far fa-plus-square"
       :title "Unit creation mode"
-      :on-click #(swap! (trum/comp->local-state (lc/get-global-cache (:component %1) (:id %1) "component"))
-                   assoc :canvas-mode :canvas-create-unit)
+      :on-click #(swap! (:node-state %1) assoc :canvas-mode :canvas-create-unit)
+      :active #(active-toolbar-btn? (:node-state %1) :canvas-create-unit)
       :hidden #(= (:mode %1) :read)}
      {:elem :btn
       :id "moving-mode"
       :icon "far fa-arrows"
       :title "Moving mode"
-      :on-click #(swap! (trum/comp->local-state (lc/get-global-cache (:component %1) (:id %1) "component"))
-                   assoc :canvas-mode :canvas-move)
+      :on-click #(swap! (:node-state %1) assoc :canvas-mode :canvas-move)
+      :active #(active-toolbar-btn? (:node-state %1) :canvas-move)
       :hidden #(= (:mode %1) :read)}
      {:elem :btn
       :id "selection-mode"
       :icon "far fa-expand"
       :title "Selection mode"
-      :on-click #(swap! (trum/comp->local-state (lc/get-global-cache (:component %1) (:id %1) "component"))
-                   assoc :canvas-mode :canvas-select)
+      :on-click #(swap! (:node-state %1) assoc :canvas-mode :canvas-select)
+      :active #(active-toolbar-btn? (:node-state %1) :canvas-select)
       :hidden #(= (:mode %1) :read)}]
     [{:elem :btn
       :id "copy"
@@ -614,8 +618,8 @@
       :id "paste"
       :icon "far fa-paste"
       :title "Paste"
-      :on-click #(swap! (trum/comp->local-state (lc/get-global-cache (:component %1) (:id %1) "component"))
-                   assoc :canvas-mode :canvas-paste)
+      :on-click #(swap! (:node-state %1) assoc :canvas-mode :canvas-paste)
+      :active #(active-toolbar-btn? (:node-state %1) :canvas-paste)
       :hidden #(= (:mode %1) :read)}]]
 
   :orgpad/uedit-toolbar nil
