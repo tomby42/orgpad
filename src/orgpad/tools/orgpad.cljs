@@ -276,7 +276,7 @@
         negate-db-id-but-independent' (partial negate-db-id-but-independent iprops)]
     {:entities
      (colls/minto
-      #{}
+      (sorted-set-by #(compare (-> %1 :db/id -) (-> %2 :db/id -)))
       (map #(-> db
                 (store/query [:entity %])
                 dscript/entity->map
