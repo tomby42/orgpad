@@ -122,7 +122,7 @@
         (colls/minto []
                      (update-refs-orders db)
                      (unescape-atoms db)
-                     (if (db-contains-styles? db)
+                     (if (not (db-contains-styles? db))
                        (default-styles-qry)
                        nil))]
     (if (empty? qry)
