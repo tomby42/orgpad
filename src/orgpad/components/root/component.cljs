@@ -19,7 +19,7 @@
     ;; TODO: hack!! We need to think about passing custom params to children and/or local states in app state
     ;; regarding to render hierarchy.
     (js/setTimeout #(let [c (lc/get-global-cache component (ot/uid unit-tree) "component")]
-                      (when (not= @local-state c)
+                      (when (and c (.-context c) (not= @local-state c))
                         (js/console.log "updating child component" c)
                         (reset! local-state c))) 0)
 
