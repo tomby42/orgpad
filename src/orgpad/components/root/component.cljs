@@ -18,12 +18,15 @@
 (defn- update-node-component
   [component unit-tree local-state]
   (let [c (lc/get-global-cache component (ot/uid unit-tree) "component")]
-    (when (not= (:component @local-state) c)
-      (js/console.log "updating child component" c)
-      (swap! local-state assoc-in [:component] c)
-      (when c
-        (swap! local-state assoc-in [:node-state] (trum/comp->local-state c))))))
-
+    (when (and c (.-context c) (not= (:component @local-state) c))
+      (let [state (trum/comp->local-state c)]
+        (add-watch state :root-component-update (fn [_ _ old-state new-state]
+                                                  (if (not= (:canvas-mode old-state) (:canvas-mode new-state))
+                                                    (rum/request-render component))))
+                                                    
+        (js/console.log "updating child component" c)
+        (swap! local-state assoc :component c)
+        (swap! local-state assoc :node-state state)))))
 
 (rum/defcc root-component < lc/parser-type-mixin-context (rum/local {:component nil :node-state nil})
   [component]
