@@ -20,6 +20,47 @@
             [goog.string :as gstring]
             [goog.string.format]))
 
+;; Input format for properties editor data
+;; =======================================
+;;
+;; A list of foldable groups of properties, each represented by the following map:
+;;
+;;  {:id              ...   identificator
+;;   :title           ...   name of the group
+;;   :elements        ...   list of all property controls in this group}
+;;
+;; Each property control is described by the following map:
+;;  {:elem            ...   type of property controller
+;;      :color-picker ...   element for picking colors
+;;      :text-input   
+;;      :numeric-input
+;;      :select       ...   choose one of several options
+;;   :label           ...   displayed label or nil for no label
+;;   :property-name   ...   name of property which is changed
+;;   :action          ...   name of action for lc/transact!
+;;  }
+;;
+;; Currently, standard transact functions are called to update properties. In the future, we might
+;; add the possibility to customize transaction calls, if ever needed.
+
+(defn- gen-on-change-action
+  "Generates transaction which updates the changed property."
+  [component {:keys [unit prop parent-view prop-name action selection]} prop-val]
+  (if (nil? selection)
+    (fn [ev]
+      (lc/transact! component [[action
+                                {:prop prop
+                                 :parent-view parent-view
+                                 :unit-tree unit
+                                 prop-name prop-val} ]]))
+    (fn [ev]
+      (lc/transact! component [[:orgpad.units/map-view-units-change-props
+                                {:action action
+                                 :selection selection
+                                 :unit-tree unit
+                                 :prop-name prop-name
+                                 :prop-val prop-val } ]]))))
+
 (defn- normalize-range
   [min max val]
   (-> (if (= val "") "0" val)
@@ -142,25 +183,22 @@
 (defn- render-direction-picker [params]
   (dpicker/direction-picker #(js/console.log %) :topright))
 
-;; maji byt informace o otevrenych zalozkach soucasti globalnich parametru orgpadu? davalo by to
-;; celkem smysl, aby se stav zachoval pri ulozeni
-(rum/defcs props-component < (rum/local false ::open)
-  [local-state]
-  (let [ open (::open local-state) ]
+(rum/defcc props-component < (rum/local false)
+  [component]
+  (let [local-state (trum/comp->local-state component) ]
      [:span
-        {:onClick #(swap! open not)}
+        {:onClick #(swap! local-state not)}
         "Colors"
-        (if (= @open true)
+        (if (= @local-state true)
           [:i.fa.fa-chevron-down.fa-lg]
-          [:i.fa.fa-chevron-right.fa-lg])]
-          
-    
+          [:i.fa.fa-chevron-right.fa-lg])]    
   ))
+
 (defn render-node-props-editor
   [params]
   [:div.map-props-toolbar {:key "prop-menu"}
-   (render-color-picker (assoc params :action :orgpad.units/map-view-unit-border-color))
-   (render-color-picker (assoc params :action :orgpad.units/map-view-unit-bg-color))
+   ;(render-color-picker (assoc params :action :orgpad.units/map-view-unit-border-color))
+   ;(render-color-picker (assoc params :action :orgpad.units/map-view-unit-bg-color))
    (render-border-width params)
    (render-border-radius params)
    (render-border-style params)
