@@ -97,7 +97,8 @@
   (and v
        (= (v :orgpad/view-type) view-type)
        (= (v :orgpad/type) type)
-       (= (v :orgpad/view-name) view-name)))
+       (or (= (v :orgpad/view-name) view-name)
+           (= (v :orgpad/view-name) "*"))))
 
 (defn props-pred
   [ctx-unit view-name view-type type v]
@@ -120,9 +121,28 @@
        (drop-while #(not (props-pred pid view-name prop-name prop-type %)))
        first))
 
+(defn get-props-all
+  [props view-name prop-name prop-type]
+  (filter (partial props-pred-no-ctx view-name prop-name prop-type) props))
+
 (defn get-props-view-child
   [props view-name pid prop-name]
   (get-props props view-name pid prop-name :orgpad/unit-view-child))
+
+(defn get-props-view-child-all
+  [props view-name prop-name]
+  (get-props-all props view-name prop-name :orgpad/unit-view-child))
+
+(defn get-style
+  [props style-name style-type]
+  (let [styles (get-props-view-child-all props "*" style-type)]
+    (->> styles (drop-while #(not= (:orgpad/style-name %) style-name)) first)))
+
+(defn get-props-view-child-styled
+  [props view-name pid prop-name style-type]
+  (let [prop (get-props-view-child props view-name pid prop-name)
+        style (get-style props (:orgpad/view-style prop) style-type)]
+    (merge style prop)))
 
 (defn child-vertex-props
   [prop-fn unit-tree & [selection]]
@@ -132,7 +152,9 @@
             (map (fn [u]
                    (let [prop (-> u
                                   :props
-                                  (get-props-view-child name id :orgpad.map-view/vertex-props))]
+                                  (get-props-view-child-styled name id
+                                                               :orgpad.map-view/vertex-props
+                                                               :orgpad.map-view/vertex-props-style))]
                      (prop-fn prop (uid u))))
                  (if selection
                    (filter #(contains? selection (uid %)) (refs unit-tree))
@@ -223,6 +245,14 @@
   [u]
   (mapv (fn [v] (-> v :db/id -)) u))
 
+(defn- negate-db-id-but-independent
+  [inds u]
+  (mapv (fn [v] (let [id (:db/id v)]
+                  (if (contains? inds id)
+                    id
+                    (- id))))
+        u))
+
 (defn- get-roots
   [db pid selection]
   (if (nil? selection)
@@ -237,12 +267,16 @@
 
 (defn copy-descendants-from-db
   [db pid props-constraints & [selection]]
-  (let [props (get-descendant-props-from-db db pid props-constraints selection)
+  (let [raw-props (get-descendant-props-from-db db pid props-constraints selection)
+        groups (group-by #(-> % second :orgpad/independent) raw-props)
+        props (groups nil)
+        iprops (into {} (map #(vector (-> % second :db/id) true)) (groups true))
         units-ids (->> props (map #(or (get % 2) (get % 0))) set)
-        update-refs-order' (partial update-refs-order -)]
+        update-refs-order' (partial update-refs-order -)
+        negate-db-id-but-independent' (partial negate-db-id-but-independent iprops)]
     {:entities
      (colls/minto
-      #{}
+      (sorted-set-by #(compare (-> %1 :db/id -) (-> %2 :db/id -)))
       (map #(-> db
                 (store/query [:entity %])
                 dscript/entity->map
@@ -250,7 +284,7 @@
                 (as-> e
                     (cond-> e
                       (:orgpad/refs e) (update :orgpad/refs negate-db-id)
-                      (:orgpad/props-refs e) (update :orgpad/props-refs negate-db-id)
+                      (:orgpad/props-refs e) (update :orgpad/props-refs negate-db-id-but-independent')
                       (:orgpad/refs-order e) (update :orgpad/refs-order update-refs-order')))) units-ids)
       (map #(-> %
                 second
@@ -298,3 +332,20 @@
                          :pos (:orgpad/unit-position %)
                          :size [(:orgpad/unit-width %) (:orgpad/unit-height %)])))
    entities))
+
+(defn get-prop-from-db-styles
+  [state props prop style-type]
+  (let [id (prop :db/id)
+        prop' (if id (store/query state [:entity id]) prop)
+        style (get-style props (:orgpad/view-style prop') style-type)
+        style' (dscript/entity->map (store/query state [:entity (:db/id style)]))]
+    (merge style' prop')))
+
+(defn get-prop-style
+  [state prop style-type]
+  (store/query state '[:find (pull ?s [*]) .
+                       :in $ ?style-name ?style-type
+                       :where
+                       [?s :orgpad/style-name ?style-name]
+                       [?s :orgpad/view-type ?style-type]]
+               [(:orgpad/view-style prop) style-type]))

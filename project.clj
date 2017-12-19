@@ -4,10 +4,10 @@
 
   :dependencies [[org.clojure/clojure         "1.8.0"]
                  [org.clojure/clojurescript   "1.9.946"]
-                 [org.clojure/core.async      "0.3.443"]
+                 [org.clojure/core.async      "0.3.465"]
                  [org.clojure/test.check      "0.9.0"]
-                 [datascript                  "0.16.2"]
-                 [com.rpl/specter             "1.0.3"]
+                 [datascript                  "0.16.3"]
+                 [com.rpl/specter             "1.0.5"]
                  ;; [rum                         "0.9.1"] ;; local modified copy src/rum 0.10.8
                  [sablono                     "0.7.7"]
                  [com.cemerick/url            "0.1.1"]

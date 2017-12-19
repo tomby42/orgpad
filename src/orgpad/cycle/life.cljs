@@ -4,7 +4,7 @@
             [orgpad.core.store :as store]
             [orgpad.cycle.parser :as parser]
             [orgpad.cycle.effects :as eff]
-            [orgpad.tools.jcolls :as jcolls]))
+            [orgpad.tools.jcolls :as jcolls :refer [aget-safe]]))
 
 (defn- bind-atom
   [state-atom & [key]]
@@ -42,10 +42,18 @@
   (let [force-update-all (volatile! false)
         force-update-part (volatile! {})
         global-cache #js {}]
-    (letfn [(parser-read [key params disable-cache?]
+    (letfn [(parser-stack-info [key params]
+              (-> @parser-state
+                  (get-in [:stack [key params]])
+                  (->> (map #(aget % "value")))))
+
+            (parser-read [key params disable-cache?]
               (let [pstate-cur (@parser-state [key params])]
                 (if (nil? pstate-cur)
-                  (let [pstate (parser/parse-query @state read-fn global-cache key params)]
+                  (let [pstate (parser/parse-query {:state @state
+                                                    :read read-fn
+                                                    :parser-stack-info parser-stack-info
+                                                    :global-cache global-cache} key params)]
                     (when (not disable-cache?)
                       (vswap! parser-state assoc [key params] pstate))
                     (aget pstate "value"))
@@ -76,6 +84,7 @@
                                             :force-update! (partial parser/force-update! force-update-all force-update-part)
                                             :parser-state-push! parser-state-push!
                                             :parser-state-pop! parser-state-pop!
+                                            :parser-stack-info parser-stack-info
                                             :transact! parser-mutate } key params)]
                            [state key-params-read
                             (if (nil? effect)
@@ -181,9 +190,9 @@
   ([component key]
    (let [global-cache (aget (.. component -context) "global-cache")]
      (assert (-> global-cache nil? not))
-     (aget global-cache key)))
+     (aget-safe global-cache key)))
 
   ([component key & keys]
    (let [global-cache (aget (.. component -context) "global-cache")]
      (assert (-> global-cache nil? not))
-     (apply aget global-cache key keys))))
+     (apply aget-safe global-cache key keys))))

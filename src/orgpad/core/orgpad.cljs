@@ -5,6 +5,7 @@
    [datascript.core   :as d]
    [orgpad.core.store :as store]
    [orgpad.tools.colls :as colls]
+   [orgpad.components.registry :as cregistry]
    [ajax.core :as ajax]))
 
 (def orgpad-db-schema
@@ -41,7 +42,42 @@
    :orgpad/text        {}
    :orgpad/response    {}
    :orgpad/parameters  {}
+   :orgpad/independent {}
+   :orgpad/view-style {}
+   :orgpad/style-name {}
    })
+
+(defn default-styles-qry
+  []
+  (let [counter (volatile! 0)]
+    (into [] (comp
+              (filter :orgpad/child-props-style-types)
+              (mapcat (fn [cdef]
+                        (map #(assoc (-> cdef :orgpad/child-props-default %) :db/id (vswap! counter dec))
+                             (:orgpad/child-props-style-types cdef)))))
+          (vals (cregistry/get-registry)))))
+
+(defn db-contains-styles?
+  [db]
+  (let [styles (into #{}
+                     (mapcat :orgpad/child-props-style-types)
+                     (vals (cregistry/get-registry)))]
+  (-> db
+      (store/query '[:find ?e
+                     :in $ ?contains
+                     :where
+                     [?e :orgpad/view-type ?vt]
+                     [(?contains ?vt)]]
+                   [#(contains? styles %)])
+      empty?
+      not)))
+
+(defn insert-default-styles
+  [db]
+  (let [counter (volatile! 0)
+        qry (default-styles-qry)]
+    (js/console.log "insert default styles" qry)
+    (store/transact db qry)))
 
 (defn empty-orgpad-db
   []
@@ -53,6 +89,7 @@
                          :orgpad/type :orgpad/root-unit-view,
                          :orgpad/refs 0 }
                        ] {})
+      insert-default-styles
       (store/transact [[:mode] :write] {})))
 
 (defn- update-refs-orders
@@ -84,7 +121,10 @@
   (let [qry
         (colls/minto []
                      (update-refs-orders db)
-                     (unescape-atoms db))]
+                     (unescape-atoms db)
+                     (if (not (db-contains-styles? db))
+                       (default-styles-qry)
+                       nil))]
     (if (empty? qry)
       db
       (store/transact db qry {}))))

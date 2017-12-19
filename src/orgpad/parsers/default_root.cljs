@@ -117,7 +117,7 @@
                                  [(= ?x ?u)]] [parent uid]))))
 
 (defmethod mutate :orgpad/root-unit-close
-  [{ :keys [state parser-state-pop!] } _ {:keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
+  [{ :keys [state parser-state-pop!] } _ params]
   (let [root-view-info (find-root-view-info state)
         rvi-id (root-view-info :db/id)
         view-stack (->> root-view-info :orgpad/view-stack sort (into []))
@@ -229,4 +229,26 @@
 (defmethod mutate :orgpad.units/copy
   [{:keys [state]} _ {:keys [pid selection]}]
   (let [data (ot/copy-descendants-from-db state pid [] selection)]
+    (js/console.log "copy " data)
     {:state (store/transact state [[:clipboards (keypath pid)] data])}))
+
+(defmethod read :orgpad/styles
+  [{:keys [state]} _ {:keys [view-type]}]
+  (store/query state '[:find [(pull ?e [*])]
+                       :in $ ?view-type
+                       :where
+                       [?e :orgpad/view-type ?view-type]]
+               [view-type]))
+
+(defmethod read :orgpad/style
+  [{:keys [state]} _ {:keys [view-type style-name]}]
+  (store/query state '[:find (pull ?e [*]) .
+                       :in $ ?view-type ?style-name
+                       :where
+                       [?e :orgpad/view-type ?view-type]
+                       [?e :orgpad/style-name ?style-name]]
+               [view-type style-name]))
+
+(defmethod read :orgpad/root-view-stack-info
+  [{:keys [parser-stack-info]} _ [key params]]
+  (parser-stack-info key params))

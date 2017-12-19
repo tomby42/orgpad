@@ -90,7 +90,6 @@
                    (not pre-quick-edit)))
       (run-dbl-click-check local-state))
     (swap! local-state merge { :local-mode :try-unit-move
-                               :local-move false
                                :selected-unit [unit-tree prop parent-view component]
                                :selected-node new-node
                                :quick-edit false
@@ -110,7 +109,9 @@
 
 (rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} app-state pcomponent view-name pid local-state]
-  (let [prop (ot/get-props-view-child props view-name pid :orgpad.map-view/vertex-props)
+  (let [prop (ot/get-props-view-child-styled props view-name pid
+                                             :orgpad.map-view/vertex-props
+                                             :orgpad.map-view/vertex-props-style)
         pos (prop :orgpad/unit-position)
         selections (get-in app-state [:selections pid])
         selected? (= (:db/id unit) (first selections))
@@ -232,7 +233,8 @@
 
 (defn- mk-lnk-vtx-prop
   [component {:keys [props unit path-info] :as unit-tree} view-name pid mid-pt]
-  (let [prop (ot/get-props-view-child props view-name pid :orgpad.map-view/vertex-props)]
+  (let [prop (ot/get-props-view-child props view-name pid
+                                      :orgpad.map-view/vertex-props)]
     (when (nil? prop)
       (js/setTimeout
        (fn []
@@ -241,11 +243,15 @@
                                     :context-unit pid
                                     :view-name view-name
                                     :unit-tree unit-tree
+                                    :style (lc/query component :orgpad/style
+                                                     {:view-type :orgpad.map-view/vertex-props-style
+                                                      :style-name "default"} true)
                                     }]])) 0))))
 
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic?]} app-state pcomponent view-name pid local-state]
-  (let [prop (ot/get-props-view-child props view-name pid :orgpad.map-view/link-props)
+  (let [prop (ot/get-props-view-child-styled props view-name pid
+                                             :orgpad.map-view/link-props :orgpad.map-view/link-props-style)
         mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
         style { :css { :zIndex -1 }
                 :canvas { :strokeStyle (format-color (prop :orgpad/link-color))
