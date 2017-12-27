@@ -295,9 +295,14 @@
                                  }]
            (gen-toolbar sel-unit-tree app-state local-state)]
            (when (= (@local-state :local-mode) :make-link)
-             (let [tr (parent-view :orgpad/transform)]
-               (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
-                       (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
+             (let [tr (parent-view :orgpad/transform)
+                   bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
+                   ox (.-left bbox)
+                   oy (.-top bbox)]
+               (g/line (geom/screen->canvas tr [(- (@local-state :link-start-x) ox)
+                                                (- (@local-state :link-start-y) oy)])
+                       (geom/screen->canvas tr [(- (@local-state :mouse-x) ox)
+                                                (- (@local-state :mouse-y) oy)])
                        {:css {:zIndex 2} :key 1})))])))))
 
 (defn- simple-node-unit-editor
