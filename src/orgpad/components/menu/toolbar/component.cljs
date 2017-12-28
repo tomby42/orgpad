@@ -159,6 +159,11 @@
   [local-state params {:keys [id value] :as data}]
   [:span.text {:key id} (when value (value params))])
 
+(defn- gen-custom
+  "Generate custom component by given render function"
+  [local-state params {:keys [id render style] :as data}]
+  [:span {:key id :className style} (when render (render params data local-state))])
+
 (defn- gen-element
   "Generates one element of arbitrary type from the input data."
   [local-state params {:keys [elem] :as data}]
@@ -166,6 +171,7 @@
     :btn (gen-button local-state params "btn" data)
     :roll (gen-roll local-state params data)
     :text (gen-text local-state params data)
+    :custom (gen-custom local-state params data)
     (js/console.warn "Toolbar gen-element: No matching element to " (pr-str elem))))
 
 (defn- gen-section
