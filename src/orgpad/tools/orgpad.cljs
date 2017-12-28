@@ -49,7 +49,7 @@
 
 (defn active-child-tree
   [unit view]
-  (let [active-child (-> view :orgpad/active-unit)]
+  (let [active-child (:orgpad/active-unit view)]
     (get-sorted-ref unit active-child)))
 
 (defn get-sheet-number
