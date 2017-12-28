@@ -210,13 +210,18 @@
                                                                          (aget % "touches" 0)))
             ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
             }
-        (gen-nodes-toolbar unit-tree app-state local-state selection)]
+      (gen-nodes-toolbar unit-tree app-state local-state selection)]
 
      (when (= (@local-state :local-mode) :make-links)
-       (let [tr (parent-view :orgpad/transform)]
-         (g/line (geom/screen->canvas tr [(@local-state :link-start-x) (@local-state :link-start-y)])
-                 (geom/screen->canvas tr [(@local-state :mouse-x) (@local-state :mouse-y)])
-                 {:css {:zIndex 2}})))]))
+             (let [tr (parent-view :orgpad/transform)
+                   bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
+                   ox (.-left bbox)
+                   oy (.-top bbox)]
+               (g/line (geom/screen->canvas tr [(- (@local-state :link-start-x) ox)
+                                                (- (@local-state :link-start-y) oy)])
+                       (geom/screen->canvas tr [(- (@local-state :mouse-x) ox)
+                                                (- (@local-state :mouse-y) oy)])
+                       {:css {:zIndex 2} :key 1})))]))
 
 (defn- node-unit-editor-style
   [prop]
