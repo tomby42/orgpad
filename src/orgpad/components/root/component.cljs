@@ -11,7 +11,8 @@
             [orgpad.components.input.file :as if]
             [orgpad.components.root.toolbar :as tbar]
             [orgpad.components.root.nesting :as nest]
-            [orgpad.tools.orgpad :as ot]))
+            [orgpad.tools.orgpad :as ot]
+            [orgpad.components.ci.dialog :as ci]))
 
 ;; TODO: hack!! We need to think about passing custom params to children and/or local states in app state
 ;; regarding to render hierarchy.
@@ -31,6 +32,7 @@
   [component]
   (let [unit-tree (lc/query component :orgpad/root-view [])
         app-state (lc/query component :orgpad/app-state [])
+        msg-list (lc/query component :orgpad.ci/msg-list [])
         local-state (trum/comp->local-state component)] ;; local-state contains children component or nil
 
     (js/setTimeout #(update-node-component component unit-tree local-state) 100)
@@ -40,6 +42,7 @@
       (rum/with-key (node/node unit-tree app-state) "root-view-part")
       (rum/with-key (tbar/status unit-tree app-state (:node-state @local-state)) "status-part")
       (rum/with-key (nest/nesting unit-tree) "nesting-part")
+      (rum/with-key (ci/dialog-panel unit-tree app-state msg-list) "ci-part")
       (when (app-state :loading)
         [ :div.loading
          [ :div.status
