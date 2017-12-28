@@ -23,7 +23,7 @@
 
 (def ^:private desc-update
   (eff/debounce (fn [transact! unit]
-                  (transact! [[:orgpad.desc/set unit]])) 500 false) )
+                  (transact! [[:orgpad.desc/set unit]])) 0 false) )
 
 (defmethod mutate :orgpad.desc/update
   [{:keys [state transact!]} _ unit]
@@ -37,4 +37,5 @@
 
 (defmethod mutate :orgpad.atom/update
   [{:keys [state transact!]} _ {:keys [db/id orgpad/view orgpad/atom]}]
+  (js/console.log ":orgpad.atom/update" id view atom)
   { :state (update-view-unit state id view :orgpad/atom atom) } )

@@ -24,7 +24,6 @@
                                                   (if (not= (:canvas-mode old-state) (:canvas-mode new-state))
                                                     (rum/request-render component))))
                                                     
-        (js/console.log "updating child component" c)
         (swap! local-state assoc :component c)
         (swap! local-state assoc :node-state state)))))
 
@@ -34,8 +33,7 @@
         app-state (lc/query component :orgpad/app-state [])
         local-state (trum/comp->local-state component)] ;; local-state contains children component or nil
 
-    (js/setTimeout #(update-node-component component unit-tree local-state) 0)
-    (js/console.log "Root component: " @local-state)
+    (js/setTimeout #(update-node-component component unit-tree local-state) 100)
 
     [ :div.root-view
       ;; (rum/with-key (sidebar/sidebar-component) 0)

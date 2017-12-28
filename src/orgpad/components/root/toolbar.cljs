@@ -154,7 +154,6 @@
                       :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
                       :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view))) }
              ]
-         (js/console.log "Updating toolbar: " node-state)
          (tbar/toolbar "toolbar" params left-toolbar right-toolbar))
          ]
          
