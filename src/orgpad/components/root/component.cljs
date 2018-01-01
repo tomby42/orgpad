@@ -135,8 +135,6 @@
       :id "help"
       :icon "far fa-question-circle"
       :label "Help"
-      :on-click #(js/window.open (str                        
-                                   (url/url (aget js/window "location" "href"))
-                                   "?u=http://pavel.klavik.cz/orgpad/help.orgpad") "_blank")}
+      :on-click #(js/window.open "help.html" "_blank")}
   ]]
 })
