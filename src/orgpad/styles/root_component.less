@@ -1,205 +1,27 @@
 @import "circle_button.less";
 
 .root-view {
+    display: flex;
+    flex-direction: column;
     width: 100%;
     height: 100%;
     position: absolute;
     overflow: hidden;
     touch-action: none;
 
-    .mode-button {
-        .circle-button-base;
-        float: left;
-        margin: 2px;
-    }
-
-    .done-root-unit-button {
-        .circle-button-base;
-        background-color: green;
-        float: left;
-        margin: 2px;
-        &:hover {
-            background-color: #009000;
-        }
-    }
-
-    .tools-button {
-        .circle-button-base;
-        float: right;
-        margin: 2px;
-    }
-
-    .tools-menu {
-        float: left;
-        margin: 2px;
-        height: 100%;
-
-
-        .tools {
-            display: flex;
-            float: right;
-            -webkit-transform: scaleX(0);
-            transform: scaleX(0);
-            width: 0px;
-
-            -webkit-transition: -webkit-transform 0.2s, width 0.2s;
-            transition: transform 0.2s, width 0.2s;
-        }
-
-        .more {
-            -webkit-transform: scaleX(1);
-            transform: scaleX(1);
-        }
-
-        .more-current {
-            .more;
-            width: 400px;
-        }
-
-        .more-4 {
-            .more;
-            width: 190px;
-        }
-
-        .view-name {
-            width: 150px;
-            .view-name-add {
-                position: relative;
-                left: 80px;
-                top: -27px;
-                &:hover {
-                    color: green;
-                }
-            }
-        }
-
-        .view-type {
-            width: 150px;
-        }
-
-        .file-item {
-            text-align: center;
-            cursor: pointer;
+    .view-name {
+        position: relative;
+        top: -6px;
+        width: 150px;
+        height: 30px;
+        .view-name-add {
+            position: relative;
+            left: 80px;
+            top: -27px;
             &:hover {
-                color: #78BEFF;
+                color: green;
             }
         }
-
-        .disabled-item {
-            text-align: center;
-            cursor: pointer;
-            color: #ddd;
-        }
-
-        .view-menu-all {
-            width: 180px;
-        }
-
-        .view-menu-header {
-            .view-menu-all;
-        }
-
-        .view-menu-body {
-            padding-left: 1em;
-            width: 164px;
-        }
-
-        .file-menu-all {
-            width: 100px;
-        }
-
-        .file-menu-header {
-            .file-menu-all;
-        }
-
-        .file-menu-body {
-            padding-left: 0px;
-            width: 100px;
-        }
-
-        .edit-menu-all {
-            width: 100px;
-        }
-
-        .edit-menu-header {
-            .file-menu-all;
-        }
-
-        .edit-menu-body {
-            padding-left: 0px;
-            width: 100px;
-        }
-
-        .menu {
-            height: 50px;
-            text-align: center;
-            background-color: #e4f5ff;
-            cursor: pointer;
-
-            &:hover {
-                background-color: #78BEFF;
-            }
-
-            .menu-header {
-                height: 50px;
-                display: block;
-                text-align: center;
-                position: absolute;
-                span {
-                    position: relative;
-                    top: 15px;
-                }
-            }
-
-            .menu-body {
-                text-align: left;
-                list-style-type: none;
-                margin-left: 0;
-                position:absolute;
-                top: 34px;
-                padding-top: 10px;
-                background-color: #e4f5ff;
-
-                -webkit-transform: scaleY(0);
-                transform: scaleY(0);
-                height: 0px;
-
-                -webkit-transition: -webkit-transform 0.2s, width 0.2s;
-                transition: transform 0.2s, width 0.2s;
-
-                .transformY {
-                    -webkit-transform: scaleY(1);
-                    transform: scaleY(1);
-                }
-
-                &.open-view {
-                    .transformY;
-                    height: 115px;
-                }
-
-                &.open-file {
-                    .transformY;
-                    height: 74px;
-                }
-
-                &.open-edit {
-                    .transformY;
-                    height: 55px;
-                }
-            }
-        }
-    }
-
-    .status-menu {
-        z-index: 1;
-        position: absolute;
-        top: 10px;
-        right: 20px;
-
-        background-color: white;
-        padding: 2px;
-        float: right;
-        border-radius: 10%;
     }
 
     .loading {

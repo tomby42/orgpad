@@ -2,7 +2,8 @@
 
 .map-view {
   width: 100%;
-  height: 100%;
+  flex-grow: 1;
+  order: 1;
   position: relative;
 
   overflow-x: hidden;
@@ -13,6 +14,8 @@
 
     .map-view-child {
       position: absolute;
+      display: flex;
+      flex-direction: column;
     }
 
     .link-control {
@@ -49,71 +52,6 @@
 
       &.simple {
           border-top: 2px dashed #e42c2c;
-      }
-
-      .toolbar {
-          position: absolute;
-          width: 100%;
-          min-width: 263px;
-          height: 24px;
-          top: -28px;
-          left: -2px;
-          background-color: #fff;
-          border: 2px dashed red;
-          white-space: nowrap;
-      }
-
-      .lft-btn {
-          float: left;
-          text-align: center;
-          width: 18px;
-          height: 18px;
-          padding: 3px;
-          display: inline-block;
-          &:hover {
-              background-color: #ccc;
-          }
-          &.active {
-              background-color: #aaa;
-          }
-      }
-
-      .rt-btn {
-          float: right;
-          text-align: center;
-          width: 18px;
-          height: 18px;
-          padding: 3px;
-          display: block;
-          &:hover {
-              background-color: #ccc;
-          }
-          &.active {
-              background-color: #aaa;
-          }
-      }
-
-      .lft-sep {
-          float: left;
-          background-color: red;
-          width: 2px;
-          height: 18px;
-          margin: 3px;
-      }
-
-      .rt-sep {
-          float: right;
-          background-color: red;
-          width: 2px;
-          height: 18px;
-          margin: 3px;
-      }
-
-      .lft-text {
-          float: left;
-          font-size: 12pt;
-          padding-top: 5px;
-          padding-bottom: 5px;
       }
 
       .resize-handle-corner {
@@ -188,27 +126,6 @@
       position: absolute;
   }
 
-  .map-local-menu {
-      position: absolute;
-      top: 0px;
-      left: 49%;
-      border: 1px solid;
-      padding: 5px;
-      & > span {
-          margin-right: 5px;
-          padding: 5px;
-
-      }
-      & > span:last-child {
-          margin-right: 0px;
-      }
-      & > span:hover {
-          background-color: #ccc;
-      }
-      & > span.active {
-          background-color: #aaa;
-      }
-  }
 }
 
 
@@ -223,7 +140,10 @@
 
 .map-tuple {
     width: 100%;
-    height: 100%;
+    flex-grow: 1;
+    order: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .map-tuple-clicker-left {

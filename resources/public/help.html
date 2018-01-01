@@ -3,165 +3,33 @@
   <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>ORGPAD HELP</title>
-    <link rel="stylesheet" type="text/css" href="css/help.css">
+    <link rel="stylesheet" type="text/css" href="css/orgpad.css">
+    <link rel="stylesheet" type="text/css" href="js/tinymce/skins/lightgray/skin.min.css">
+    <link rel="stylesheet" type="text/css" href="js/tinymce/skins/lightgray/content.min.css">
+    <script src="js/tinymce/tinymce.min.js"></script>
+    <script src="js/lz-string.min.js"></script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        extensions: ["tex2jax.js"],
+        jax: ["input/TeX", "output/HTML-CSS"],
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+          displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+          processEscapes: true
+        },
+        "HTML-CSS": { availableFonts: ["TeX"] }
+        });
+    </script>
+    <script type="text/javascript" src="js/mathjax/MathJax.js"></script>
   </head>
   <body>
-    <h1><center>Writer mode</center></h1>
-    
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/74pJFUFQuVM" allowFullScreen>
-      </iframe>
-    </div>
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/eHbe05TeFoY" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/AgZKTXb7F_U" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/MZGWQA13O6I" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/nXL3Q8m-gzM" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/nouFXwPRm5Q" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/HvRGpEwFNIA" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/yACYcxJYyJc" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/awc57fpSEcs" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/SefJ_OJmXOg" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/Y0Mrag4WOHw" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/oB-nzYsY5Ts" allowFullScreen>
-      </iframe>
-    </div>
-    
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/EXQa5efkJ3E" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/KZ1yoZjW3zc" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/zcG8ssa-2Yw" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/KZAAeKQU7Vo" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/7mxTSWbSSJA" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/0KmqoHWPRYc" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/0KmqoHWPRYc" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/rllsFYIBfe8" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/rllsFYIBfe8" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/IeK336GGHCE" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/LycylvowH-w" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/U-vKaiMud4I" allowFullScreen>
-      </iframe>
-    </div>
-
-    <div class="help-video">
-      <iframe width="420" height="315" src="https://www.youtube.com/embed/z6mt1A7Gk5U" allowFullScreen>
-      </iframe>
-    </div>
-        
+    <script id="store" type="text/plain; charset=utf-8">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</script>
+    <div id="orgpad"></div>
+    <script type="text/javascript" src="js/compiled/orgpad.js"></script>
+    <script>
+      orgpad.core.boot.init({'root-el': document.getElementById("orgpad"),
+                             'storage-el': document.getElementById("store")});
+    </script>
   </body>
 </html>
-
-
-<!--
-
-https://www.youtube.com/edit?o=U&video_id=AgZKTXb7F_U *
-https://www.youtube.com/edit?o=U&video_id=MZGWQA13O6I *
-https://www.youtube.com/edit?o=U&video_id=nXL3Q8m-gzM *
-https://www.youtube.com/edit?o=U&video_id=eHbe05TeFoY *
-https://www.youtube.com/edit?o=U&video_id=nouFXwPRm5Q *
-https://www.youtube.com/edit?o=U&video_id=HvRGpEwFNIA *
-https://www.youtube.com/edit?o=U&video_id=yACYcxJYyJc *
-https://www.youtube.com/edit?o=U&video_id=74pJFUFQuVM *
-https://www.youtube.com/edit?o=U&video_id=awc57fpSEcs *
-https://www.youtube.com/edit?o=U&video_id=SefJ_OJmXOg *
-https://www.youtube.com/edit?o=U&video_id=Y0Mrag4WOHw *
-https://www.youtube.com/edit?o=U&video_id=oB-nzYsY5Ts *
-https://www.youtube.com/edit?o=U&video_id=EXQa5efkJ3E *
-https://www.youtube.com/edit?o=U&video_id=KZ1yoZjW3zc *
-https://www.youtube.com/edit?o=U&video_id=zcG8ssa-2Yw *
-https://www.youtube.com/edit?o=U&video_id=KZAAeKQU7Vo *
-https://www.youtube.com/edit?o=U&video_id=7mxTSWbSSJA *
-https://www.youtube.com/edit?o=U&video_id=0KmqoHWPRYc *
-https://www.youtube.com/edit?o=U&video_id=rllsFYIBfe8 *
-https://www.youtube.com/edit?o=U&video_id=IeK336GGHCE *
-https://www.youtube.com/edit?o=U&video_id=LycylvowH-w *
-https://www.youtube.com/edit?o=U&video_id=U-vKaiMud4I *
-https://www.youtube.com/edit?o=U&video_id=z6mt1A7Gk5U
-
-
--->

@@ -1,0 +1,37 @@
+.nesting {
+  display: flex;
+  width: 100%;
+  border-top: 2px solid black;
+  font-size: 13pt;
+  background-color: #fff;
+  flex-wrap: wrap;
+  flex-grow: 0;
+  order: 2;
+  
+  .btn {
+    text-align: center;
+    height: 23px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    display: block;
+    background-color: #fff;
+    white-space: nowrap; 
+    &:hover, &.active:hover {
+      background-color: #6df;
+    }
+  }
+  
+  .label {
+    text-align: left;
+    padding-top: 3px;
+    padding-right: 7px;
+    padding-left: 3px;
+  }
+  
+  .sep {
+    padding: 3px;
+    color: #666;
+  }
+
+}
+

@@ -631,12 +631,13 @@
     {:state (store/transact (:state res) [[:selections (keypath pid)] nil])}))
 
 (defmethod mutate :orgpad.units/try-make-new-links-unit
-  [env _ {:keys [unit-tree selection position]}]
+  [env _ {:keys [unit-tree selection position style]}]
   (repeat-action env selection (repeat nil) :orgpad.units/try-make-new-link-unit
                  (fn [uid _]
                    {:map-unit-tree unit-tree
                     :begin-unit-id uid
-                    :position position})))
+                    :position position
+                    :style style})))
 
 (defmethod mutate :orgpad.units/map-view-units-change-props
   [env _ {:keys [unit-tree selection action prop-name prop-val]}]

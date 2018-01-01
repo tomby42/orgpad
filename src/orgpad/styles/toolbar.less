@@ -1,0 +1,203 @@
+.toolbar {
+  display: flex;
+  width: 100%;
+  border-bottom: 2px solid black;
+  font-size: 13pt;
+  background-color: #fff;
+  flex-grow: 0;
+  order: 0;
+  cursor: pointer;
+
+  .btn {
+    text-align: center;
+    height: 23px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    display: inline-block;
+    background-color: #fff;
+    white-space: nowrap; 
+    &:hover, &.active:hover {
+      background-color: #6df;
+    }
+    &.active {
+      background-color: #33adff;
+    }
+    &.disabled {
+      background-color: #ddd;
+      color: #666;
+    }
+  }
+  
+  .btn-icon-label {
+    text-align: left;
+    padding-top: 3px;
+    padding-right: 7px;
+    padding-left: 3px;
+  }
+  
+  .btn-label {
+    text-align: left;
+    padding-top: 3px;
+    padding-right: 7px;
+    padding-left: 7px;
+  }
+ 
+  .roll {
+    position: relative;
+    display: block;
+    z-index: 10;
+  }
+
+  .roll-items {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    position: absolute;
+    left: 0px;
+    top: 29px;
+    border: 2px solid black;
+    white-space: nowrap;
+    background-color: #fff;
+  }
+
+  .roll-item {
+    height: 26px;
+    display: inline-block;
+    padding-top: 3px;
+    padding-bottom: 0px;
+    &:hover, &.active:hover {
+      background-color: #6df;
+    }
+    &.active {
+      background-color: #33adff;
+    }
+    &.disabled {
+      background-color: #ddd;
+      color: #666;
+    }
+  }
+  
+  .text {
+    font-size: 12pt;
+    padding-left: 3px;
+    padding-right: 3px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+
+  .sep {
+    display: inline-block;
+    background-color: black;
+    width: 2px;
+    height: 23px;
+    margin: 3px;
+  }
+
+  .fill {
+    flex-grow: 1;
+  }
+}
+
+.uedit-toolbar {
+  position: absolute;
+  display: flex;
+  width: 100%;
+  min-width: 325px;
+  height: 24px;
+  top: -28px;
+  left: -2px;
+  background-color: #fff;
+  border: 2px dashed red;
+
+  .btn {
+    text-align: center;
+    height: 18px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    display: inline-block;
+    background-color: #fff;
+    &:hover, &.active:hover {
+      background-color: #6df;
+    }
+    &.active {
+      background-color: #33adff;
+    }
+    &.disabled {
+      background-color: #ddd;
+      color: #666;
+    }
+  }
+  
+  .btn-icon-label {
+    text-align: left;
+    padding-top: 3px;
+    padding-right: 7px;
+    padding-left: 3px;
+  }
+  
+  .btn-label {
+    text-align: left;
+    padding-top: 3px;
+    padding-right: 7px;
+    padding-left: 7px;
+  }
+ 
+  .roll {
+    position: relative;
+    display: block;
+    z-index: 10;
+  }
+
+  .roll-items {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    position: absolute;
+    left: 0px;
+    top: 24px;
+    border: 2px solid red;
+    white-space: nowrap;
+    background-color: #fff;
+  }
+
+  .roll-item {
+    height: 20px;
+    display: inline-block;
+    padding-top: 3px;
+    padding-bottom: 0px;
+    &:hover, &.active:hover {
+      background-color: #6df;
+    }
+    &.active {
+      background-color: #33adff;
+    }
+    &.disabled {
+      background-color: #ddd;
+      color: #666;
+    }
+  }
+  
+  .text {
+    font-size: 12pt;
+    padding-left: 3px;
+    padding-right: 3px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+
+  .sep {
+    background-color: red;
+    width: 2px;
+    height: 18px;
+    margin: 3px;
+  }
+
+  .fill {
+    flex-grow: 1;
+  }
+}
+
+
+

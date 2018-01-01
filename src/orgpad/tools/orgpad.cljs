@@ -3,7 +3,9 @@
   (:require [orgpad.core.store :as store]
             [orgpad.tools.dscript :as dscript]
             [orgpad.tools.colls :as colls]
-            [orgpad.tools.geom :refer [++ -- *c] :as geom]))
+            [orgpad.tools.geom :refer [++ -- *c] :as geom]
+            [goog.string :as gstring]
+            [goog.string.format]))
 
 (defn uid
   [unit]
@@ -45,8 +47,33 @@
   [unit idx]
   (get (sort-refs unit) idx))
 
-(defn- get-sheet-number [{ :keys [unit view]}]
+(defn active-child-tree
+  [unit view]
+  (let [active-child (:orgpad/active-unit view)]
+    (get-sorted-ref unit active-child)))
+
+(defn get-sheet-number
+  [{ :keys [unit view]}]
   [(-> view :orgpad/active-unit inc) (-> unit :orgpad/refs count)])
+
+(defn no-sheets?
+  [unit-tree]
+  (= ((get-sheet-number unit-tree) 1) 0))
+
+(defn first-sheet?
+  [unit-tree]
+  (= ((get-sheet-number unit-tree) 0) 1))
+
+(defn last-sheet?
+  [unit-tree]
+  (let [[current-sheet sheet-count] (get-sheet-number unit-tree)]
+    (>= current-sheet sheet-count)))
+
+(defn sheets-to-str
+  [unit-tree]
+  (if (no-sheets? unit-tree)
+    "none"
+    (apply gstring/format "%d/%d" (get-sheet-number unit-tree)))) 
 
 (defn update-unit-view-query
   [unit-id view key val]

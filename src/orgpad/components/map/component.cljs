@@ -7,8 +7,9 @@
             [orgpad.components.node :as node]
             [orgpad.components.map.unit :as munit]
             [orgpad.tools.css :as css]
-            [orgpad.tools.js-events :as jev]
+            [orgpad.tools.js-events :refer [mouse-node-x mouse-node-y mouse-node-rel-x mouse-node-rel-y] :as jev]
             [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.rum :as trum]
             [orgpad.tools.geom :as geom]
             [orgpad.tools.jcolls :as jcolls]
@@ -69,32 +70,6 @@
                                                             :view-name (ot/view-name unit-tree)
                                                             :transform (-> unit-tree :view :orgpad/transform)
                                                             :position pos}]]))))
-
-(defn- render-local-menu1
-  [component unit-tree app-state local-state-atom]
-  [:div.map-local-menu {:onMouseDown jev/block-propagation :onTouchStart jev/block-propagation
-                        :onMouseUp jev/block-propagation}
-   [:span {:className (if (= (:canvas-mode @local-state-atom) :canvas-create-unit) "active" "")
-           :title "Create unit mode"
-           :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-create-unit)}
-    [:i {:className "far fa-file-alt fa-lg "}]]
-   [:span {:className (if (= (:canvas-mode @local-state-atom) :canvas-move) "active" "")
-           :title "Move mode"
-           :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-move)}
-    [:i {:className "far fa-arrows fa-lg"}]]
-   [:span {:className (if (= (:canvas-mode @local-state-atom) :canvas-select) "active" "")
-           :title "Select mode"
-           :onClick #(swap! local-state-atom assoc :canvas-mode :canvas-select)}
-    [:i {:className "far fa-crop fa-lg"}]]
-   [:i "| "]
-   [:span {:title "Copy"
-           :onClick #(copy-units-to-clipboard component unit-tree app-state)}
-    [:i {:className "far fa-copy fa-lg"}]]
-   [:span {:className (if (= (:local-mode @local-state-atom) :canvas-paste) "active" "")
-           :title "Paste"
-           :onMouseDown #(swap! local-state-atom assoc :local-mode :canvas-paste)}
-    [:i {:className "far fa-paste fa-lg"}]]
-   ])
 
 (defn handle-mouse-down
   [component unit-tree app-state ev]
@@ -197,28 +172,31 @@
                      :bb bb}]])))
 
 (defn- resolve-mouse-down
-  [component unit-tree local-state pos ev]
+  [component unit-tree local-state ev]
   (when (and (= (:canvas-mode @local-state) :canvas-create-unit)
              (not (.-isTouch ev)))
-    (create-pair-unit component unit-tree pos)))
+    (let [bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
+          pos {:center-x (mouse-node-rel-x bbox ev)
+               :center-y (mouse-node-rel-y bbox ev)}]
+      (create-pair-unit component unit-tree pos))))
 
 (defn- handle-mouse-up
   [component unit-tree app-state ev]
-  (let [local-state (trum/comp->local-state component)]
+  (let [local-state (trum/comp->local-state component)
+        bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")]
     (case (:local-mode @local-state)
-      :mouse-down (resolve-mouse-down component unit-tree local-state {:center-x (.-clientX ev)
-                                                                       :center-y (.-clientY ev)} ev)
+      :mouse-down (resolve-mouse-down component unit-tree local-state ev)
       :canvas-move (stop-canvas-move component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
       :unit-move (stop-unit-move component local-state [(.-clientX ev) (.-clientY ev)])
       :unit-resize (stop-unit-resize component local-state [(.-clientX ev) (.-clientY ev)])
       :units-move (stop-units-move component local-state [(.-clientX ev) (.-clientY ev)])
-      :make-link (make-link component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
+      :make-link (make-link component unit-tree local-state [(mouse-node-rel-x bbox ev) (mouse-node-rel-y bbox ev)])
       :link-shape (when (= (@local-state :link-menu-show) :maybe)
                     (swap! local-state assoc :link-menu-show :yes))
       :choose-selection (select-units-by-bb component unit-tree local-state)
       :make-links (make-links component unit-tree (-> @local-state :selected-units second)
-                              [(.-clientX ev) (.-clientY ev)])
-      :canvas-paste (paste-units-from-clipbord component unit-tree app-state [(.-clientX ev) (.-clientY ev)])
+                              [(mouse-node-rel-x bbox ev) (mouse-node-rel-y bbox ev)])
+      :canvas-paste (omt/paste-units-from-clipbord component unit-tree app-state [(.-clientX ev) (.-clientY ev)])
       nil)
     (swap! local-state merge { :local-mode :none })
     (js/setTimeout
@@ -234,9 +212,7 @@
   (let [pel (-> component rum/state deref (trum/ref-node "component-node"))
         el (aget pel "children" 0 "children" 0)]
     (dom/update-translate el (.-clientX ev) (.-clientY ev)
-                          (@mouse-pos :mouse-x) (@mouse-pos :mouse-y) 1)
-    ;; (update-mouse-position local-state ev)
-    ))
+                          (@mouse-pos :mouse-x) (@mouse-pos :mouse-y) 1)))
 
 (defn- unit-move
   [parent-view local-state ev]
@@ -244,9 +220,7 @@
     (when el
       (dom/update-translate el (.-clientX ev) (.-clientY ev)
                             (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
-                            (-> parent-view :orgpad/transform :scale)))
-    ;; (update-mouse-position local-state ev)
-    ))
+                            (-> parent-view :orgpad/transform :scale)))))
 
 (defn- unit-resize
   [parent-view local-state ev]
@@ -254,41 +228,12 @@
     (when el
       (dom/update-size el (.-clientX ev) (.-clientY ev)
                        (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
-                       (-> parent-view :orgpad/transform :scale)))
-    ;;(update-mouse-position local-state ev)
-    ))
-
-(defn- unit-change
-  [component local-state ev action]
-  (let [[unit-tree prop parent-view] (@local-state :selected-unit)]
-    (lc/transact! component
-                  [[ action
-                    { :prop prop
-                      :parent-view parent-view
-                      :unit-tree unit-tree
-                      :old-pos [(@local-state :mouse-x)
-                                (@local-state :mouse-y)]
-                      :new-pos [(.-clientX ev)
-                                (.-clientY ev)] }]])
-    (update-mouse-position local-state ev)))
-
-(defn- units-change
-  [component local-state ev action]
-  (let [[unit-tree selection] (@local-state :selected-units)]
-    (lc/transact! component
-                  [[ :orgpad.units/map-view-repeat-action
-                    { :unit-tree unit-tree
-                      :selection selection
-                      :action action
-                      :old-pos [(@local-state :mouse-x)
-                                (@local-state :mouse-y)]
-                      :new-pos [(.-clientX ev)
-                                (.-clientY ev)] }]])
-    (update-mouse-position local-state ev)))
+                       (-> parent-view :orgpad/transform :scale)))))
 
 (defn- update-link-shape
   [component local-state ev]
-  (let [[unit-tree prop parent-view start-pos end-pos mid-pt] (@local-state :selected-link)]
+  (let [[unit-tree prop parent-view start-pos end-pos mid-pt] (@local-state :selected-link)
+        bbox (lc/get-global-cache component (-> parent-view :orgpad/refs first :db/id) "bbox")]
     (swap! local-state assoc :link-menu-show :none)
     (lc/transact! component
                   [[ :orgpad.units/map-view-link-shape
@@ -298,8 +243,8 @@
                       :start-pos start-pos
                       :end-pos end-pos
                       :mid-pt mid-pt
-                      :pos [(.-clientX ev)
-                            (.-clientY ev)] }]])
+                      :pos [(mouse-node-rel-x bbox ev)
+                            (mouse-node-rel-y bbox ev)] }]])
     (update-mouse-position local-state ev)))
 
 (defn- try-start-selection
@@ -317,15 +262,15 @@
   (let [local-state (trum/comp->local-state component)]
     (case (@local-state :local-mode)
       :canvas-move (canvas-move component unit-tree app-state local-state (jev/stop-propagation ev))
-      :unit-move (unit-move (:view unit-tree) local-state (jev/stop-propagation ev)) ;; (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
-      :unit-resize (unit-resize (:view unit-tree) local-state (jev/stop-propagation ev)) ;; (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-resize)
+      :unit-move (unit-move (:view unit-tree) local-state (jev/stop-propagation ev))
+      :unit-resize (unit-resize (:view unit-tree) local-state (jev/stop-propagation ev))
       :make-link (update-mouse-position local-state (jev/stop-propagation ev))
       :link-shape (update-link-shape component local-state (jev/stop-propagation ev))
       :try-unit-move (do
                        (swap! local-state assoc :local-mode :unit-move :pre-quick-edit 0)
-                       (unit-move (:view unit-tree) local-state (jev/stop-propagation ev)) ;; (unit-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
+                       (unit-move (:view unit-tree) local-state (jev/stop-propagation ev))
                        )
-      :units-move (unit-move (:view unit-tree) local-state (jev/stop-propagation ev)) ;; (units-change component local-state (jev/stop-propagation ev) :orgpad.units/map-view-unit-move)
+      :units-move (unit-move (:view unit-tree) local-state (jev/stop-propagation ev))
       :mouse-down (try-start-selection local-state (jev/stop-propagation ev))
       :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
       :make-links (update-mouse-position local-state (jev/stop-propagation ev))
@@ -344,13 +289,14 @@
     (swap! local-state merge init-state)))
 
 (defn- render-selection-box
-  [local-state view]
+  [component unit-tree local-state view]
   (let [[pos pos1] (geom/points-bbox [(:start-mouse-x local-state) (:start-mouse-y local-state)]
                                      [(:mouse-x local-state) (:mouse-y local-state)])
-        [width height] (geom/-- pos1 pos)]
+        [width height] (geom/-- pos1 pos)
+        bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")]
     [:div.selection-box {:style (merge {:width width
                                         :height height}
-                                       (css/transform {:translate pos}))}]))
+                                       (css/transform {:translate (geom/-- pos [(.-left bbox) (.-top bbox)])}))}]))
 
 (defn normalize-mouse-data
   [ev]
@@ -372,8 +318,9 @@
 
 (defn- handle-double-click
   [component unit-tree ev]
-  (do-create-pair-unit component unit-tree {:center-x (.-clientX ev)
-                                            :center-y (.-clientY ev)} ev))
+  (do-create-pair-unit component unit-tree {:center-x (mouse-node-x ev)
+                                            :center-y (mouse-node-y ev)} ev))
+
 (defn- handle-key-down
   [component unit-tree app-state local-state ev]
   (when (= (:mode app-state) :write)
@@ -407,9 +354,8 @@
               :onDoubleClick #(handle-double-click component unit-tree %)
               :onWheel (jev/make-block-propagation #(handle-wheel component unit-tree app-state %)) }
        (munit/render-mapped-children-units component unit-tree app-state local-state)
-       (render-local-menu1 component unit-tree app-state local-state)
        (when (= (:local-mode @local-state) :choose-selection)
-         (render-selection-box @local-state (:view unit-tree)))
+         (render-selection-box component unit-tree @local-state (:view unit-tree)))
       (when (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
         (munit/render-selected-children-units component unit-tree app-state local-state))
       ])))
@@ -554,19 +500,23 @@
     (render-write-mode component unit-tree app-state)
     (render-read-mode component unit-tree app-state)))
 
+(defn- active-toolbar-btn?
+  [local-state required]
+  (when local-state (= (:canvas-mode @local-state) required)))
+
 (registry/register-component-info
  :orgpad/map-view
- { :orgpad/default-view-info   { :orgpad/view-type :orgpad/map-view
+ {:orgpad/default-view-info   { :orgpad/view-type :orgpad/map-view
                                  :orgpad/view-name "default"
                                  :orgpad/transform { :translate [0 0]
                                                      :scale     1.0 } }
-   :orgpad/child-default-view-info     { :orgpad/view-type :orgpad/map-tuple-view
+  :orgpad/child-default-view-info     { :orgpad/view-type :orgpad/map-tuple-view
                                          :orgpad/view-name "default" }
-   :orgpad/class               map-component
-   :orgpad/child-props-types   [:orgpad.map-view/vertex-props :orgpad.map-view/link-props
+  :orgpad/class               map-component
+  :orgpad/child-props-types   [:orgpad.map-view/vertex-props :orgpad.map-view/link-props
                                 :orgpad.map-view/vertex-props-style :orgpad.map-view/link-props-style]
-   :orgpad/child-props-style-types [:orgpad.map-view/vertex-props-style :orgpad.map-view/link-props-style]
-   :orgpad/child-props-default { :orgpad.map-view/vertex-props
+  :orgpad/child-props-style-types [:orgpad.map-view/vertex-props-style :orgpad.map-view/link-props-style]
+  :orgpad/child-props-default { :orgpad.map-view/vertex-props
                                  { :orgpad/view-type :orgpad.map-view/vertex-props
                                    :orgpad/view-name "default"
                                    :orgpad/view-style "default"}
@@ -603,7 +553,50 @@
                                    :orgpad/link-mid-pt [0 0] }
                                 
                                 }
-   :orgpad/needs-children-info true
-   :orgpad/view-name           "Map View"
-   :orgpad/visible-children-picker pick-visible-children
+  :orgpad/needs-children-info true
+  :orgpad/view-name           "Map View"
+  :orgpad/view-icon           "far fa-share-alt"
+  :orgpad/visible-children-picker pick-visible-children
+
+  :orgpad/toolbar [
+    [{:elem :btn
+      :id "unit-creation-mode"
+      :icon "far fa-plus-square"
+      :title "Unit creation mode"
+      :on-click #(swap! (:node-state %1) assoc :canvas-mode :canvas-create-unit)
+      :active #(active-toolbar-btn? (:node-state %1) :canvas-create-unit)
+      :hidden #(= (:mode %1) :read)}
+     {:elem :btn
+      :id "moving-mode"
+      :icon "far fa-arrows"
+      :title "Moving mode"
+      :on-click #(swap! (:node-state %1) assoc :canvas-mode :canvas-move)
+      :active #(active-toolbar-btn? (:node-state %1) :canvas-move)
+      :hidden #(= (:mode %1) :read)}
+     {:elem :btn
+      :id "selection-mode"
+      :icon "far fa-expand"
+      :title "Selection mode"
+      :on-click #(swap! (:node-state %1) assoc :canvas-mode :canvas-select)
+      :active #(active-toolbar-btn? (:node-state %1) :canvas-select)
+      :hidden #(= (:mode %1) :read)}]
+    [{:elem :btn
+      :id "copy"
+      :icon "far fa-copy"
+      :title "Copy"
+      :on-click #(omt/copy-units-to-clipboard (:component %1) (:unit-tree %1) (:app-state %1))
+      :hidden #(= (:mode %1) :read)}
+     {:elem :btn
+      :id "paste"
+      :icon "far fa-paste"
+      :title "Paste"
+      :on-click #(swap! (:node-state %1) assoc :canvas-mode :canvas-paste)
+      :active #(active-toolbar-btn? (:node-state %1) :canvas-paste)
+      :hidden #(= (:mode %1) :read)}]]
+
+  :orgpad/uedit-toolbar nil
   })
+
+
+
+

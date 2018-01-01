@@ -15,6 +15,7 @@
             [orgpad.tools.geom :as geom]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.bezier :as bez]
             [orgpad.tools.math :as math]
             [orgpad.tools.geocache :as geocache]
@@ -60,7 +61,7 @@
 (defn- open-unit
   [component unit-tree local-state]
   (when (= (@local-state :local-mode) :try-unit-move)
-    (uedit/open-unit component unit-tree)))
+    (omt/open-unit component unit-tree)))
 
 (def ^:private finc (fnil inc 0))
 

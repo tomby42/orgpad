@@ -76,7 +76,6 @@
   [db]
   (let [counter (volatile! 0)
         qry (default-styles-qry)]
-    (js/console.log "insert default styles" qry)
     (store/transact db qry)))
 
 (defn empty-orgpad-db

@@ -23,7 +23,7 @@
 
 (def ^:private desc-update
   (eff/debounce (fn [transact! unit]
-                  (transact! [[:orgpad.desc/set unit]])) 500 false) )
+                  (transact! [[:orgpad.desc/set unit]])) 200 false) )
 
 (defmethod mutate :orgpad.desc/update
   [{:keys [state transact!]} _ unit]
@@ -37,4 +37,16 @@
 
 (defmethod mutate :orgpad.atom/update
   [{:keys [state transact!]} _ {:keys [db/id orgpad/view orgpad/atom]}]
-  { :state (update-view-unit state id view :orgpad/atom atom) } )
+  (let [view' (if (:db/id view)
+                view
+                (or
+                 (store/query state '[:find (pull ?v [*]) .
+                                      :in $ ?u ?name ?type
+                                      :where
+                                      [?u :orgpad/props-refs ?v]
+                                      [?v :orgpad/type :orgpad/unit-view]
+                                      [?v :orgpad/view-name ?name]
+                                      [?v :orgpad/view-type ?type]]
+                              [id (:orgpad/view-name view) (:orgpad/view-type view)])
+                 view))]
+    { :state (update-view-unit state id view' :orgpad/atom atom) } ))
