@@ -44,7 +44,7 @@
   "Generates transaction which updates the changed property."
   [component {:keys [unit prop parent-view selection]} prop-name action prop-val]
   (if (nil? selection)
-    (fn [ev] ; update single unit properties
+    (fn [ev] ; update properties of a single unit
       (lc/transact! component [[action
                                 {:prop prop
                                  :parent-view parent-view
@@ -183,8 +183,17 @@
 (defn- gen-foldable
   "Generates one foldable element and its children when opened from the input data."
   [local-state params {:keys [id label children]}]
-  
-  )
+  (let [opened (contains? @local-state id)
+        fold-icon-class (str "fa fa-lg fa-chevron-" (if opened "down" "right"))]
+    (js/console.log @local-state)
+    [:span.foldable
+      {:key id
+       :onClick #(swap! local-state (if opened disj conj) id)
+       }
+      label
+      [:i {:key (str id "-icon") :className fold-icon-class}]   
+     ]    
+  ))
 
 (defn- gen-element
   "Generates one element of arbitrary type from the input data."
@@ -193,20 +202,15 @@
     :foldable (gen-foldable local-state params data)
     (js/console.warn "Props-editor gen-element: No matching element to " elem)))
 
-(rum/defcc props-component < (rum/local false)
+(rum/defcc props-component < (rum/local #{})
   [component params data]
   (let [local-state (trum/comp->local-state component) ]
-     [:span
-        {:onClick #(swap! local-state not)}
-        "Colors"
-        (if (= @local-state true)
-          [:i.fa.fa-chevron-down.fa-lg]
-          [:i.fa.fa-chevron-right.fa-lg])]    
+    [:div.map-props-toolbar {:key "prop-menu"}
+      (map (partial gen-element local-state params) data)]
   ))
 
 (defn render-node-props-editor
   [params]
-  [:div.map-props-toolbar {:key "prop-menu"}
    ;(render-color-picker (assoc params :action :orgpad.units/map-view-unit-border-color))
    ;(render-color-picker (assoc params :action :orgpad.units/map-view-unit-bg-color))
 ;   (render-border-width params)
@@ -233,7 +237,7 @@
         ]}
 
       ]     
-  )])
+  ))
 
 (defn- render-link-color-picker
   [{:keys [component unit prop parent-view local-state]}]
