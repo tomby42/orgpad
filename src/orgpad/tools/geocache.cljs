@@ -105,7 +105,7 @@
      [?map-prop :orgpad/unit-width ?w]
      [?map-prop :orgpad/unit-height ?h]]
     [(size ?unit ?map-prop ?w ?h)
-     [?unit :orgpad/refs ?style]
+     [?unit :orgpad/props-refs ?style]
      [?map-prop :orgpad/view-style ?style-name]
      [?style :orgpad/style-name ?style-name]
      [?style :orgpad/unit-width ?w]
@@ -134,7 +134,7 @@
   '[[(mid-pt ?unit ?map-prop ?mid-pt)
      [?map-prop :orgpad/link-mid-pt ?mid-pt]]
     [(mid-pt ?unit ?map-prop ?mid-pt)
-     [?unit :orgpad/refs ?style]
+     [?unit :orgpad/props-refs ?style]
      [?map-prop :orgpad/view-style ?style-name]
      [?style :orgpad/style-name ?style-name]
      [?style :orgpad/link-mid-pt ?mid-pt]]])
