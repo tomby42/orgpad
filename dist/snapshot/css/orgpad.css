@@ -3923,6 +3923,7 @@ readers do not read off random characters that represent icons */
   position: absolute;
   display: flex;
   flex-direction: column;
+  overflow: auto;
 }
 .map-view .map-view-canvas .link-control {
   width: 40px;
@@ -4078,6 +4079,7 @@ readers do not read off random characters that represent icons */
   position: absolute;
   right: 0px;
   top: 10%;
+  max-height: 80%;
   width: 205px;
   border: 1px solid black;
   padding: 10px;
