@@ -356,7 +356,8 @@
        (munit/render-mapped-children-units component unit-tree app-state local-state)
        (when (= (:local-mode @local-state) :choose-selection)
          (render-selection-box component unit-tree @local-state (:view unit-tree)))
-      (when (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
+      (when (and (:enable-experimental-features app-state)
+                 (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1))
         (munit/render-selected-children-units component unit-tree app-state local-state))
       ])))
 

@@ -84,7 +84,7 @@
       view-toolbar)))
 
 (rum/defcc status < rum/reactive (rum/local { :unroll false :view-menu-unroll false :typed "" :history false }) lc/parser-type-mixin-context
-  [component { :keys [unit view path-info] :as unit-tree } app-state node-state]
+  [component { :keys [unit view path-info] :as unit-tree } app-state root-local-state]
   (let [id (unit :db/id)
         local-state (trum/comp->local-state component)
         msg-list (lc/query component :orgpad.ci/msg-list [])
@@ -95,19 +95,22 @@
 
      (let [root-component-left-toolbar (-> :orgpad/root-view registry/get-component-info :orgpad/left-toolbar)
            view-types-section [(tbar/gen-view-types-roll view :unit-tree "Current" "views" #(= (:mode %1) :read))]
-           view-name-section [{:elem :custom
-                               :style ""
-                               :render #(render-view-names (:component %1) (:unit-tree %1) %3)}]
+           view-name-section (if (:enable-experimental-features app-state)
+                               [{:elem :custom
+                                 :style ""
+                                 :render #(render-view-names (:component %1) (:unit-tree %1) %3)}]
+                               [])
            view-toolbar (gen-view-toolbar unit-tree view-type)
            left-toolbar (concat (conj root-component-left-toolbar view-types-section view-name-section) view-toolbar)
            right-toolbar (-> :orgpad/root-view registry/get-component-info :orgpad/right-toolbar)
-           params { :id           id
+           params {:id           id
                    :unit-tree    unit-tree
                    :unit         unit
                    :view         view
                    :path-info    path-info
                    :local-state  local-state
-                   :node-state   node-state
+                   :node-state   (:node-state @root-local-state)
+                   :root-local-state root-local-state
                    :mode         (:mode app-state)
                    :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
                    :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view))) }]

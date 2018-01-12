@@ -12,7 +12,8 @@
             [orgpad.components.root.toolbar :as tbar]
             [orgpad.components.root.nesting :as nest]
             [orgpad.tools.orgpad :as ot]
-            [orgpad.components.ci.dialog :as ci]))
+            [orgpad.components.ci.dialog :as ci]
+            [orgpad.components.root.settings :as settings]))
 
 ;; TODO: hack!! We need to think about passing custom params to children and/or local states in app state
 ;; regarding to render hierarchy.
@@ -28,7 +29,11 @@
         (swap! local-state assoc :component c)
         (swap! local-state assoc :node-state state)))))
 
-(rum/defcc root-component < lc/parser-type-mixin-context (rum/local {:component nil :node-state nil})
+(def default-values {:component nil
+                     :node-state nil
+                     :show-settings false})
+
+(rum/defcc root-component < lc/parser-type-mixin-context (rum/local default-values)
   [component]
   (let [unit-tree (lc/query component :orgpad/root-view [])
         app-state (lc/query component :orgpad/app-state [])
@@ -40,10 +45,13 @@
     [ :div.root-view
       ;; (rum/with-key (sidebar/sidebar-component) 0)
       (rum/with-key (node/node unit-tree app-state) "root-view-part")
-      (rum/with-key (tbar/status unit-tree app-state (:node-state @local-state)) "status-part")
+      (rum/with-key (tbar/status unit-tree app-state local-state) "status-part")
       (rum/with-key (nest/nesting unit-tree) "nesting-part")
-      (rum/with-key (ci/dialog-panel unit-tree app-state msg-list) "ci-part")
-      (when (app-state :loading)
+      (when (:enable-experimental-features app-state)
+        (rum/with-key (ci/dialog-panel unit-tree app-state msg-list) "ci-part"))
+      (when (:show-settings @local-state)
+        (rum/with-key (settings/settings app-state #(swap! local-state assoc :show-settings false)) "settings"))
+      (when (:loading app-state)
         [ :div.loading
          [ :div.status
           [ :i.fa.fa-spinner.fa-pulse.fa-3x.fa-fw.margin-bottom ]
@@ -132,6 +140,12 @@
       :on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :read]]]) }
     ]
     [{:elem :btn
+      :id "settings"
+      :label "Settings"
+      :icon "fa fa-cog"
+      :on-click #(swap! (:root-local-state %1) assoc :show-settings true)
+      }
+     {:elem :btn
       :id "help"
       :icon "far fa-question-circle"
       :label "Help"
