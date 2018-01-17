@@ -21,7 +21,12 @@
     [:div.label "Basic"]
     [:div.line
      [:div.left "Orgpad Name"]
-     [:div.right [:input {:placeholder "Write a name"}]]]]
+     [:div.right [:input {:type "text"
+                          :placeholder "Write a name"
+                          :value (or (:orgpad-name app-state) "")
+                          :onChange #(lc/transact! component
+                                                   [[:orgpad/app-state [[:orgpad-name]
+                                                                        (-> % .-target .-value)]]])}]]]]
 
 
    [:div.block
