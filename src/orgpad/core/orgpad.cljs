@@ -165,11 +165,14 @@
       content)))
 
 (defn- file-name
-  [defualt-name]
-  (let [p (js/document.location.pathname.lastIndexOf "/")]
-    (if (not= p -1)
-      (js/document.location.pathname.substr (inc p))
-      defualt-name)))
+  [default-name db]
+  (let [orgpad-name (-> db (store/query []) first :orgpad-name)
+        p (js/document.location.pathname.lastIndexOf "/")]
+    (if orgpad-name
+      orgpad-name
+      (if (not= p -1)
+        (js/document.location.pathname.substr (inc p))
+        default-name))))
 
 (defn- store-file
   [filename content mime-type]
@@ -188,12 +191,12 @@
 (defn export-html-by-uri
   [db storage-el]
   (store-db db storage-el)
-  (let [filename (file-name "orgpad.html")]
+  (let [filename (file-name "orgpad.html" db)]
     (store-file filename (full-html) "text/html")))
 
 (defn save-file-by-uri
   [db]
-  (let [filename (.replace (file-name "orgpad.orgpad") "html" "orgpad")]
+  (let [filename (.replace (file-name "orgpad.orgpad" db) "html" "orgpad")]
     (store-file filename (compress-db db) "text/plain")))
 
 (defn load-orgpad
