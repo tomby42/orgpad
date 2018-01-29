@@ -33,3 +33,12 @@
         hh (-> h (.substring 0 (- (.-length h) 2)) js/parseInt)]
     (aset el "style" "width" (str (js/Math.round (+ ww (/ (- new-x old-x) parent-scale))) "px"))
     (aset el "style" "height" (str (js/Math.round (+ hh (/ (- new-y old-y) parent-scale))) "px"))))
+
+(defn ffind-tag
+  "tag-name is keyword"
+  [tag-name]
+  (-> tag-name name js/document.getElementsByTagName (aget 0)))
+
+(defn set-el-text
+  [el text]
+  (aset el "text" text))

@@ -7,7 +7,8 @@
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.js-events :as jev]
-            [orgpad.tools.rum :as trum]))
+            [orgpad.tools.rum :as trum]
+            [orgpad.tools.dom :as dom]))
 
 (rum/defcc settings < lc/parser-type-mixin-context
   [component app-state on-close]
@@ -24,9 +25,10 @@
      [:div.right [:input {:type "text"
                           :placeholder "Write a name"
                           :value (or (:orgpad-name app-state) "")
-                          :onChange #(lc/transact! component
-                                                   [[:orgpad/app-state [[:orgpad-name]
-                                                                        (-> % .-target .-value)]]])}]]]]
+                          :onChange #(let [name (-> % .-target .-value)]
+                                       (dom/set-el-text (dom/ffind-tag :title) name)
+                                       (lc/transact! component
+                                                     [[:orgpad/app-state [[:orgpad-name] name]]]))}]]]]
 
 
    [:div.block

@@ -8,6 +8,7 @@
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.geocache :as geocache]
             [orgpad.tools.jcolls :as jscolls]
+            [orgpad.tools.dom :as dom]
             [orgpad.components.registry :as registry]))
 
 (defn- find-root-view-info
@@ -167,6 +168,8 @@
   (force-update!)
   (jscolls/clear! global-cache)
   (geocache/rebuild! global-cache new-state)
+  (when-let [name (-> new-state (store/query []) first :orgpad-name)]
+    (dom/set-el-text (dom/ffind-tag :title) name))
   { :state new-state })
 
 (defmethod mutate :orgpad/download-orgpad-from-url

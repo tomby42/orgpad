@@ -134,7 +134,7 @@
   [{:keys [state global-cache]} _ {:keys [prop parent-view unit-tree old-pos new-pos]}]
   (let [id (prop :db/id)
         unit-id (ot/uid unit-tree)
-        prop' (if id (store/query state [:entity id]) prop)
+        prop' (ot/get-prop-from-db-styles state (:props unit-tree) prop :orgpad.map-view/vertex-props-style) ;;(if id (store/query state [:entity id]) prop)
         new-translate (compute-translate (prop' :orgpad/unit-position)
                                          (-> parent-view :orgpad/transform :scale)
                                          new-pos old-pos)
@@ -150,6 +150,7 @@
     (geocache/update-box! global-cache (ot/pid parent-view) (:orgpad/view-name parent-view)
                           unit-id new-translate size
                           (prop' :orgpad/unit-position) size)
+    (js/console.log "moving unit to" unit-id new-translate size " - " (prop' :orgpad/unit-position) size)
     { :state new-state } ))
 
 (defn- propagated-prop
@@ -217,6 +218,7 @@
   (let [new-size (compute-translate [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
                                     (-> parent-view :orgpad/transform :scale)
                                     new-pos old-pos)]
+    (js/console.log "Resize" new-size)
     { :orgpad/unit-width (new-size 0)
       :orgpad/unit-height (new-size 1) }))
 
