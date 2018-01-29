@@ -3519,6 +3519,49 @@ readers do not read off random characters that represent icons */
   width: 98%;
   overflow: auto;
 }
+.root-view .settings {
+  z-index: 1000;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0px;
+  background-color: white;
+}
+.root-view .settings .header {
+  font-size: 24px;
+  height: 30px;
+  padding: 20px;
+  background-color: #33adff;
+  width: 100%;
+}
+.root-view .settings .header .label {
+  float: left;
+}
+.root-view .settings .header .close {
+  float: right;
+  padding-right: 30px;
+}
+.root-view .settings .block {
+  position: relative;
+  padding-left: 50px;
+  padding-right: 50px;
+  padding-top: 20px;
+  padding-bottom: 50px;
+}
+.root-view .settings .block .label {
+  font-size: 20px;
+  width: 100%;
+  padding-bottom: 10px;
+}
+.root-view .settings .block .line .left {
+  text-align: right;
+  width: 40%;
+  float: left;
+}
+.root-view .settings .block .line .right {
+  width: 40%;
+  float: right;
+}
 .atomic-view {
   width: 100%;
   flex-grow: 1;
@@ -3923,7 +3966,8 @@ readers do not read off random characters that represent icons */
   position: absolute;
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .map-view .map-view-canvas .link-control {
   width: 40px;
