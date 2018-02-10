@@ -20,7 +20,8 @@
             [orgpad.tools.math :as math]
             [orgpad.tools.geocache :as geocache]
             [orgpad.tools.func :as func]
-            [orgpad.components.graphics.primitives :as g]))
+            [orgpad.components.graphics.primitives :as g]
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos!]]))
 
 (defn- parent-id
   [view]
@@ -99,6 +100,7 @@
                                :start-mouse-y (.-clientY (jev/touch-pos ev))
                                :mouse-x (.-clientX (jev/touch-pos ev))
                                :mouse-y (.-clientY (jev/touch-pos ev)) })
+    (set-mouse-pos! (jev/touch-pos ev))
     (lc/transact! component [[ :orgpad.units/select {:pid (parent-id parent-view)
                                                      :uid (ot/uid unit-tree)} ]])))
 
@@ -166,7 +168,7 @@
            { :style { :top -10 :left -10 }
              :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
              :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-            :onMouseUp #(open-unit pcomponent unit-tree local-state) }
+             :onMouseUp #(open-unit pcomponent unit-tree local-state) }
          (when (contains? selections (:db/id unit))
            [:span.fa.fa-check-circle.fa-lg.select-check {:style {:left (- (prop :orgpad/unit-width) 10)
                                                                  :top 15}}])]

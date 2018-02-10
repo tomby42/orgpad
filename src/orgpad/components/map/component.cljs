@@ -15,7 +15,8 @@
             [orgpad.tools.jcolls :as jcolls]
             [orgpad.tools.geocache :as geocache]
             [orgpad.tools.colls :as colls]
-            [orgpad.tools.dom :as dom]))
+            [orgpad.tools.dom :as dom]
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos!]]))
 
 (def ^:private init-state
   { :local-mode :none
@@ -25,8 +26,6 @@
     :mouse-y 0
     :link-start-x 0
     :link-start-y 0})
-
-(def ^:private mouse-pos (volatile! nil))
 
 (defn- create-pair-unit
   [component {:keys [unit view] :as unit-tree} pos]
@@ -87,6 +86,7 @@
                                                :mouse-down)
                                              :canvas-move)
                                :quick-edit false })
+    (set-mouse-pos! ev)
     (lc/transact! component [[ :orgpad.units/deselect-all {:pid (ot/uid unit-tree)} ]])))
 
 (defn- make-link
@@ -267,17 +267,16 @@
       :make-link (update-mouse-position local-state (jev/stop-propagation ev))
       :link-shape (update-link-shape component local-state (jev/stop-propagation ev))
       :try-unit-move (do
-                       (swap! local-state assoc :local-mode :unit-move :pre-quick-edit 0)
+                       (set-mouse-pos! ev)
                        (unit-move (:view unit-tree) local-state (jev/stop-propagation ev))
-                       )
+                       (swap! local-state assoc :local-mode :unit-move :pre-quick-edit 0))
       :units-move (unit-move (:view unit-tree) local-state (jev/stop-propagation ev))
       :mouse-down (try-start-selection local-state (jev/stop-propagation ev))
       :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
       :make-links (update-mouse-position local-state (jev/stop-propagation ev))
       nil)
-    
-    (vreset! mouse-pos {:mouse-x (.-clientX ev)
-                        :mouse-y (.-clientY ev)})
+
+    (set-mouse-pos! ev)
 
     (when (not= (@local-state :local-mode) :default-mode)
       (jev/block-propagation ev))
@@ -415,8 +414,8 @@
                                  #js { :preventDefault (prevent-default ev)
                                        :stopPropagation (fn [] (.stopPropagation ev))
                                        :isTouch true
-                                       :clientX (-> state :rum/local deref :mouse-x)
-                                       :clientY (-> state :rum/local deref :mouse-y) })))
+                                       :clientX (@mouse-pos :mouse-x)
+                                       :clientY (@mouse-pos :mouse-y) })))
             key-down-cb
             (fn [ev]
               (let [component (state :rum/react-component)
@@ -541,7 +540,7 @@
                                  { :orgpad/view-type :orgpad.map-view/link-props
                                    :orgpad/view-name "default"
                                    :orgpad/view-style "default"}
-                                
+
                                 :orgpad.map-view/link-props-style
                                  { :orgpad/view-type :orgpad.map-view/link-props-style
                                    :orgpad/type :orgpad/unit-view-child
@@ -552,7 +551,7 @@
                                    :orgpad/link-width 2
                                    :orgpad/link-dash #js [0 0]
                                    :orgpad/link-mid-pt [0 0] }
-                                
+
                                 }
   :orgpad/needs-children-info true
   :orgpad/view-name           "Map View"
@@ -597,7 +596,3 @@
 
   :orgpad/uedit-toolbar nil
   })
-
-
-
-

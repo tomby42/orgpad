@@ -18,7 +18,8 @@
             [orgpad.components.menu.toolbar.component :as tbar]
             [orgpad.components.menu.color.picker :as cpicker]
             [goog.string :as gstring]
-            [goog.string.format]))
+            [goog.string.format]
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos!]]))
 
 (def ^:private edge-menu-conf {
   :always-open? false
@@ -117,6 +118,7 @@
 
 (defn- start-unit-move
   [local-state ev]
+  (set-mouse-pos! (jev/touch-pos ev))
   (swap! local-state merge { :local-mode :unit-move
                              :quick-edit false
                              :pre-quick-edit 0
@@ -127,6 +129,7 @@
 
 (defn- start-units-move
   [unit-tree selection local-state ev]
+    (set-mouse-pos! (jev/touch-pos ev))
   (swap! local-state merge { :local-mode :units-move
                              :quick-edit false
                              :pre-quick-edit (if (:pre-quick-edit @local-state)
@@ -141,6 +144,7 @@
 
 (defn- start-unit-resize
   [local-state ev]
+  (set-mouse-pos! (jev/touch-pos ev))
   (swap! local-state merge { :local-mode :unit-resize
                              :start-mouse-x (.-clientX (jev/touch-pos ev))
                              :start-mouse-y (.-clientY (jev/touch-pos ev))
@@ -149,6 +153,7 @@
 
 (defn- start-links
   [unit-tree selection local-state ev]
+  (set-mouse-pos! (jev/touch-pos ev))
   (start-link local-state ev)
   (swap! local-state merge {:local-mode :make-links
                             :selected-units [unit-tree selection]}))
