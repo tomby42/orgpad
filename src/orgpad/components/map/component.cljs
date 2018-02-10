@@ -16,6 +16,7 @@
             [orgpad.tools.geocache :as geocache]
             [orgpad.tools.colls :as colls]
             [orgpad.tools.dom :as dom]
+            [orgpad.tools.time :as t]
             [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos!]]))
 
 (def ^:private init-state
@@ -171,14 +172,20 @@
                     {:unit-tree unit-tree
                      :bb bb}]])))
 
+(def ^:private last-unit-created-ts (volatile! 0))
+
 (defn- resolve-mouse-down
   [component unit-tree local-state ev]
+  (js/console.log "resolve-mouse-down" (< 100 (- (t/now) @last-unit-created-ts)))
   (when (and (= (:canvas-mode @local-state) :canvas-create-unit)
-             (not (.-isTouch ev)))
+             (not (.-isTouch ev))
+             (< 100 (- (t/now) @last-unit-created-ts)))
     (let [bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
           pos {:center-x (mouse-node-rel-x bbox ev)
                :center-y (mouse-node-rel-y bbox ev)}]
-      (create-pair-unit component unit-tree pos))))
+      (create-pair-unit component unit-tree pos)))
+  (when (not (.-isTouch ev))
+    (vreset! last-unit-created-ts (t/now))))
 
 (defn- handle-mouse-up
   [component unit-tree app-state ev]
@@ -414,8 +421,8 @@
                                  #js { :preventDefault (prevent-default ev)
                                        :stopPropagation (fn [] (.stopPropagation ev))
                                        :isTouch true
-                                       :clientX (@mouse-pos :mouse-x)
-                                       :clientY (@mouse-pos :mouse-y) })))
+                                       :clientX (:mouse-x @mouse-pos)
+                                       :clientY (:mouse-y @mouse-pos) })))
             key-down-cb
             (fn [ev]
               (let [component (state :rum/react-component)
