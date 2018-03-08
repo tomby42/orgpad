@@ -36,3 +36,25 @@
                    'orgpad/DatomAtomStore store/datom-atom-store-from-reader})
 
 (doseq [[tag cb] data-readers] (cljs.reader/register-tag-parser! tag cb))
+
+(extend-type cljs.core.PersistentVector
+  IComparable
+  (-compare [x y]
+    (if (= x y)
+      0
+      (if (= (count x) (count y))
+        (compare (str x) (str y))
+        (compare (count x) (count y))))))
+
+(defn- cnz
+  [x]
+  (-> x sort str))
+
+(extend-type cljs.core.PersistentArrayMap
+  IComparable
+  (-compare [x y]
+    (if (= x y)
+      0
+      (if (= (count x) (count y))
+        (compare (cnz x) (cnz y))
+        (compare (count x) (count y))))))
