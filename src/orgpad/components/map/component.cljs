@@ -179,7 +179,7 @@
   (js/console.log "resolve-mouse-down" (< 100 (- (t/now) @last-unit-created-ts)))
   (when (and (= (:canvas-mode @local-state) :canvas-create-unit)
              (not (.-isTouch ev))
-             (< 100 (- (t/now) @last-unit-created-ts)))
+             (< 250 (- (t/now) @last-unit-created-ts)))
     (let [bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
           pos {:center-x (mouse-node-rel-x bbox ev)
                :center-y (mouse-node-rel-y bbox ev)}]
