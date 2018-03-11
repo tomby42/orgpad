@@ -95,4 +95,25 @@
             }
         }
     }
+
+    .root-toolbar {
+        -webkit-transition: 0.5s ease-in-out;
+        transition: 0.5s ease-in-out;
+
+        &.hide {
+            -webkit-transform: translate(0,-30px);
+            transform: translate(0,-30px);
+            position: absolute;
+            width: 100%;
+        }
+
+        .root-toolbar-handle {
+            position: relative;
+            bottom: 0px;
+            left: 50%;
+            &:hover {
+                background-color: #aaa;
+            }
+        }
+    }
 }

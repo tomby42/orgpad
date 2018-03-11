@@ -29,9 +29,18 @@
         (swap! local-state assoc :component c)
         (swap! local-state assoc :node-state state)))))
 
+(defn- status
+  [unit-tree app-state local-state]
+  [:div {:className (str "root-toolbar " (if (:root-toolbar-visible @local-state) "" "hide"))}
+   (tbar/status unit-tree app-state local-state)
+   [:span.root-toolbar-handle {:onClick #(swap! local-state update :root-toolbar-visible not)}
+    [:i {:className (str "fa fa-lg "
+                         (if (:root-toolbar-visible @local-state) "fa-angle-up" "fa-angle-down"))}]]])
+
 (def default-values {:component nil
                      :node-state nil
-                     :show-settings false})
+                     :show-settings false
+                     :root-toolbar-visible true})
 
 (rum/defcc root-component < lc/parser-type-mixin-context (rum/local default-values)
   [component]
@@ -45,7 +54,7 @@
     [ :div.root-view
       ;; (rum/with-key (sidebar/sidebar-component) 0)
       (rum/with-key (node/node unit-tree app-state) "root-view-part")
-      (rum/with-key (tbar/status unit-tree app-state local-state) "status-part")
+      (status unit-tree app-state local-state)
       (rum/with-key (nest/nesting unit-tree) "nesting-part")
       (when (:enable-experimental-features app-state)
         (rum/with-key (ci/dialog-panel unit-tree app-state msg-list) "ci-part"))
