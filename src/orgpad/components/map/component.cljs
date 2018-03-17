@@ -176,7 +176,6 @@
 
 (defn- resolve-mouse-down
   [component unit-tree local-state ev]
-  (js/console.log "resolve-mouse-down" (< 100 (- (t/now) @last-unit-created-ts)))
   (when (and (= (:canvas-mode @local-state) :canvas-create-unit)
              (not (.-isTouch ev))
              (< 250 (- (t/now) @last-unit-created-ts)))

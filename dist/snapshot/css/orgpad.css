@@ -3562,6 +3562,24 @@ readers do not read off random characters that represent icons */
   width: 40%;
   float: right;
 }
+.root-view .root-toolbar {
+  -webkit-transition: 0.5s ease-in-out;
+  transition: 0.5s ease-in-out;
+}
+.root-view .root-toolbar.hide {
+  -webkit-transform: translate(0, -30px);
+  transform: translate(0, -30px);
+  position: absolute;
+  width: 100%;
+}
+.root-view .root-toolbar .root-toolbar-handle {
+  position: relative;
+  bottom: 0px;
+  left: 50%;
+}
+.root-view .root-toolbar .root-toolbar-handle:hover {
+  background-color: #aaa;
+}
 .atomic-view {
   width: 100%;
   flex-grow: 1;

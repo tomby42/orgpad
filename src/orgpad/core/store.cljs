@@ -236,7 +236,7 @@
   (undo
     [store]
     (let [[tx finger] (undo-info (.-history-records store))]
-       (if (-> tx nil? not)
+      (if (-> tx nil? not)
         (tx-report->store store (d/with (.-db store)
                                         (dtool/datoms->rev-tx tx))
                           finger)
