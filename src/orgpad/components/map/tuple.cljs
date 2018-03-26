@@ -55,10 +55,20 @@
                           (when (and (< (- (t/now) (@local-state :time-stamp)) CLICK-DELTA)
                                      (not= (:mode app-state) :quick-write))
                             (omt/switch-active-sheet component unit-tree (comp-dir e)))) }
+     ;; [:table.map-tuple-tab
+     ;;  [:tr
+     ;;   [:td [ :div.map-tuple-clicker-left [:i.fa.fa-2x.fa-angle-left] ]]
+     ;;   [:td (when child-tree
+     ;;          [:div.map-tuple-child (node/node child-tree app-state)])]
+     ;;   [:td [ :div.map-tuple-clicker-right [:i.fa.fa-2x.fa-angle-right] ]]
+     ;;   ]
+     ;;  ]
+
+     [ :div.map-tuple-clicker-left [:i.fa.fa-2x.fa-angle-left] ]
      (when child-tree
-       (rum/with-key (node/node child-tree app-state) 2))
-     [ :div.map-tuple-clicker-left ]
-     [ :div.map-tuple-clicker-right ]
+       [:div.map-tuple-child (rum/with-key (node/node child-tree app-state) 2)])
+     [ :div.map-tuple-clicker-right [:i.fa.fa-2x.fa-angle-right] ]
+
      ]))
 
 (rum/defcc map-tuple-component < trum/istatic lc/parser-type-mixin-context
@@ -98,11 +108,11 @@
     :on-click #(omt/remove-active-sheet (:component %1) (:unit-tree %1))
     :disabled #(<= ((ot/get-sheet-number (:unit-tree %1)) 1) 1)
     :hidden #(= (:mode %1) :read) }
-   {:elem :btn 
+   {:elem :btn
     :id "open-page"
     :icon "far fa-sign-in-alt"
     :title "Open current page"
-    :on-click #(open-unit (:component %1) (:unit-tree %1)) 
+    :on-click #(open-unit (:component %1) (:unit-tree %1))
     :disabled #(ot/no-sheets? (:unit-tree %1)) }
   ]])
 
@@ -127,7 +137,7 @@
                                               :orgpad/unit-border-color :orgpad/unit-bg-color
                                               :orgpad/unit-border-width :orgpad/unit-corner-x
                                               :orgpad/unit-corner-y :orgpad/unit-border-style] }
-  
+
   :orgpad/toolbar (gen-toolbar)
   :orgpad/uedit-toolbar (gen-toolbar)
 

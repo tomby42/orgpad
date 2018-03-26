@@ -162,17 +162,19 @@
                     :width (prop :orgpad/unit-width)
                     :height (prop :orgpad/unit-height) }
             :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)}
-           (when (contains? selections (:db/id unit))
-             [:span.fa.fa-check-circle.fa-lg.select-check])])
+           ;; (when (contains? selections (:db/id unit))
+           ;;  [:span.fa.fa-check-circle.fa-lg.select-check])
+           ])
         [ :div.map-view-child.leader-control
-           { :style { :top -10 :left -10 }
-             :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-             :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-             :onMouseUp #(open-unit pcomponent unit-tree local-state) }
-         (when (contains? selections (:db/id unit))
-           [:span.fa.fa-check-circle.fa-lg.select-check {:style {:left (- (prop :orgpad/unit-width) 10)
-                                                                 :top 15}}])]
-         )
+          { :style {:left (/ (prop :orgpad/unit-corner-x) 2)}
+            :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+            :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+            :onMouseUp #(open-unit pcomponent unit-tree local-state) }
+          [:i.far.fa-sign-in-alt]]
+        )
+
+      (when (contains? selections (:db/id unit))
+        [:span.fa.fa-check-circle.fa-lg.select-check {:style {:right (+ (/ (prop :orgpad/unit-corner-y) 2) 8) }}])
       ])))
 
 (def map-unit-mem
