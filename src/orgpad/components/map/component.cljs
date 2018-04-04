@@ -533,8 +533,8 @@
                                    :orgpad/independent true
                                    :orgpad/view-name "*"
                                    :orgpad/style-name "default"
-                                   :orgpad/unit-width 250
-                                   :orgpad/unit-height 60
+                                   :orgpad/unit-width 320
+                                   :orgpad/unit-height 150
                                    :orgpad/unit-border-color "#009cffff"
                                    :orgpad/unit-bg-color "#ffffffff"
                                    :orgpad/unit-border-width 2
