@@ -41,9 +41,7 @@
                                                                                (-> % .-target .-checked)]]])}
                                 (if (:enable-experimental-features app-state)
                                   {:checked true} {}))
-                                  
+
                            ]]]]
-    
-   
    ]
   )

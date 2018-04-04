@@ -513,11 +513,11 @@
 (registry/register-component-info
  :orgpad/map-view
  {:orgpad/default-view-info   { :orgpad/view-type :orgpad/map-view
-                                 :orgpad/view-name "default"
-                                 :orgpad/transform { :translate [0 0]
-                                                     :scale     1.0 } }
+                                :orgpad/view-name "default"
+                                :orgpad/transform { :translate [0 0]
+                                                    :scale     1.0 } }
   :orgpad/child-default-view-info     { :orgpad/view-type :orgpad/map-tuple-view
-                                         :orgpad/view-name "default" }
+                                        :orgpad/view-name "default" }
   :orgpad/class               map-component
   :orgpad/child-props-types   [:orgpad.map-view/vertex-props :orgpad.map-view/link-props
                                 :orgpad.map-view/vertex-props-style :orgpad.map-view/link-props-style]

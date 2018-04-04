@@ -1,15 +1,15 @@
 (ns ^{:doc "Math tools"}
   orgpad.tools.bezier
-  (:require [orgpad.tools.geom :as geom]))
+  (:require [orgpad.tools.geom :refer [++ *c] :as geom]))
 
 ;; B(t) = (1-t)^2 * P_0 + 2(1-t)t * P_1 + t^2 * P_2
 (defn get-point-on-quadratic-bezier
   [p1 p2 p3 t]
   (let [t' (- 1 t)]
-    (geom/++
-     (geom/*c p1 (* t' t'))
-     (geom/*c p2 (* 2 t' t))
-     (geom/*c p3 (* t t)))))
+    (++
+     (*c p1 (* t' t'))
+     (*c p2 (* 2 t' t))
+     (*c p3 (* t t)))))
 
 
 (defn get-point-on-bezier
@@ -27,7 +27,7 @@
                    (if (== i n-k)
                      q'
                      (recur (inc i)
-                            (assoc! q' i (geom/++ (geom/*c (get q' i) t')
-                                                  (geom/*c (get q' (inc i)) t))))
+                            (assoc! q' i (++ (*c (get q' i) t')
+                                             (*c (get q' (inc i)) t))))
                      ))))
         ))))
