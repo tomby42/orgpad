@@ -465,7 +465,8 @@
 
 (defn- render-props-menu1
   [params]
-  [:div.map-props-toolbar {:key "prop-menu"}
+  [:div.map-props-toolbar {:key "prop-menu"
+                           :onWheel jev/stop-propagation}
    (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-border-color))
    (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-bg-color))
    (render-border-width1 params)
