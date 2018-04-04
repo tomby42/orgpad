@@ -7,7 +7,8 @@
             [orgpad.components.atomic.atom-editor :as atom-editor]
             [orgpad.components.atomic.tags-editor :as tags-editor]
             [orgpad.components.atomic.desc-editor :as desc-editor]
-            [orgpad.tools.rum :as trum]))
+            [orgpad.tools.rum :as trum]
+            [orgpad.tools.js-events :as jev]))
 
 (defn- update-mathjax 
   [state]
@@ -29,7 +30,11 @@
 
 (defn- render-quick-write-mode
   [{:keys [unit view]} app-state]
-  (atom-editor/atom-editor (unit :db/id) view (view :orgpad/atom) :inline))
+  [:div {:onMouseDown jev/stop-propagation
+         :onMouseUp jev/stop-propagation
+         :onClick jev/stop-propagation
+         :onWheel jev/stop-propagation}
+   (atom-editor/atom-editor (unit :db/id) view (view :orgpad/atom) :inline)])
 
 (defn render-read-mode
   [{:keys [view]} app-state & [no-ref?]]
