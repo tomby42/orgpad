@@ -1,3 +1,5 @@
+@import "config.less";
+
 .toolbar {
   display: flex;
   width: 100%;
@@ -20,7 +22,7 @@
       background-color: #6df;
     }
     &.active {
-      background-color: #33adff;
+      background-color: @select-color;
     }
     &.disabled {
       background-color: #ddd;
@@ -66,7 +68,7 @@
     padding-top: 3px;
     padding-bottom: 0px;
     &:hover, &.active:hover {
-      background-color: #6df;
+      background-color: @hover-color;
     }
     &.active {
       background-color: #33adff;

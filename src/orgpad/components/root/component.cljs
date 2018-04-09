@@ -13,7 +13,8 @@
             [orgpad.components.root.nesting :as nest]
             [orgpad.tools.orgpad :as ot]
             [orgpad.components.ci.dialog :as ci]
-            [orgpad.components.root.settings :as settings]))
+            [orgpad.components.root.settings :as settings]
+            [orgpad.components.editors.styles :as styles]))
 
 ;; TODO: hack!! We need to think about passing custom params to children and/or local states in app state
 ;; regarding to render hierarchy.
@@ -25,7 +26,7 @@
         (add-watch state :root-component-update (fn [_ _ old-state new-state]
                                                   (if (not= (:canvas-mode old-state) (:canvas-mode new-state))
                                                     (rum/request-render component))))
-                                                    
+
         (swap! local-state assoc :component c)
         (swap! local-state assoc :node-state state)))))
 
@@ -60,6 +61,8 @@
         (rum/with-key (ci/dialog-panel unit-tree app-state msg-list) "ci-part"))
       (when (:show-settings @local-state)
         (rum/with-key (settings/settings app-state #(swap! local-state assoc :show-settings false)) "settings"))
+      (when false
+        (rum/with-key (styles/styles-editor app-state #(js/console.log "Closing styles!")) "styles"))
       (when (:loading app-state)
         [ :div.loading
          [ :div.status
@@ -90,7 +93,7 @@
         :id "load"
         :icon "far fa-upload"
         :label "Load"
-        :on-click #(lc/transact! (:component %1) [[ :orgpad/load-orgpad %2 ]]) } 
+        :on-click #(lc/transact! (:component %1) [[ :orgpad/load-orgpad %2 ]]) }
        {:id "tohtml"
         :label "Export HTML"
         :on-click #(lc/transact! (:component %1) [[ :orgpad/export-as-html ((lc/global-conf (:component %1)) :storage-el) ]]) }

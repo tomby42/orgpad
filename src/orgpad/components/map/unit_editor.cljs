@@ -14,12 +14,15 @@
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.dom :as dom]
+            [orgpad.tools.math :refer [normalize-range]]
             [orgpad.components.graphics.primitives :as g]
             [orgpad.components.menu.toolbar.component :as tbar]
             [orgpad.components.menu.color.picker :as cpicker]
             [goog.string :as gstring]
             [goog.string.format]
-            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos!]]))
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos!]]
+            [orgpad.components.input.slider :as slider]
+            [orgpad.components.editors.styles :as styles]))
 
 (def ^:private edge-menu-conf {
   :always-open? false
@@ -59,48 +62,24 @@
              first)]
     [sel-unit (merge sel-style sel-prop)]))
 
-(defn- mouse-down-default
-  [local-state ev]
-  (swap! local-state assoc :local-mode :default-mode)
-  (.stopPropagation ev))
-
-(defn- normalize-range
-  [min max val]
-  (-> (if (= val "") "0" val)
-      js/parseInt
-      (js/Math.max min)
-      (js/Math.min max)))
-
 (defn- render-slider
   [{:keys [component unit prop parent-view local-state max prop-name action selection]}]
   (let [on-change
         (if (nil? selection)
-          (fn [ev]
+          (fn [v]
             (lc/transact! component [[action
                                       {:prop prop
                                        :parent-view parent-view
                                        :unit-tree unit
-                                       prop-name (normalize-range 0 max (-> ev .-target .-value)) } ]]))
-          (fn [ev]
+                                       prop-name v } ]]))
+          (fn [v]
             (lc/transact! component [[:orgpad.units/map-view-units-change-props
                                       {:action action
                                        :selection selection
                                        :unit-tree unit
                                        :prop-name prop-name
-                                       :prop-val (normalize-range 0 max (-> ev .-target .-value)) } ]])))]
-    [ :div.slider
-     [ :input { :type "range" :min 0 :max max :step 1 :value (prop prop-name)
-                :onMouseDown (partial mouse-down-default local-state)
-                :onBlur jev/stop-propagation
-                :onChange on-change } ]
-     [ :input.val { :type "text" :value (prop prop-name)
-                    :onBlur jev/stop-propagation
-                    :onMouseDown jev/stop-propagation
-                    :onChange on-change
- } ] ] ) )
-
-(def ^:private border-styles
-  [ "none" "solid" "dotted" "dashed" "double" "groove" "ridge" "inset" "outset" ])
+                                       :prop-val v } ]])))]
+    (slider/render-slider {:max max :value (prop prop-name) :on-change on-change})))
 
 (defn enable-quick-edit
   [local-state]
@@ -405,33 +384,28 @@
                                                  :unit-tree unit
                                                  :prop-name :color
                                                  :prop-val c}]])))]
-    [ :div.map-view-border-edit {}
-     [ :div.center (if (= action :orgpad.units/map-view-unit-border-color)
-                     "Border Color"
-                     "Background Color") ]
-     (cpicker/color-picker color {} on-change) ] ))
+    (styles/frame (if (= action :orgpad.units/map-view-unit-border-color)
+                    "Border Color"
+                    "Background Color") (cpicker/color-picker color {} on-change))))
 
 (defn- render-border-width1
   [{:keys [prop] :as params}]
-  [ :div.map-view-border-edit {}
-   [:div.center "Border Width"]
-   (render-slider (merge params {:max 20
-                                 :prop-name :orgpad/unit-border-width
-                                 :action :orgpad.units/map-view-unit-border-width })) ])
-
+  (styles/frame "Border Width"
+                (render-slider (merge params {:max 20
+                                              :prop-name :orgpad/unit-border-width
+                                              :action :orgpad.units/map-view-unit-border-width }))))
 
 (defn- render-border-radius1
   [{:keys [prop] :as params}]
-  [ :div.map-view-border-edit {}
-   [ :div.center "Border Radius" ]
-   (render-slider (merge params
-                         {:max 50
-                          :prop-name :orgpad/unit-corner-x
-                          :action :orgpad.units/map-view-unit-border-radius }))
-   (render-slider (merge params
-                         {:max 50
-                          :prop-name :orgpad/unit-corner-y
-                          :action :orgpad.units/map-view-unit-border-radius })) ])
+   (styles/frame "Border Radius"
+                 (render-slider (merge params
+                                       {:max 50
+                                        :prop-name :orgpad/unit-corner-x
+                                        :action :orgpad.units/map-view-unit-border-radius }))
+                 (render-slider (merge params
+                                       {:max 50
+                                        :prop-name :orgpad/unit-corner-y
+                                        :action :orgpad.units/map-view-unit-border-radius }))))
 
 (defn- render-border-style1
   [{:keys [component unit prop parent-view local-state selection]}]
@@ -452,20 +426,15 @@
                                        :unit-tree unit
                                        :prop-name :orgpad/unit-border-style
                                        :prop-val (-> ev .-target .-value) } ]])))]
-    [ :div.-100.map-view-border-edit {}
+    [ :div.map-view-border-edit {}
       [ :div.center "Border Style" ]
-     (into
-      [ :select.fake-center
-       { :onMouseDown (partial mouse-down-default local-state)
-         :onBlur jev/stop-propagation
-         :onChange on-change } ]
-      (map (fn [s]
-             [ :option (if (= s style) { :selected true } {}) s ])
-           border-styles) ) ] ))
+      (styles/border-style style on-change)] ))
 
 (defn- render-props-menu1
   [params]
   [:div.map-props-toolbar {:key "prop-menu"
+                           :onClick jev/stop-propagation
+                           :onDoubleClick jev/stop-propagation
                            :onWheel jev/stop-propagation}
    (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-border-color))
    (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-bg-color))

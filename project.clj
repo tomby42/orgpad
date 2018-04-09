@@ -29,10 +29,10 @@
                        ["mathjax" "2.7.2"]]}
 
   :plugins [[lein-cljsbuild "1.1.7"]
-            [lein-figwheel "0.5.13"] ;; needs update to lein 2.5.3 at least
+            [lein-figwheel "0.5.15"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             [lein-localrepo "0.5.3"]
-            [lein-doo "0.1.7"]
+            [lein-doo "0.1.10"]
             [lein-npm "0.6.2"]]
 
   :hooks [leiningen.less leiningen.cljsbuild]
@@ -45,10 +45,10 @@
          :target-path "resources/public/css"}
 
   :profiles {:dev
-             {:dependencies [[com.cemerick/piggieback "0.2.1"]
+             {:dependencies [[com.cemerick/piggieback "0.2.2"]
                              [org.clojure/tools.nrepl "0.2.12"]
-                             [figwheel-sidecar        "0.5.13"]
-                             [binaryage/devtools      "0.9.4"]]
+                             [figwheel-sidecar        "0.5.15"]
+                             [binaryage/devtools      "0.9.10"]]
               }
 
              :repl {:plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]] }}

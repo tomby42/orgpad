@@ -13,3 +13,10 @@
 (defn psum
   [seq from to]
   (reduce + (subvec seq from to)))
+
+(defn normalize-range
+  [min max val]
+  (-> (if (= val "") "0" val)
+      js/parseInt
+      (js/Math.max min)
+      (js/Math.min max)))

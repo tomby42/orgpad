@@ -521,7 +521,10 @@
   :orgpad/class               map-component
   :orgpad/child-props-types   [:orgpad.map-view/vertex-props :orgpad.map-view/link-props
                                 :orgpad.map-view/vertex-props-style :orgpad.map-view/link-props-style]
-  :orgpad/child-props-style-types [:orgpad.map-view/vertex-props-style :orgpad.map-view/link-props-style]
+  :orgpad/child-props-style-types [{:key :orgpad.map-view/vertex-props-style
+                                    :name "Unit style"}
+                                   {:key :orgpad.map-view/link-props-style
+                                    :name "Link style"}]
   :orgpad/child-props-default { :orgpad.map-view/vertex-props
                                  { :orgpad/view-type :orgpad.map-view/vertex-props
                                    :orgpad/view-name "default"

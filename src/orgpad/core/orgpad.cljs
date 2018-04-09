@@ -53,14 +53,17 @@
     (into [] (comp
               (filter :orgpad/child-props-style-types)
               (mapcat (fn [cdef]
-                        (map #(assoc (-> cdef :orgpad/child-props-default %) :db/id (vswap! counter dec))
+                        (map #(assoc (get-in cdef [:orgpad/child-props-default (:key %)])
+                                     :db/id (vswap! counter dec))
                              (:orgpad/child-props-style-types cdef)))))
           (vals (cregistry/get-registry)))))
 
 (defn db-contains-styles?
   [db]
   (let [styles (into #{}
-                     (mapcat :orgpad/child-props-style-types)
+                     (comp
+                      (mapcat :orgpad/child-props-style-types)
+                      (map :key))
                      (vals (cregistry/get-registry)))]
   (-> db
       (store/query '[:find ?e

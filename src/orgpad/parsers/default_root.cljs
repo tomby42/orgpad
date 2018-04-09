@@ -278,6 +278,11 @@
                        [?e :orgpad/style-name ?style-name]]
                [view-type style-name]))
 
+(defmethod mutate :orgpad.style/update
+  [{:keys [state]} _ {:keys [style prop-name prop-val]}]
+  (js/console.log "orgpad.style/update" style prop-name prop-val)
+  {:state (store/transact state [[:db/add (:db/id style) prop-name prop-val]])})
+
 (defmethod read :orgpad/root-view-stack-info
   [{:keys [parser-stack-info]} _ [key params]]
   (parser-stack-info key params))
