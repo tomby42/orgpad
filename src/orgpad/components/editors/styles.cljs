@@ -32,7 +32,7 @@
     {:onMouseDown jev/stop-propagation
      :onMouseMove jev/stop-propagation
      :onBlur jev/stop-propagation
-     :onChange on-change } ]
+     :onChange #(on-change (-> % .-target .-value)) } ]
    (map (fn [s]
           [:option (if (= s style) { :selected true } {}) s])
         styles)))

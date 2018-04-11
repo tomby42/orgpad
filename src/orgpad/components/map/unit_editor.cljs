@@ -411,13 +411,13 @@
   [{:keys [component unit prop parent-view local-state selection]}]
   (let [style (prop :orgpad/unit-border-style)
         on-change (if (nil? selection)
-                    (fn [ev]
+                    (fn [val]
                       (lc/transact! component
                                     [[:orgpad.units/map-view-unit-border-style
                                       {:prop prop
                                        :parent-view parent-view
                                        :unit-tree unit
-                                       :orgpad/unit-border-style (-> ev .-target .-value) } ]]))
+                                       :orgpad/unit-border-style val } ]]))
                     (fn [ev]
                       (lc/transact! component
                                     [[:orgpad.units/map-view-units-change-props
@@ -425,7 +425,7 @@
                                        :selection selection
                                        :unit-tree unit
                                        :prop-name :orgpad/unit-border-style
-                                       :prop-val (-> ev .-target .-value) } ]])))]
+                                       :prop-val val } ]])))]
     [ :div.map-view-border-edit {}
      [ :div.center "Border Style" ]
      (styles/render-selection styles/border-styles style on-change)] ))
@@ -435,13 +435,13 @@
   (let [styles-list (lc/query component :orgpad/styles {:view-type :orgpad.map-view/vertex-props-style} true)
         style (:orgpad/view-style prop)
         on-change (if (nil? selection)
-                    (fn [ev]
+                    (fn [val]
                       (lc/transact! component
                                     [[:orgpad.units/map-view-unit-style
                                       {:prop prop
                                        :parent-view parent-view
                                        :unit-tree unit
-                                       :orgpad/view-style (-> ev .-target .-value) } ]]))
+                                       :orgpad/view-style val } ]]))
                     (fn [ev]
                       (lc/transact! component
                                     [[:orgpad.units/map-view-units-change-props
@@ -449,7 +449,7 @@
                                        :selection selection
                                        :unit-tree unit
                                        :prop-name :orgpad/view-style
-                                       :prop-val (-> ev .-target .-value) } ]])))]
+                                       :prop-val val } ]])))]
     [ :div.map-view-border-edit {}
      [ :div.center "Style" ]
      (styles/render-selection (map :orgpad/style-name styles-list) style on-change)]
