@@ -434,6 +434,11 @@
   [env _ {:keys [orgpad/unit-border-style] :as payload}]
   (update-propagated-prop env payload nil { :orgpad/unit-border-style unit-border-style }))
 
+(defmethod mutate :orgpad.units/map-view-unit-style
+  [env _ {:keys [orgpad/view-style] :as payload}]
+  (update-propagated-prop env payload nil { :orgpad/view-style view-style }))
+
+
 ;; 'not' and 'or' is not properly supported in ds query yet
 (def ^:private parents-props-query
   '[:find ?parent ?t ?i

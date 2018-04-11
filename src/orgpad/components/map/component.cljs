@@ -53,24 +53,6 @@
   (create-pair-unit component unit-tree pos)
   (.stopPropagation ev))
 
-(defn- copy-units-to-clipboard
-  [component unit-tree app-state]
-  (let [selection (get-in app-state [:selections (ot/uid unit-tree)])]
-    (when (and selection
-               (-> selection empty? not))
-      (lc/transact! component [[:orgpad.units/copy {:pid (ot/uid unit-tree)
-                                                    :selection selection}]]))))
-
-(defn- paste-units-from-clipbord
-  [component unit-tree app-state pos]
-  (let [data (get-in app-state [:clipboards (ot/uid unit-tree)])]
-    (when data
-      (lc/transact! component [[:orgpad.units/paste-to-map {:pid (ot/uid unit-tree)
-                                                            :data data
-                                                            :view-name (ot/view-name unit-tree)
-                                                            :transform (-> unit-tree :view :orgpad/transform)
-                                                            :position pos}]]))))
-
 (defn handle-mouse-down
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
@@ -82,7 +64,7 @@
                                :selected-unit nil
                                :selected-link nil
                                :local-mode (if (= (app-state :mode) :write)
-                                             (if (= (:local-mode @local-state) :canvas-paste)
+                                             (if (= (:canvas-mode @local-state) :canvas-paste)
                                                :canvas-paste
                                                :mouse-down)
                                              :canvas-move)
@@ -174,15 +156,20 @@
 
 (def ^:private last-unit-created-ts (volatile! 0))
 
+(defn- get-rel-mouse-pos
+  [component unit-tree ev]
+  (let [bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")]
+        [(mouse-node-rel-x bbox ev)
+         (mouse-node-rel-y bbox ev)]))
+
 (defn- resolve-mouse-down
   [component unit-tree local-state ev]
   (when (and (= (:canvas-mode @local-state) :canvas-create-unit)
              (not (.-isTouch ev))
              (< 250 (- (t/now) @last-unit-created-ts)))
-    (let [bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
-          pos {:center-x (mouse-node-rel-x bbox ev)
-               :center-y (mouse-node-rel-y bbox ev)}]
-      (create-pair-unit component unit-tree pos)))
+    (let [pos (get-rel-mouse-pos component unit-tree ev)]
+      (create-pair-unit component unit-tree {:center-x (get pos 0)
+                                             :center-y (get pos 1)})))
   (when (not (.-isTouch ev))
     (vreset! last-unit-created-ts (t/now))))
 
@@ -190,6 +177,7 @@
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)
         bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")]
+    (js/console.log "handle-mouse-up" (:local-mode @local-state) (:canvas-mode @local-state))
     (case (:local-mode @local-state)
       :mouse-down (resolve-mouse-down component unit-tree local-state ev)
       :canvas-move (stop-canvas-move component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
@@ -202,7 +190,7 @@
       :choose-selection (select-units-by-bb component unit-tree local-state)
       :make-links (make-links component unit-tree (-> @local-state :selected-units second)
                               [(mouse-node-rel-x bbox ev) (mouse-node-rel-y bbox ev)])
-      :canvas-paste (omt/paste-units-from-clipbord component unit-tree app-state [(.-clientX ev) (.-clientY ev)])
+      :canvas-paste (omt/paste-units-from-clipboard component unit-tree app-state (get-rel-mouse-pos component unit-tree ev))
       nil)
     (swap! local-state merge { :local-mode :none })
     (js/setTimeout
@@ -333,8 +321,9 @@
       (let [
             data (get-in app-state [:clipboards (ot/uid unit-tree)])]
         (case (.-code ev)
-          "KeyC" (copy-units-to-clipboard component unit-tree app-state)
-          "KeyV" (paste-units-from-clipbord component unit-tree app-state [(:mouse-x @mouse-pos) (:mouse-y @mouse-pos)])
+          "KeyC" (omt/copy-units-to-clipboard component unit-tree app-state)
+          "KeyV" (omt/paste-units-from-clipboard component unit-tree app-state (get-rel-mouse-pos component unit-tree #js {:clientX (:mouse-x @mouse-pos)
+                                                                                                                           :clientY (:mouse-y @mouse-pos)}))
           nil)))))
 
 (defn- render-write-mode

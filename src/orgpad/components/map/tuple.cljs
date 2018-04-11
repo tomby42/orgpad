@@ -116,7 +116,6 @@
     :disabled #(ot/no-sheets? (:unit-tree %1)) }
   ]])
 
-
 (registry/register-component-info
  :orgpad/map-tuple-view
  {

@@ -41,6 +41,7 @@
 (def default-values {:component nil
                      :node-state nil
                      :show-settings false
+                     :show-styles-editor false
                      :root-toolbar-visible true})
 
 (rum/defcc root-component < lc/parser-type-mixin-context (rum/local default-values)
@@ -61,8 +62,8 @@
         (rum/with-key (ci/dialog-panel unit-tree app-state msg-list) "ci-part"))
       (when (:show-settings @local-state)
         (rum/with-key (settings/settings app-state #(swap! local-state assoc :show-settings false)) "settings"))
-      (when false
-        (rum/with-key (styles/styles-editor app-state #(js/console.log "Closing styles!")) "styles"))
+      (when (:show-styles-editor @local-state)
+        (rum/with-key (styles/styles-editor app-state #(swap! local-state assoc :show-styles-editor false)) "styles"))
       (when (:loading app-state)
         [ :div.loading
          [ :div.status
@@ -79,7 +80,8 @@
   :orgpad/class               root-component
   :orgpad/needs-children-info true
 
-  :orgpad/left-toolbar [
+  :orgpad/left-toolbar
+  [
     [{:elem :roll
       :id "file"
       :icon "far fa-save"
@@ -96,8 +98,16 @@
         :on-click #(lc/transact! (:component %1) [[ :orgpad/load-orgpad %2 ]]) }
        {:id "tohtml"
         :label "Export HTML"
-        :on-click #(lc/transact! (:component %1) [[ :orgpad/export-as-html ((lc/global-conf (:component %1)) :storage-el) ]]) }
-       ]}]
+        :on-click #(lc/transact! (:component %1) [[ :orgpad/export-as-html ((lc/global-conf (:component %1)) :storage-el) ]]) }]}]
+   [{:elem :roll
+     :id "styles-editor"
+     :icon "far fa-calendar"
+     :label "Styles"
+     :roll-items
+     [{:id "edit-styles"
+       :icon "far fa-edit"
+       :label "Edit"
+       :on-click #(swap! (:root-local-state %1) assoc :show-styles-editor true)}]}]
     [
      {:elem :btn
       :id "history"

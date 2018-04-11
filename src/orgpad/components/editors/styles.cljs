@@ -16,7 +16,7 @@
 (def init-state
   {})
 
-(def ^:private border-styles
+(def border-styles
   [ "none" "solid" "dotted" "dashed" "double" "groove" "ridge" "inset" "outset" ])
 
 (defn frame
@@ -25,8 +25,8 @@
    [:div.center label ]
    body])
 
-(defn border-style
-  [style on-change]
+(defn render-selection
+  [styles style on-change]
   (into
    [:select.fake-center
     {:onMouseDown jev/stop-propagation
@@ -35,7 +35,7 @@
      :onChange on-change } ]
    (map (fn [s]
           [:option (if (= s style) { :selected true } {}) s])
-        border-styles)))
+        styles)))
 
 (defn styles-types-list
   []
@@ -80,8 +80,9 @@
   [:span [:div
           (frame "Corner X" (slider/render-slider (slider-params component style :orgpad/unit-corner-x 100)))
           (frame "Corner Y" (slider/render-slider (slider-params component style :orgpad/unit-corner-y 100)))
-          (frame "Border Style" (border-style (:orgpad/unit-border-style style)
-                                              (transact! component style :orgpad/unit-border-style)))]])
+          (frame "Border Style" (render-selection border-styles
+                                                  (:orgpad/unit-border-style style)
+                                                  (transact! component style :orgpad/unit-border-style)))]])
 
 (defn render-vertex-props-style
   [component style]
@@ -106,7 +107,7 @@
     ((style-type->editor active-type) component style)))
 
 (rum/defcc styles-editor < lc/parser-type-mixin-context (rum/local init-state)
-  [component db app-state on-close]
+  [component app-state on-close]
   (let [styles-types (styles-types-list)
         local-state (trum/comp->local-state component)
         active-type (or (:active-type @local-state) (-> styles-types first :key))

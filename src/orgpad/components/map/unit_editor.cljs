@@ -427,8 +427,34 @@
                                        :prop-name :orgpad/unit-border-style
                                        :prop-val (-> ev .-target .-value) } ]])))]
     [ :div.map-view-border-edit {}
-      [ :div.center "Border Style" ]
-      (styles/border-style style on-change)] ))
+     [ :div.center "Border Style" ]
+     (styles/render-selection styles/border-styles style on-change)] ))
+
+(defn- render-styles-list
+  [{:keys [component unit prop parent-view local-state selection]}]
+  (let [styles-list (lc/query component :orgpad/styles {:view-type :orgpad.map-view/vertex-props-style} true)
+        style (:orgpad/view-style prop)
+        on-change (if (nil? selection)
+                    (fn [ev]
+                      (lc/transact! component
+                                    [[:orgpad.units/map-view-unit-style
+                                      {:prop prop
+                                       :parent-view parent-view
+                                       :unit-tree unit
+                                       :orgpad/view-style (-> ev .-target .-value) } ]]))
+                    (fn [ev]
+                      (lc/transact! component
+                                    [[:orgpad.units/map-view-units-change-props
+                                      {:action :orgpad.units/map-view-unit-style
+                                       :selection selection
+                                       :unit-tree unit
+                                       :prop-name :orgpad/view-style
+                                       :prop-val (-> ev .-target .-value) } ]])))]
+    [ :div.map-view-border-edit {}
+     [ :div.center "Style" ]
+     (styles/render-selection (map :orgpad/style-name styles-list) style on-change)]
+    )
+  )
 
 (defn- render-props-menu1
   [params]
@@ -440,7 +466,8 @@
    (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-bg-color))
    (render-border-width1 params)
    (render-border-radius1 params)
-   (render-border-style1 params)])
+   (render-border-style1 params)
+   (render-styles-list params)])
 
 (defn- node-unit-editor-static
   [component {:keys [view] :as unit-tree} app-state local-state]
