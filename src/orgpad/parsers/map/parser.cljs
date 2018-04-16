@@ -289,7 +289,10 @@
             parent-name (nth view-path n)]
         (when-let [prop (-> (filter #(= (:orgpad/view-name %) parent-name) update-trans) first)]
           (let [e (ot/get-prop-from-db-styles state (:props unit-tree) prop :orgpad.map-view/vertex-props-style) ;;(store/query state [:entity (prop :db/id)])
-                prop' (merge (ot/get-prop-style state prop :orgpad.map-view/vertex-props-style) prop)]
+                prop' (merge (ot/get-style-from-db state
+                                                   :orgpad.map-view/vertex-props-style
+                                                   (:orgpad/view-style prop))
+                             prop)]
             (geocache/update-box! global-cache parent-id parent-name
                                   (ot/uid unit-tree) (e :orgpad/unit-position)
                                   [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
@@ -368,7 +371,9 @@
   (let [info (registry/get-component-info :orgpad/map-view)
         closest-unit (find-closest-unit map-unit-tree begin-unit-id position)
         parent-id (ot/uid map-unit-tree)
-        mid-pt-rel (if (= begin-unit-id (ot/uid closest-unit)) [-40 0] [0 0])
+        mid-pt-rel (if style
+                     (:orgpad/link-mid-pt style)
+                     (if (= begin-unit-id (ot/uid closest-unit)) [-40 0] [0 0]))
         default-prop (-> info :orgpad/child-props-default :orgpad.map-view/link-props
                          (as-> x (if style (assoc x :orgpad/view-style (:orgpad/style-name style)) x)))
         new-state (if closest-unit
@@ -386,9 +391,9 @@
                                :orgpad/refs -1
                                :orgpad/type :orgpad/unit-view-child
                                :orgpad/view-name (-> map-unit-tree :view :orgpad/view-name)
-                               :orgpad/context-unit parent-id
-                               :orgpad/link-mid-pt mid-pt-rel
-                              })
+                               :orgpad/context-unit parent-id}
+                             (when (nil? style)
+                               {:orgpad/link-mid-pt mid-pt-rel}))
                       [:db/add parent-id :orgpad/refs -1]])
                     state)]
     (when closest-unit
@@ -435,9 +440,19 @@
   (update-propagated-prop env payload nil { :orgpad/unit-border-style unit-border-style }))
 
 (defmethod mutate :orgpad.units/map-view-unit-style
-  [env _ {:keys [orgpad/view-style] :as payload}]
-  (update-propagated-prop env payload nil { :orgpad/view-style view-style }))
-
+  [{:keys [state] :as env} _ {:keys [orgpad/view-style prop] :as payload}]
+  (let [old-style (ot/get-style-from-db state :orgpad.map-view/vertex-props-style (:orgpad/view-style prop))
+        new-style (ot/get-style-from-db state :orgpad.map-view/vertex-props-style view-style)
+        uid (ot/pid prop)]
+    (->
+     env
+     (update :state #(store/with-history-mode % {:new-record true :mode :acc}))
+     (update-propagated-prop payload nil { :orgpad/view-style view-style })
+     :state
+     (store/transact [[:db/retract uid :orgpad/props-refs (:db/id old-style)]
+                      [:db/add uid :orgpad/props-refs (:db/id new-style)]])
+     (store/with-history-mode :add)
+     (->> (assoc {} :state)))))
 
 ;; 'not' and 'or' is not properly supported in ds query yet
 (def ^:private parents-props-query
@@ -576,6 +591,21 @@
       (aset val 0 link-style-1)
       (aset val 1 link-style-2))
     { :state (update-props state id (ot/uid unit-tree) :orgpad/unit-view-child prop' { :orgpad/link-dash val }) } ))
+
+(defmethod mutate :orgpad.units/map-view-style-link
+  [{:keys [state] :as env} _ {:keys [:orgpad/view-style prop] :as payload}]
+  (let [old-style (ot/get-style-from-db state :orgpad.map-view/link-props-style (:orgpad/view-style prop))
+        new-style (ot/get-style-from-db state :orgpad.map-view/link-props-style view-style)
+        uid (ot/pid prop)]
+    (->
+     env
+     (update :state #(store/with-history-mode % {:new-record true :mode :acc}))
+     (update-link-props payload { :orgpad/view-style view-style })
+     :state
+     (store/transact [[:db/retract uid :orgpad/props-refs (:db/id old-style)]
+                      [:db/add uid :orgpad/props-refs (:db/id new-style)]])
+     (store/with-history-mode :add)
+     (->> (assoc {} :state)))))
 
 (defmethod mutate :orgpad.units/map-view-link-remove
   [{:keys [state global-cache]} _ id]

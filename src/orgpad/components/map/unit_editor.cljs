@@ -524,12 +524,29 @@
                    :prop-name :orgpad/link-style-2
                    :action :orgpad.units/map-view-link-style }) ])
 
+(defn- render-link-styles-list
+  [{:keys [component unit prop parent-view local-state]}]
+  (let [styles-list (lc/query component :orgpad/styles {:view-type :orgpad.map-view/link-props-style} true)
+        style (:orgpad/view-style prop)
+        on-change (fn [val]
+                    (lc/transact! component [[:orgpad.units/map-view-style-link
+                                              {:prop prop
+                                               :parent-view parent-view
+                                               :unit-tree unit
+                                               :orgpad/view-style val} ]]))]
+    [ :div.map-view-border-edit {}
+     [ :div.center "Style" ]
+     (styles/render-selection (map :orgpad/style-name styles-list) style on-change)]
+    )
+  )
+
 (defn- render-edge-prop-menu
   [params]
   [:div.map-props-toolbar
    (render-link-color-picker1 params)
    (render-link-width1 params)
-   (render-link-style1 params)])
+   (render-link-style1 params)
+   (render-link-styles-list params)])
 
 (defn- edge-unit-editor-static
   [component {:keys [unit view] :as unit-tree} app-state local-state]
@@ -543,7 +560,9 @@
 (rum/defcc unit-editor-static < lc/parser-type-mixin-context
   [component unit-tree app-state local-state]
   (let [select-unit (@local-state :selected-unit)]
-    [:div {:onMouseDown jev/block-propagation :onTouchStart jev/block-propagation}
+    [:div {:onMouseDown jev/block-propagation
+           :onTouchStart jev/block-propagation
+           :onWheel jev/block-propagation}
      (if select-unit
        (node-unit-editor-static component unit-tree app-state local-state)
        (edge-unit-editor-static component unit-tree app-state local-state))]))

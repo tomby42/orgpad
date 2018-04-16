@@ -263,7 +263,7 @@
 
 (defmethod read :orgpad/styles
   [{:keys [state]} _ {:keys [view-type]}]
-  (store/query state '[:find [(pull ?e [*])]
+  (store/query state '[:find [(pull ?e [*]) ...]
                        :in $ ?view-type
                        :where
                        [?e :orgpad/view-type ?view-type]]
@@ -271,17 +271,29 @@
 
 (defmethod read :orgpad/style
   [{:keys [state]} _ {:keys [view-type style-name]}]
-  (store/query state '[:find (pull ?e [*]) .
-                       :in $ ?view-type ?style-name
-                       :where
-                       [?e :orgpad/view-type ?view-type]
-                       [?e :orgpad/style-name ?style-name]]
-               [view-type style-name]))
+  (ot/get-style-from-db state view-type style-name))
 
 (defmethod mutate :orgpad.style/update
   [{:keys [state]} _ {:keys [style prop-name prop-val]}]
   (js/console.log "orgpad.style/update" style prop-name prop-val)
   {:state (store/transact state [[:db/add (:db/id style) prop-name prop-val]])})
+
+(defn- get-style-default
+  [type]
+  (-> (registry/get-registry)
+      vals
+      (->> (drop-while #(nil? (get-in % [:orgpad/child-props-default type]))))
+      first
+      (get-in [:orgpad/child-props-default type])))
+
+(defmethod mutate :orgpad.style/new
+  [{:keys [state]} _ {:keys [type name]}]
+  (let [style (-> type
+                  get-style-default
+                  (assoc :orgpad/style-name name :db/id -1))
+        new-state (store/transact state [style])]
+    (js/console.log "orgpad.style/new" type name style)
+    {:state new-state}))
 
 (defmethod read :orgpad/root-view-stack-info
   [{:keys [parser-stack-info]} _ [key params]]

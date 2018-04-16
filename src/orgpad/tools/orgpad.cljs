@@ -368,11 +368,11 @@
         style' (dscript/entity->map (store/query state [:entity (:db/id style)]))]
     (merge style' prop')))
 
-(defn get-prop-style
-  [state prop style-type]
+(defn get-style-from-db
+  [state style-type style-name]
   (store/query state '[:find (pull ?s [*]) .
                        :in $ ?style-name ?style-type
                        :where
                        [?s :orgpad/style-name ?style-name]
                        [?s :orgpad/view-type ?style-type]]
-               [(:orgpad/view-style prop) style-type]))
+               [style-name style-type]))
