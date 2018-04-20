@@ -177,10 +177,11 @@
   [component app-state on-close]
   (let [styles-types (styles-types-list)
         local-state (trum/comp->local-state component)
-        active-type (or (:active-type @local-state) (-> styles-types first :key))
+        active-type (or (-> app-state :styles :active-type) (-> styles-types first :key))
         styles-list (sort #(compare (:orgpad/style-name %1) (:orgpad/style-name %2))
                           (lc/query component :orgpad/styles {:view-type active-type} true))
-        active-style (or (:active-style @local-state) (-> styles-list first :orgpad/style-name))]
+        active-style (or (-> app-state :styles active-type :active-style)
+                         (-> styles-list first :orgpad/style-name))]
     (js/console.log styles-list)
     [:div.styles-editor
      [:div.header
@@ -189,7 +190,8 @@
        [:span.far.fa-times-circle]]]
      [:div.styles-names
       (into [] (map (fn [s]
-                      [:span {:onClick #(swap! local-state assoc :active-type (:key s))
+                      [:span {:onClick #(lc/transact! component [[:orgpad/app-state
+                                                                  [[:styles :active-type] (:key s)]]])
                               :key (:key s)
                               :className (if (= active-type (:key s)) "active" "")}
                        (:name s)])
@@ -198,7 +200,8 @@
       [:div.styles-list
        (into [] (map (fn [s]
                        (let [n (:orgpad/style-name s)]
-                         [:span {:onClick #(swap! local-state assoc :active-style n)
+                         [:span {:onClick #(lc/transact! component [[:orgpad/app-state
+                                                                     [[:styles active-type :active-style] n]]])
                                  :key n
                                  :className (if (= active-style n) "active" "")}
                           (:orgpad/style-name s)]))
@@ -212,7 +215,9 @@
          {:onClick #(when (:new-style-name @local-state)
                      (lc/transact! component
                                   [[:orgpad.style/new {:name (:new-style-name @local-state)
-                                                       :type active-type}]])
+                                                       :type active-type}]
+                                   [:orgpad/app-state [[:styles active-type :active-style]
+                                                       (:new-style-name @local-state)]]])
                      (swap! local-state assoc :new-style-name nil)
                      )}]]
        ]
