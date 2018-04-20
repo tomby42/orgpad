@@ -174,7 +174,7 @@
                 :local-state  local-state
                 :selection    selection
                 :mode         (:mode app-state)}]
-    (tbar/toolbar "uedit-toolbar" params left-toolbar right-toolbar)))
+    (tbar/toolbar "uedit-toolbar mini" params left-toolbar right-toolbar)))
 
 (defn- nodes-unit-editor1
   [component {:keys [view] :as unit-tree} app-state local-state parent-view prop]
@@ -242,9 +242,16 @@
            :icon "far fa-edit"
            :title "Edit"
            :on-click #(omt/open-unit (:component %1) (:unit-tree %1))}]]
+        toolbar-on-off [{:elem :btn
+                         :id "toolbar-on-off"
+                         :icon (str "far " (if (:full-toolbar @local-state) "fa-angle-left" "fa-angle-right"))
+                         :title (if (:full-toolbar @local-state) "Hide toolbar" "Show toolbar")
+                         :on-click #(swap! (:local-state %1) update :full-toolbar not)}]
         view-types-section [(tbar/gen-view-types-roll view :unit-tree "Current" "views" #(= (:mode %1) :read))]
         view-toolbar (gen-view-toolbar unit-tree view-type)
-        left-toolbar (concat (conj common-left-toolbar view-types-section) view-toolbar)
+        left-toolbar (if (:full-toolbar @local-state)
+                       (concat (conj common-left-toolbar view-types-section) view-toolbar [toolbar-on-off])
+                       (conj common-left-toolbar toolbar-on-off))
         right-toolbar [
           [{:elem :btn
             :icon "far fa-trash-alt"
@@ -257,7 +264,8 @@
                 :mode         (:mode app-state)
                 :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
                 :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view))) }]
-    (tbar/toolbar "uedit-toolbar" params left-toolbar right-toolbar)))
+    (tbar/toolbar (str "uedit-toolbar " (if (:full-toolbar @local-state) "full" "mini"))
+                  params left-toolbar right-toolbar)))
 
 (defn- node-unit-editor1
   [component {:keys [view] :as unit-tree} app-state local-state]
@@ -276,12 +284,14 @@
                   :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
                   }
            ; add other resize directions
-           [:span.resize-handle-corner {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
-                                 :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
-                                 }]
-           [:span.resize-handle-bottom {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
-                                 :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
-                                 }]
+            [:span.resize-handle-corner
+             {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
+              :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
+              }]
+            [:span.resize-handle-bottom
+             {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
+              :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
+              }]
            (gen-toolbar sel-unit-tree app-state local-state)]
            (when (= (@local-state :local-mode) :make-link)
              (let [tr (parent-view :orgpad/transform)
