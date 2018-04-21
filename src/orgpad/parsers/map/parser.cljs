@@ -215,9 +215,12 @@
 
 (defn- comp-new-size
   [{:keys [parent-view old-pos new-pos]} prop' {:keys [global-cache]}]
-  (let [new-size (compute-translate [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
-                                    (-> parent-view :orgpad/transform :scale)
-                                    new-pos old-pos)]
+  (let [new-size (->
+                  (compute-translate [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
+                                     (-> parent-view :orgpad/transform :scale)
+                                     new-pos old-pos)
+                  (as-> x [(max 5 (x 0))
+                           (max 5 (x 1))]))]
     (js/console.log "Resize" new-size)
     { :orgpad/unit-width (new-size 0)
       :orgpad/unit-height (new-size 1) }))
