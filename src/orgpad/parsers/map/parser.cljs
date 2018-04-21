@@ -213,14 +213,16 @@
                 (update-props (:db/id propagated-prop) (ot/uid propagated-unit)
                               :orgpad/unit-view-child-propagated prop' new-val)) } ))
 
+(def ^:private MIN-SIZE 5)
+
 (defn- comp-new-size
   [{:keys [parent-view old-pos new-pos]} prop' {:keys [global-cache]}]
   (let [new-size (->
                   (compute-translate [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
                                      (-> parent-view :orgpad/transform :scale)
                                      new-pos old-pos)
-                  (as-> x [(max 5 (x 0))
-                           (max 5 (x 1))]))]
+                  (as-> x [(max MIN-SIZE (x 0))
+                           (max MIN-SIZE (x 1))]))]
     (js/console.log "Resize" new-size)
     { :orgpad/unit-width (new-size 0)
       :orgpad/unit-height (new-size 1) }))
