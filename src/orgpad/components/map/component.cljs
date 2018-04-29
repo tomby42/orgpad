@@ -380,7 +380,7 @@
               :onTouchStart #(do
                                (handle-mouse-down component unit-tree app-state (aget % "touches" 0))
                                (jev/block-propagation %))
-             :onMouseUp #(do
+              :onMouseUp #(do
                            (handle-mouse-up component unit-tree app-state %)
                            (jev/block-propagation %))
               :onMouseMove #(handle-mouse-move component unit-tree app-state %)
@@ -439,12 +439,12 @@
                 (handle-key-up component unit-tree app-state (-> state :rum/local ) ev)))]
         (swap! (state :rum/local) merge { :touch-move-event-handler move-cb
                                           :touch-end-event-handler end-cb
-                                          :key-down-event-handler key-down-cb})
+                                          :key-down-event-handler key-down-cb
+                                          :key-up-event-hadler key-up-cb})
         (js/document.addEventListener "touchmove" move-cb)
         (js/document.addEventListener "touchend" end-cb)
         (js/document.addEventListener "keydown" key-down-cb)
         (js/document.addEventListener "keyup" key-up-cb))
-
       state)
 
     :will-unmount
@@ -452,9 +452,11 @@
       (js/document.removeEventListener "touchmove" (-> state :rum/local deref :touch-move-event-handler))
       (js/document.removeEventListener "touchend" (-> state :rum/local deref :touch-end-event-handler))
       (js/document.removeEventListener "keydown" (-> state :rum/local deref :key-down-event-handler))
+      (js/document.removeEventListener "keyup" (-> state :rum/local deref :key-up-event-handler))
       (swap! (state :rum/local) dissoc :touch-move-event-handler)
       (swap! (state :rum/local) dissoc :touch-end-event-handler)
       (swap! (state :rum/local) dissoc :key-down-event-handler)
+      (swap! (state :rum/local) dissoc :key-up-event-handler)
       state)
    })
 
