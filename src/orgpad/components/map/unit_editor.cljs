@@ -326,7 +326,7 @@
 
 (defn- close-link-menu
   [local-state]
-  (js/console.log "close link menu")
+  ;; (js/console.log "close link menu")
   (js/setTimeout
    #(swap! local-state merge { :link-menu-show :none }) 200))
 

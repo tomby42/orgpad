@@ -125,7 +125,7 @@
 
 (defn render-link-sizes
   [component style]
-  (js/console.log "render-link-sizes" style)
+  ;; (js/console.log "render-link-sizes" style)
   [:span [:div
           (frame "Border Width" (slider/render-slider (slider-params {:component component
                                                                       :style style
@@ -182,7 +182,7 @@
                           (lc/query component :orgpad/styles {:view-type active-type} true))
         active-style (or (-> app-state :styles active-type :active-style)
                          (-> styles-list first :orgpad/style-name))]
-    (js/console.log styles-list)
+    ;; (js/console.log styles-list)
     [:div.styles-editor
      [:div.header
       [:div.label "Styles"]

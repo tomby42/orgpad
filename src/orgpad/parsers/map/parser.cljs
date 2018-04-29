@@ -150,7 +150,7 @@
     (geocache/update-box! global-cache (ot/pid parent-view) (:orgpad/view-name parent-view)
                           unit-id new-translate size
                           (prop' :orgpad/unit-position) size)
-    (js/console.log "moving unit to" unit-id new-translate size " - " (prop' :orgpad/unit-position) size)
+    ;; (js/console.log "moving unit to" unit-id new-translate size " - " (prop' :orgpad/unit-position) size)
     { :state new-state } ))
 
 (defn- propagated-prop
@@ -223,7 +223,7 @@
                                      new-pos old-pos)
                   (as-> x [(max MIN-SIZE (x 0))
                            (max MIN-SIZE (x 1))]))]
-    (js/console.log "Resize" new-size)
+    ;; (js/console.log "Resize" new-size)
     { :orgpad/unit-width (new-size 0)
       :orgpad/unit-height (new-size 1) }))
 

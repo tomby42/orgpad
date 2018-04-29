@@ -177,7 +177,7 @@
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)
         bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")]
-    (js/console.log "handle-mouse-up" (:local-mode @local-state) (:canvas-mode @local-state))
+    ;; (js/console.log "handle-mouse-up" (:local-mode @local-state) (:canvas-mode @local-state))
     (case (:local-mode @local-state)
       :mouse-down (resolve-mouse-down component unit-tree local-state ev)
       :canvas-move (stop-canvas-move component unit-tree local-state [(.-clientX ev) (.-clientY ev)])

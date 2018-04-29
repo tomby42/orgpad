@@ -52,7 +52,7 @@
 (defn paste-units-from-clipboard
   [component unit-tree app-state pos]
   (let [data (get-in app-state [:clipboards (ot/uid unit-tree)])]
-    (js/console.log "paste-units-from-clipbord" data pos)
+    ;; (js/console.log "paste-units-from-clipbord" data pos)
     (when data
       (lc/transact! component [[:orgpad.units/paste-to-map {:pid (ot/uid unit-tree)
                                                             :data data

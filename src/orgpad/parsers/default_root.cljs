@@ -258,7 +258,7 @@
 (defmethod mutate :orgpad.units/copy
   [{:keys [state]} _ {:keys [pid selection]}]
   (let [data (ot/copy-descendants-from-db state pid [] selection)]
-    (js/console.log "copy " data)
+    ;; (js/console.log "copy " data)
     {:state (store/transact state [[:clipboards (keypath pid)] data])}))
 
 (defmethod read :orgpad/styles
@@ -275,7 +275,7 @@
 
 (defmethod mutate :orgpad.style/update
   [{:keys [state]} _ {:keys [style prop-name prop-val]}]
-  (js/console.log "orgpad.style/update" style prop-name prop-val)
+  ;; (js/console.log "orgpad.style/update" style prop-name prop-val)
   {:state (store/transact state [[:db/add (:db/id style) prop-name prop-val]])})
 
 (defn- get-style-default
@@ -292,7 +292,7 @@
                   get-style-default
                   (assoc :orgpad/style-name name :db/id -1))
         new-state (store/transact state [style])]
-    (js/console.log "orgpad.style/new" type name style)
+    ;; (js/console.log "orgpad.style/new" type name style)
     {:state new-state}))
 
 (defmethod read :orgpad/root-view-stack-info
