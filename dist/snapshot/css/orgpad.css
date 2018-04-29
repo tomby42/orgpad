@@ -3541,6 +3541,9 @@ readers do not read off random characters that represent icons */
   float: right;
   padding-right: 30px;
 }
+.root-view .settings .header .close:hover {
+  color: #333333;
+}
 .root-view .settings .block {
   position: relative;
   padding-left: 50px;
@@ -3573,8 +3576,8 @@ readers do not read off random characters that represent icons */
   width: 100%;
 }
 .root-view .root-toolbar .root-toolbar-handle {
-  position: relative;
-  bottom: 0px;
+  position: absolute;
+  top: 30px;
   left: 50%;
 }
 .root-view .root-toolbar .root-toolbar-handle:hover {
@@ -3777,7 +3780,7 @@ readers do not read off random characters that represent icons */
 }
 .toolbar .roll-item:hover,
 .toolbar .roll-item.active:hover {
-  background-color: #6df;
+  background-color: #66ddff;
 }
 .toolbar .roll-item.active {
   background-color: #33adff;
@@ -3807,12 +3810,17 @@ readers do not read off random characters that represent icons */
   position: absolute;
   display: flex;
   width: 100%;
-  min-width: 325px;
   height: 24px;
   top: -28px;
   left: -2px;
   background-color: #fff;
   border: 2px dashed red;
+}
+.uedit-toolbar.full {
+  min-width: 335px;
+}
+.uedit-toolbar.mini {
+  min-width: 100px;
 }
 .uedit-toolbar .btn {
   text-align: center;
@@ -4006,19 +4014,27 @@ readers do not read off random characters that represent icons */
   background-color: #78BEFF;
 }
 .map-view .map-view-canvas .leader-control {
-  border-radius: 100%;
   cursor: pointer;
-  background-color: rgba(104, 174, 240, 0.1);
+  color: rgba(255, 255, 255, 0);
   width: 20px;
   height: 20px;
+  top: 0px;
+  left: 0px;
 }
 .map-view .map-view-canvas .leader-control:hover {
-  background-color: rgba(120, 190, 255, 0.1);
+  color: #000000;
+}
+.map-view .map-view-canvas .leader-control i {
+  position: absolute;
+  top: 0px;
+  left: 0px;
 }
 .map-view .map-view-canvas .select-check {
   position: absolute;
-  right: 5px;
-  top: 5px;
+  right: 8px;
+  top: 8px;
+  width: 10px;
+  height: 10px;
 }
 .map-view .map-view-unit-selected {
   position: absolute;
@@ -4048,14 +4064,6 @@ readers do not read off random characters that represent icons */
   width: 100%;
   height: 20px;
   z-index: 2;
-}
-.map-view .slider input {
-  margin: 5px;
-}
-.map-view .slider .val {
-  width: 30px;
-  position: relative;
-  top: -5px;
 }
 .map-view .map-view-border-edit- {
   border: 2px solid #cccccc;
@@ -4102,22 +4110,58 @@ readers do not read off random characters that represent icons */
   order: 1;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 .map-tuple-clicker-left {
-  width: 10px;
+  width: 5%;
+  max-width: 20px;
   height: 100%;
   position: absolute;
-  background-color: rgba(200, 200, 200, 0.1);
-  left: 0;
-  top: 0;
+  left: 0px;
+  top: 0px;
+  color: rgba(255, 255, 255, 0);
+}
+.map-tuple-clicker-left i {
+  position: relative;
+  top: 40%;
+}
+.map-tuple-clicker-left:hover {
+  color: black;
+}
+.map-tuple-child {
+  position: absolute;
+  top: 0px;
+  left: 20px;
+  min-width: 85%;
+  height: 100%;
+  display: flex;
 }
 .map-tuple-clicker-right {
-  width: 10px;
+  width: 5%;
+  max-width: 20px;
   height: 100%;
   position: absolute;
-  background-color: rgba(200, 200, 200, 0.1);
-  right: 0;
-  top: 0;
+  color: rgba(255, 255, 255, 0);
+  right: 0px;
+  top: 0px;
+  text-align: right;
+}
+.map-tuple-clicker-right i {
+  position: relative;
+  top: 40%;
+}
+.map-tuple-clicker-right:hover {
+  color: black;
+}
+.map-tuple-tab {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+.map-tuple-tab tr {
+  width: 100%;
+  height: 100%;
+  display: flex;
 }
 .map-tuple-menu {
   z-index: 1;
@@ -4140,17 +4184,20 @@ readers do not read off random characters that represent icons */
 .map-props-toolbar {
   position: absolute;
   right: 0px;
-  top: 10%;
-  max-height: 80%;
-  width: 205px;
-  border: 1px solid black;
+  top: 0px;
+  height: 100%;
+  border-left: 2px solid black;
+  border-right: 2px solid black;
   padding: 10px;
   overflow-y: auto;
   overflow-x: hidden;
   background-color: white;
 }
 .map-props-toolbar > div {
+  margin-top: 10px;
   margin-bottom: 20px;
+  margin-left: 5px;
+  margin-right: 5px;
 }
 /**
  * React Select
@@ -4794,4 +4841,92 @@ readers do not read off random characters that represent icons */
 }
 .ci-dialog-panel .ci-msg-input .ci-input:focus {
   outline: none;
+}
+.styles-editor {
+  z-index: 1000;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0px;
+  background-color: white;
+}
+.styles-editor .header {
+  font-size: 24px;
+  height: 30px;
+  padding: 20px;
+  background-color: #55adff;
+  width: 100%;
+}
+.styles-editor .header .label {
+  float: left;
+}
+.styles-editor .header .close {
+  float: right;
+  padding-right: 30px;
+}
+.styles-editor .header .close:hover {
+  color: #333333;
+}
+.styles-editor .styles-names {
+  border-bottom: 2px solid black;
+  border-top: 2px solid black;
+}
+.styles-editor .styles-names span {
+  padding: 10px;
+  display: inline-flex;
+}
+.styles-editor .styles-names span:hover {
+  background-color: #66ddff;
+}
+.styles-editor .styles-names span.active {
+  background-color: #33adff;
+}
+.styles-editor .editor {
+  width: 100%;
+  height: 100%;
+}
+.styles-editor .editor .styles-list {
+  float: left;
+  width: 10%;
+  height: 100%;
+  border-right: 2px solid black;
+  padding: 9px;
+}
+.styles-editor .editor .styles-list span {
+  display: flex;
+  padding: 5px;
+}
+.styles-editor .editor .styles-list span:hover {
+  background-color: #66ddff;
+}
+.styles-editor .editor .styles-list span.active {
+  background-color: #33adff;
+}
+.styles-editor .editor .new-style input {
+  width: 100%;
+}
+.styles-editor .editor .new-style span:hover {
+  color: #33adff;
+}
+.styles-editor .editor .style-editor {
+  float: left;
+}
+.styles-editor .editor .style-editor span {
+  float: left;
+  margin: 10px;
+}
+.styles-editor .editor .style-editor .fake-center {
+  margin-left: 12px;
+  margin-right: 12px;
+  margin-bottom: 5px;
+  margin-top: 5px;
+}
+.slider input {
+  margin: 5px;
+}
+.slider .val {
+  width: 35px;
+  text-align: right;
+  position: relative;
+  top: -5px;
 }
