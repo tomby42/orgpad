@@ -317,14 +317,27 @@
 (defn- handle-key-down
   [component unit-tree app-state local-state ev]
   (when (= (:mode app-state) :write)
-    (when (or (.-ctrlKey ev) (.-metaKey ev))
-      (let [
-            data (get-in app-state [:clipboards (ot/uid unit-tree)])]
+    ;; (js/console.log "down" (.-code ev))
+    (if (or (.-ctrlKey ev) (.-metaKey ev))
+      (let [data (get-in app-state [:clipboards (ot/uid unit-tree)])]
         (case (.-code ev)
           "KeyC" (omt/copy-units-to-clipboard component unit-tree app-state)
           "KeyV" (omt/paste-units-from-clipboard component unit-tree app-state (get-rel-mouse-pos component unit-tree #js {:clientX (:mouse-x @mouse-pos)
                                                                                                                            :clientY (:mouse-y @mouse-pos)}))
-          nil)))))
+          "ControlLeft" (swap! local-state assoc :canvas-mode :canvas-create-unit)
+          nil))
+      (case (.-code ev)
+        "ShiftLeft" (swap! local-state assoc :canvas-mode :canvas-select)
+        nil))))
+
+(defn- handle-key-up
+  [component unit-tree app-state local-state ev]
+  (when (= (:mode app-state) :write)
+    ;; (js/console.log "up" (.-code ev))
+    (case (.-code ev)
+      "ControlLeft" (swap! local-state assoc :canvas-mode :canvas-move)
+      "ShiftLeft" (swap! local-state assoc :canvas-mode :canvas-move)
+      nil)))
 
 (defn- render-write-mode
   [component unit-tree app-state]
@@ -417,15 +430,20 @@
                     state' @(rum/state component)
                     [unit-tree app-state] (state' :rum/args)]
                 (handle-key-down component unit-tree app-state (-> state :rum/local ) ev)
-                ))]
+                ))
+            key-up-cb
+            (fn [ev]
+              (let [component (state :rum/react-component)
+                    state' @(rum/state component)
+                    [unit-tree app-state] (state' :rum/args)]
+                (handle-key-up component unit-tree app-state (-> state :rum/local ) ev)))]
         (swap! (state :rum/local) merge { :touch-move-event-handler move-cb
                                           :touch-end-event-handler end-cb
                                           :key-down-event-handler key-down-cb})
         (js/document.addEventListener "touchmove" move-cb)
         (js/document.addEventListener "touchend" end-cb)
         (js/document.addEventListener "keydown" key-down-cb)
-        )
-
+        (js/document.addEventListener "keyup" key-up-cb))
 
       state)
 
