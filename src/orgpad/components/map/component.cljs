@@ -429,8 +429,7 @@
               (let [component (state :rum/react-component)
                     state' @(rum/state component)
                     [unit-tree app-state] (state' :rum/args)]
-                (handle-key-down component unit-tree app-state (-> state :rum/local ) ev)
-                ))
+                (handle-key-down component unit-tree app-state (-> state :rum/local ) ev)))
             key-up-cb
             (fn [ev]
               (let [component (state :rum/react-component)
