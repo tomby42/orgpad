@@ -4849,6 +4849,9 @@ readers do not read off random characters that represent icons */
   height: 100%;
   top: 0px;
   background-color: white;
+  font-family: Gill Sans Extrabold, sans-serif;
+  font-size: 14px;
+  cursor: pointer;
 }
 .styles-editor .header {
   font-size: 24px;
@@ -4902,8 +4905,11 @@ readers do not read off random characters that represent icons */
 .styles-editor .editor .styles-list span.active {
   background-color: #33adff;
 }
+.styles-editor .editor .styles-list span:last-child:hover {
+  background-color: white;
+}
 .styles-editor .editor .new-style input {
-  width: 100%;
+  width: 75%;
 }
 .styles-editor .editor .new-style span:hover {
   color: #33adff;
