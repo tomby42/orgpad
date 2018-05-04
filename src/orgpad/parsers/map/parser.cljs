@@ -454,8 +454,11 @@
      (update :state #(store/with-history-mode % {:new-record true :mode :acc}))
      (update-propagated-prop payload nil { :orgpad/view-style view-style })
      :state
-     (store/transact [[:db/retract uid :orgpad/props-refs (:db/id old-style)]
-                      [:db/add uid :orgpad/props-refs (:db/id new-style)]])
+     (as-> state'
+         (let [unit-styles (ot/get-all-unit-styles-names state' uid)]
+           (store/transact state' (into [[:db/add uid :orgpad/props-refs (:db/id new-style)]]
+                                        (when (->> old-style :orgpad/style-name (contains? unit-styles) not)
+                                          [[:db/retract uid :orgpad/props-refs (:db/id old-style)]])))))
      (store/with-history-mode :add)
      (->> (assoc {} :state)))))
 

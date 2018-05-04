@@ -21,7 +21,8 @@
                  [cljsjs/react-select         "1.0.0-rc.3"]
                  [cljsjs/latlon-geohash       "1.1.0-0"] ;; *
                  [doo                         "0.1.8"]
-                 [org.clojure/data.avl        "0.0.17"]]
+                 [org.clojure/data.avl        "0.0.17"]
+                 [io.replikativ/superv.async  "0.2.9"]]
 
   :npm {:dependencies [;;["jupyter-js-services" "0.48.0"]
                        ["jupyter-js-services" "0.21.1"]

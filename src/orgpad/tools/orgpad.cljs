@@ -376,3 +376,16 @@
                        [?s :orgpad/style-name ?style-name]
                        [?s :orgpad/view-type ?style-type]]
                [style-name style-type]))
+
+(defn get-all-unit-styles-names
+  [state uid]
+  (-> state
+      (store/query '[:find [?style ...]
+                     :in $ ?uid
+                     :where
+                     [?ppp :orgpad/type :orgpad/unit-view-child-propagated]
+                     [?child :orgpad/props-refs ?ppp]
+                     [?uid :orgpad/refs ?child]
+                     [?ppp :orgpad/view-style ?style]]
+                   [uid])
+      (->> (into #{}))))

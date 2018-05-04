@@ -7,7 +7,6 @@
             [orgpad.tools.geocache :as geocache]
             [orgpad.components.registry :as registry]))
 
-
 ;;; Dispatch definitions
 
 (declare read)
@@ -47,7 +46,7 @@
 
 (defn- get-view-props
   [unit {:keys [orgpad/view-type orgpad/view-name orgpad/type]}]
-  (ds/find-props unit (make-view-type-name-filter type view-type view-name)))
+  (ds/find-props-all unit (make-view-type-name-filter type view-type view-name)))
 
 (defn- get-path-info
   [unit view-path]
@@ -131,7 +130,7 @@
         (registry/get-component-info (path-info' :orgpad/view-type))
 
         view-unit-local
-        (get-view-props unit path-info')
+        (-> unit (get-view-props path-info') first)
 
         view-unit
         (or view-unit-local (-> view-info :orgpad/default-view-info (assoc :orgpad/refs [{ :db/id unit-id }])))
@@ -160,8 +159,7 @@
 
         props
         (when view-contexts
-          (mapv #(get-view-props unit %) view-contexts))
-        ]
+          (into [] (mapcat #(get-view-props unit %)) view-contexts))]
 
 ;;     (println { :unit unit'
 ;;                :path-info path-info'
