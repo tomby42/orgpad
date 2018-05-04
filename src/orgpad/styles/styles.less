@@ -7,6 +7,9 @@
     height: 100%;
     top: 0px;
     background-color: white;
+    font-family: cursive;
+    font-size: 14px;
+    cursor: pointer;
 
    .header {
        font-size: 24px;
@@ -72,12 +75,15 @@
            & span.active {
                background-color: @select-color;
            }
-       }
 
+           & span:last-child:hover {
+               background-color: white;
+           }
+       }
 
        .new-style {
            & input {
-               width: 100%;
+               width: 75%;
            }
 
            & span:hover {
