@@ -9,6 +9,7 @@
   [:div.slider
    [:input {:type "range" :min 0 :max max :step 1 :value value
             :onMouseDown jev/stop-propagation
+            :onMouseUp jev/stop-propagation
             :onMouseMove jev/stop-propagation
             :onBlur jev/stop-propagation
             :onChange on-change' } ]
