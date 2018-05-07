@@ -55,18 +55,9 @@
                           (when (and (< (- (t/now) (@local-state :time-stamp)) CLICK-DELTA)
                                      (not= (:mode app-state) :quick-write))
                             (omt/switch-active-sheet component unit-tree (comp-dir e)))) }
-     ;; [:table.map-tuple-tab
-     ;;  [:tr
-     ;;   [:td [ :div.map-tuple-clicker-left [:i.fa.fa-2x.fa-angle-left] ]]
-     ;;   [:td (when child-tree
-     ;;          [:div.map-tuple-child (node/node child-tree app-state)])]
-     ;;   [:td [ :div.map-tuple-clicker-right [:i.fa.fa-2x.fa-angle-right] ]]
-     ;;   ]
-     ;;  ]
-
-     [ :div.map-tuple-clicker-left [:i.fa.fa-2x.fa-angle-left] ]
      (when child-tree
        [:div.map-tuple-child (rum/with-key (node/node child-tree app-state) 2)])
+     [ :div.map-tuple-clicker-left [:i.fa.fa-2x.fa-angle-left] ]
      [ :div.map-tuple-clicker-right [:i.fa.fa-2x.fa-angle-right] ]
 
      ]))
