@@ -3979,6 +3979,7 @@ readers do not read off random characters that represent icons */
 }
 .map-view {
   width: 100%;
+  height: 100%;
   flex-grow: 1;
   order: 1;
   position: relative;
@@ -4114,11 +4115,10 @@ readers do not read off random characters that represent icons */
 }
 .map-tuple-clicker-left {
   width: 5%;
-  max-width: 20px;
-  height: 100%;
+  height: 40%;
   position: absolute;
   left: 0px;
-  top: 0px;
+  top: 30%;
   color: rgba(255, 255, 255, 0);
 }
 .map-tuple-clicker-left i {
@@ -4131,19 +4131,18 @@ readers do not read off random characters that represent icons */
 .map-tuple-child {
   position: absolute;
   top: 0px;
-  left: 20px;
-  min-width: 85%;
+  left: 0px;
+  width: 100%;
   height: 100%;
-  display: flex;
+  overflow: auto;
 }
 .map-tuple-clicker-right {
   width: 5%;
-  max-width: 20px;
-  height: 100%;
+  height: 40%;
   position: absolute;
   color: rgba(255, 255, 255, 0);
   right: 0px;
-  top: 0px;
+  top: 30%;
   text-align: right;
 }
 .map-tuple-clicker-right i {
