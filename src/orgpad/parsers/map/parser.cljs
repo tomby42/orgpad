@@ -229,10 +229,12 @@
 
 (defn- update-geocache-after-resize
   [{:keys [global-cache]} {:keys [parent-view unit-tree]} prop size]
+  ;; (js/console.log "update-geocache-after-resize" prop size)
   (geocache/update-box! global-cache (ot/pid parent-view) (:orgpad/view-name parent-view)
-                        (ot/uid unit-tree) (prop :orgpad/unit-position) size
-                        (prop :orgpad/unit-position)
-                        [(prop :orgpad/unit-width) (prop :orgpad/unit-height)]))
+                        (ot/uid unit-tree) (:orgpad/unit-position prop)
+                        [(:orgpad/unit-width size) (:orgpad/unit-height size)]
+                        (:orgpad/unit-position prop)
+                        [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]))
 
 (defmethod mutate :orgpad.units/map-view-unit-resize
   [env _ payload]

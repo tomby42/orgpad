@@ -57,8 +57,10 @@
     :icon icon
     :label label
     :title view-name
-    :on-click #(lc/transact! component
-                   (repeat jump-up [:orgpad/root-unit-close]))}))
+    :on-click #(do
+                 ;; (js/console.log "jump up" jump-up (repeat jump-up [:orgpad/root-unit-close]))
+                 (lc/transact! component
+                               (repeat jump-up [:orgpad/root-unit-close])))}))
 
 (rum/defcc nesting < lc/parser-type-mixin-context
   "Nesting status bar component."
@@ -68,6 +70,7 @@
                      [unit-tree])
         level (dec (count unit-stack))
         jumps-up (range level -1 -1)]
+    ;; (js/console.log "nesting" unit-stack jumps-up)
     (when (> (count unit-stack) 1)
       [:div.nesting
         (gen-nesting-list (map (partial gen-unit-data component) unit-stack jumps-up))
