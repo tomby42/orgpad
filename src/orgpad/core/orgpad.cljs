@@ -127,7 +127,6 @@
                      (if (not (db-contains-styles? db))
                        (default-styles-qry)
                        nil))]
-    ;; (js/console.log db)
     (if (empty? qry)
       db
       (store/transact db qry {}))))

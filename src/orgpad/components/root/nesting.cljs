@@ -42,6 +42,11 @@
       (map gen-nesting-button data)
       sep-data))))
 
+(defn- close-unit
+  [component n]
+  (doseq [_ (range n)]
+    (lc/transact! component [[:orgpad/root-unit-close {}]])))
+
 (defn- gen-unit-data
   "Creates data for one unit from its unit-tree where jump-up is the number of units we need to close to get back to this unit."
   [component {:keys [unit view path-info] :as unit-tree} jump-up]
@@ -57,10 +62,7 @@
     :icon icon
     :label label
     :title view-name
-    :on-click #(do
-                 ;; (js/console.log "jump up" jump-up (repeat jump-up [:orgpad/root-unit-close]))
-                 (lc/transact! component
-                               (repeat jump-up [:orgpad/root-unit-close])))}))
+    :on-click #(close-unit component jump-up)}))
 
 (rum/defcc nesting < lc/parser-type-mixin-context
   "Nesting status bar component."
@@ -70,8 +72,6 @@
                      [unit-tree])
         level (dec (count unit-stack))
         jumps-up (range level -1 -1)]
-    ;; (js/console.log "nesting" unit-stack jumps-up)
     (when (> (count unit-stack) 1)
       [:div.nesting
-        (gen-nesting-list (map (partial gen-unit-data component) unit-stack jumps-up))
-      ])))
+       (gen-nesting-list (map (partial gen-unit-data component) unit-stack jumps-up))])))
