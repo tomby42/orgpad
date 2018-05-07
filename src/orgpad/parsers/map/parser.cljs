@@ -240,6 +240,20 @@
   [env _ payload]
   (update-propagated-prop env payload comp-new-size nil update-geocache-after-resize))
 
+(defn- comp-new-size1
+  [{:keys [orgpad/unit-width orgpad/unit-height]} prop' {:keys [global-cache]}]
+  (let [new-size  (->
+                   [(or unit-width (prop' :orgpad/unit-width))
+                    (or unit-height (prop' :orgpad/unit-height))]
+                   (as-> x [(max MIN-SIZE (x 0))
+                            (max MIN-SIZE (x 1))]))]
+    {:orgpad/unit-width (new-size 0)
+     :orgpad/unit-height (new-size 1)}))
+
+(defmethod mutate :orgpad.units/map-view-unit-set-size
+  [env _ payload]
+  (update-propagated-prop env payload comp-new-size1 nil update-geocache-after-resize))
+
 (defn- child-propagated-props
   [db unit-id child-id props-from-children view-name]
   (let [xform

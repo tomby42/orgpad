@@ -398,6 +398,20 @@
                     "Border Color"
                     "Background Color") (cpicker/color-picker color {} on-change))))
 
+(defn- render-width
+  [{:keys [prop] :as params}]
+  (styles/frame "Width"
+                (render-slider (merge params {:max js/window.innerWidth
+                                              :prop-name :orgpad/unit-width
+                                              :action :orgpad.units/map-view-unit-set-size }))))
+
+(defn- render-height
+  [{:keys [prop] :as params}]
+  (styles/frame "Height"
+                (render-slider (merge params {:max js/window.innerHeight
+                                              :prop-name :orgpad/unit-height
+                                              :action :orgpad.units/map-view-unit-set-size }))))
+
 (defn- render-border-width1
   [{:keys [prop] :as params}]
   (styles/frame "Border Width"
@@ -474,6 +488,8 @@
                            :onWheel jev/stop-propagation}
    (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-border-color))
    (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-bg-color))
+   (render-width params)
+   (render-height params)
    (render-border-width1 params)
    (render-border-radius1 params)
    (render-border-style1 params)
