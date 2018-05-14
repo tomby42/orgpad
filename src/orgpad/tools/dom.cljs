@@ -15,15 +15,20 @@
     #js [(.exec tr-rex tr)
          (.exec sc-rex tr)]))
 
+(defn set-translate
+  [el x y new-x new-y old-x old-y parent-scale & [ts']]
+  (let [ts (or ts' (parse-transform el))]
+    (aset el "style" "transform" (str "translate("
+                                      (+ x (/ (- new-x old-x) parent-scale)) "px, "
+                                      (+ y (/ (- new-y old-y) parent-scale)) "px) "
+                                      (aget ts 1)))))
+
 (defn update-translate
   [el new-x new-y old-x old-y parent-scale]
   (let [ts (parse-transform el)
         x (js/parseFloat (aget ts 0 1))
         y (js/parseFloat (aget ts 0 2))]
-    (aset el "style" "transform" (str "translate("
-                                      (+ x (/ (- new-x old-x) parent-scale)) "px, "
-                                      (+ y (/ (- new-y old-y) parent-scale)) "px) "
-                                      (aget ts 1)))))
+    (set-translate el x y new-x new-y old-x old-y parent-scale ts)))
 
 (defn update-size
   [el new-x new-y old-x old-y parent-scale]
