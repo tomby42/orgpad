@@ -118,12 +118,24 @@
     (mapv (fn [[eid a]]
             [:db/add eid :orgpad/atom (js/window.unescape a)]) atoms)))
 
+(defn- remove-view-stack
+  [db]
+  (let [stack (store/query db
+                           '[:find ?s .
+                             :in $
+                             :where
+                             [1 :orgpad/view-stack ?s]])]
+    (if (nil? stack)
+      []
+      [[:db/retract 1 :orgpad/view-stack stack]])))
+
 (defn- update-db
   [db]
   (let [qry
         (colls/minto []
                      (update-refs-orders db)
                      (unescape-atoms db)
+                     (remove-view-stack db)
                      (if (not (db-contains-styles? db))
                        (default-styles-qry)
                        nil))]
