@@ -208,13 +208,13 @@
     (dom/update-translate el (.-clientX ev) (.-clientY ev)
                           (@mouse-pos :mouse-x) (@mouse-pos :mouse-y) 1)))
 
-;; (defn- unit-move-old
-;;   [parent-view local-state ev]
-;;   (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)]
-;;     (when el
-;;       (dom/update-translate el (.-clientX ev) (.-clientY ev)
-;;                             (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
-;;                             (-> parent-view :orgpad/transform :scale)))))
+(defn- units-move
+  [parent-view local-state ev]
+  (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)]
+    (when el
+      (dom/update-translate el (.-clientX ev) (.-clientY ev)
+                            (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
+                            (-> parent-view :orgpad/transform :scale)))))
 
 (defn- unit-move
   [parent-view local-state ev]
@@ -273,7 +273,7 @@
                        ;; (set-mouse-pos! ev)
                        (unit-move (:view unit-tree) local-state (jev/stop-propagation ev))
                        (swap! local-state assoc :local-mode :unit-move :pre-quick-edit 0))
-      :units-move (unit-move (:view unit-tree) local-state (jev/stop-propagation ev))
+      :units-move (units-move (:view unit-tree) local-state (jev/stop-propagation ev))
       :mouse-down (try-start-selection local-state (jev/stop-propagation ev))
       :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
       :make-links (update-mouse-position local-state (jev/stop-propagation ev))
