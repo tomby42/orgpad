@@ -389,3 +389,25 @@
                      [?ppp :orgpad/view-style ?style]]
                    [uid])
       (->> (into #{}))))
+
+(defn merge-orgpads
+  [db1 db2]
+  (let [entities (store/query db2
+                              '[:find [(pull ?e [*]) ...]
+                                :in $
+                                :where
+                                [?e :orgpad/type]])
+        entities-prep-1 (into [] (comp (filter #(not (or (= 0 (:db/id %))
+                                                         (= 1 (:db/id %)))))
+                                       (map #(update % :db/id -))
+                                       (map #(update % :orgpad/refs
+                                                     (fn [refs]
+                                                       (into [] (map (comp - :db/id)) refs))))
+                                       (map #(update % :orgpad/props-refs
+                                                     (fn [prefs]
+                                                       (into [] (map (comp - :db/id)) prefs)))))
+                              entities)
+        entities-styles (group-by (juxt :orgpad/view-style :orgpad/view-type) entities)
+        ]
+
+    ))

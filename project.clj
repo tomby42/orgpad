@@ -3,7 +3,8 @@
   :url "http://www.orgpad.org/"
 
   :dependencies [[org.clojure/clojure         "1.8.0"]
-                 [org.clojure/clojurescript   "1.9.946"]
+                 ;; [org.clojure/clojurescript   "1.9.946"]
+                 [org.clojure/clojurescript   "1.10.238"]
                  [org.clojure/core.async      "0.3.465"]
                  [org.clojure/test.check      "0.9.0"]
                  [datascript                  "0.16.4"]
@@ -21,13 +22,14 @@
                  [cljsjs/react-select         "1.0.0-rc.3"]
                  [cljsjs/latlon-geohash       "1.1.0-0"] ;; *
                  [doo                         "0.1.8"]
-                 [org.clojure/data.avl        "0.0.17"]
+                 ;; [org.clojure/data.avl        "0.0.17"] ;; we have own fixed copy
                  [io.replikativ/superv.async  "0.2.9"]]
 
   :npm {:dependencies [;;["jupyter-js-services" "0.48.0"]
                        ["jupyter-js-services" "0.21.1"]
                        ["babel-polyfill" "6.23.0"]
-                       ["mathjax" "2.7.2"]]}
+                       ;; ["mathjax" "2.7.2"]
+                       ["bezier-js" "2.2.5"]]}
 
   :plugins [[lein-cljsbuild "1.1.7"]
             [lein-figwheel "0.5.15"] ;; needs update to lein 2.5.3 at least
