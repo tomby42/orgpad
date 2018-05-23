@@ -170,15 +170,34 @@
     :effect #(orgpad/save-file-by-uri state) })
 
 (defmethod mutate :orgpad/load-orgpad
-  [{ :keys [state force-update! transact!] } _ files]
-  { :state (store/transact state [[:loading] true])
-    :effect #(transact! [[ :orgpad/loaded (orgpad/load-orgpad state files) ]])})
+  [{:keys [state force-update! transact!] } _ files]
+  {:state (store/transact state [[:loading] true])
+   :effect #(try
+              (transact! [[:orgpad/loaded (orgpad/load-orgpad state files)]])
+              (catch :default e
+                (js/console.log "error loading" e)
+                ;; TODO - show error message
+                ))})
 
-(defmethod mutate :orgpad/loaded
-  [{ :keys [force-update! global-cache]} _ new-state]
-  (force-update!)
+(defmethod mutate :orgpad/import-orgpad
+  [{ :keys [state force-update! transact!] } _ files]
+  {:state (store/transact state [[:loading] true])
+   :effect #(try
+              (transact! [[:orgpad/loaded (orgpad/import-orgpad state files)]])
+              (catch :default e
+                (js/console.log "error importing" e)
+                ;; TODO - show error message
+                ))})
+
+(defn- reset-n-rebuild
+  [{:keys [force-update! global-cache]} new-state]
   (jscolls/clear! global-cache)
   (geocache/rebuild! global-cache new-state)
+  (force-update!))
+
+(defmethod mutate :orgpad/loaded
+  [env _ new-state]
+  (reset-n-rebuild env new-state)
   (when-let [name (-> new-state (store/query []) first :orgpad-name)]
     (dom/set-el-text (dom/ffind-tag :title) name))
   { :state new-state })

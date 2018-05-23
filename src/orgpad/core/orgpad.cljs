@@ -5,6 +5,7 @@
    [datascript.core   :as d]
    [orgpad.core.store :as store]
    [orgpad.tools.colls :as colls]
+   [orgpad.tools.orgpad :as ot]
    [orgpad.components.registry :as cregistry]
    [ajax.core :as ajax]))
 
@@ -45,6 +46,7 @@
    :orgpad/independent {}
    :orgpad/view-style {}
    :orgpad/style-name {}
+   :orgpad/context-unit {}
    })
 
 (defn default-styles-qry
@@ -224,3 +226,21 @@
   (ajax/GET url { :handler #(transact! [[ :orgpad/load-orgpad [%] ]])
                   :error-handler #(js/console.log (str "Error while downloading from " url " " %))
                   :format :text }))
+
+(defn- get-root-traslations
+  [db rid]
+  (into {}
+        (map (fn [[k v]] [k (:translate v)]))
+        (store/query db '[:find ?vn ?t
+                          :in $ ?r
+                          :where
+                          [?r :orgpad/props-refs ?p]
+                          [?p :orgpad/view-name ?vn]
+                          [?p :orgpad/transform ?t]]
+                     [rid])))
+
+(defn import-orgpad
+  [state files]
+  (let [file-state (load-orgpad state files)
+        trans (get-root-traslations state 0)]
+    (ot/merge-orgpads state file-state 0 trans)))

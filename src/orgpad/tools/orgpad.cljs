@@ -73,7 +73,7 @@
   [unit-tree]
   (if (no-sheets? unit-tree)
     "none"
-    (apply gstring/format "%d/%d" (get-sheet-number unit-tree)))) 
+    (apply gstring/format "%d/%d" (get-sheet-number unit-tree))))
 
 (defn update-unit-view-query
   [unit-id view key val]
@@ -317,20 +317,59 @@
                 second
                 (update :db/id -)
                 (update :orgpad/refs negate-db-id)) props))
+     :old-pid pid
      :roots (get-roots db pid selection)}))
 
+(defn make-roots-query
+  [pid roots]
+  (map #(vector :db/add pid :orgpad/refs %) roots))
+
+(defn make-ref-orders-updates-qry
+  [entities temp->ids & [update-uid]]
+  (let [update-uid (if update-uid update-uid identity)]
+    (into [] (comp (filter :orgpad/refs-order)
+                   (map (fn [unit]
+                          [:db/add (temp->ids (:db/id unit))
+                           :orgpad/refs-order
+                           (update-refs-order (comp temp->ids update-uid) (:orgpad/refs-order unit))
+                           ])))
+        entities)))
+
+(defn update-path-info-qry
+  [entities temp->ids old-rpid new-rpid]
+  (into [] (comp (filter :orgpad/view-path)
+                 (map (fn [path-info]
+                        [:db/add (temp->ids (:db/id path-info))
+                         :orgpad/view-path
+                         (mapv #(if (number? %)
+                                  (if (= old-rpid %)
+                                    new-rpid
+                                    (temp->ids (- %)))
+                                  %) (:orgpad/view-path path-info))])))
+        entities))
+
+(defn make-context-unit-update-qry
+  [entities temp->ids old-rpid new-rpid]
+  (into []
+        (comp (filter :orgpad/context-unit)
+              (map (fn [unit]
+                     (let [ctx-unit (:orgpad/context-unit unit)]
+                     [:db/add (temp->ids (:db/id unit))
+                      :orgpad/context-unit
+                      (if (= ctx-unit old-rpid)
+                        new-rpid
+                        (temp->ids (- ctx-unit)))]))))
+        entities))
+
 (defn past-descendants-to-db
-  [db pid {:keys [entities roots]}]
-  (let [db1 (store/transact db (colls/minto [] entities (map #(vector :db/add pid :orgpad/refs %) roots)))
+  [db new-pid {:keys [entities roots old-pid]}]
+  (let [db1 (store/transact db (colls/minto [] entities (make-roots-query new-pid roots)))
         temp->ids (store/tempids db1)
-        ref-orders-qupdate (into [] (comp (filter :orgpad/refs-order)
-                                          (map (fn [unit]
-                                                 [:db/add (temp->ids (:db/id unit))
-                                                  :orgpad/refs-order
-                                                  (update-refs-order temp->ids (:orgpad/refs-order unit))
-                                                  ])))
-                                 entities)
-        db2 (if (empty? ref-orders-qupdate) db1 (store/transact db1 ref-orders-qupdate))]
+        path-info-update (update-path-info-qry entities temp->ids old-pid new-pid)
+        context-unit-update (make-context-unit-update-qry entities temp->ids old-pid new-pid)
+        ref-orders-qupdate (make-ref-orders-updates-qry entities temp->ids)
+        update-qry (colls/minto path-info-update ref-orders-qupdate context-unit-update)
+        db2 (if (empty? update-qry) db1 (store/transact db1 update-qry))]
     {:db db2 :temp->ids temp->ids}))
 
 (defn- is-vertex-prop
@@ -390,13 +429,51 @@
                    [uid])
       (->> (into #{}))))
 
+(defn- every-non-nil?
+  [col]
+  (every? #(-> % nil? not) col))
+
+(defn gen-new-name
+  [db {:keys [orgpad/style-name orgpad/view-type]}]
+  (loop [n 1]
+    (if (get-style-from-db db view-type (str style-name n))
+      (recur (inc n))
+      (str style-name n))))
+
+(def get-type-view-style (juxt :orgpad/view-type :orgpad/view-style))
+(def get-type-style-name (juxt :orgpad/view-type :orgpad/style-name))
+
+(def prop-type->prop-type-style
+  {:orgpad.map-view/vertex-props :orgpad.map-view/vertex-props-style
+   :orgpad.map-view/link-props :orgpad.map-view/link-props-style})
+
+(defn get-pos-props
+  [db root-id]
+  (-> db
+      (store/query '[:find [?p ...]
+                     :in $ ?r
+                     :where
+                     [?r :orgpad/refs ?e]
+                     [?e :orgpad/props-refs ?p]
+                     [?p :orgpad/unit-position]]
+                   [root-id])
+      (->> (into #{}))))
+
+;; TODO - (x) update path info
+;;        (x) sort entities from db2 - new entities should be sorted as old one
+;;        ( ) make it as one big transaction for history
+;;        (x) update context unit
+
 (defn merge-orgpads
-  [db1 db2]
-  (let [entities (store/query db2
-                              '[:find [(pull ?e [*]) ...]
-                                :in $
-                                :where
-                                [?e :orgpad/type]])
+  [db1 db2 pid translations]
+  (let [entities (-> db2 (store/query
+                          '[:find [(pull ?e [*]) ...]
+                            :in $
+                            :where
+                            [?e :orgpad/type]])
+                     (->> (sort-by :db/id)))
+        roots (get-roots db2 0 nil)
+        roots-pos-props (get-pos-props db2 0)
         entities-prep-1 (into [] (comp (filter #(not (or (= 0 (:db/id %))
                                                          (= 1 (:db/id %)))))
                                        (map #(update % :db/id -))
@@ -407,7 +484,41 @@
                                                      (fn [prefs]
                                                        (into [] (map (comp - :db/id)) prefs)))))
                               entities)
-        entities-styles (group-by (juxt :orgpad/view-style :orgpad/view-type) entities)
-        ]
-
-    ))
+        styles (->> entities-prep-1
+                    (group-by get-type-style-name)
+                    (filter (comp every-non-nil? first))
+                    (into {}))
+        new-style-name (->> styles
+                            (into {} (map (fn [[k v]]
+                                            (if (nil? (apply get-style-from-db db1 k))
+                                              [k (get k 1)]
+                                              [k (gen-new-name db1 (first v))])))))
+        entities-qry
+        (into []
+              (comp
+               (map (fn [e] ;; update styles name in props
+                      (if (-> e get-type-view-style every-non-nil?)
+                        (update e :orgpad/view-style
+                                #(new-style-name [(prop-type->prop-type-style (:orgpad/view-type e)) %]))
+                        e)))
+               (map (fn [e] ;; update styles name of styles
+                      (if (-> e get-type-style-name every-non-nil?)
+                        (update e :orgpad/style-name
+                                #(new-style-name [(:orgpad/view-type e) %]))
+                        e)))
+               (map (fn [e]
+                      (if (and (:orgpad/unit-position e)
+                               (contains? roots-pos-props (-> e :db/id -)))
+                        (update e :orgpad/unit-position
+                                #(-- % (get translations (:orgpad/view-name e) [0 0])))
+                        e))))
+              entities-prep-1)
+        db1-1 (store/transact db1 (into entities-qry (make-roots-query pid roots)))
+        temp->ids (store/tempids db1-1)
+        path-info-update (update-path-info-qry entities-qry temp->ids 0 pid)
+        ref-orders-qupdate (make-ref-orders-updates-qry entities-qry temp->ids -)
+        context-unit-update (make-context-unit-update-qry entities-qry temp->ids 0 pid)
+        update-qry (colls/minto path-info-update ref-orders-qupdate context-unit-update)]
+    (if (empty? update-qry)
+      db1-1
+      (store/transact db1-1 update-qry))))
