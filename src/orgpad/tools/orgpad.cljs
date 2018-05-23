@@ -363,14 +363,17 @@
 
 (defn past-descendants-to-db
   [db new-pid {:keys [entities roots old-pid]}]
-  (let [db1 (store/transact db (colls/minto [] entities (make-roots-query new-pid roots)))
+  (let [db1 (-> db
+                (store/with-history-mode {:new-record true
+                                          :mode :acc})
+                (store/transact (colls/minto [] entities (make-roots-query new-pid roots))))
         temp->ids (store/tempids db1)
         path-info-update (update-path-info-qry entities temp->ids old-pid new-pid)
         context-unit-update (make-context-unit-update-qry entities temp->ids old-pid new-pid)
         ref-orders-qupdate (make-ref-orders-updates-qry entities temp->ids)
         update-qry (colls/minto path-info-update ref-orders-qupdate context-unit-update)
         db2 (if (empty? update-qry) db1 (store/transact db1 update-qry))]
-    {:db db2 :temp->ids temp->ids}))
+    {:db (store/with-history-mode db2 :add) :temp->ids temp->ids}))
 
 (defn- is-vertex-prop
   [roots p]
@@ -463,7 +466,7 @@
 
 ;; TODO - (x) update path info
 ;;        (x) sort entities from db2 - new entities should be sorted as old one
-;;        ( ) make it as one big transaction for history
+;;        (x) make it as one big transaction for history
 ;;        (x) update context unit
 
 (defn merge-orgpads
@@ -515,12 +518,17 @@
                                 #(-- % (get translations (:orgpad/view-name e) [0 0])))
                         e))))
               entities-prep-1)
-        db1-1 (store/transact db1 (into entities-qry (make-roots-query pid roots)))
+        db1-1 (-> db1
+                  (store/with-history-mode {:new-record true
+                                            :mode :acc})
+                  (store/transact (into entities-qry (make-roots-query pid roots))))
         temp->ids (store/tempids db1-1)
         path-info-update (update-path-info-qry entities-qry temp->ids 0 pid)
         ref-orders-qupdate (make-ref-orders-updates-qry entities-qry temp->ids -)
         context-unit-update (make-context-unit-update-qry entities-qry temp->ids 0 pid)
         update-qry (colls/minto path-info-update ref-orders-qupdate context-unit-update)]
-    (if (empty? update-qry)
-      db1-1
-      (store/transact db1-1 update-qry))))
+    (->
+     (if (empty? update-qry)
+       db1-1
+       (store/transact db1-1 update-qry))
+     (store/with-history-mode :add))))
