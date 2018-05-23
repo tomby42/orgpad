@@ -800,14 +800,19 @@
                                              :orgpad/type :orgpad/unit-view })
                                      [:db/add parent-id :orgpad/props-refs -1]]))}))
 
-;; TODO - update all geocaches in hierarchy
 (defmethod mutate :orgpad.units/paste-to-map
   [{:keys [state global-cache]} _ {:keys [pid data position view-name transform]}]
   (let [pos (geom/screen->canvas transform position)
         data' (assoc data :entities (ot/update-children-position data pos 0.5))
         {:keys [db temp->ids]} (ot/past-descendants-to-db state pid data')]
-    (doseq [u (ot/get-paste-children-bbox data')]
-      (geocache/update-box! global-cache pid view-name
-                            (-> u :uid temp->ids) (:pos u)
-                            (:size u)))
+    (doseq [u (ot/get-all-paste-children-bbox data')]
+      (let [rid (if (= (:ctx-unit u) (:old-pid data'))
+                  pid
+                  (-> u :ctx-unit - temp->ids))]
+        (geocache/create! global-cache rid (:view-name u))
+        (geocache/update-box! global-cache
+                              rid
+                              (:view-name u)
+                              (-> u :uid temp->ids) (:pos u)
+                              (:size u))))
     {:state db}))

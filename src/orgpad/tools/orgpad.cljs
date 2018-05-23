@@ -390,11 +390,13 @@
              (update e :orgpad/unit-position #(++ % delta))
              e)) entities)))
 
-(defn get-paste-children-bbox
-  [{:keys [entities roots]}]
+(defn get-all-paste-children-bbox
+  [{:keys [entities]}]
   (sequence
-   (comp (filter #(is-vertex-prop roots %))
+   (comp (filter :orgpad/unit-position)
          (map #(hash-map :uid (-> % :orgpad/refs first)
+                         :ctx-unit (:orgpad/context-unit %)
+                         :view-name (:orgpad/view-name %)
                          :pos (:orgpad/unit-position %)
                          :size [(:orgpad/unit-width %) (:orgpad/unit-height %)])))
    entities))
