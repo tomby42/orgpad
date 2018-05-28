@@ -402,9 +402,10 @@
                      state
                      [{ :db/id -1
                         :orgpad/refs [begin-unit-id (ot/uid closest-unit)]
-                        :orgpad/refs-order (sorted-set [ordn/canonical-zero begin-unit-id]
-                                                       [(ordn/canonical-next ordn/canonical-zero)
-                                                        (ot/uid closest-unit)])
+                       :orgpad/refs-order (sorted-set-by colls/first-<
+                                           [ordn/canonical-zero begin-unit-id]
+                                           [(ordn/canonical-next ordn/canonical-zero)
+                                            (ot/uid closest-unit)])
                         :orgpad/type :orgpad/unit
                         :orgpad/props-refs (if style [-2 (:db/id style)] -2) }
                       (merge default-prop

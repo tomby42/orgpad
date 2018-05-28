@@ -442,7 +442,7 @@
                                        :parent-view parent-view
                                        :unit-tree unit
                                        :orgpad/unit-border-style val } ]]))
-                    (fn [ev]
+                    (fn [val]
                       (lc/transact! component
                                     [[:orgpad.units/map-view-units-change-props
                                       {:action :orgpad.units/map-view-unit-border-style
@@ -466,7 +466,7 @@
                                        :parent-view parent-view
                                        :unit-tree unit
                                        :orgpad/view-style val } ]]))
-                    (fn [ev]
+                    (fn [val]
                       (lc/transact! component
                                     [[:orgpad.units/map-view-units-change-props
                                       {:action :orgpad.units/map-view-unit-style

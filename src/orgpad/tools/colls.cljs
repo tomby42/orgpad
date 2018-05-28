@@ -42,3 +42,7 @@
 (defn vsecond
   [v]
   (nth v 1))
+
+(defn first-<
+  [c1 c2]
+  (< (first c1) (first c2)))

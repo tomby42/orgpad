@@ -29,7 +29,8 @@
                        ["jupyter-js-services" "0.21.1"]
                        ["babel-polyfill" "6.23.0"]
                        ;; ["mathjax" "2.7.2"]
-                       ["bezier-js" "2.2.5"]]}
+                       ["bezier-js" "2.2.5"]
+                       ]}
 
   :plugins [[lein-cljsbuild "1.1.7"]
             [lein-figwheel "0.5.15"] ;; needs update to lein 2.5.3 at least
@@ -73,9 +74,13 @@
                         :output-dir "resources/public/js/compiled/out"
                         :source-map-timestamp true
                         :language-in :ecmascript5
-                        :externs ["node_modules/jupyter-js-services/dist/index.js"]
+                        ;; :install-deps true
+                        ;; :npm-deps {:bezier-js "2.2.5"}
+                        :externs ["node_modules/jupyter-js-services/dist/index.js" "dev-resources/js/bezier.js"]
                         :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
-                                        :provides ["jupyter.services"]}]
+                                        :provides ["jupyter.services"]}
+                                       {:file "dev-resources/js/bezier.js"
+                                        :provides ["Bezier"]}]
                         }}
 
             {:id "test"
@@ -87,11 +92,15 @@
                         :optimizations :whitespace
                         :pretty-print true
                         :language-in :ecmascript5
-                        :externs ["node_modules/babel-polyfill/dist/polyfill.js", "node_modules/jupyter-js-services/dist/index.js"]
+                        ;; :install-deps true
+                        ;; :npm-deps {:bezier-js "2.2.5"}
+                        :externs ["node_modules/babel-polyfill/dist/polyfill.js", "node_modules/jupyter-js-services/dist/index.js" "dev-resources/js/bezier.js"]
                         :foreign-libs [{:file "node_modules/babel-polyfill/dist/polyfill.js"
                                         :provides ["babel.polyfill"]},
                                        {:file "node_modules/jupyter-js-services/dist/index.js"
-                                        :provides ["jupyter.services"]}]
+                                        :provides ["jupyter.services"]}
+                                       {:file "dev-resources/js/bezier.js"
+                                        :provides ["Bezier"]}]
                         }}
 
             {:id "prod"
@@ -102,9 +111,13 @@
                         :pretty-print false
                         :language-in :ecmascript5
                         :closure-warnings {:externs-validation :off :non-standard-jsdoc :off}
-                        :externs ["node_modules/jupyter-js-services/dist/index.js"]
+                        ;; :install-deps true
+                        ;; :npm-deps {:bezier-js "2.2.5"}
+                        :externs ["node_modules/jupyter-js-services/dist/index.js" "dev-resources/js/bezier.js"]
                         :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
-                                        :provides ["jupyter.services"]}]
+                                        :provides ["jupyter.services"]}
+                                       {:file "dev-resources/js/bezier.js"
+                                        :provides ["Bezier"]}]
                         }}]
 
    :test-commands {"test" ["phantomjs"

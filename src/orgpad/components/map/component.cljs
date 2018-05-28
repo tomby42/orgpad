@@ -164,12 +164,17 @@
 
 (defn- resolve-mouse-down
   [component unit-tree local-state ev]
-  (when (and (= (:canvas-mode @local-state) :canvas-create-unit)
-             (not (.-isTouch ev))
-             (< 250 (- (t/now) @last-unit-created-ts)))
-    (let [pos (get-rel-mouse-pos component unit-tree ev)]
+  (let [pos (get-rel-mouse-pos component unit-tree ev)
+        linfo (ot/get-nearest-link unit-tree
+                                   (geom/screen->canvas (-> unit-tree :view :orgpad/transform)
+                                                           pos))]
+    (js/console.log "nearest link" linfo)
+    (when (and (= (:canvas-mode @local-state) :canvas-create-unit)
+               (not (.-isTouch ev))
+               (< 250 (- (t/now) @last-unit-created-ts)))
       (create-pair-unit component unit-tree {:center-x (get pos 0)
                                              :center-y (get pos 1)})))
+
   (when (not (.-isTouch ev))
     (vreset! last-unit-created-ts (t/now))))
 

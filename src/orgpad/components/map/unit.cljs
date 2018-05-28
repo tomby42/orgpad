@@ -12,9 +12,9 @@
             [orgpad.tools.css :as css]
             [orgpad.tools.colls :as colls]
             [orgpad.tools.rum :as trum]
-            [orgpad.tools.geom :as geom]
+            [orgpad.tools.geom :refer [++ -- *c normalize] :as geom]
             [orgpad.tools.js-events :as jev]
-            [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.orgpad :refer [mapped-children mapped-links] :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.bezier :as bez]
             [orgpad.tools.math :as math]
@@ -31,30 +31,8 @@
   [unit-tree prop pcomponent local-state component]
   (swap! local-state merge { :selected-unit [unit-tree prop (aget pcomponent "parent-view") component] }))
 
-(defn- mapped?
-  [{:keys [orgpad/refs db/id]} view-name prop-name]
-  (let [pred (partial ot/props-pred-view-child id view-name prop-name)]
-    (filter (fn [u] (->> u :props (some pred))) refs)))
-
-(defn- mapped-children
-  [unit-tree view-name]
-  (mapped? unit-tree view-name :orgpad.map-view/vertex-props))
-
 (def mapped-children-mem
   (memoize mapped-children))
-
-(defn- mapped-links
-  [unit-tree view-name pid m-units]
-  (let [links (mapped? unit-tree view-name :orgpad.map-view/link-props)
-        mus   (into {} (map (fn [u] [(ot/uid u) u])) m-units)]
-    (map (fn [l]
-           (let [refs (-> l :unit :orgpad/refs)
-                 id1 (-> refs (nth 0) ot/uid-safe)
-                 id2 (-> refs (nth 1) ot/uid-safe)]
-             [l { :start-pos (ot/get-pos (mus id1) view-name pid)
-                  :end-pos (ot/get-pos (mus id2) view-name pid)
-                  :cyclic? (= id1 id2) }]))
-         links)))
 
 (def mapped-links-mem
   (memoize mapped-links))
@@ -196,11 +174,11 @@
 (defn- make-arrow-quad
   [start-pos end-pos ctl-pt prop]
   (let [p1 (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos 0.85)
-        dir (-> p1 (geom/-- (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos 0.84)) geom/normalize)
-        ptmp (geom/++ p1 (geom/*c dir -10))
+        dir (-> p1 (-- (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos 0.84)) normalize)
+        ptmp (++ p1 (*c dir -10))
         n (-> dir geom/normal)
-        p2 (geom/++ ptmp (geom/*c n 10))
-        p3 (geom/++ ptmp (geom/*c (geom/-- n) 10))
+        p2 (++ ptmp (*c n 10))
+        p3 (++ ptmp (*c (-- n) 10))
         style { :css { :zIndex -1 }
                 :canvas { :strokeStyle (-> prop :orgpad/link-color format-color)
                           :lineWidth (prop :orgpad/link-width)
@@ -209,11 +187,11 @@
 
 (defn- make-arrow-arc
   [s e prop]
-  (let [dir (geom/normalize (geom/-- s e))
+  (let [dir (normalize (-- s e))
         n (geom/normal dir)
-        s' (geom/++ (geom/*c n -10) s)
-        p1 (geom/++ (geom/*c dir 10) s')
-        p2 (geom/++ (geom/*c dir -10) s')
+        s' (++ (*c n -10) s)
+        p1 (++ (*c dir 10) s')
+        p2 (++ (*c dir -10) s')
         style { :css { :zIndex -1 }
                 :canvas { :strokeStyle (-> prop :orgpad/link-color format-color)
                           :lineWidth (prop :orgpad/link-width)
@@ -229,7 +207,7 @@
         id1 (-> refs (nth 0) ot/uid-safe)
         id2 (-> refs (nth 1) ot/uid-safe)
         pos (bbox 0)
-        size (geom/-- (bbox 1) (bbox 0))
+        size (-- (bbox 1) (bbox 0))
         [old-pos old-size] (aget global-cache uid "link-info" view-name)]
     (aset global-cache uid "link-info" view-name [pos size])
     (geocache/update-box! global-cache pid view-name uid
@@ -263,10 +241,13 @@
                           :lineWidth (prop :orgpad/link-width)
                           :lineCap "round"
                           :lineDash (prop :orgpad/link-dash) } }
-        ctl-style (css/transform {:translate (geom/-- mid-pt [10 10])})
+        ctl-style (css/transform {:translate (-- (++ mid-pt [(-> prop :orgpad/link-width)
+                                                             (-> prop :orgpad/link-width)])
+                                                 [10 10])})
         ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
     ;; (js/window.console.log "rendering " (unit :db/id))
     ;; ugly o'hacks
+    ;; move it to component mount and component did update
     (update-geocache-for-link-changes pcomponent pid view-name (unit :db/id)
                                       start-pos end-pos (prop :orgpad/link-mid-pt)
                                       (unit :orgpad/refs))
@@ -296,7 +277,7 @@
   (let [style (merge (css/transform (:orgpad/transform view))
                      {})
         view-name (view :orgpad/view-name)
-        pid (parent-id view)
+        pid (:db/id unit) ;;(parent-id view)
         m-units (mapped-children-mem unit view-name)
         m-links (mapped-links-mem unit view-name pid m-units)]
     (aset component "parent-view" view)
@@ -314,7 +295,6 @@
   [component params ev]
   (.stopPropagation ev)
   (lc/transact! component [[:orgpad.units/map-move-to-unit params]]))
-
 
 (defn- render-selected-unit
   [component app-state parent-view [uid vprop tprops]]

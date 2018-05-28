@@ -4,6 +4,7 @@
             [orgpad.tools.dscript :as dscript]
             [orgpad.tools.colls :as colls]
             [orgpad.tools.geom :refer [++ -- *c] :as geom]
+            [orgpad.tools.bezier :as bez]
             [goog.string :as gstring]
             [goog.string.format]))
 
@@ -288,7 +289,7 @@
 
 (defn- update-refs-order
   [update-uid refs-orders]
-  (apply sorted-set
+  (apply sorted-set-by colls/first-<
          (map (fn [[n uid]]
                 [n (update-uid uid)]) refs-orders)))
 
@@ -464,11 +465,6 @@
                    [root-id])
       (->> (into #{}))))
 
-;; TODO - (x) update path info
-;;        (x) sort entities from db2 - new entities should be sorted as old one
-;;        (x) make it as one big transaction for history
-;;        (x) update context unit
-
 (defn merge-orgpads
   [db1 db2 pid translations]
   (let [entities (-> db2 (store/query
@@ -532,3 +528,68 @@
        db1-1
        (store/transact db1-1 update-qry))
      (store/with-history-mode :add))))
+
+;; TODO: optimize
+(defn get-links-from-db
+  [db pid view-name]
+  (let [links (store/query db '[:find [[?pt1 ?pt2 ?midpt ?lid] ...]
+                                :in $ ?pid ?view-name
+                                :where
+                                [?pid :orgpad/refs ?lid]
+                                [?lid :orgpad/props-refs ?p]
+                                [?p :orgpad/view-name ?view-name]
+                                [?p :orgpad/link-mid-pt ?midpt]
+                                [?lid :orgpad/refs ?v1]
+                                [?lid :orgpad/refs ?v2]
+                                [?pid :orgpad/refs ?v1]
+                                [?pid :orgpad/refs ?v2]
+                                [?v1 :orgpad/props-refs ?vp1]
+                                [?vp1 :orgpad/view-name ?view-name]
+                                [?vp1 :orgpad/unit-position ?pt1]
+                                [?v2 :orgpad/props-refs ?vp2]
+                                [?vp2 :orgpad/view-name ?view-name]
+                                [?vp2 :orgpad/unit-position ?pt2]])]
+    links))
+
+(defn- mapped?
+  [{:keys [orgpad/refs db/id]} view-name prop-name]
+  (let [pred (partial props-pred-view-child id view-name prop-name)]
+    (filter (fn [u] (->> u :props (some pred))) refs)))
+
+(defn mapped-children
+  [unit-tree view-name]
+  (mapped? unit-tree view-name :orgpad.map-view/vertex-props))
+
+(defn mapped-links
+  [unit-tree view-name pid m-units]
+  (let [links (mapped? unit-tree view-name :orgpad.map-view/link-props)
+        mus   (into {} (map (fn [u] [(uid u) u])) m-units)]
+    (map (fn [l]
+           (let [refs (-> l :unit :orgpad/refs)
+                 id1 (-> refs (nth 0) uid-safe)
+                 id2 (-> refs (nth 1) uid-safe)]
+             [l {:start-pos (get-pos (mus id1) view-name pid)
+                 :end-pos (get-pos (mus id2) view-name pid)
+                 :cyclic? (= id1 id2) }]))
+         links)))
+
+(defn- link-dist-info
+  [p {:keys [props unit]} {:keys [start-pos end-pos cyclic?]} pid view-name]
+  (let [prop (get-props-view-child-styled props view-name pid
+                                          :orgpad.map-view/link-props :orgpad.map-view/link-props-style)
+        mid-pt (geom/link-middle-point start-pos end-pos (:orgpad/link-mid-pt prop))
+        ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
+    (bez/nearest-point-on start-pos ctl-pt end-pos p)))
+
+(defn get-nearest-link
+  [{:keys [unit view props] :as unit-tree} p]
+  (let [view-name (view :orgpad/view-name)
+        pid (:db/id unit)
+        vertices (mapped-children unit view-name)
+        links (mapped-links unit view-name pid vertices)]
+    (reduce (fn [[best-unit _ dist-info :as res] [unit info]]
+              (let [d-info (link-dist-info p unit info pid view-name)]
+                (if (< (.-d d-info) (.-d dist-info))
+                  [unit info d-info]
+                  res)))
+            [nil nil #js {:d 100000000}] links)))

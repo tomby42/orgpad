@@ -106,7 +106,7 @@
                        [?eid :orgpad/refs-order ?o]])]
 
     (mapv (fn [[eid o]]
-            [:db/add eid :orgpad/refs-order (apply sorted-set o)])
+            [:db/add eid :orgpad/refs-order (apply sorted-set-by colls/first-< o)])
           refs-orders)))
 
 (defn- unescape-atoms
