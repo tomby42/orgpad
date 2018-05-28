@@ -604,13 +604,11 @@
                     [?a :orgpad/type :orgpad/unit-view]
                     [?a :orgpad/view-name ?view-name]] [id view-name]))
 
-;; TODO - if unit is edge and vertex remove only vertex prop
 (defn- remove-unit
   [{:keys [state global-cache force-update!]} {:keys [id ctx-unit view-name] :as params}]
   (let [v (edge-label state params)]
     (if v
-      (let [a (atomic-view state params)
-            _ (js/console.log "remove unit - link label" v a params)]
+      (let [a (atomic-view state params)]
         ;; (force-update!)
         [[:db/retract id :orgpad/props-refs (:db/id v)]
          [:db/retract id :orgpad/props-refs (:db/id a)]
@@ -626,7 +624,6 @@
                                    (remove-from-refs-orders-qry state id)
                                    (map (fn [eid] [:db.fn/retractEntity eid])
                                         (concat units-to-remove edges-to-remove edges-props-to-remove)))]
-        (js/console.log "remove unit" params final-qry units-to-remove parents edges edges-to-remove edges-props-to-remove)
         (update-geocache-after-remove global-cache parents id edges-to-remove)
         final-qry))))
 
@@ -634,7 +631,6 @@
   [env _ params]
   (let [final-qry (remove-unit env params)
         new-state (store/transact (:state env) final-qry)]
-    (js/console.log new-state)
     {:state  new-state}))
 
 (defn- update-link-props
