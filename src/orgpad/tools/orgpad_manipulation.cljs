@@ -31,14 +31,15 @@
   (lc/transact! component [[ :orgpad.units/remove-active-sheet-unit unit-tree ]]))
 
 (defn remove-unit
-  [component id]
+  [component params local-state]
+  (swap! local-state assoc :selected-unit nil)
   (lc/transact! component [[ :orgpad.units/remove-unit
-                             id ]]))
+                             params ]]))
 
 (defn remove-units
-  [component pid selection]
+  [component params selection]
   (lc/transact! component [[:orgpad.units/remove-units
-                            [pid selection]]]))
+                            [params selection]]]))
 
 
 (defn copy-units-to-clipboard

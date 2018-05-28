@@ -161,10 +161,11 @@
         (when view-contexts
           (into [] (mapcat #(get-view-props unit %)) view-contexts))]
 
-;;     (println { :unit unit'
-;;                :path-info path-info'
-;;                :view view-unit
-;;                :props props })
+     ;; (js/console.log {:unit unit'
+     ;;                  :path-info path-info'
+     ;;                  :view view-unit
+     ;;                  :props props }
+     ;;                 db)
 
 
     { :unit unit'

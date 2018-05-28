@@ -44,7 +44,7 @@
 })
 
 (defn- selected-unit-prop
-  [{:keys [unit] :as unit-tree} unit-id prop-id]
+  [{:keys [unit] :as unit-tree} unit-id prop-id prop-view-type]
   (let [sel-unit
         (->> unit
              :orgpad/refs
@@ -58,7 +58,12 @@
         sel-style
         (->> sel-unit
              :props
-             (filter (fn [prop] (and prop (= (:orgpad/style-name prop) (:orgpad/view-style sel-prop)))))
+             (filter (fn [prop] (and prop
+                                     (= (:orgpad/style-name prop) (:orgpad/view-style sel-prop))
+                                     (= (:orgpad/view-type prop)
+                                        (if (= prop-view-type :orgpad.map-view/vertex-props)
+                                          :orgpad.map-view/vertex-props-style
+                                          :orgpad.map-view/link-props-style)))))
              first)]
     [sel-unit (merge sel-style sel-prop)]))
 
@@ -167,7 +172,9 @@
           [{:elem :btn
             :icon "far fa-trash-alt"
             :title "Remove"
-            :on-click #(omt/remove-units (:component %1) (ot/uid (:unit-tree %1)) (:selection %1))}]]
+            :on-click #(omt/remove-units (:component %1) {:pid (-> %1 :unit-tree ot/uid)
+                                                          :view-name (:orgpad/view-name view)}
+                                         (:selection %1))}]]
         params {:unit-tree    unit-tree 
                 :unit         unit
                 :view         view
@@ -228,7 +235,7 @@
       view-toolbar)))
 
 (defn- gen-toolbar
-  [{:keys [unit view] :as unit-tree} app-state local-state]
+  [{:keys [unit view] :as unit-tree} parent-tree app-state local-state]
   (let [view-type (ot/view-type unit-tree)
         common-left-toolbar [
          [{:elem :btn
@@ -256,7 +263,9 @@
           [{:elem :btn
             :icon "far fa-trash-alt"
             :title "Remove"
-            :on-click #(omt/remove-unit (:component %1) (ot/uid (:unit-tree %1)))}]]
+            :on-click #(omt/remove-unit (:component %1) {:id (-> %1 :unit-tree ot/uid)
+                                                         :view-name (ot/view-name parent-tree)
+                                                         :ctx-unit (ot/uid parent-tree)} (:local-state %1))}]]
         params {:unit-tree    unit-tree 
                 :unit         unit
                 :view         view
@@ -270,7 +279,7 @@
 (defn- node-unit-editor1
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
-        [sel-unit-tree prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
+        [sel-unit-tree prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id) (:orgpad/view-type old-prop))]
     (when (and prop sel-unit-tree)
       (if (not= (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
         (nodes-unit-editor1 component unit-tree app-state local-state parent-view prop)
@@ -292,7 +301,7 @@
              {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
               :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
               }]
-           (gen-toolbar sel-unit-tree app-state local-state)]
+           (gen-toolbar sel-unit-tree unit-tree app-state local-state)]
            (when (= (@local-state :local-mode) :make-link)
              (let [tr (parent-view :orgpad/transform)
                    bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
@@ -307,7 +316,7 @@
 (defn- simple-node-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
-        [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
+        [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id) (:orgpad/view-type old-prop))]
     (when (and prop unit)
       (let [pos (prop :orgpad/unit-position)
             width (prop :orgpad/unit-width) height (prop :orgpad/unit-height)
@@ -340,7 +349,7 @@
   (let [select-link (@local-state :selected-link)]
     (when (and select-link (= (@local-state :link-menu-show) :yes))
       (let [[old-unit old-prop _ _ _ mid-pt] select-link
-            [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))]
+            [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id) (:orgpad/view-type old-prop))]
         (when (and prop unit)
            [:div {}
             (mc/circle-menu
@@ -498,7 +507,7 @@
 (defn- node-unit-editor-static
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
-        [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))
+        [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id) (:orgpad/view-type old-prop))
         selection (get-in app-state [:selections (ot/uid unit-tree)])]
     (when (and prop unit)
       (if (not= (count selection) 1)
@@ -579,7 +588,7 @@
   (let [select-link (@local-state :selected-link)]
     (when select-link
       (let [[old-unit old-prop _ _ _ mid-pt] select-link
-            [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id))
+            [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (:db/id old-prop) (:orgpad/view-type old-prop))
             params {:component component :unit unit :prop prop :parent-view view :local-state local-state}]
         (render-edge-prop-menu params)))))
 

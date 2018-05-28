@@ -481,12 +481,11 @@
 
 ;; 'not' and 'or' is not properly supported in ds query yet
 (def ^:private parents-props-query
-  '[:find ?parent ?t ?i
+  '[:find ?parent ?t
     :in $ ?e
     :where
     [?parent :orgpad/refs ?e]
-    [?parent :orgpad/type ?t]
-    [?parent :orgpad/independent ?i]])
+    [?parent :orgpad/type ?t]])
 
 (defn- find-relative
   [db id qry]
@@ -508,9 +507,18 @@
   [db id]
   (find-parents-or-props db id parent?))
 
+(defn- prop-but-style
+  [db [id type :as params]]
+  (and (-> params parent? not)
+       (-> db (store/query '[:find ?i .
+                             :in $ ?uid
+                             :where
+                             [?uid :orgpad/independent ?i]] [id])
+           nil?)))
+
 (defn- find-props
   [db id]
-  (find-parents-or-props db id #(and (-> % parent? not) (-> % (get 2) not))))
+  (find-parents-or-props db id (partial prop-but-style db)))
 
 (def ^:private child-query
   '[:find [?child ...]
@@ -571,25 +579,63 @@
     (doseq [pid parents]
       (geocache/clear! global-cache pid ids))))
 
+(defn- edge-label
+  [db {:keys [id view-name ctx-unit]}]
+  (-> db
+      (store/query '[:find (pull ?v [*]) .
+                     :in $ ?uid ?view-name ctx-unit
+                     :where
+                     [?uid :orgpad/props-refs ?v]
+                     [?v :orgpad/view-type :orgpad.map-view/vertex-props]
+                     [?v :orgpad/view-name ?view-name]
+                     [?v :orgpad/context-unit ?ctx-unit]
+                     [?uid :orgpad/props-refs ?l]
+                     [?l :orgpad/view-type :orgpad.map-view/link-props]
+                     [?l :orgpad/view-name ?view-name]
+                     [?l :orgpad/context-unit ?ctx-unit]] [id view-name ctx-unit])))
+
+(defn- atomic-view
+  [db {:keys [id view-name]}]
+  (store/query db '[:find (pull ?a [*]) .
+                    :in $ ?uid ?view-name
+                    :where
+                    [?uid :orgpad/props-refs ?a]
+                    [?a :orgpad/view-type :orgpad/atomic-view]
+                    [?a :orgpad/type :orgpad/unit-view]
+                    [?a :orgpad/view-name ?view-name]] [id view-name]))
+
+;; TODO - if unit is edge and vertex remove only vertex prop
 (defn- remove-unit
-  [{:keys [state global-cache]} id]
-  (let [units-to-remove (find-children-deep state [id])
-        parents (find-parents state id)
-        edges (mapcat #(find-relative state % edge-check-query) (find-relative state id edge-query))
-        edges-to-remove (into [] (comp (filter (fn [[_ ro]] (= (count ro) 2))) (map first)) edges)
-        edges-props-to-remove (mapcat (fn [eid] (find-props state eid)) edges-to-remove)
-        final-qry (colls/minto []
-                               (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents)
-                               (remove-from-refs-orders-qry state id)
-                               (map (fn [eid] [:db.fn/retractEntity eid])
-                                    (concat units-to-remove edges-to-remove edges-props-to-remove)))]
-    (update-geocache-after-remove global-cache parents id edges-to-remove)
-    final-qry))
+  [{:keys [state global-cache force-update!]} {:keys [id ctx-unit view-name] :as params}]
+  (let [v (edge-label state params)]
+    (if v
+      (let [a (atomic-view state params)
+            _ (js/console.log "remove unit - link label" v a params)]
+        ;; (force-update!)
+        [[:db/retract id :orgpad/props-refs (:db/id v)]
+         [:db/retract id :orgpad/props-refs (:db/id a)]
+         [:db.fn/retractEntity (:db/id v)]
+         [:db.fn/retractEntity (:db/id a)]])
+      (let [units-to-remove (find-children-deep state [id])
+            parents (find-parents state id)
+            edges (mapcat #(find-relative state % edge-check-query) (find-relative state id edge-query))
+            edges-to-remove (into [] (comp (filter (fn [[_ ro]] (= (count ro) 2))) (map first)) edges)
+            edges-props-to-remove (mapcat (fn [eid] (find-props state eid)) edges-to-remove)
+            final-qry (colls/minto []
+                                   (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents)
+                                   (remove-from-refs-orders-qry state id)
+                                   (map (fn [eid] [:db.fn/retractEntity eid])
+                                        (concat units-to-remove edges-to-remove edges-props-to-remove)))]
+        (js/console.log "remove unit" params final-qry units-to-remove parents edges edges-to-remove edges-props-to-remove)
+        (update-geocache-after-remove global-cache parents id edges-to-remove)
+        final-qry))))
 
 (defmethod mutate :orgpad.units/remove-unit
   [env _ params]
-  (let [final-qry (remove-unit env params)]
-    { :state (store/transact (:state env) final-qry) }))
+  (let [final-qry (remove-unit env params)
+        new-state (store/transact (:state env) final-qry)]
+    (js/console.log new-state)
+    {:state  new-state}))
 
 (defn- update-link-props
   [{:keys [state]} {:keys [prop parent-view unit-tree]} val]
@@ -632,10 +678,11 @@
      (store/with-history-mode :add)
      (->> (assoc {} :state)))))
 
+;; TODO - remove children that are not siblings (edge is strict parent and not connect them)
 (defmethod mutate :orgpad.units/map-view-link-remove
   [{:keys [state global-cache]} _ id]
   (let [parents (find-parents state id)
-        final-qry (colls/minto [[:db.fn/retractEntity id]]
+        final-qry (colls/minto [[:db.fn/retractEntuity id]]
                                (map (fn [eid] [:db.fn/retractEntity eid]) (find-props state id))
                                (remove-from-refs-orders-qry state id)
                                (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents))]
@@ -654,7 +701,7 @@
                                             :direction 1
                                             :nof-sheets nof-sheets
                                             :new-active-pos active-pos})
-            remove-qry (remove-unit env ruid)
+            remove-qry (remove-unit env {:id ruid})
             final-qry (into switch-qry remove-qry)]
         { :state (store/transact (:state env) final-qry) }))))
 
@@ -688,8 +735,12 @@
     {:state (store/transact state [[:selections (-> unit-tree ot/uid keypath)] selected])}))
 
 (defmethod mutate :orgpad.units/remove-units
-  [env _ [pid selection]]
-  (let [res (repeat-action env selection (repeat nil) :orgpad.units/remove-unit #(identity %))]
+  [env _ [{:keys [pid view-name]} selection]]
+  (let [res (repeat-action env selection (repeat nil) :orgpad.units/remove-unit
+                           (fn [uid _]
+                             {:id uid
+                              :view-name view-name
+                              :ctx-unit pid}))]
     {:state (store/transact (:state res) [[:selections (keypath pid)] nil])}))
 
 (defmethod mutate :orgpad.units/try-make-new-links-unit
