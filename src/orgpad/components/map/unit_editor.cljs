@@ -175,7 +175,7 @@
             :on-click #(omt/remove-units (:component %1) {:pid (-> %1 :unit-tree ot/uid)
                                                           :view-name (:orgpad/view-name view)}
                                          (:selection %1))}]]
-        params {:unit-tree    unit-tree 
+        params {:unit-tree    unit-tree
                 :unit         unit
                 :view         view
                 :local-state  local-state
@@ -224,13 +224,13 @@
            :height (+ height (* 2 bw)) }
            (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))))
 
-(defn- gen-view-toolbar 
+(defn- gen-view-toolbar
   [{:keys [unit view] :as unit-tree} view-type]
   (let [view-toolbar (-> view :orgpad/view-type registry/get-component-info :orgpad/uedit-toolbar)]
     (if (and (= view-type :orgpad/map-tuple-view) (not (ot/no-sheets? unit-tree)))
       (let [ac-unit-tree (ot/active-child-tree unit view)
             ac-view-types-roll (tbar/gen-view-types-roll (:view ac-unit-tree) :ac-unit-tree "Current page" "page-views" #(= (:mode %1) :read))
-            last-sec (- (count view-toolbar) 1) ] 
+            last-sec (- (count view-toolbar) 1) ]
         (update-in view-toolbar [last-sec] conj ac-view-types-roll ))
       view-toolbar)))
 
@@ -266,7 +266,7 @@
             :on-click #(omt/remove-unit (:component %1) {:id (-> %1 :unit-tree ot/uid)
                                                          :view-name (ot/view-name parent-tree)
                                                          :ctx-unit (ot/uid parent-tree)} (:local-state %1))}]]
-        params {:unit-tree    unit-tree 
+        params {:unit-tree    unit-tree
                 :unit         unit
                 :view         view
                 :local-state  local-state
@@ -344,6 +344,10 @@
   (swap! local-state assoc :selected-link nil)
   (lc/transact! component [[ :orgpad.units/map-view-link-remove (ot/uid unit) ]]))
 
+(defn- swap-link-direction
+  [component unit-tree _]
+  (lc/transact! component [[:orgpad.units/map-view-link-swap-dir (:unit unit-tree)]]))
+
 (defn- edge-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [select-link (@local-state :selected-link)]
@@ -363,6 +367,7 @@
               {:title "Edit"
                :onMouseUp #(omt/open-unit component (assoc-in unit [:view :orgpad/view-type] :orgpad/atomic-view))
                } ]
+             [:i.far.fa-exchange.fa-lg {:title "Swap direction" :onMouseDown (partial swap-link-direction component unit)}]
              [:i.far.fa-times.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit local-state) } ]
            )])))))
 

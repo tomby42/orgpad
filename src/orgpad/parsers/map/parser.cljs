@@ -864,3 +864,14 @@
                               (-> u :uid temp->ids) (:pos u)
                               (:size u))))
     {:state db}))
+
+(defmethod mutate :orgpad.units/map-view-link-swap-dir
+  [{:keys [state]} _ {:keys [db/id orgpad/refs-order] :as unit}]
+  (let [f (first refs-order)
+        s (second refs-order)
+        new-refs-order (sorted-set-by colls/first-<
+                                      [(get f 0) (get s 1)]
+                                      [(get s 0) (get f 1)])
+        new-state (store/transact state [[:db/retract id :orgpad/refs-order refs-order]
+                                         [:db/add id :orgpad/refs-order new-refs-order]])]
+    {:state new-state}))
