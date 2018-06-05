@@ -28,7 +28,19 @@
                           :onChange #(let [name (-> % .-target .-value)]
                                        (dom/set-el-text (dom/ffind-tag :title) name)
                                        (lc/transact! component
-                                                     [[:orgpad/app-state [[:orgpad-name] name]]]))}]]]]
+                                                     [[:orgpad/app-state [[:orgpad-name] name]]]))}]]]
+    [:div.line
+     [:div.left "Zip Saved Files"]
+     [:div.right
+      [:input (merge {:type "checkbox"
+                      :onChange #(lc/transact! component
+                                               [[:orgpad/app-state [[:zip-saved-files?]
+                                                                    (-> % .-target .-checked)]]])}
+                     (if (:zip-saved-files? app-state)
+                       {:checked true} {}))
+       ]]
+     ]
+    ]
 
 
    [:div.block
@@ -37,9 +49,9 @@
      [:div.left "Enable Experimental Features"]
      [:div.right [:input (merge {:type "checkbox"
                                  :onChange #(lc/transact! component
-                                                          [[:orgpad/app-state [[:enable-experimental-features]
+                                                          [[:orgpad/app-state [[:enable-experimental-features?]
                                                                                (-> % .-target .-checked)]]])}
-                                (if (:enable-experimental-features app-state)
+                                (if (:enable-experimental-features? app-state)
                                   {:checked true} {}))
 
                            ]]]]

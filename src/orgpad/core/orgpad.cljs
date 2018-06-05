@@ -159,8 +159,10 @@
 
 (defn- compress-db
   [db]
-  (let [c (aget js/LZString "compressToBase64")]
-    (c (pr-str db))))
+  (let [compress (aget js/LZString "compressToBase64")]
+    (if (-> db (store/query []) first :zip-saved-files?)
+      (compress (pr-str db))
+      (pr-str db))))
 
 (defn store-db
   [db storage-el]

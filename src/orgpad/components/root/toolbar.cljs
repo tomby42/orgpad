@@ -95,7 +95,7 @@
 
      (let [root-component-left-toolbar (-> :orgpad/root-view registry/get-component-info :orgpad/left-toolbar)
            view-types-section [(tbar/gen-view-types-roll view :unit-tree "Current" "views" #(= (:mode %1) :read))]
-           view-name-section (if (:enable-experimental-features app-state)
+           view-name-section (if (:enable-experimental-features? app-state)
                                [{:elem :custom
                                  :style ""
                                  :render #(render-view-names (:component %1) (:unit-tree %1) %3)}]

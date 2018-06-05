@@ -58,7 +58,7 @@
       (rum/with-key (node/node unit-tree app-state) "root-view-part")
       (status unit-tree app-state local-state)
       (rum/with-key (nest/nesting unit-tree) "nesting-part")
-      (when (:enable-experimental-features app-state)
+      (when (:enable-experimental-features? app-state)
         (rum/with-key (ci/dialog-panel unit-tree app-state msg-list) "ci-part"))
       (when (:show-settings @local-state)
         (rum/with-key (settings/settings app-state #(swap! local-state assoc :show-settings false)) "settings"))
