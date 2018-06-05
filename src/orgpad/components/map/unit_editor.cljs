@@ -500,14 +500,14 @@
                            :onClick jev/stop-propagation
                            :onDoubleClick jev/stop-propagation
                            :onWheel jev/stop-propagation}
+   (render-styles-list params)
    (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-border-color))
    (render-color-picker1 (assoc params :action :orgpad.units/map-view-unit-bg-color))
    (render-width params)
    (render-height params)
    (render-border-width1 params)
    (render-border-radius1 params)
-   (render-border-style1 params)
-   (render-styles-list params)])
+   (render-border-style1 params)])
 
 (defn- node-unit-editor-static
   [component {:keys [view] :as unit-tree} app-state local-state]
