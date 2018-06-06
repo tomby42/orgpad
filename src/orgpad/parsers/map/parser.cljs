@@ -400,14 +400,14 @@
         new-state (if closest-unit
                     (store/transact
                      state
-                     [{ :db/id -1
-                        :orgpad/refs [begin-unit-id (ot/uid closest-unit)]
+                     [{:db/id -1
+                       :orgpad/refs [begin-unit-id (ot/uid closest-unit)]
                        :orgpad/refs-order (sorted-set-by colls/first-<
                                            [ordn/canonical-zero begin-unit-id]
                                            [(ordn/canonical-next ordn/canonical-zero)
                                             (ot/uid closest-unit)])
-                        :orgpad/type :orgpad/unit
-                        :orgpad/props-refs (if style [-2 (:db/id style)] -2) }
+                       :orgpad/type :orgpad/unit
+                       :orgpad/props-refs (if style [-2 (:db/id style)] -2) }
                       (merge default-prop
                              { :db/id -2
                                :orgpad/refs -1
@@ -867,11 +867,5 @@
 
 (defmethod mutate :orgpad.units/map-view-link-swap-dir
   [{:keys [state]} _ {:keys [db/id orgpad/refs-order] :as unit}]
-  (let [f (first refs-order)
-        s (second refs-order)
-        new-refs-order (sorted-set-by colls/first-<
-                                      [(get f 0) (get s 1)]
-                                      [(get s 0) (get f 1)])
-        new-state (store/transact state [[:db/retract id :orgpad/refs-order refs-order]
-                                         [:db/add id :orgpad/refs-order new-refs-order]])]
+  (let [new-state (store/transact state (ot/make-swap-refs-order-qry id refs-order))]
     {:state new-state}))

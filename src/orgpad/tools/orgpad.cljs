@@ -593,3 +593,13 @@
                   [unit info d-info]
                   res)))
             [nil nil #js {:d 100000000}] links)))
+
+(defn make-swap-refs-order-qry
+  [id refs-order]
+  (let [f (first refs-order)
+        s (second refs-order)
+        new-refs-order (sorted-set-by colls/first-<
+                                      [(get f 0) (get s 1)]
+                                      [(get s 0) (get f 1)])]
+    [[:db/retract id :orgpad/refs-order refs-order]
+     [:db/add id :orgpad/refs-order new-refs-order]]))
