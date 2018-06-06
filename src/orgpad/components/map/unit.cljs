@@ -90,70 +90,74 @@
 
 (rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} app-state pcomponent view-name pid local-state]
-  (let [prop (ot/get-props-view-child-styled props view-name pid
-                                             :orgpad.map-view/vertex-props
-                                             :orgpad.map-view/vertex-props-style)
-        pos (prop :orgpad/unit-position)
-        selections (get-in app-state [:selections pid])
-        selected? (= (:db/id unit) (first selections))
-        ;; selected? (= (unit :db/id) (-> @local-state :selected-unit first ot/uid))
-        style (merge { :width (prop :orgpad/unit-width)
-                       :height (prop :orgpad/unit-height)
-                       :borderWidth (prop :orgpad/unit-border-width)
-                       :borderStyle (prop :orgpad/unit-border-style)
-                       :borderColor (-> prop :orgpad/unit-border-color format-color)
-                       :borderRadius (str (prop :orgpad/unit-corner-x) "px "
-                                          (prop :orgpad/unit-corner-y) "px")
-                       :backgroundColor (-> prop :orgpad/unit-bg-color format-color) }
-                     (css/transform { :translate pos })
-                     (when (and selected? (:quick-edit @local-state)) {:zIndex 2})) ]
-    ;;(js/window.console.log "rendering " (unit :db/id) (and selected? (:quick-edit @local-state)))
-    (when selected?
-      (select-unit unit-tree prop pcomponent local-state component))
-    (html
-     [ :div
-      (if (= (app-state :mode) :write)
-        { :style style :className "map-view-child" :key (unit :db/id)
-          :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-          :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-          ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
-          :onDoubleClick (jev/make-block-propagation #(uedit/enable-quick-edit local-state))
-          :onWheel jev/stop-propagation
-          :ref "unit-node"
-         }
-        { :style style :className "map-view-child" :key (unit :db/id)
-          :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-          :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-          :onWheel jev/stop-propagation
-          :ref "unit-node"
-         })
-      (node/node unit-tree
-                 (assoc app-state
-                        :mode
-                        (if (and selected? (:quick-edit @local-state))
-                          :quick-write
-                          :read)))
-      (if (= (app-state :mode) :write)
-        (when-not (and selected? (:quick-edit @local-state))
-          [:div.map-view-child.hat
-           {:style {:top 0
-                    :width (prop :orgpad/unit-width)
-                    :height (prop :orgpad/unit-height) }
-            :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)}
-           ;; (when (contains? selections (:db/id unit))
-           ;;  [:span.fa.fa-check-circle.fa-lg.select-check])
-           ])
-        [ :div.map-view-child.leader-control
-          { :style {:left (/ (prop :orgpad/unit-corner-x) 2)}
+  (try
+    (let [prop (ot/get-props-view-child-styled props view-name pid
+                                               :orgpad.map-view/vertex-props
+                                               :orgpad.map-view/vertex-props-style)
+          pos (prop :orgpad/unit-position)
+          selections (get-in app-state [:selections pid])
+          selected? (= (:db/id unit) (first selections))
+          ;; selected? (= (unit :db/id) (-> @local-state :selected-unit first ot/uid))
+          style (merge { :width (prop :orgpad/unit-width)
+                        :height (prop :orgpad/unit-height)
+                        :borderWidth (prop :orgpad/unit-border-width)
+                        :borderStyle (prop :orgpad/unit-border-style)
+                        :borderColor (-> prop :orgpad/unit-border-color format-color)
+                        :borderRadius (str (prop :orgpad/unit-corner-x) "px "
+                                           (prop :orgpad/unit-corner-y) "px")
+                        :backgroundColor (-> prop :orgpad/unit-bg-color format-color) }
+                       (css/transform { :translate pos })
+                       (when (and selected? (:quick-edit @local-state)) {:zIndex 2})) ]
+      ;;(js/window.console.log "rendering " (unit :db/id) (and selected? (:quick-edit @local-state)))
+      (when selected?
+        (select-unit unit-tree prop pcomponent local-state component))
+      (html
+       [ :div
+        (if (= (app-state :mode) :write)
+          { :style style :className "map-view-child" :key (unit :db/id)
+           :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+           :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+           ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
+           :onDoubleClick (jev/make-block-propagation #(uedit/enable-quick-edit local-state))
+           :onWheel jev/stop-propagation
+           :ref "unit-node"
+           }
+          { :style style :className "map-view-child" :key (unit :db/id)
+           :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+           :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+           :onWheel jev/stop-propagation
+           :ref "unit-node"
+           })
+        (node/node unit-tree
+                   (assoc app-state
+                          :mode
+                          (if (and selected? (:quick-edit @local-state))
+                            :quick-write
+                            :read)))
+        (if (= (app-state :mode) :write)
+          (when-not (and selected? (:quick-edit @local-state))
+            [:div.map-view-child.hat
+             {:style {:top 0
+                      :width (prop :orgpad/unit-width)
+                      :height (prop :orgpad/unit-height) }
+              :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)}
+             ;; (when (contains? selections (:db/id unit))
+             ;;  [:span.fa.fa-check-circle.fa-lg.select-check])
+             ])
+          [ :div.map-view-child.leader-control
+           { :style {:left (/ (prop :orgpad/unit-corner-x) 2)}
             :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
             :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
             :onMouseUp #(open-unit pcomponent unit-tree local-state) }
-          [:i.far.fa-sign-in-alt]]
-        )
+           [:i.far.fa-sign-in-alt]]
+          )
 
-      (when (contains? selections (:db/id unit))
-        [:span.fa.fa-check-circle.fa-lg.select-check {:style {:right (+ (/ (prop :orgpad/unit-corner-y) 2) 8) }}])
-      ])))
+        (when (contains? selections (:db/id unit))
+          [:span.fa.fa-check-circle.fa-lg.select-check {:style {:right (+ (/ (prop :orgpad/unit-corner-y) 2) 8) }}])
+        ]))
+    (catch :default e
+      (js/console.log "Unit render error" e)
+      nil)))
 
 (def map-unit-mem
   (func/memoize' map-unit {:key-fn #(-> % first ot/uid)
@@ -233,40 +237,44 @@
 
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic?]} app-state pcomponent view-name pid local-state]
-  (let [prop (ot/get-props-view-child-styled props view-name pid
-                                             :orgpad.map-view/link-props :orgpad.map-view/link-props-style)
-        mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
-        style { :css { :zIndex -1 }
-                :canvas { :strokeStyle (format-color (prop :orgpad/link-color))
+  (try
+    (let [prop (ot/get-props-view-child-styled props view-name pid
+                                               :orgpad.map-view/link-props :orgpad.map-view/link-props-style)
+          mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
+          style { :css { :zIndex -1 }
+                 :canvas { :strokeStyle (format-color (prop :orgpad/link-color))
                           :lineWidth (prop :orgpad/link-width)
                           :lineCap "round"
                           :lineDash (prop :orgpad/link-dash) } }
-        ctl-style (css/transform {:translate (-- (++ mid-pt [(-> prop :orgpad/link-width)
-                                                             (-> prop :orgpad/link-width)])
-                                                 [10 10])})
-        ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
-    ;; (js/window.console.log "rendering " (unit :db/id))
-    ;; ugly o'hacks
-    ;; move it to component mount and component did update
-    (update-geocache-for-link-changes pcomponent pid view-name (unit :db/id)
-                                      start-pos end-pos (prop :orgpad/link-mid-pt)
-                                      (unit :orgpad/refs))
-    (when (ot/get-props-no-ctx (:orgpad/props-refs unit) view-name :orgpad/atomic-view :orgpad/unit-view)
-      (mk-lnk-vtx-prop component unit-tree view-name pid mid-pt))
-    (html
-     [ :div {}
-       (if cyclic?
-         (g/arc (geom/link-arc-center start-pos mid-pt)
-                (geom/link-arc-radius start-pos mid-pt) 0 math/pi2 style)
-         (g/quadratic-curve start-pos end-pos ctl-pt style))
-       (if cyclic?
-         (make-arrow-arc start-pos mid-pt prop)
-         (make-arrow-quad start-pos end-pos ctl-pt prop))
-       (when (= (app-state :mode) :write)
-         [ :div { :className "map-view-child link-control" :style ctl-style
+          ctl-style (css/transform {:translate (-- (++ mid-pt [(-> prop :orgpad/link-width)
+                                                               (-> prop :orgpad/link-width)])
+                                                   [10 10])})
+          ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
+      ;; (js/window.console.log "rendering " (unit :db/id))
+      ;; ugly o'hacks
+      ;; move it to component mount and component did update
+      (update-geocache-for-link-changes pcomponent pid view-name (unit :db/id)
+                                        start-pos end-pos (prop :orgpad/link-mid-pt)
+                                        (unit :orgpad/refs))
+      (when (ot/get-props-no-ctx (:orgpad/props-refs unit) view-name :orgpad/atomic-view :orgpad/unit-view)
+        (mk-lnk-vtx-prop component unit-tree view-name pid mid-pt))
+      (html
+       [ :div {}
+        (if cyclic?
+          (g/arc (geom/link-arc-center start-pos mid-pt)
+                 (geom/link-arc-radius start-pos mid-pt) 0 math/pi2 style)
+          (g/quadratic-curve start-pos end-pos ctl-pt style))
+        (if cyclic?
+          (make-arrow-arc start-pos mid-pt prop)
+          (make-arrow-quad start-pos end-pos ctl-pt prop))
+        (when (= (app-state :mode) :write)
+          [ :div { :className "map-view-child link-control" :style ctl-style
                   :onMouseDown #(start-change-link-shape unit-tree prop pcomponent start-pos end-pos mid-pt local-state %)
                   :onTouchStart #(start-change-link-shape unit-tree prop pcomponent start-pos end-pos mid-pt local-state %) } ])
-      ])))
+        ]))
+    (catch :default e
+      (js/console.log "link render error" unit-tree start-pos end-pos cyclic? view-name pid  e) ;; TODO - show error
+      nil)))
 
 (def map-link-mem
   (func/memoize' map-link {:key-fn #(-> % first ot/uid)
@@ -280,6 +288,7 @@
         pid (:db/id unit) ;;(parent-id view)
         m-units (mapped-children-mem unit view-name)
         m-links (mapped-links-mem unit view-name pid m-units)]
+    ;; (js/console.log m-units m-links)
     (aset component "parent-view" view)
     (html
      [:div

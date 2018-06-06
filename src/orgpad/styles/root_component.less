@@ -85,15 +85,31 @@
                 width: 100%;
                 padding-bottom: 10px;
             }
+            .paragraph {
+                border: 1px solid #d9d9d9;
+            }
             .line {
+                margin: 10px;
+                line-height: 200%;
                 .left {
-                    text-align: right;
+                    text-align: left;
                     width:40%;
-                    float: left;
+                    // float: left;
+                    position: relative;
+                    left: 0px;
+                    display: inline;
                 }
                 .right {
                     width: 40%;
-                    float: right;
+                    // float: right;
+                    position: absolute;
+                    right: 10%;
+                    display: inline;
+                    text-align: left;
+
+                    .orgpad-name {
+                        width: 50%;
+                    }
                 }
             }
         }

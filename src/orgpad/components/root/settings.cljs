@@ -20,40 +20,42 @@
 
    [:div.block
     [:div.label "Basic"]
-    [:div.line
-     [:div.left "Orgpad Name"]
-     [:div.right [:input {:type "text"
-                          :placeholder "Write a name"
-                          :value (or (:orgpad-name app-state) "")
-                          :onChange #(let [name (-> % .-target .-value)]
-                                       (dom/set-el-text (dom/ffind-tag :title) name)
-                                       (lc/transact! component
-                                                     [[:orgpad/app-state [[:orgpad-name] name]]]))}]]]
-    [:div.line
-     [:div.left "Zip Saved Files"]
-     [:div.right
-      [:input (merge {:type "checkbox"
-                      :onChange #(lc/transact! component
-                                               [[:orgpad/app-state [[:zip-saved-files?]
-                                                                    (-> % .-target .-checked)]]])}
-                     (if (:zip-saved-files? app-state)
-                       {:checked true} {}))
+    [:div.paragraph
+     [:div.line
+      [:div.left "Orgpad Name"]
+      [:div.right [:input.orgpad-name {:type "text"
+                                       :placeholder "Write a name"
+                                       :value (or (:orgpad-name app-state) "")
+                                       :onChange #(let [name (-> % .-target .-value)]
+                                                    (dom/set-el-text (dom/ffind-tag :title) name)
+                                                    (lc/transact! component
+                                                                  [[:orgpad/app-state [[:orgpad-name] name]]]))}]]]
+     [:div.line
+      [:div.left "Compress Saved Files"]
+      [:div.right
+       [:input (merge {:type "checkbox"
+                       :onChange #(lc/transact! component
+                                                [[:orgpad/app-state [[:compress-saved-files?]
+                                                                     (-> % .-target .-checked)]]])}
+                      (if (:compress-saved-files? app-state)
+                        {:checked true} {}))
        ]]
      ]
-    ]
+    ]]
 
 
    [:div.block
     [:div.label "Advanced"]
-    [:div.line
-     [:div.left "Enable Experimental Features"]
-     [:div.right [:input (merge {:type "checkbox"
-                                 :onChange #(lc/transact! component
-                                                          [[:orgpad/app-state [[:enable-experimental-features?]
-                                                                               (-> % .-target .-checked)]]])}
-                                (if (:enable-experimental-features? app-state)
-                                  {:checked true} {}))
+    [:div.paragraph
+     [:div.line
+      [:div.left "Enable Experimental Features"]
+      [:div.right [:input (merge {:type "checkbox"
+                                  :onChange #(lc/transact! component
+                                                           [[:orgpad/app-state [[:enable-experimental-features?]
+                                                                                (-> % .-target .-checked)]]])}
+                                 (if (:enable-experimental-features? app-state)
+                                   {:checked true} {}))
 
-                           ]]]]
-   ]
+                   ]]]]
+   ]]
   )

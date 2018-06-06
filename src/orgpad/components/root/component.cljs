@@ -103,7 +103,8 @@
         :on-click #(lc/transact! (:component %1) [[ :orgpad/import-orgpad %2 ]]) }
        {:id "tohtml"
         :label "Export HTML"
-        :on-click #(lc/transact! (:component %1) [[ :orgpad/export-as-html ((lc/global-conf (:component %1)) :storage-el) ]]) }]}]
+        :on-click #(lc/transact! (:component %1) [[ :orgpad/export-as-html ((lc/global-conf (:component %1)) :storage-el) ]]) }
+                   ]}]
    [{:elem :roll
      :id "styles-editor"
      :icon "far fa-calendar"
