@@ -113,5 +113,6 @@
                    :root-local-state root-local-state
                    :mode         (:mode app-state)
                    :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
-                   :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view))) }]
+                   :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view)))
+                   :app-state    app-state}]
        (tbar/toolbar "toolbar" params left-toolbar right-toolbar))]))

@@ -27,7 +27,7 @@
 ;; Each group of buttons is represented by a nested list.
 ;;
 ;; Each button is represented by the following map:
-;;  {:elem (:btn|:roll|:text) 
+;;  {:elem (:btn|:roll|:text|:custom)
 ;;   :id              ...   identificator
 ;;   :title           ...   tooltip hint
 ;;   :icon            ...   font-awesome style name or nil for no icon
@@ -48,7 +48,7 @@
 ;;   :value           ...   unary function generating a string to be displayed
 ;;  }
 ;;
-;; Each roll item is represented by the same map without elem (at least for now).  
+;; Each roll item is represented by the same map without elem (at least for now).
 ;; In the future, it should be possible to do a menu with multiple layers in this way.
 ;;
 ;; The first parameter of all functions is the map param given on the input, the second parameter
@@ -99,7 +99,7 @@
 (defn- gen-action
   "Generate function for js-event."
   [is-disabled func local-state params]
-  (when (and (fn? func) (not is-disabled)) 
+  (when (and (fn? func) (not is-disabled))
     #(wrap-toolbar-action local-state (fn [] (func params %)))))
 
 (defn- get-disabled
@@ -115,7 +115,7 @@
 (defn- gen-button
   "Generates one button or roll item from the input data, with a hack for file loading."
   [local-state params elem {:keys [id title icon label on-click on-mouse-down on-touch-start active disabled load-files]}]
-  (let [is-disabled (get-disabled disabled params) 
+  (let [is-disabled (get-disabled disabled params)
         is-active (get-active active is-disabled params)
         button-class (str elem (when is-disabled " disabled") (when is-active " active"))
         label-class (if icon "btn-icon-label" "btn-label")
@@ -133,26 +133,27 @@
        :onMouseDown (gen-action is-disabled on-mouse-down local-state params)
        :onTouchStart (gen-action is-disabled on-touch-start local-state params)}
       icon-span label-span])))
- 
+
 (defn- gen-roll
   "Generates one roll from the input data."
-  [local-state params {:keys [id title icon label active disabled roll-items]}]
-  (let [is-disabled (get-disabled disabled params)
-        is-active (get-active active is-disabled params)
-        button-class (str "btn" (when is-disabled " disabled") (when (or is-active (= (:open @local-state) id)) " active"))
-        label-class (if icon "btn-icon-label" "btn-label")]
-    [:span.roll {:key id}
-      [:span 
-       {:key (str id "-btn")
-        :className button-class
-        :title title
-        :onClick (when (not is-disabled) (jev/make-block-propagation #(swap! local-state update-in [:open] toggle-open-state id)))}
+  [local-state params {:keys [id title icon label active disabled roll-items] :as elem}]
+  (when (visible-elem? params elem)
+    (let [is-disabled (get-disabled disabled params)
+          is-active (get-active active is-disabled params)
+          button-class (str "btn" (when is-disabled " disabled") (when (or is-active (= (:open @local-state) id)) " active"))
+          label-class (if icon "btn-icon-label" "btn-label")]
+      [:span.roll {:key id}
+       [:span
+        {:key (str id "-btn")
+         :className button-class
+         :title title
+         :onClick (when (not is-disabled) (jev/make-block-propagation #(swap! local-state update-in [:open] toggle-open-state id)))}
         (when icon [:i { :key (str id "-icon") :className (str icon " fa-lg fa-fw") }])
         (when label [:span { :key (str id "-label") :className label-class } label])
         [:i { :key (str id "-caret") :className "fa fa-caret-down" }]]
-      (when (= (:open @local-state) id)
-        [:span.roll-items { :key (str id "-roll-items") }
-          (map (partial gen-button local-state params "roll-item") roll-items)])]))
+       (when (= (:open @local-state) id)
+         [:span.roll-items { :key (str id "-roll-items") }
+          (map (partial gen-button local-state params "roll-item") roll-items)])])))
 
 (defn- gen-text
   "Generates one text from the input data."
@@ -179,12 +180,12 @@
   [local-state params data]
   (map (partial gen-element local-state params) data))
 
-  
+
 (defn- gen-side
   "Generates one side of the toolbar from the input data, interposing each section with separators."
   [local-state params data]
   (let [sep-data (map #(identity [:span.sep {:key (str (:id (nth % 0)) "-sep") }]) data)]
-    (drop-last (interleave 
+    (drop-last (interleave
       (map (partial gen-section local-state params) data)
       sep-data))))
 
@@ -208,7 +209,7 @@
        (map (fn [[view-type info]] { :id view-type
                                      :label (info :orgpad/view-name)
                                      :icon (info :orgpad/view-icon)
-                                     :on-click #(omt/change-view-type (:component %1) (unit-tree-key %1) view-type) 
+                                     :on-click #(omt/change-view-type (:component %1) (unit-tree-key %1) view-type)
                                      :active (= current-type view-type) }))
        (sort-by :label)))
 
@@ -224,4 +225,3 @@
       :title (str title-prefix ": " current-name)
       :roll-items (view-types-roll-items (:orgpad/view-type view) unit-tree-key)
       :hidden hidden }))
-

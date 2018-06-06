@@ -166,7 +166,16 @@
       :title "Read mode"
       :active #(= (:mode %1) :read)
       :on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :read]]]) }
-    ]
+     ]
+     [{:elem :roll
+       :id "debug"
+       :icon "far fa-bug"
+       :label "Debug"
+       :hidden #(not= (-> %1 :app-state :enable-experimental-features?) true)
+       :roll-items [{:id "swap-all-links"
+                     :icon "far fa-exchange"
+                     :label "Swap All Links"
+                     :on-click #(lc/transact! (:component %1) [[:orgpad/debug-swap-all-links true]])}]}]
     [{:elem :btn
       :id "settings"
       :label "Settings"
