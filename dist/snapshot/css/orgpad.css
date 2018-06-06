@@ -3556,14 +3556,29 @@ readers do not read off random characters that represent icons */
   width: 100%;
   padding-bottom: 10px;
 }
+.root-view .settings .block .paragraph {
+  border: 1px solid #d9d9d9;
+}
+.root-view .settings .block .line {
+  margin: 10px;
+  line-height: 200%;
+}
 .root-view .settings .block .line .left {
-  text-align: right;
+  text-align: left;
   width: 40%;
-  float: left;
+  position: relative;
+  left: 0px;
+  display: inline;
 }
 .root-view .settings .block .line .right {
   width: 40%;
-  float: right;
+  position: absolute;
+  right: 10%;
+  display: inline;
+  text-align: left;
+}
+.root-view .settings .block .line .right .orgpad-name {
+  width: 50%;
 }
 .root-view .root-toolbar {
   -webkit-transition: 0.5s ease-in-out;
