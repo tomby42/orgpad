@@ -186,10 +186,10 @@
 
 (defn- file-name
   [default-name db]
-  (let [orgpad-name (-> db (store/query []) first :orgpad-name)
+  (let [orgpad-filename (-> db (store/query []) first :orgpad-filename)
         p (js/document.location.pathname.lastIndexOf "/")]
-    (if orgpad-name
-      orgpad-name
+    (if orgpad-filename
+      orgpad-filename
       (if (not= p -1)
         (js/document.location.pathname.substr (inc p))
         default-name))))
@@ -216,7 +216,7 @@
 
 (defn save-file-by-uri
   [db]
-  (let [filename (.replace (file-name "orgpad.orgpad" db) "html" "orgpad")]
+  (let [filename (.replace (file-name "untitled.orgpad" db) "html" "orgpad")]
     (store-file filename (compress-db db) "text/plain")))
 
 (defn load-orgpad

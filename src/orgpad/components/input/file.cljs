@@ -1,4 +1,4 @@
-(ns ^{:doc "File input componet"}
+(ns ^{:doc "File input component"}
   orgpad.components.input.file
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
