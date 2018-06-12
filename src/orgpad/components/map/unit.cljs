@@ -21,11 +21,7 @@
             [orgpad.tools.geocache :as geocache]
             [orgpad.tools.func :as func]
             [orgpad.components.graphics.primitives :as g]
-            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos!]]))
-
-(defn- parent-id
-  [view]
-  (-> view :orgpad/refs first :db/id))
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-change-link-shape parent-id]]))
 
 (defn- select-unit
   [unit-tree prop pcomponent local-state component]
@@ -163,18 +159,6 @@
   (func/memoize' map-unit {:key-fn #(-> % first ot/uid)
                            :eq-fns [identical? identical? identical? identical? identical? identical?]}))
 
-(defn- start-change-link-shape
-  [unit-tree prop component start-pos end-pos mid-pt local-state ev]
-  (.stopPropagation ev)
-  (let [parent-view (aget component "parent-view")]
-    (swap! local-state merge { :local-mode :link-shape
-                               :selected-link [unit-tree prop parent-view start-pos end-pos mid-pt]
-                               :link-menu-show :maybe
-                               :selected-unit nil
-                               :mouse-x (if (.-clientX ev) (.-clientX ev) (aget ev "touches" 0 "clientX"))
-                               :mouse-y (if (.-clientY ev) (.-clientY ev) (aget ev "touches" 0 "clientY")) })
-    (lc/transact! component [[ :orgpad.units/deselect-all {:pid (parent-id parent-view)} ]])))
-
 (defn- make-arrow-quad
   [start-pos end-pos ctl-pt prop]
   (let [p1 (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos 0.85)
@@ -241,11 +225,11 @@
     (let [prop (ot/get-props-view-child-styled props view-name pid
                                                :orgpad.map-view/link-props :orgpad.map-view/link-props-style)
           mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
-          style { :css { :zIndex -1 }
-                 :canvas { :strokeStyle (format-color (prop :orgpad/link-color))
+          style {:css { :zIndex -1 }
+                 :canvas {:strokeStyle (format-color (prop :orgpad/link-color))
                           :lineWidth (prop :orgpad/link-width)
                           :lineCap "round"
-                          :lineDash (prop :orgpad/link-dash) } }
+                          :lineDash (prop :orgpad/link-dash)}}
           ctl-style (css/transform {:translate (-- (++ mid-pt [(-> prop :orgpad/link-width)
                                                                (-> prop :orgpad/link-width)])
                                                    [10 10])})
@@ -267,10 +251,10 @@
         (if cyclic?
           (make-arrow-arc start-pos mid-pt prop)
           (make-arrow-quad start-pos end-pos ctl-pt prop))
-        (when (= (app-state :mode) :write)
-          [ :div { :className "map-view-child link-control" :style ctl-style
-                  :onMouseDown #(start-change-link-shape unit-tree prop pcomponent start-pos end-pos mid-pt local-state %)
-                  :onTouchStart #(start-change-link-shape unit-tree prop pcomponent start-pos end-pos mid-pt local-state %) } ])
+        ;; (when (and (= (app-state :mode) :write) cyclic?)
+        ;;   [ :div {:className "map-view-child link-control" :style ctl-style
+        ;;           :onMouseDown #(start-change-link-shape unit-tree prop pcomponent start-pos end-pos mid-pt 0.5 local-state %)
+        ;;           :onTouchStart #(start-change-link-shape unit-tree prop pcomponent start-pos end-pos mid-pt 0.5 local-state %) } ])
         ]))
     (catch :default e
       (js/console.log "link render error" unit-tree start-pos end-pos cyclic? view-name pid  e) ;; TODO - show error

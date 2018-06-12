@@ -577,9 +577,18 @@
   [p {:keys [props unit]} {:keys [start-pos end-pos cyclic?]} pid view-name]
   (let [prop (get-props-view-child-styled props view-name pid
                                           :orgpad.map-view/link-props :orgpad.map-view/link-props-style)
-        mid-pt (geom/link-middle-point start-pos end-pos (:orgpad/link-mid-pt prop))
-        ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
-    (bez/nearest-point-on start-pos ctl-pt end-pos p)))
+        d [(-> prop :orgpad/link-width)
+           (-> prop :orgpad/link-width)]
+        mid-pt (geom/link-middle-point start-pos end-pos (:orgpad/link-mid-pt prop))]
+    (if cyclic?
+      (let [nearest-point (geom/arc-nearest-point start-pos mid-pt p)]
+        [#js {:x (nth nearest-point 0)
+              :y (nth nearest-point 1)
+              :t 0.5
+              :d (geom/distance nearest-point p)}
+         prop])
+      (let [ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
+        [(bez/nearest-point-on (++ start-pos d) (++ ctl-pt d) (++ end-pos d) p) prop]))))
 
 (defn get-nearest-link
   [{:keys [unit view props] :as unit-tree} p]
@@ -587,12 +596,12 @@
         pid (:db/id unit)
         vertices (mapped-children unit view-name)
         links (mapped-links unit view-name pid vertices)]
-    (reduce (fn [[best-unit _ dist-info :as res] [unit info]]
-              (let [d-info (link-dist-info p unit info pid view-name)]
+    (reduce (fn [[best-unit _ _ dist-info :as res] [unit info]]
+              (let [[d-info prop] (link-dist-info p unit info pid view-name)]
                 (if (< (.-d d-info) (.-d dist-info))
-                  [unit info d-info]
+                  [unit prop info d-info]
                   res)))
-            [nil nil #js {:d 100000000}] links)))
+            [nil nil nil #js {:d 100000000}] links)))
 
 (defn make-swap-refs-order-qry
   [id refs-order]

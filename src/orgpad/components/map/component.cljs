@@ -17,7 +17,7 @@
             [orgpad.tools.colls :as colls]
             [orgpad.tools.dom :as dom]
             [orgpad.tools.time :as t]
-            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos!]]))
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-change-link-shape]]))
 
 (def ^:private init-state
   { :local-mode :none
@@ -53,9 +53,21 @@
   (create-pair-unit component unit-tree pos)
   (.stopPropagation ev))
 
+(defn- get-rel-mouse-pos
+  [component unit-tree ev]
+  (let [bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")]
+    [(mouse-node-rel-x bbox ev)
+     (mouse-node-rel-y bbox ev)]))
+
 (defn handle-mouse-down
   [component unit-tree app-state ev]
-  (let [local-state (trum/comp->local-state component)]
+  (let [local-state (trum/comp->local-state component)
+        pos (get-rel-mouse-pos component unit-tree ev)
+        linfo (when (= (:mode app-state) :write)
+                (ot/get-nearest-link unit-tree
+                                     (geom/screen->canvas (-> unit-tree :view :orgpad/transform)
+                                                          pos)))]
+    ;; (js/console.log "nearest link" linfo)
     ;; (jev/block-propagation ev)
     (swap! local-state merge { :mouse-x (.-clientX ev)
                                :mouse-y (.-clientY ev)
@@ -70,7 +82,12 @@
                                              :canvas-move)
                                :quick-edit false })
     (set-mouse-pos! ev)
-    (lc/transact! component [[ :orgpad.units/deselect-all {:pid (ot/uid unit-tree)} ]])))
+    (if (and linfo (< (-> linfo (get 3) (aget "d")) 20))
+      (let [[link-unit link-prop link-info link-dist-info] linfo]
+        (start-change-link-shape link-unit link-prop component (:start-pos link-info) (:end-pos link-info)
+                                 [(aget link-dist-info "x") (aget link-dist-info "y")] (aget link-dist-info "t")
+                                 local-state ev))
+      (lc/transact! component [[ :orgpad.units/deselect-all {:pid (ot/uid unit-tree)} ]]))))
 
 (defn- make-link
   [component unit-tree local-state pos]
@@ -156,19 +173,9 @@
 
 (def ^:private last-unit-created-ts (volatile! 0))
 
-(defn- get-rel-mouse-pos
-  [component unit-tree ev]
-  (let [bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")]
-        [(mouse-node-rel-x bbox ev)
-         (mouse-node-rel-y bbox ev)]))
-
 (defn- resolve-mouse-down
   [component unit-tree local-state ev]
-  (let [pos (get-rel-mouse-pos component unit-tree ev)
-        linfo (ot/get-nearest-link unit-tree
-                                   (geom/screen->canvas (-> unit-tree :view :orgpad/transform)
-                                                           pos))]
-    (js/console.log "nearest link" linfo)
+  (let [pos (get-rel-mouse-pos component unit-tree ev)]
     (when (and (= (:canvas-mode @local-state) :canvas-create-unit)
                (not (.-isTouch ev))
                (< 250 (- (t/now) @last-unit-created-ts)))
@@ -240,19 +247,20 @@
 
 (defn- update-link-shape
   [component local-state ev]
-  (let [[unit-tree prop parent-view start-pos end-pos mid-pt] (@local-state :selected-link)
+  (let [[unit-tree prop parent-view start-pos end-pos mid-pt t] (@local-state :selected-link)
         bbox (lc/get-global-cache component (-> parent-view :orgpad/refs first :db/id) "bbox")]
     (swap! local-state assoc :link-menu-show :none)
     (lc/transact! component
-                  [[ :orgpad.units/map-view-link-shape
-                    { :prop prop
-                      :parent-view parent-view
-                      :unit-tree unit-tree
-                      :start-pos start-pos
-                      :end-pos end-pos
-                      :mid-pt mid-pt
-                      :pos [(mouse-node-rel-x bbox ev)
-                            (mouse-node-rel-y bbox ev)] }]])
+                  [[:orgpad.units/map-view-link-shape
+                    {:prop prop
+                     :parent-view parent-view
+                     :unit-tree unit-tree
+                     :start-pos start-pos
+                     :end-pos end-pos
+                     :mid-pt mid-pt
+                     :t t
+                     :pos [(mouse-node-rel-x bbox ev)
+                           (mouse-node-rel-y bbox ev)]}]])
     (update-mouse-position local-state ev)))
 
 (defn- try-start-selection

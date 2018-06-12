@@ -7,7 +7,7 @@
                  [org.clojure/clojurescript   "1.10.238"]
                  [org.clojure/core.async      "0.3.465"]
                  [org.clojure/test.check      "0.9.0"]
-                 [datascript                  "0.16.4"]
+                 [datascript                  "0.16.6"]
                  [com.rpl/specter             "1.0.5"]
                  ;; [rum                         "0.9.1"] ;; local modified copy src/rum 0.10.8
                  [sablono                     "0.7.7"]

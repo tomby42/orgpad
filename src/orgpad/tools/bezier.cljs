@@ -41,5 +41,20 @@
   "returns {x: 2, y: 2, t: 1, d: 1.4142135623730951}"
   [p1 p2 p3 p]
   (let [curve (bezier-js. (apply array (colls/minto p1 p2 p3)))]
-    (.project curve #js {:x (p 0) :y (p 1)})))
+    (.project curve #js {:x (nth p 0) :y (nth p 1)})))
 
+(defn ->pt
+  [p]
+  #js {:x (nth p 0) :y (nth p 1)})
+
+(defn get-quadratic-curve-ctl-point
+  [p1 p2 p3 t]
+  (let [curve (.quadraticFromPoints bezier-js (->pt p1) (->pt p2) (->pt p3) t)]
+    [(aget curve "points" 1 "x")
+     (aget curve "points" 1 "y")]))
+
+(defn get-point-on-quadratic-curve
+  [p1 p2 p3 t-old t-new]
+  (let [curve (.quadraticFromPoints bezier-js (->pt p1) (->pt p2) (->pt p3) t-old)
+        pt (.get curve t-new)]
+    [(.-x pt) (.-y pt)]))

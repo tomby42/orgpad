@@ -12,6 +12,7 @@
             [orgpad.tools.dscript :as ds]
             [orgpad.tools.jcolls :as jcolls]
             [orgpad.tools.dom :as dom]
+            [orgpad.tools.bezier :as bez]
             [orgpad.parsers.default-unit :as dp :refer [read mutate]]))
 
 (def ^:private propagated-query
@@ -392,9 +393,12 @@
   (let [info (registry/get-component-info :orgpad/map-view)
         closest-unit (find-closest-unit map-unit-tree begin-unit-id position)
         parent-id (ot/uid map-unit-tree)
+        cyclic? (= begin-unit-id (ot/uid closest-unit))
         mid-pt-rel (if style
-                     (:orgpad/link-mid-pt style)
-                     (if (= begin-unit-id (ot/uid closest-unit)) [-40 0] [0 0]))
+                     (if (and cyclic? (= (:orgpad/link-mid-pt style) [0 0]))
+                       [-40 0]
+                       (:orgpad/link-mid-pt style))
+                     (if cyclic? [-40 0] [0 0]))
         default-prop (-> info :orgpad/child-props-default :orgpad.map-view/link-props
                          (as-> x (if style (assoc x :orgpad/view-style (:orgpad/style-name style)) x)))
         new-state (if closest-unit
@@ -407,14 +411,14 @@
                                            [(ordn/canonical-next ordn/canonical-zero)
                                             (ot/uid closest-unit)])
                        :orgpad/type :orgpad/unit
-                       :orgpad/props-refs (if style [-2 (:db/id style)] -2) }
+                       :orgpad/props-refs (if style [-2 (:db/id style)] -2)}
                       (merge default-prop
                              { :db/id -2
                                :orgpad/refs -1
                                :orgpad/type :orgpad/unit-view-child
                                :orgpad/view-name (-> map-unit-tree :view :orgpad/view-name)
                                :orgpad/context-unit parent-id}
-                             (when (nil? style)
+                             (when (or (nil? style) cyclic?)
                                {:orgpad/link-mid-pt mid-pt-rel}))
                       [:db/add parent-id :orgpad/refs -1]])
                     state)]
@@ -426,18 +430,19 @@
     { :state new-state }))
 
 (defmethod mutate :orgpad.units/map-view-link-shape
-  [{:keys [state]} _ {:keys [prop parent-view unit-tree pos start-pos end-pos mid-pt]}]
+  [{:keys [state]} _ {:keys [prop parent-view unit-tree pos start-pos end-pos mid-pt t]}]
   (let [id (prop :db/id)
         tr (parent-view :orgpad/transform)
-        pos' (geom/screen->canvas tr pos)
+        pos-tr (geom/screen->canvas tr pos)
+        pos' (bez/get-point-on-quadratic-curve start-pos pos-tr end-pos t 0.5)
+        old-mid-pt (bez/get-point-on-quadratic-curve start-pos mid-pt end-pos t 0.5)
         mid-pt' (geom/-- pos' (geom/*c (geom/++ start-pos end-pos) 0.5))
         vprop (ot/get-props-view-child (:props unit-tree) (:orgpad/view-name parent-view)
                                        (-> parent-view :orgpad/refs first :db/id) :orgpad.map-view/vertex-props)]
     { :state (store/transact state (into [[:db/add id :orgpad/link-mid-pt mid-pt']]
                                          (when (-> vprop nil? not)
                                            [[:db/add (:db/id vprop) :orgpad/unit-position (geom/++ (:orgpad/unit-position vprop)
-                                                                                                   (geom/-- pos' mid-pt))]]))
-                             ) }))
+                                                                                                   (geom/-- pos' old-mid-pt))]])))}))
 
 (defmethod mutate :orgpad.units/map-view-unit-border-color
   [env _ {:keys [color] :as payload}]
@@ -678,7 +683,7 @@
 (defmethod mutate :orgpad.units/map-view-link-remove
   [{:keys [state global-cache]} _ id]
   (let [parents (find-parents state id)
-        final-qry (colls/minto [[:db.fn/retractEntuity id]]
+        final-qry (colls/minto [[:db.fn/retractEntity id]]
                                (map (fn [eid] [:db.fn/retractEntity eid]) (find-props state id))
                                (remove-from-refs-orders-qry state id)
                                (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents))]
