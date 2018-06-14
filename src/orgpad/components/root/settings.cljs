@@ -22,16 +22,16 @@
     [:div.label "Basic"]
     [:div.paragraph
      [:div.line
-      [:div.left "Orgpad name"]
+      [:div.left "Orgpad Title"]
       [:div.right [:input.orgpad-name {:type "text"
-                                       :placeholder "Write a name"
+                                       :placeholder "Write a title"
                                        :value (or (:orgpad-name app-state) "")
                                        :onChange #(let [name (-> % .-target .-value)]
                                                     (dom/set-el-text (dom/ffind-tag :title) name)
                                                     (lc/transact! component
                                                                   [[:orgpad/app-state [[:orgpad-name] name]]]))}]]]
      [:div.line
-      [:div.left "Orgpad filename"]
+      [:div.left "Orgpad Filename"]
       [:div.right [:input.orgpad-name {:type "text"
                                        :placeholder "Write a filename"
                                        :value (or (:orgpad-filename app-state) "")

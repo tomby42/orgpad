@@ -1,5 +1,5 @@
 (ns ^{:doc "Core orgpad functionality"}
-  orgpad.core.orgpad
+    orgpad.core.orgpad
   (:require
    [cljs.reader :as reader]
    [datascript.core   :as d]
@@ -69,15 +69,15 @@
                       (mapcat :orgpad/child-props-style-types)
                       (map :key))
                      (vals (cregistry/get-registry)))]
-  (-> db
-      (store/query '[:find ?e
-                     :in $ ?contains
-                     :where
-                     [?e :orgpad/view-type ?vt]
-                     [(?contains ?vt)]]
-                   [#(contains? styles %)])
-      empty?
-      not)))
+    (-> db
+        (store/query '[:find ?e
+                       :in $ ?contains
+                       :where
+                       [?e :orgpad/view-type ?vt]
+                       [(?contains ?vt)]]
+                     [#(contains? styles %)])
+        empty?
+        not)))
 
 (defn insert-default-styles
   [db]
@@ -89,11 +89,11 @@
   []
   (-> (store/new-datom-atom-store {} (d/empty-db orgpad-db-schema))
       (store/transact [{ :db/id 0,
-                         :orgpad/props-refs 1
-                         :orgpad/type :orgpad/root-unit }
+                        :orgpad/props-refs 1
+                        :orgpad/type :orgpad/root-unit }
                        { :db/id 1,
-                         :orgpad/type :orgpad/root-unit-view,
-                         :orgpad/refs 0 }
+                        :orgpad/type :orgpad/root-unit-view,
+                        :orgpad/refs 0 }
                        ] {})
       insert-default-styles
       (store/transact [[:mode] :write] {})))
@@ -189,13 +189,13 @@
 (defn- substitute-time-date
   [file-name]
   (let [dobj (js/Date.)
-  		date (gstring/format "%04d-%02d-%02d" (.getFullYear dobj) (.getMonth dobj) (.getDate dobj))
-  		time (gstring/format "%02d-%02d-%02d" (.getHours dobj) (.getMinutes dobj) (.getSeconds dobj))]
-	(-> file-name
-		(clojure.string/replace "%d" date)
-		(clojure.string/replace "%D" date)
-		(clojure.string/replace "%t" time)
-		(clojure.string/replace "%T" time))))
+        date (gstring/format "%04d-%02d-%02d" (.getFullYear dobj) (.getMonth dobj) (.getDate dobj))
+        time (gstring/format "%02d-%02d-%02d" (.getHours dobj) (.getMinutes dobj) (.getSeconds dobj))]
+    (-> file-name
+        (clojure.string/replace "%d" date)
+        (clojure.string/replace "%D" date)
+        (clojure.string/replace "%t" time)
+        (clojure.string/replace "%T" time))))
 
 (defn- file-name
   [default-name db]
@@ -238,9 +238,9 @@
 
 (defn download-orgpad-from-url
   [url transact!]
-  (ajax/GET url { :handler #(transact! [[ :orgpad/load-orgpad [%] ]])
-                  :error-handler #(js/console.log (str "Error while downloading from " url " " %))
-                  :format :text }))
+  (ajax/GET url {:handler #(transact! [[ :orgpad/load-orgpad [%] ]])
+                 :error-handler #(js/console.log (str "Error while downloading from " url " " %))
+                 :format :text }))
 
 (defn- get-root-traslations
   [db rid]
