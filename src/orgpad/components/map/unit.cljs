@@ -110,14 +110,13 @@
       (html
        [ :div
         (if (= (app-state :mode) :write)
-          { :style style :className "map-view-child" :key (unit :db/id)
+          {:style style :className "map-view-child" :key (unit :db/id)
            :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
            :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
            ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
            :onDoubleClick (jev/make-block-propagation #(uedit/enable-quick-edit local-state))
            :onWheel jev/stop-propagation
-           :ref "unit-node"
-           }
+           :ref "unit-node"}
           { :style style :className "map-view-child" :key (unit :db/id)
            :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
            :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)

@@ -20,7 +20,7 @@
             [orgpad.components.menu.color.picker :as cpicker]
             [goog.string :as gstring]
             [goog.string.format]
-            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos!]]
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-link]]
             [orgpad.components.input.slider :as slider]
             [orgpad.components.editors.styles :as styles]))
 
@@ -92,28 +92,25 @@
     (swap! local-state assoc :quick-edit true)
     (trum/force-update react-component)))
 
-(defn- start-link
-  [local-state ev]
-  (swap! local-state merge { :local-mode :make-link
-                             :link-start-x (.-clientX (jev/touch-pos ev))
-                             :link-start-y (.-clientY (jev/touch-pos ev))
-                             :mouse-x (.-clientX (jev/touch-pos ev))
-                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
-
 (defn- start-unit-move
-  [local-state ev]
+  [app-state local-state ev]
   (set-mouse-pos! (jev/touch-pos ev))
-  (swap! local-state merge { :local-mode :unit-move
-                             :quick-edit false
-                             :pre-quick-edit 0
-                             :start-mouse-x (.-clientX (jev/touch-pos ev))
-                             :start-mouse-y (.-clientY (jev/touch-pos ev))
-                             :mouse-x (.-clientX (jev/touch-pos ev))
-                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
+  (js/console.log "start-unit-move" (and (= (:mode app-state) :write)
+                                         (= (:canvas-mode @local-state) :canvas-create-unit)) app-state @local-state)
+  (if (and (= (:mode app-state) :write)
+           (= (:canvas-mode @local-state) :canvas-create-unit))
+    (start-link local-state ev)
+    (swap! local-state merge {:local-mode :unit-move
+                              :quick-edit false
+                              :pre-quick-edit 0
+                              :start-mouse-x (.-clientX (jev/touch-pos ev))
+                              :start-mouse-y (.-clientY (jev/touch-pos ev))
+                              :mouse-x (.-clientX (jev/touch-pos ev))
+                              :mouse-y (.-clientY (jev/touch-pos ev))})))
 
 (defn- start-units-move
   [unit-tree selection local-state ev]
-    (set-mouse-pos! (jev/touch-pos ev))
+  (set-mouse-pos! (jev/touch-pos ev))
   (swap! local-state merge { :local-mode :units-move
                              :quick-edit false
                              :pre-quick-edit (if (:pre-quick-edit @local-state)
@@ -289,8 +286,8 @@
                   :style style
                   :key 0
                   :onDoubleClick (jev/make-block-propagation #(enable-quick-edit local-state))
-                  :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
-                  :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
+                  :onMouseDown (jev/make-block-propagation #(start-unit-move app-state local-state %))
+                  :onTouchStart (jev/make-block-propagation #(start-unit-move app-state local-state (aget % "touches" 0)))
                   }
            ; add other resize directions
             [:span.resize-handle-corner
@@ -329,8 +326,8 @@
                 :style style
                 :key 0
                 :onDoubleClick (jev/make-block-propagation #(enable-quick-edit local-state))
-                :onMouseDown (jev/make-block-propagation #(start-unit-move local-state %))
-                :onTouchStart (jev/make-block-propagation #(start-unit-move local-state (aget % "touches" 0)))
+                :onMouseDown (jev/make-block-propagation #(start-unit-move app-state local-state %))
+                :onTouchStart (jev/make-block-propagation #(start-unit-move app-state local-state (aget % "touches" 0)))
                 }]]))))
 
 (defn- close-link-menu

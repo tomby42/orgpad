@@ -1,6 +1,7 @@
 (ns ^{:doc "Map component utils"}
   orgpad.components.map.utils
-  (:require [orgpad.cycle.life :as lc]))
+  (:require [orgpad.cycle.life :as lc]
+            [orgpad.tools.js-events :as jev]))
 
 (def mouse-pos (volatile! nil))
 
@@ -25,3 +26,10 @@
                               :mouse-y (if (.-clientY ev) (.-clientY ev) (aget ev "touches" 0 "clientY")) })
     (lc/transact! component [[ :orgpad.units/deselect-all {:pid (parent-id parent-view)} ]])))
 
+(defn- start-link
+  [local-state ev]
+  (swap! local-state merge {:local-mode :make-link
+                            :link-start-x (.-clientX (jev/touch-pos ev))
+                            :link-start-y (.-clientY (jev/touch-pos ev))
+                            :mouse-x (.-clientX (jev/touch-pos ev))
+                            :mouse-y (.-clientY (jev/touch-pos ev))}))

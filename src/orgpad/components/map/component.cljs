@@ -17,7 +17,7 @@
             [orgpad.tools.colls :as colls]
             [orgpad.tools.dom :as dom]
             [orgpad.tools.time :as t]
-            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-change-link-shape]]))
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-change-link-shape start-link]]))
 
 (def ^:private init-state
   { :local-mode :none
@@ -273,6 +273,16 @@
                               :mouse-y (.-clientY ev) })
     (start-canvas-move local-state ev)))
 
+(defn- resolve-unit-move
+  [unit-tree app-state local-state ev]
+  ;; (set-mouse-pos! ev)
+  (if (and (= (:mode app-state) :write)
+           (= (:canvas-mode @local-state) :canvas-create-unit))
+    (start-link local-state ev)
+    (do
+      (unit-move (:view unit-tree) local-state ev)
+      (swap! local-state assoc :local-mode :unit-move :pre-quick-edit 0))))
+
 (defn- handle-mouse-move
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
@@ -282,10 +292,7 @@
       :unit-resize (unit-resize (:view unit-tree) local-state (jev/stop-propagation ev))
       :make-link (update-mouse-position local-state (jev/stop-propagation ev))
       :link-shape (update-link-shape component local-state (jev/stop-propagation ev))
-      :try-unit-move (do
-                       ;; (set-mouse-pos! ev)
-                       (unit-move (:view unit-tree) local-state (jev/stop-propagation ev))
-                       (swap! local-state assoc :local-mode :unit-move :pre-quick-edit 0))
+      :try-unit-move (resolve-unit-move unit-tree app-state local-state (jev/stop-propagation ev))
       :units-move (units-move (:view unit-tree) local-state (jev/stop-propagation ev))
       :mouse-down (try-start-selection local-state (jev/stop-propagation ev))
       :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
@@ -601,7 +608,7 @@
     [{:elem :btn
       :id "unit-creation-mode"
       :icon "far fa-plus-square"
-      :title "Unit creation mode"
+      :title "Creation mode"
       :on-click #(swap! (:node-state %1) assoc :canvas-mode :canvas-create-unit)
       :active #(active-toolbar-btn? (:node-state %1) :canvas-create-unit)
       :hidden #(= (:mode %1) :read)}
