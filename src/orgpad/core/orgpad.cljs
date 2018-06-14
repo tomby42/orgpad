@@ -7,7 +7,9 @@
    [orgpad.tools.colls :as colls]
    [orgpad.tools.orgpad :as ot]
    [orgpad.components.registry :as cregistry]
-   [ajax.core :as ajax]))
+   [ajax.core :as ajax]
+   [goog.string :as gstring]
+   [goog.string.format]))
 
 (def orgpad-db-schema
   {
@@ -184,12 +186,23 @@
            content)
       content)))
 
+(defn- substitute-time-date
+  [file-name]
+  (let [dobj (js/Date.)
+  		date (gstring/format "%04d-%02d-%02d" (.getFullYear dobj) (.getMonth dobj) (.getDate dobj))
+  		time (gstring/format "%02d-%02d-%02d" (.getHours dobj) (.getMinutes dobj) (.getSeconds dobj))]
+	(-> file-name
+		(clojure.string/replace "%d" date)
+		(clojure.string/replace "%D" date)
+		(clojure.string/replace "%t" time)
+		(clojure.string/replace "%T" time))))
+
 (defn- file-name
   [default-name db]
-  (let [orgpad-name (-> db (store/query []) first :orgpad-name)
+  (let [orgpad-filename (substitute-time-date (-> db (store/query []) first :orgpad-filename))
         p (js/document.location.pathname.lastIndexOf "/")]
-    (if orgpad-name
-      orgpad-name
+    (if orgpad-filename
+      orgpad-filename
       (if (not= p -1)
         (js/document.location.pathname.substr (inc p))
         default-name))))
@@ -216,7 +229,7 @@
 
 (defn save-file-by-uri
   [db]
-  (let [filename (.replace (file-name "orgpad.orgpad" db) "html" "orgpad")]
+  (let [filename (.replace (file-name "untitled.orgpad" db) "html" "orgpad")]
     (store-file filename (compress-db db) "text/plain")))
 
 (defn load-orgpad

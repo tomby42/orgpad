@@ -22,7 +22,7 @@
     [:div.label "Basic"]
     [:div.paragraph
      [:div.line
-      [:div.left "Orgpad Name"]
+      [:div.left "Orgpad name"]
       [:div.right [:input.orgpad-name {:type "text"
                                        :placeholder "Write a name"
                                        :value (or (:orgpad-name app-state) "")
@@ -30,6 +30,14 @@
                                                     (dom/set-el-text (dom/ffind-tag :title) name)
                                                     (lc/transact! component
                                                                   [[:orgpad/app-state [[:orgpad-name] name]]]))}]]]
+     [:div.line
+      [:div.left "Orgpad filename"]
+      [:div.right [:input.orgpad-name {:type "text"
+                                       :placeholder "Write a filename"
+                                       :value (or (:orgpad-filename app-state) "")
+                                       :onChange #(let [filename (-> % .-target .-value)]
+                                                    (lc/transact! component
+                                                                  [[:orgpad/app-state [[:orgpad-filename] filename]]]))}]]]
      [:div.line
       [:div.left "Compress Saved Files"]
       [:div.right
