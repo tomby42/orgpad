@@ -199,7 +199,8 @@
 
 (defn- file-name
   [default-name db]
-  (let [orgpad-filename (substitute-time-date (-> db (store/query []) first :orgpad-filename))
+  (let [filename (-> db (store/query []) first :orgpad-filename)
+        orgpad-filename (when filename (substitute-time-date filename))
         p (js/document.location.pathname.lastIndexOf "/")]
     (if orgpad-filename
       orgpad-filename

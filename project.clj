@@ -4,7 +4,7 @@
 
   :dependencies [[org.clojure/clojure         "1.8.0"]
                  ;; [org.clojure/clojurescript   "1.9.946"]
-                 [org.clojure/clojurescript   "1.10.238"]
+                 [org.clojure/clojurescript   "1.10.312"]
                  [org.clojure/core.async      "0.3.465"]
                  [org.clojure/test.check      "0.9.0"]
                  [datascript                  "0.16.6"]
