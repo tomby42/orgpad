@@ -23,14 +23,15 @@
                                  global-cfg)
         u (url/url (aget js/window "location" "href"))
         from (-> u .-query (get "u"))]
+    (when init-data
+      ((:parser-mutate context) [[:orgpad/loaded db]]))
     (when from
-      ((context :parser-mutate) [[ :orgpad/download-orgpad-from-url
-                                   (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack
+      ((:parser-mutate context) [[:orgpad/download-orgpad-from-url
+                                  (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack
                                   ]]))
     (.log js/console "ORGPAD BOOT.")))
 
-(defn on-js-reload []
-  )
+(defn on-js-reload [])
 
 (def data-readers {'orgpad/DatomStore store/datom-store-from-reader
                    'orgpad/DatomAtomStore store/datom-atom-store-from-reader})
