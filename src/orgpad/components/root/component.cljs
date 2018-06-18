@@ -45,42 +45,42 @@
 					 :root-toolbar-visible true})
 
 (rum/defcc root-component < lc/parser-type-mixin-context (rum/local default-values)
- [component]
- (let [unit-tree (lc/query component :orgpad/root-view [])
-  app-state (lc/query component :orgpad/app-state [])
-  msg-list (lc/query component :orgpad.ci/msg-list [])
-  local-state (trum/comp->local-state component)] ;; local-state contains children component or nil
+  [component]
+  (let [unit-tree (lc/query component :orgpad/root-view [])
+        app-state (lc/query component :orgpad/app-state [])
+        msg-list (lc/query component :orgpad.ci/msg-list [])
+        local-state (trum/comp->local-state component)] ;; local-state contains children component or nil
 
-  (js/setTimeout #(update-node-component component unit-tree local-state) 100)
+    (js/setTimeout #(update-node-component component unit-tree local-state) 100)
 
-  [ :div.root-view
-  ;; (rum/with-key (sidebar/sidebar-component) 0)
-  (rum/with-key (node/node unit-tree app-state) "root-view-part")
-  (status unit-tree app-state local-state)
-  (rum/with-key (nest/nesting unit-tree) "nesting-part")
-  (when (:enable-experimental-features? app-state)
-   (rum/with-key (ci/dialog-panel unit-tree app-state msg-list) "ci-part"))
-  (when (:show-settings @local-state)
-   (rum/with-key (settings/settings app-state #(swap! local-state assoc :show-settings false)) "settings"))
-  (when (:show-styles-editor @local-state)
-   (rum/with-key (styles/styles-editor app-state #(swap! local-state assoc :show-styles-editor false)) "styles"))
-  (when (:loading app-state)
-   [ :div.loading
-   [ :div.status
-   [ :i.fa.fa-spinner.fa-pulse.fa-3x.fa-fw.margin-bottom ]
-   [ :div.sr-only "Loading..." ] ]
-   ]
-  )
-  ] ) )
+    [ :div.root-view
+     ;; (rum/with-key (sidebar/sidebar-component) 0)
+     (rum/with-key (node/node unit-tree app-state) "root-view-part")
+     (status unit-tree app-state local-state)
+     (rum/with-key (nest/nesting unit-tree) "nesting-part")
+     (when (:enable-experimental-features? app-state)
+       (rum/with-key (ci/dialog-panel unit-tree app-state msg-list) "ci-part"))
+     (when (:show-settings @local-state)
+       (rum/with-key (settings/settings app-state #(swap! local-state assoc :show-settings false)) "settings"))
+     (when (:show-styles-editor @local-state)
+       (rum/with-key (styles/styles-editor app-state #(swap! local-state assoc :show-styles-editor false)) "styles"))
+     (when (:loading app-state)
+       [ :div.loading
+        [ :div.status
+         [ :i.fa.fa-spinner.fa-pulse.fa-3x.fa-fw.margin-bottom ]
+         [ :div.sr-only "Loading..." ] ]
+        ]
+       )
+     ] ) )
 
-  (registry/register-component-info
-   :orgpad/root-view
-   {:orgpad/default-view-info   { :orgpad/view-type :orgpad/map-view
-   :orgpad/view-name "default" }
-   :orgpad/class               root-component
-   :orgpad/needs-children-info true
+(registry/register-component-info
+ :orgpad/root-view
+ {:orgpad/default-view-info   { :orgpad/view-type :orgpad/map-view
+                               :orgpad/view-name "default" }
+  :orgpad/class               root-component
+  :orgpad/needs-children-info true
 
-   :orgpad/left-toolbar
+  :orgpad/left-toolbar
    [
    [{:elem :roll
    :id "file"
@@ -160,32 +160,32 @@
 					:title "Edit mode"
 					:active #(= (:mode %1) :write)
 											:on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :write]]]) }
-{:elem :btn
-	:id "read-mode"
-		:icon "far fa-eye"
-		:title "Read mode"
-		:active #(= (:mode %1) :read)
+       {:elem :btn
+        :id "read-mode"
+        :icon "far fa-eye"
+        :title "Read mode"
+        :active #(= (:mode %1) :read)
 								:on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :read]]]) }
-			]
-			[{:elem :roll
-				:id "debug"
-					:icon "far fa-bug"
-					:label "Debug"
-					:hidden #(not= (-> %1 :app-state :enable-experimental-features?) true)
-					:roll-items [{:id "swap-all-links"
-						:icon "far fa-exchange"
-							:label "Swap All Links"
-							:on-click #(lc/transact! (:component %1) [[:orgpad/debug-swap-all-links true]])}]}]
+       ]
+                           [{:elem :roll
+                             :id "debug"
+                             :icon "far fa-bug"
+                             :label "Debug"
+                             :hidden #(not= (-> %1 :app-state :enable-experimental-features?) true)
+                             :roll-items [{:id "swap-all-links"
+                                           :icon "far fa-exchange"
+                                           :label "Swap All Links"
+                                           :on-click #(lc/transact! (:component %1) [[:orgpad/debug-swap-all-links true]])}]}]
 							[{:elem :btn
 								:id "settings"
-									:label "Settings"
-									:icon "fa fa-cog"
-									:on-click #(swap! (:root-local-state %1) assoc :show-settings true)
-							}
-     {:elem :btn
-      :id "help"
-      :icon "far fa-question-circle"
-      :label "Help"
-      :on-click #(js/window.open "help.html" "_blank")}
-  ]]
-})
+                :label "Settings"
+                :icon "fa fa-cog"
+                :on-click #(swap! (:root-local-state %1) assoc :show-settings true)
+                }
+               {:elem :btn
+                :id "help"
+                :icon "far fa-question-circle"
+                :label "Help"
+                :on-click #(js/window.open "help.html" "_blank")}
+               ]]
+  })

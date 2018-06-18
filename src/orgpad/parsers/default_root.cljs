@@ -63,15 +63,15 @@
 
 (defmethod read :orgpad/app-state
   [{ :keys [state] :as env } _ _]
-  (-> state (store/query []) first))
+  (-> state (store/query [:app-state]) first))
 
 (defmethod mutate :orgpad/app-state
   [{:keys [state]} _ path-val]
-  { :state (store/transact state path-val) })
+  {:state (store/transact state [(->> path-val first (into [:app-state])) (second path-val)])})
 
 (defmethod updated? :orgpad/app-state
   [_ { :keys [state] } _]
-  (store/changed? state []))
+  (store/changed? state [:app-state]))
 
 (defmethod mutate :orgpad/root-view-stack
   [{ :keys [state parser-state-push!] } _ { :keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
@@ -171,7 +171,7 @@
 
 (defmethod mutate :orgpad/load-orgpad
   [{:keys [state force-update! transact!] } _ files]
-  {:state (store/transact state [[:loading] true])
+  {:state (store/transact state [[:app-state :loading] true])
    :effect #(try
               (transact! [[:orgpad/loaded (orgpad/load-orgpad state files)]])
               (catch :default e
@@ -181,7 +181,7 @@
 
 (defmethod mutate :orgpad/import-orgpad
   [{ :keys [state force-update! transact!] } _ files]
-  {:state (store/transact state [[:loading] true])
+  {:state (store/transact state [[:app-state :loading] true])
    :effect #(try
               (transact! [[:orgpad/loaded (orgpad/import-orgpad state files)]])
               (catch :default e
@@ -198,13 +198,13 @@
 (defmethod mutate :orgpad/loaded
   [env _ new-state]
   (reset-n-rebuild env new-state)
-  (when-let [name (-> new-state (store/query []) first :orgpad-name)]
+  (when-let [name (-> new-state (store/query [:app-state]) first :orgpad-name)]
     (dom/set-el-text (dom/ffind-tag :title) name))
   { :state new-state })
 
 (defmethod mutate :orgpad/download-orgpad-from-url
   [{ :keys [state transact!] } _ url]
-  { :state (store/transact state [[:loading] true])
+  { :state (store/transact state [[:app-state :loading] true])
     :effect #(orgpad/download-orgpad-from-url url transact!) })
 
 (defmethod read :orgpad/undoable?
@@ -257,11 +257,11 @@
 
 (defmethod mutate :orgpad.units/select
   [{:keys [state]} _ {:keys [pid uid]}]
-  {:state (store/transact state [[:selections (keypath pid)] #{uid}])})
+  {:state (store/transact state [[:app-state :selections (keypath pid)] #{uid}])})
 
 (defmethod mutate :orgpad.units/deselect-all
   [{:keys [state]} _ {:keys [pid]}]
-  {:state (store/transact state [[:selections (keypath pid)] nil])})
+  {:state (store/transact state [[:app-state :selections (keypath pid)] nil])})
 
 (defmethod mutate :orgpad.units/select-by-pattern
   [{:keys [state]} _ {:keys [params unit-tree]}]
@@ -270,7 +270,7 @@
                                                                   (:selection-text params))
         cnt (count selected-units)]
     (println "selected: " pid selected-units (set (map first selected-units)))
-    {:state (store/transact state [[:selections (keypath pid)] (set (map first selected-units))])
+    {:state (store/transact state [[:app-state :selections (keypath pid)] (set (map first selected-units))])
      :response (str "Selected " cnt
                     (if (< cnt 2) " unit." " units."))}))
 
@@ -278,7 +278,7 @@
   [{:keys [state]} _ {:keys [pid selection]}]
   (let [data (ot/copy-descendants-from-db state pid [] selection)]
     ;; (js/console.log "copy " data)
-    {:state (store/transact state [[:clipboards (keypath pid)] data])}))
+    {:state (store/transact state [[:app-state :clipboards (keypath pid)] data])}))
 
 (defmethod read :orgpad/styles
   [{:keys [state]} _ {:keys [view-type]}]

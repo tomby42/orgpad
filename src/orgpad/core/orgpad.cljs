@@ -87,7 +87,7 @@
 
 (defn empty-orgpad-db
   []
-  (-> (store/new-datom-atom-store {} (d/empty-db orgpad-db-schema))
+  (-> (store/new-datom-atom-store {:app-state {:mode :write}} (d/empty-db orgpad-db-schema))
       (store/transact [{ :db/id 0,
                         :orgpad/props-refs 1
                         :orgpad/type :orgpad/root-unit }
@@ -95,8 +95,7 @@
                         :orgpad/type :orgpad/root-unit-view,
                         :orgpad/refs 0 }
                        ] {})
-      insert-default-styles
-      (store/transact [[:mode] :write] {})))
+      insert-default-styles))
 
 (defn- update-refs-orders
   [db]
@@ -133,6 +132,14 @@
       []
       [[:db/retract 1 :orgpad/view-stack stack]])))
 
+(defn- app-state
+  [db]
+  (-> db (store/query [:app-state]) first))
+
+(defn move-app-state-qry
+  [db]
+  [[] {:app-state (-> db (store/query []) first)}])
+
 (defn- update-db
   [db]
   (let [qry
@@ -140,13 +147,14 @@
                      (update-refs-orders db)
                      (unescape-atoms db)
                      (remove-view-stack db)
-                     (if (not (db-contains-styles? db))
-                       (default-styles-qry)
-                       nil))]
+                     (when (not (db-contains-styles? db))
+                       (default-styles-qry)))
+        app-state-qry (when (not (app-state db))
+                        (move-app-state-qry db))]
     ;; (js/console.log db)
-    (if (empty? qry)
-      db
-      (store/transact db qry {}))))
+    (cond-> db
+           (-> qry empty? not) (store/transact qry {})
+           (-> app-state-qry empty? not) (store/transact app-state-qry))))
 
 (defn orgpad-db
   [data]
@@ -162,7 +170,7 @@
 (defn- compress-db
   [db]
   (let [compress (aget js/LZString "compressToBase64")]
-    (if (-> db (store/query []) first :compress-saved-files?)
+    (if (-> db (store/query []) first :app-state :compress-saved-files?)
       (compress (pr-str db))
       (pr-str db))))
 
@@ -199,7 +207,7 @@
 
 (defn- file-name
   [default-name db]
-  (let [filename (-> db (store/query []) first :orgpad-filename)
+  (let [filename (-> db (store/query []) first :app-state :orgpad-filename)
         orgpad-filename (when filename (substitute-time-date filename))
         p (js/document.location.pathname.lastIndexOf "/")]
     (if orgpad-filename
