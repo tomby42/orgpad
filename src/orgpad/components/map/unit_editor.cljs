@@ -95,8 +95,8 @@
 (defn- start-unit-move
   [app-state local-state ev]
   (set-mouse-pos! (jev/touch-pos ev))
-  (js/console.log "start-unit-move" (and (= (:mode app-state) :write)
-                                         (= (:canvas-mode @local-state) :canvas-create-unit)) app-state @local-state)
+;;   (js/console.log "start-unit-move" (and (= (:mode app-state) :write)
+;;                                          (= (:canvas-mode @local-state) :canvas-create-unit)) app-state @local-state)
   (if (and (= (:mode app-state) :write)
            (= (:canvas-mode @local-state) :canvas-create-unit))
     (start-link local-state ev)
@@ -597,9 +597,9 @@
 (rum/defcc unit-editor-static < lc/parser-type-mixin-context
   [component unit-tree app-state local-state]
   (let [select-unit (@local-state :selected-unit)]
-    [:div {:onMouseDown jev/block-propagation
-           :onTouchStart jev/block-propagation
-           :onWheel jev/block-propagation}
+    [:div {:onMouseDown jev/stop-propagation
+           :onTouchStart jev/stop-propagation
+           :onWheel jev/stop-propagation}
      (if select-unit
        (node-unit-editor-static component unit-tree app-state local-state)
        (edge-unit-editor-static component unit-tree app-state local-state))]))

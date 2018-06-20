@@ -63,5 +63,5 @@
   (trum/gen-update-mixin update-color) remount
   [color props on-change]
   [ :div (merge props { :ref "color-picker"
-                        :onMouseDown jev/block-propagation
-                        :onMouseUp jev/block-propagation }) ])
+                        :onMouseDown jev/stop-propagation
+                        :onMouseUp jev/stop-propagation }) ])
