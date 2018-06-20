@@ -8,17 +8,33 @@
             [orgpad.components.atomic.tags-editor :as tags-editor]
             [orgpad.components.atomic.desc-editor :as desc-editor]
             [orgpad.tools.rum :as trum]
+            [orgpad.tools.orgpad :as ot]
             [orgpad.tools.js-events :as jev]))
 
-(defn- update-mathjax 
+(def ^:private mathjax-render-state (atom {}))
+
+(defn- set-mathjax-render-state
+  [unit-tree state & [component]]
+  (if state
+    (swap! mathjax-render-state assoc (ot/uid unit-tree) true)
+    (swap! mathjax-render-state dissoc (ot/uid unit-tree)))
+  (when component
+    (let [[_ app-state] (trum/comp->args component)]
+      (when (= (:mode app-state) :quick-write)
+        (rum/request-render component)))))
+
+(defn- update-mathjax
   [state]
   (let [dom-node (trum/ref state :dom-node)
-        args (trum/args state)]
+        [unit-tree app-state] (trum/args state)
+        component (:rum/react-component state)]
     (when (and js/MathJax
-               (= (-> args second :mode) :read))
+               (= (:mode app-state) :read))
       (let [hub (aget js/MathJax "Hub")
             queue (.bind (aget hub "Queue") hub)]
-        (queue #js ["Typeset" hub dom-node])))))
+        (set-mathjax-render-state unit-tree true)
+        (queue #js ["Typeset" hub dom-node]
+               #js [set-mathjax-render-state unit-tree false component])))))
 
 (defn- render-write-mode
   [{:keys [unit view]} app-state]
@@ -52,9 +68,10 @@
   [unit-tree app-state]
   (if (= (:mode app-state) :write)
     (render-write-mode unit-tree app-state)
-    (if (= (:mode app-state) :quick-write)
-      (render-quick-write-mode unit-tree app-state)
-      (render-read-mode unit-tree app-state))))
+    (if (and (= (:mode app-state) :quick-write)
+             (-> @mathjax-render-state (get (ot/uid unit-tree) false) not))
+        (render-quick-write-mode unit-tree app-state)
+        (render-read-mode unit-tree app-state))))
 
 (registry/register-component-info
  :orgpad/atomic-view
