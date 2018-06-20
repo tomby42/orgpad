@@ -562,7 +562,7 @@
 
 (defn mapped-links
   [unit-tree view-name pid m-units]
-  (let [links (mapped? unit-tree view-name :orgpad.map-view/link-props)
+  (let [links (mapped? unit-tree view-name :orgpad.map-view/link-props) ;; (filter #(>= (-> % :unit :orgpad/refs count) 0) (mapped? unit-tree view-name :orgpad.map-view/link-props))
         mus   (into {} (map (fn [u] [(uid u) u])) m-units)]
     (map (fn [l]
            (let [refs (-> l :unit :orgpad/refs)

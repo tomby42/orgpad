@@ -17,6 +17,7 @@
             [orgpad.tools.colls :as colls]
             [orgpad.tools.dom :as dom]
             [orgpad.tools.time :as t]
+            [orgpad.cycle.utils :as cu]
             [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-change-link-shape start-link]]))
 
 (def ^:private init-state
@@ -504,15 +505,10 @@
   #js { :left 0 :right js/window.innerWidth :top 0 :bottom js/window.innerHeight })
 
 (defn- pick-visible-children
-  [unit view-unit old-node global-cache]
+  [unit view-unit old-node global-cache & [keep-units]]
   (let [id (unit :db/id)]
     (if (aget global-cache id)
-      (let [children-cache (if old-node
-                             (persistent!
-                              (reduce (fn [m n]
-                                        (assoc! m (-> n (aget "value") ot/uid) n))
-                                      (transient {}) (aget old-node "children")))
-                             {})
+      (let [children-cache (cu/build-children-old-node-cache old-node)
             iz (/ 1 (-> view-unit :orgpad/transform :scale))
             pos (geom/*c (-> view-unit :orgpad/transform :translate)
                          iz)
@@ -523,7 +519,7 @@
                           iz)
             vis-units (geocache/visible-units global-cache id (:orgpad/view-name view-unit) pos size)]
         ;; (js/console.log "vis units" unit view-unit vis-units global-cache children-cache)
-        (map (juxt identity children-cache) vis-units))
+        (map (juxt identity children-cache) (concat keep-units vis-units)))
       [])))
 
 (def ^:private istatic-local-mode

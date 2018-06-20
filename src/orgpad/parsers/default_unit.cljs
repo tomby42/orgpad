@@ -78,34 +78,37 @@
   (let [eunit (ds/entity->map unit)]
     (if (:orgpad/needs-children-info view-info)
       (if (:orgpad/visible-children-picker view-info)
-        (update-in eunit [:orgpad/refs]
-                   (fn [refs]
-                     (mapv (fn [[u o]] (parser' u o))
-                           ((:orgpad/visible-children-picker view-info) unit view-unit
-                            (if (and old-node (= (aget old-node "key") :orgpad/unit-view)) old-node nil)
-                            global-cache))))
+        (update eunit :orgpad/refs
+                (fn [refs]
+                  (let [sort-refs (if (:orgpad/refs-order eunit)
+                                    (map second (:orgpad/refs-order eunit))
+                                    [])] ;; TODO: hack for links that are units too - need to get all siblings of current unit
+                    (mapv (fn [[u o]] (parser' u o))
+                          ((:orgpad/visible-children-picker view-info) unit view-unit
+                           (if (and old-node (= (aget old-node "key") :orgpad/unit-view)) old-node nil)
+                           global-cache sort-refs)))))
         (let [old-children-nodes (and old-node (aget old-node "children"))
               use-children-nodes? (and old-node
                                        (= (aget old-node "key") :orgpad/unit-view)
                                        (= (alength old-children-nodes) (count (unit :orgpad/refs))))]
-          (update-in eunit [:orgpad/refs]
-                     (fn [refs]
-                       (let [refs' (map :db/id refs)]
-                         ;; (println (eunit :orgpad/refs-order))
-                         (if (eunit :orgpad/refs-order)
-                           (let [children (if use-children-nodes?
-                                            (into {} (map (juxt identity parser')
-                                                          refs' old-children-nodes))
-                                            (into {} (map (juxt identity parser') refs')))]
-                             (mapv (comp children second) (eunit :orgpad/refs-order)))
-                           (if use-children-nodes?
-                             (into [] (map parser' refs' old-children-nodes))
-                             (mapv parser' refs'))))))))
+          (update eunit :orgpad/refs
+                  (fn [refs]
+                    (let [refs' (map :db/id refs)]
+                      ;; (println (eunit :orgpad/refs-order))
+                      (if (eunit :orgpad/refs-order)
+                        (let [children (if use-children-nodes?
+                                         (into {} (map (juxt identity parser')
+                                                       refs' old-children-nodes))
+                                         (into {} (map (juxt identity parser') refs')))]
+                          (mapv (comp children second) (eunit :orgpad/refs-order)))
+                        (if use-children-nodes?
+                          (into [] (map parser' refs' old-children-nodes))
+                          (mapv parser' refs'))))))))
       (if (eunit :orgpad/refs-order)
-        (update-in eunit [:orgpad/refs]
-                   (fn [refs]
-                     (let [children (into {} (map (juxt :db/id identity) refs))]
-                       (mapv (comp children second) (eunit :orgpad/refs-order)))))
+        (update eunit :orgpad/refs
+                (fn [refs]
+                  (let [children (into {} (map (juxt :db/id identity) refs))]
+                    (mapv (comp children second) (eunit :orgpad/refs-order)))))
         eunit))))
 
 (defmethod read :orgpad/unit-view
@@ -161,12 +164,11 @@
         (when view-contexts
           (into [] (mapcat #(get-view-props unit %)) view-contexts))]
 
-     ;; (js/console.log {:unit unit'
-     ;;                  :path-info path-info'
-     ;;                  :view view-unit
-     ;;                  :props props }
-     ;;                 db)
-
+    ;; (js/console.log {:unit unit'
+    ;;                  :path-info path-info'
+    ;;                  :view view-unit
+    ;;                  :props props }
+    ;;                 db)
 
     { :unit unit'
       :path-info path-info'
