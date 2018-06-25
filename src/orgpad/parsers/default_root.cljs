@@ -16,6 +16,19 @@
   (let [root-unit (store/query db [:entity 0])]
     (ds/find-props root-unit (fn [u] (= (u :orgpad/type) :orgpad/root-unit-view)))))
 
+(defn- get-view-stack
+  [db]
+  (let [stack (-> db (store/query [:app-state :orgpad/view-stack]) first)]
+    (if stack
+      stack
+      [])))
+
+(defn- set-view-stack
+  [db view-stack]
+  (if (empty? view-stack)
+    (store/transact db [[:app-state :orgpad/view-stack] nil])
+    (store/transact db [[:app-state :orgpad/view-stack] view-stack])))
+
 (defmethod read :orgpad/root-view
   [{ :keys [state query] :as env } k params]
   (let [db state
@@ -26,9 +39,11 @@
         root-info
         (registry/get-component-info :orgpad/root-view)
 
+        view-stack (get-view-stack db)
+
         [_ cr-id v-name v-type v-path]
-        (if (root-view-info :orgpad/view-stack)
-          (->> root-view-info :orgpad/view-stack sort last)
+        (if view-stack
+          (last view-stack)
           [nil nil nil nil nil])
 
         view-name
@@ -59,7 +74,8 @@
         root-view-info (find-root-view-info state)
         old-root (ot/uid value)
         current-root (-> root-view-info :orgpad/refs last :db/id)]
-    (not= current-root old-root)))
+    (or (not-empty (get-view-stack state))
+        (not= current-root old-root))))
 
 (defmethod read :orgpad/app-state
   [{ :keys [state] :as env } _ _]
@@ -75,11 +91,10 @@
 
 (defmethod mutate :orgpad/root-view-stack
   [{ :keys [state parser-state-push!] } _ { :keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
-  (let [root-view-info (find-root-view-info state)
-        rvi-id (root-view-info :db/id)
-        pos (or (-> root-view-info :orgpad/view-stack count) 0)]
+  (let [view-stack (get-view-stack state)
+        pos (or (and view-stack (count view-stack)) 0)]
     (parser-state-push! :orgpad/root-view [])
-    { :state (store/transact state [[:db/add rvi-id :orgpad/view-stack [pos id view-name view-type view-path]]]) }))
+    { :state (set-view-stack state (conj view-stack [pos id view-name view-type view-path])) }))
 
 (defn update-parser-state!
   [db old new]
@@ -117,25 +132,14 @@
                                  [?p :orgpad/refs ?x]
                                  [(= ?x ?u)]] [parent uid]))))
 
-(defn- rv-info->vstack
-  [root-view-info]
-  (->> root-view-info :orgpad/view-stack sort (into [])))
-
-(defn- state->vstack
-  [state]
-  (-> state find-root-view-info rv-info->vstack))
-
 (defmethod mutate :orgpad/root-unit-close
   [{ :keys [state parser-state-pop!] } _ params]
-  (let [root-view-info (find-root-view-info state)
-        rvi-id (root-view-info :db/id)
-        view-stack (rv-info->vstack root-view-info) ;;(->> root-view-info :orgpad/view-stack sort (into []))
-        last-view (last view-stack)]
+  (let [view-stack (get-view-stack state)]
     (parser-state-pop! :orgpad/root-view []
                        (if (sequent? state view-stack)
                          (partial update-parser-state! state)
                          nil))
-    { :state (store/transact state [[:db/retract rvi-id :orgpad/view-stack last-view] ]) }))
+    { :state (set-view-stack state (pop view-stack)) }))
 
 (defmethod mutate :orgpad/root-view-conf
   [{ :keys [state force-update!] } _ [{:keys [unit view path-info] } {:keys [attr value]}]]
@@ -215,30 +219,66 @@
   [{ :keys [state] } _ _]
   (store/redoable? state))
 
+;; TODO - if unit that we are editing do not exist pop the stack unit it exist
+;; (defn- resolve-parser-state!
+;;   [{:keys [state parser-state-pop! parser-state-push!]} new-state]
+;;   (let [view-stack (get-view-stack state)
+;;         new-view-stack (get-view-stack new-state)]
+;;     (case (compare (count view-stack) (count new-view-stack))
+;;       1 (parser-state-pop! :orgpad/root-view []
+;;                            (if (sequent? state view-stack)
+;;                              (partial update-parser-state! state)
+;;                              nil))
+;;       -1 (parser-state-push! :orgpad/root-view [])
+;;       nil)))
+
+(defn- not-exists?
+  [state uid]
+  (->> (store/query state [:entity uid]) (into {}) empty?))
+
+(defn- descendant?
+  [new-state old-state pid did]
+  (let [u (if (not-exists? new-state did)
+            (-> old-state (store/query [:entity did]) ds/entity->map)
+            (-> new-state (store/query [:entity did]) ds/entity->map))
+        uid  (if (or (= (:orgpad/type u) :orgpad/unit)
+                     (= (:orgpad/type u) :orgpad/root-unit))
+               (:db/id u)
+               (-> u :orgpad/refs first :db/id))]
+    (if (not-exists? new-state uid)
+      (ot/is-descendant? old-state pid uid)
+      (ot/is-descendant? new-state pid uid))))
+
 (defn- resolve-parser-state!
-  [{:keys [state parser-state-pop! parser-state-push!]} new-state]
-  (let [view-stack (state->vstack state)
-        new-view-stack (state->vstack new-state)]
-    (case (compare (count view-stack) (count new-view-stack))
-      1 (parser-state-pop! :orgpad/root-view []
-                           (if (sequent? state view-stack)
-                             (partial update-parser-state! state)
-                             nil))
-      -1 (parser-state-push! :orgpad/root-view [])
-      nil)))
+  [{:keys [state parser-state-pop! force-update!]} new-state]
+  (let [old-view-stack (get-view-stack state)
+        es (:datom (store/changed-entities new-state))]
+    (reduce (fn [state' [_ cr-id _ _ _]]
+              (if (or (not-exists? state' cr-id)
+                      (not-every? (partial descendant? state' state cr-id) es))
+                (let [view-stack (get-view-stack state')]
+                  (parser-state-pop! :orgpad/root-view []
+                                     (if (sequent? state view-stack)
+                                       (partial update-parser-state! state)
+                                       nil))
+                  (set-view-stack state' (pop view-stack)))
+                (reduced state')))
+              new-state old-view-stack)))
 
 ;; update if view-stack updated
 (defmethod mutate :orgpad/undo
   [{ :keys [state global-cache] :as env } _ _]
-  (let [new-state (store/undo state)]
-    (resolve-parser-state! env new-state)
+  (let [new-state (->> state
+                       store/undo
+                       (resolve-parser-state! env))]
     (geocache/update-changed-units! global-cache state new-state (:datom (store/changed-entities new-state)))
     { :state new-state }))
 
 (defmethod mutate :orgpad/redo
   [{ :keys [state global-cache] :as env } _ _]
-  (let [new-state (store/redo state)]
-    (resolve-parser-state! env new-state)
+  (let [new-state (->> state
+                       store/redo
+                       (resolve-parser-state! env))]
     (geocache/update-changed-units! global-cache state new-state (:datom (store/changed-entities new-state)))
     { :state new-state }))
 

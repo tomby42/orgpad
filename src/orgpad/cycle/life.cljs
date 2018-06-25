@@ -61,7 +61,8 @@
 
             (parser-state-push! [key params]
               ;; (println (@parser-state [key params]))
-              (vswap! parser-state update-in [:stack [key params]] (fnil conj []) (parser/clone-node (@parser-state [key params]))))
+              (vswap! parser-state update-in [:stack [key params]] (fnil conj [])
+                      (parser/clone-node (@parser-state [key params]))))
 
             (parser-state-pop! [key params update!]
               ;; (println (last (get-in @parser-state [:stack [key params]])))

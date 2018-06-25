@@ -12,7 +12,7 @@
                  ;; [rum                         "0.9.1"] ;; local modified copy src/rum 0.10.8
                  [sablono                     "0.7.7"]
                  [com.cemerick/url            "0.1.1"]
-                 [cljs-ajax                   "0.6.0"]
+                 [cljs-ajax                   "0.7.3"]
                  [cljsjs/react                "15.6.1-0"]
                  [cljsjs/react-dom            "15.6.1-0"]
                  [cljsjs/react-sanfona        "0.0.14-0"]

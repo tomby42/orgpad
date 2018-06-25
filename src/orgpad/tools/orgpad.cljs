@@ -612,3 +612,16 @@
                                       [(get s 0) (get f 1)])]
     [[:db/retract id :orgpad/refs-order refs-order]
      [:db/add id :orgpad/refs-order new-refs-order]]))
+
+(defn is-descendant?
+  [store pid did]
+  (-> store
+      (store/query '[:find  ?t
+                     :in    $ % ?pid ?did
+                     :where
+                     [?pid :orgpad/type :orgpad/unit]
+                     (descendant ?pid ?u)
+                     [(= ?u ?did)]
+                     [?u :orgpad/type ?t]]
+                   [rules pid did])
+      not-empty))
