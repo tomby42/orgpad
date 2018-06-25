@@ -27,7 +27,9 @@
       ((:parser-mutate context) [[:orgpad/loaded db]]))
     (when from
       ((:parser-mutate context) [[:orgpad/download-orgpad-from-url
-                                  (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack
+                                  ;; from
+                                  ;; (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack
+                                  (str "https://cryptic-headland-94862.herokuapp.com/" from)
                                   ]]))
     (.log js/console "ORGPAD BOOT.")))
 
