@@ -2,13 +2,12 @@
   :description "Orgpad - universal tool for thoughts managing and co-sharing."
   :url "http://www.orgpad.org/"
 
-  :dependencies [[org.clojure/clojure         "1.8.0"]
-                 ;; [org.clojure/clojurescript   "1.9.946"]
-                 [org.clojure/clojurescript   "1.10.312"]
-                 [org.clojure/core.async      "0.3.465"]
+  :dependencies [[org.clojure/clojure         "1.9.0"]
+                 [org.clojure/clojurescript   "1.10.339"]
+                 [org.clojure/core.async      "0.4.474"]
                  [org.clojure/test.check      "0.9.0"]
                  [datascript                  "0.16.6"]
-                 [com.rpl/specter             "1.0.5"]
+                 [com.rpl/specter             "1.1.1"]
                  ;; [rum                         "0.9.1"] ;; local modified copy src/rum 0.10.8
                  [sablono                     "0.7.7"]
                  [com.cemerick/url            "0.1.1"]
@@ -21,7 +20,7 @@
                  [cljsjs/react-motion         "0.3.1-0"]  ;; *
                  [cljsjs/react-select         "1.0.0-rc.3"]
                  [cljsjs/latlon-geohash       "1.1.0-0"] ;; *
-                 [doo                         "0.1.8"]
+                 [doo                         "0.1.10"]
                  ;; [org.clojure/data.avl        "0.0.17"] ;; we have own fixed copy
                  [io.replikativ/superv.async  "0.2.9"]]
 
@@ -33,7 +32,7 @@
                        ]}
 
   :plugins [[lein-cljsbuild "1.1.7"]
-            [lein-figwheel "0.5.15"] ;; needs update to lein 2.5.3 at least
+            [lein-figwheel "0.5.16"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             [lein-localrepo "0.5.3"]
             [lein-doo "0.1.10"]
@@ -49,15 +48,15 @@
          :target-path "resources/public/css"}
 
   :profiles {:dev
-             {:dependencies [[com.cemerick/piggieback "0.2.2"]
-                             [org.clojure/tools.nrepl "0.2.12"]
-                             [figwheel-sidecar        "0.5.15"]
+             {:dependencies [[cider/piggieback "0.3.6"]
+                             [org.clojure/tools.nrepl "0.2.13"]
+                             [figwheel-sidecar        "0.5.16"]
                              [binaryage/devtools      "0.9.10"]]
               }
 
-             :repl {:plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]] }}
+             :repl {:plugins [[cider/cider-nrepl "0.17.0"]] }}
 
-  :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
+  :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
 
   :cljsbuild
   {
