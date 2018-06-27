@@ -466,3 +466,8 @@
   "Creates new datom-atom store from reader value"
   [{:keys [datom atom]}]
   (DatomAtomStore. datom atom nil))
+
+(defn datom-atom-store-ds-db
+  "Get Datascript DB from DatomAtomStore"
+  [store]
+  (-> store .-datom .-db))

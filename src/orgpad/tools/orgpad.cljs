@@ -1,7 +1,9 @@
 (ns ^{:doc "Orgpad tools"}
   orgpad.tools.orgpad
-  (:require [orgpad.core.store :as store]
+  (:require [datascript.core :as ds]
+            [orgpad.core.store :as store]
             [orgpad.tools.dscript :as dscript]
+            [orgpad.tools.datom :as datom]
             [orgpad.tools.colls :as colls]
             [orgpad.tools.geom :refer [++ -- *c] :as geom]
             [orgpad.tools.bezier :as bez]
@@ -625,3 +627,32 @@
                      [?u :orgpad/type ?t]]
                    [rules pid did])
       not-empty))
+
+(defn- remap-datom
+  [o->n datom]
+  (let [a (.-a datom)
+        v (.-v datom)
+        nv (o->n v)]
+    (-> datom
+        (assoc :e (o->n (.-e datom)))
+        (assoc :v (case a
+                    :orgpad/refs nv
+                    :orgpad/props-refs nv
+                    :orgpad/view-path (into []
+                                            (map-indexed (fn [idx val]
+                                                           (if (even? idx)
+                                                             (o->n val)
+                                                             val)))
+                                            v)
+                    :orgpad/context-unit nv
+                    :orgpad/refs-order (update-refs-order o->n v)
+                    v)))))
+
+(defn datoms-uid->squuid
+  [datom-seq & [o->n]]
+  (datom/remap-datom-seq-eids datom-seq (or o->n {}) ds/squuid remap-datom))
+
+(defn datoms-squuid->uid
+  [datom-seq & [first-id o->n]]
+  (let [index (volatile! (or first-id 0))]
+    (datom/remap-datom-seq-eids datom-seq (or o->n {}) #(vswap! index inc) remap-datom)))
