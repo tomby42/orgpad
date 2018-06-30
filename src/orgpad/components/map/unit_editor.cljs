@@ -580,10 +580,10 @@
 (defn- render-edge-prop-menu
   [params]
   [:div.map-props-toolbar
+   (render-link-styles-list params)
    (render-link-color-picker1 params)
    (render-link-width1 params)
-   (render-link-style1 params)
-   (render-link-styles-list params)])
+   (render-link-style1 params)])
 
 (defn- edge-unit-editor-static
   [component {:keys [unit view] :as unit-tree} app-state local-state]
