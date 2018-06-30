@@ -83,63 +83,55 @@
   :orgpad/left-toolbar
    [
    [{:elem :roll
-   :id "file"
-   :icon "far fa-save"
-   :label "File"
-   :roll-items [
-   {:id "save"
-   :icon "far fa-download"
-   :label "Save"
-   :on-click #(lc/transact! (:component %1) [[ :orgpad/save-orgpad true ]]) }
-   {:load-files true
-   :id "load"
-   :icon "far fa-upload"
-   :label "Load"
-   :on-click #(lc/transact! (:component %1) [[ :orgpad/load-orgpad %2 ]]) }
-   {:load-files true
-	   :id "import"
-		   :icon "far fa-code-merge"
-		   :label "Import"
-		   :on-click #(lc/transact! (:component %1) [[ :orgpad/import-orgpad %2 ]]) }
-   {:id "tohtml"
-	   :label "Export HTML"
-		   :on-click #(lc/transact! (:component %1) [[ :orgpad/export-as-html ((lc/global-conf (:component %1)) :storage-el) ]]) }
-   ]}]
-	   [{:elem :roll
-		   :id "styles-editor"
-			   :icon "far fa-calendar"
-			   :label "Styles"
-			   :roll-items
-			   [{:id "edit-styles"
-				   :icon "far fa-edit"
-					   :label "Edit"
-					   :on-click #(swap! (:root-local-state %1) assoc :show-styles-editor true)}]}]
-					   [
-					   {:elem :btn
-						   :id "history"
-							   :icon "far fa-clock"
-							   :title "History on/off"
-							   :on-click #(swap! (:local-state %1) update :history not)
-							   :disabled #(not (or (lc/query (:component %1) :orgpad/undoable? [] true)
-										   (lc/query (:component %1) :orgpad/redoable? [] true)))
-							   :hidden true}
-   ;:hidden #(= (:mode %1) :read)}
-{:elem :btn
-	:id "undo"
-		:icon "far fa-undo-alt"
-		:title "Undo"
-		:on-click #(lc/transact! (:component %1) [[ :orgpad/undo true ]])
-		:disabled #(not (lc/query (:component %1) :orgpad/undoable? [] true))
-		:hidden #(= (:mode %1) :read)}
-{:elem :btn
-	:id "redo"
-		:icon "far fa-redo-alt"
-		:title "Redo"
-		:on-click #(lc/transact! (:component %1) [[ :orgpad/redo true ]])
-		:disabled #(not (lc/query (:component %1) :orgpad/redoable? [] true))
-		:hidden #(= (:mode %1) :read)}
-		]
-		]
+     :id "file"
+     :icon "far fa-save"
+     :label "File"
+     :roll-items [
+      {:id "save"
+       :icon "far fa-download"
+       :label "Save"
+       :on-click #(lc/transact! (:component %1) [[ :orgpad/save-orgpad true ]]) }
+      {:load-files true
+       :id "load"
+       :icon "far fa-upload"
+       :label "Load"
+       :on-click #(lc/transact! (:component %1) [[ :orgpad/load-orgpad %2 ]]) }
+      {:load-files true
+       :id "import"
+       :icon "far fa-code-merge"
+       :label "Import"
+       :on-click #(lc/transact! (:component %1) [[ :orgpad/import-orgpad %2 ]]) }
+      {:id "tohtml"
+       :label "Export HTML"
+       :on-click #(lc/transact! (:component %1) [[ :orgpad/export-as-html ((lc/global-conf (:component %1)) :storage-el) ]]) }]}]
+	 [{:elem :btn
+		 :id "styles-editor"
+		 :icon "far fa-paint-brush"
+		 :label "Styles"
+		 :on-click #(swap! (:root-local-state %1) assoc :show-styles-editor true)
+     :hidden #(= (:mode %1) :read)}]
+	 [{:elem :btn
+		 :id "history"
+		 :icon "far fa-clock"
+		 :title "History on/off"
+		 :on-click #(swap! (:local-state %1) update :history not)
+		 :disabled #(not (or (lc/query (:component %1) :orgpad/undoable? [] true)
+									       (lc/query (:component %1) :orgpad/redoable? [] true)))
+		 :hidden true }
+    {:elem :btn
+	   :id "undo"
+		 :icon "far fa-undo-alt"
+		 :title "Undo"
+		 :on-click #(lc/transact! (:component %1) [[ :orgpad/undo true ]])
+		 :disabled #(not (lc/query (:component %1) :orgpad/undoable? [] true))
+		 :hidden #(= (:mode %1) :read)}
+    {:elem :btn
+	   :id "redo"
+		 :icon "far fa-redo-alt"
+		 :title "Redo"
+		 :on-click #(lc/transact! (:component %1) [[ :orgpad/redo true ]])
+		 :disabled #(not (lc/query (:component %1) :orgpad/redoable? [] true))
+		 :hidden #(= (:mode %1) :read)} ]]
 
 		:orgpad/right-toolbar [
 			[{:elem :btn
