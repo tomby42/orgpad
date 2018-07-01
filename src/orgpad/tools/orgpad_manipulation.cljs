@@ -41,6 +41,11 @@
   (lc/transact! component [[:orgpad.units/remove-units
                             [params selection]]]))
 
+(defn has-selection?
+  [unit-tree app-state]
+  (let [selection (get-in app-state [:selections (ot/uid unit-tree)])]
+    (and selection
+         (-> selection empty? not))))
 
 (defn copy-units-to-clipboard
   [component unit-tree app-state]
@@ -49,6 +54,11 @@
                (-> selection empty? not))
       (lc/transact! component [[:orgpad.units/copy {:pid (ot/uid unit-tree)
                                                     :selection selection}]]))))
+
+(defn is-clipboard-empty?
+  [unit-tree app-state]
+  (let [data (get-in app-state [:clipboards (ot/uid unit-tree)])]
+    (nil? data)))
 
 (defn paste-units-from-clipboard
   [component unit-tree app-state pos]
