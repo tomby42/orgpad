@@ -40,11 +40,10 @@
   [e]
   (let [bb (->> e find-map-tuple-node .getBoundingClientRect)
         x (.-clientX e)
-        dist->left (- x (.-left bb))
-        dist->right (- (.-right bb) x)]
-    (if (< dist->right dist->left)
-      1
-      -1)))
+        dist->left (- x (.-left bb))]
+    (if (<= dist->left 20)
+      -1
+      1)))
 
 (defn- render-read-mode
   [component { :keys [unit view] :as unit-tree } app-state local-state]

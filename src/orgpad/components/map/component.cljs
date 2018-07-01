@@ -602,6 +602,24 @@
 
   :orgpad/toolbar [
     [{:elem :btn
+      :id "zoom-in"
+      :icon "far fa-search-plus"
+      :title "Zoom in"
+      :on-click #(lc/transact! (:component %1) [[:orgpad.units/map-view-canvas-zoom
+                               {:view (:view %1)
+                                :parent-id (:db/id (:unit %1))
+                                :pos [0 0]
+                                :zoom 1.1025}]])}
+     {:elem :btn
+      :id "zoom-out"
+      :icon "far fa-search-minus"
+      :title "Zoom out"
+      :on-click #(lc/transact! (:component %1) [[:orgpad.units/map-view-canvas-zoom
+                               {:view (:view %1)
+                                :parent-id (:db/id (:unit %1))
+                                :pos [0 0]
+                                :zoom 0.9025}]])}]
+    [{:elem :btn
       :id "unit-creation-mode"
       :icon "far fa-plus-square"
       :title "Creation mode"
@@ -627,14 +645,16 @@
       :icon "far fa-copy"
       :title "Copy"
       :on-click #(omt/copy-units-to-clipboard (:component %1) (:unit-tree %1) (:app-state %1))
-      :hidden #(= (:mode %1) :read)}
+      ;:hidden #(= (:mode %1) :read)}
+      :hidden true}
      {:elem :btn
       :id "paste"
       :icon "far fa-paste"
       :title "Paste"
       :on-click #(swap! (:node-state %1) assoc :canvas-mode :canvas-paste)
       :active #(active-toolbar-btn? (:node-state %1) :canvas-paste)
-      :hidden #(= (:mode %1) :read)}]]
+      ;:hidden #(= (:mode %1) :read)}]]
+      :hidden true}]]
 
   :orgpad/uedit-toolbar nil
   })

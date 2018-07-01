@@ -197,7 +197,7 @@
 (defn- substitute-time-date
   [file-name]
   (let [dobj (js/Date.)
-        date (gstring/format "%04d-%02d-%02d" (.getFullYear dobj) (.getMonth dobj) (.getDate dobj))
+        date (gstring/format "%04d-%02d-%02d" (.getFullYear dobj) (inc (.getMonth dobj)) (.getDate dobj))
         time (gstring/format "%02d-%02d-%02d" (.getHours dobj) (.getMinutes dobj) (.getSeconds dobj))]
     (-> file-name
         (clojure.string/replace "%d" date)
