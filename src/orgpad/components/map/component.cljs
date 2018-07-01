@@ -606,19 +606,21 @@
       :icon "far fa-search-plus"
       :title "Zoom in"
       :on-click #(lc/transact! (:component %1) [[:orgpad.units/map-view-canvas-zoom
-                               {:view (:view %1)
-                                :parent-id (:db/id (:unit %1))
-                                :pos [0 0]
-                                :zoom 1.1025}]])}
+                                                 {:view (:view %1)
+                                                  :parent-id (:db/id (:unit %1))
+                                                  :pos [(/ js/window.innerWidth 2)
+                                                        (/ js/window.innerHeight 2)]
+                                                  :zoom 1.1025}]])}
      {:elem :btn
       :id "zoom-out"
       :icon "far fa-search-minus"
       :title "Zoom out"
       :on-click #(lc/transact! (:component %1) [[:orgpad.units/map-view-canvas-zoom
-                               {:view (:view %1)
-                                :parent-id (:db/id (:unit %1))
-                                :pos [0 0]
-                                :zoom 0.9025}]])}]
+                                                 {:view (:view %1)
+                                                  :parent-id (:db/id (:unit %1))
+                                                  :pos [(/ js/window.innerWidth 2)
+                                                        (/ js/window.innerHeight 2)]
+                                                  :zoom 0.9025}]])}]
     [{:elem :btn
       :id "unit-creation-mode"
       :icon "far fa-plus-square"
