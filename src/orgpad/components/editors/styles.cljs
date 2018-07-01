@@ -123,6 +123,30 @@
   (let [a (-> style prop-name aclone)]
     (aset a n val) a))
 
+(defn render-link-types
+  [component style]
+  (let [undirected-style (str "btn" (when (= (:orgpad/link-type style) :undirected) " active"))
+        directed-style (str "btn" (when (= (:orgpad/link-type style) :directed) " active"))
+        bidirected-style (str "btn" (when (= (:orgpad/link-type style) :bidirected) " active"))]
+    [:div.btn-panel
+      [:span.fill]
+      [:span
+        {:class undirected-style
+         :title "Undirected link"
+         :on-click #((transact! component style :orgpad/link-type) :undirected)}
+        [:i.far.fa-minus]]
+      [:span
+        {:class directed-style
+         :title "Directed link"
+         :on-click #((transact! component style :orgpad/link-type) :directed)}
+        [:i.far.fa-long-arrow-right]]
+      [:span
+        {:class bidirected-style
+         :title "Directed link both ways"
+         :on-click #((transact! component style :orgpad/link-type) :bidirected)}
+        [:i.far.fa-arrows-h]]
+      [:span.fill]]))                
+
 (defn render-link-sizes
   [component style]
   ;; (js/console.log "render-link-sizes" style)
@@ -160,8 +184,8 @@
           (frame "Arrow position" (slider/render-slider (slider-params {:component component
                                                                         :style style
                                                                         :prop-name :orgpad/link-arrow-pos
-                                                                        :min 1 :max 100})))]])
-                
+                                                                        :min 1 :max 100})))
+          (frame "Direction" (render-link-types component style))]])
 
 (defn render-link-props-style
   [component style]
