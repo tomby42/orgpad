@@ -679,6 +679,10 @@
      (store/with-history-mode :add)
      (->> (assoc {} :state)))))
 
+(defmethod mutate :orgpad.units/map-view-link-arrow-pos
+  [env _ {:keys [orgpad/link-arrow-pos] :as payload}]
+  (update-link-props env payload { :orgpad/link-arrow-pos link-arrow-pos }))
+
 ;; TODO - remove children that are not siblings (edge is strict parent and not connect them)
 (defmethod mutate :orgpad.units/map-view-link-remove
   [{:keys [state global-cache]} _ id]

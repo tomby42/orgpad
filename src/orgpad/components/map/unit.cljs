@@ -160,8 +160,9 @@
 
 (defn- make-arrow-quad
   [start-pos end-pos ctl-pt prop]
-  (let [p1 (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos 0.85)
-        dir (-> p1 (-- (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos 0.84)) normalize)
+  (let [arrow-pos (* (prop :orgpad/link-arrow-pos) 0.01)
+        p1 (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos arrow-pos)
+        dir (-> p1 (-- (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos (- arrow-pos 0.01))) normalize)
         ptmp (++ p1 (*c dir -10))
         n (-> dir geom/normal)
         p2 (++ ptmp (*c n 10))
@@ -247,9 +248,10 @@
           (g/arc (geom/link-arc-center start-pos mid-pt)
                  (geom/link-arc-radius start-pos mid-pt) 0 math/pi2 style)
           (g/quadratic-curve start-pos end-pos ctl-pt style))
-        (if cyclic?
-          (make-arrow-arc start-pos mid-pt prop)
-          (make-arrow-quad start-pos end-pos ctl-pt prop))
+        (when (prop :orgpad/link-directed)
+          (if cyclic?
+            (make-arrow-arc start-pos mid-pt prop)
+            (make-arrow-quad start-pos end-pos ctl-pt prop)))
         ;; (when (and (= (app-state :mode) :write) cyclic?)
         ;;   [ :div {:className "map-view-child link-control" :style ctl-style
         ;;           :onMouseDown #(start-change-link-shape unit-tree prop pcomponent start-pos end-pos mid-pt 0.5 local-state %)

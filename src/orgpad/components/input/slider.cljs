@@ -3,11 +3,11 @@
             [orgpad.tools.math :refer [normalize-range]]))
 
 (defn render-slider
-  [{:keys [max value on-change]}]
+  [{:keys [min max value on-change]}]
   (let [on-change' (fn [ev]
                      (on-change (normalize-range 0 max (-> ev .-target .-value))))]
   [:div.slider
-   [:input {:type "range" :min 0 :max max :step 1 :value value
+   [:input {:type "range" :min min :max max :step 1 :value value
             :onMouseDown jev/stop-propagation
             :onMouseUp jev/stop-propagation
             :onMouseMove jev/stop-propagation

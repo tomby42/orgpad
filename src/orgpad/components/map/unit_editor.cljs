@@ -68,7 +68,7 @@
     [sel-unit (merge sel-style sel-prop)]))
 
 (defn- render-slider
-  [{:keys [component unit prop parent-view local-state max prop-name action selection]}]
+  [{:keys [component unit prop parent-view local-state max min prop-name action selection]}]
   (let [on-change
         (if (nil? selection)
           (fn [v]
@@ -84,7 +84,7 @@
                                        :unit-tree unit
                                        :prop-name prop-name
                                        :prop-val v } ]])))]
-    (slider/render-slider {:max max :value (prop prop-name) :on-change on-change})))
+    (slider/render-slider {:max max :min min :value (prop prop-name) :on-change on-change})))
 
 (defn enable-quick-edit
   [local-state]
@@ -577,13 +577,35 @@
     )
   )
 
+(defn- render-link-directed
+  [{:keys [component unit prop parent-view local-state]}]
+  [ :div.map-view-border-edit {}
+   [ :div.center "Directed" ]
+   (render-slider {:component component :unit unit :prop prop
+                   :parent-view parent-view :local-state local-state
+                   :min 1 :max 100
+                   :prop-name :orgpad/link-arrow-pos
+                   :action :orgpad.units/map-view-link-arrow-pos }) ])
+
+(defn- render-link-arrow-pos
+  [{:keys [component unit prop parent-view local-state]}]
+  [ :div.map-view-border-edit {}
+   [ :div.center "Arrow position" ]
+   (render-slider {:component component :unit unit :prop prop
+                   :parent-view parent-view :local-state local-state
+                   :min 1 :max 100
+                   :prop-name :orgpad/link-arrow-pos
+                   :action :orgpad.units/map-view-link-arrow-pos }) ])
+
 (defn- render-edge-prop-menu
   [params]
   [:div.map-props-toolbar
    (render-link-styles-list params)
    (render-link-color-picker1 params)
    (render-link-width1 params)
-   (render-link-style1 params)])
+   (render-link-style1 params)
+   (render-link-arrow-pos params)
+   ])
 
 (defn- edge-unit-editor-static
   [component {:keys [unit view] :as unit-tree} app-state local-state]

@@ -581,7 +581,7 @@
                                 :orgpad.map-view/link-props
                                  { :orgpad/view-type :orgpad.map-view/link-props
                                    :orgpad/view-name "default"
-                                   :orgpad/view-style "default"}
+                                   :orgpad/view-style "default" }
 
                                 :orgpad.map-view/link-props-style
                                  { :orgpad/view-type :orgpad.map-view/link-props-style
@@ -592,7 +592,9 @@
                                    :orgpad/link-color "#000000ff"
                                    :orgpad/link-width 2
                                    :orgpad/link-dash #js [0 0]
-                                   :orgpad/link-mid-pt [0 0] }
+                                   :orgpad/link-mid-pt [0 0]
+                                   :orgpad/link-directed true
+                                   :orgpad/link-arrow-pos 0.85 }
 
                                 }
   :orgpad/needs-children-info true

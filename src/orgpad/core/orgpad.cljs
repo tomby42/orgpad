@@ -41,6 +41,8 @@
    :orgpad/link-width {}
    :orgpad/link-dash {}
    :orgpad/link-mid-pt {}
+   :orgpad/link-directed {}
+   :orgpad/link-arrow-pos {}
    :orgpad/refs-order  {}
    :orgpad/text        {}
    :orgpad/response    {}
