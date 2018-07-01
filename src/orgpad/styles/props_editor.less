@@ -1,0 +1,49 @@
+@import "config.less";
+
+.btn-panel {
+  display: flex;
+  width: 100%;
+  font-size: 13pt;
+  background-color: #fff;
+  flex-grow: 0;
+  order: 0;
+  cursor: pointer;
+
+  .btn {
+    text-align: center;
+    padding-top: 3px;
+    height: 23px;
+    min-width: 26px;
+    display: inline-block;
+    background-color: #fff;
+    white-space: nowrap; 
+    &:hover, &.active:hover {
+      background-color: #6df;
+    }
+    &.active {
+      background-color: @select-color;
+    }
+    &.disabled {
+      background-color: #ddd;
+      color: #666;
+    }
+  }
+
+  .btn-icon-label {
+    text-align: left;
+    padding-top: 3px;
+    padding-right: 7px;
+    padding-left: 3px;
+  }
+
+  .btn-label {
+    text-align: left;
+    padding-top: 3px;
+    padding-right: 7px;
+    padding-left: 7px;
+  }
+  
+  .fill {
+    flex-grow: 1;
+  }
+}

@@ -593,10 +593,8 @@
                                    :orgpad/link-width 2
                                    :orgpad/link-dash #js [0 0]
                                    :orgpad/link-mid-pt [0 0]
-                                   :orgpad/link-directed true
-                                   :orgpad/link-arrow-pos 0.85 }
-
-                                }
+                                   :orgpad/link-type :directed
+                                   :orgpad/link-arrow-pos 85 }}
   :orgpad/needs-children-info true
   :orgpad/view-name           "Map View"
   :orgpad/view-icon           "far fa-share-alt"

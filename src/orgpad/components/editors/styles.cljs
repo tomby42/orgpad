@@ -55,8 +55,8 @@
                                           %)}]]))
 
 (defn slider-params
-  [{:keys [component style prop-name max get-prop set-prop]}]
-  {:max max
+  [{:keys [component style prop-name min max get-prop set-prop]}]
+  {:min min :max max
    :value (if get-prop
             (get-prop style prop-name)
             (prop-name style))
@@ -156,7 +156,12 @@
                                                        :prop-name :orgpad/link-mid-pt
                                                        :max 1000
                                                        :get-prop (partial get-nth-component 1)
-                                                       :set-prop (partial set-nth-component 1)})))]])
+                                                       :set-prop (partial set-nth-component 1)})))
+          (frame "Arrow position" (slider/render-slider (slider-params {:component component
+                                                                        :style style
+                                                                        :prop-name :orgpad/link-arrow-pos
+                                                                        :min 1 :max 100})))]])
+                
 
 (defn render-link-props-style
   [component style]

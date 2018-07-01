@@ -364,7 +364,7 @@
               {:title "Edit"
                :onMouseUp #(omt/open-unit component (assoc-in unit [:view :orgpad/view-type] :orgpad/atomic-view))
                } ]
-             [:i.far.fa-exchange.fa-lg {:title "Swap direction" :onMouseDown (partial swap-link-direction component unit)}]
+             [:i.far.fa-exchange.fa-lg {:title "Flip direction" :onMouseDown (partial swap-link-direction component unit)}]
              [:i.far.fa-times.fa-lg { :title "Remove" :onMouseDown #(remove-link component unit local-state) } ]
            )])))))
 
@@ -577,16 +577,6 @@
     )
   )
 
-(defn- render-link-directed
-  [{:keys [component unit prop parent-view local-state]}]
-  [ :div.map-view-border-edit {}
-   [ :div.center "Directed" ]
-   (render-slider {:component component :unit unit :prop prop
-                   :parent-view parent-view :local-state local-state
-                   :min 1 :max 100
-                   :prop-name :orgpad/link-arrow-pos
-                   :action :orgpad.units/map-view-link-arrow-pos }) ])
-
 (defn- render-link-arrow-pos
   [{:keys [component unit prop parent-view local-state]}]
   [ :div.map-view-border-edit {}
@@ -597,6 +587,49 @@
                    :prop-name :orgpad/link-arrow-pos
                    :action :orgpad.units/map-view-link-arrow-pos }) ])
 
+(defn- render-link-directions
+  [{:keys [component unit prop parent-view local-state]}]
+  (let [undirected-style (str "btn" (when (= (:orgpad/link-type prop) :undirected) " active"))
+        directed-style (str "btn" (when (= (:orgpad/link-type prop) :directed) " active"))
+        bidirected-style (str "btn" (when (= (:orgpad/link-type prop) :bidirected) " active"))]
+    [:div.map-view-border-edit {}
+      [:div.center "Link direction" ]
+      [:div.btn-panel
+        [:span
+          {:class undirected-style
+           :title "Undirected link"
+           :on-click #(lc/transact! component [[:orgpad.units/map-view-link-type
+                                               {:prop prop
+                                                :parent-view parent-view
+                                                :unit-tree unit
+                                                :orgpad/link-type :undirected} ]])}
+          [:i.far.fa-minus]]
+
+        [:span
+          {:class directed-style
+           :title "Directed link"
+           :on-click #(lc/transact! component [[:orgpad.units/map-view-link-type
+                                               {:prop prop
+                                                :parent-view parent-view
+                                                :unit-tree unit
+                                                :orgpad/link-type :directed} ]])}
+          [:i.far.fa-long-arrow-right]]
+        [:span
+          {:class bidirected-style
+           :title "Directed link both ways"
+           :on-click #(lc/transact! component [[:orgpad.units/map-view-link-type
+                                               {:prop prop
+                                                :parent-view parent-view
+                                                :unit-tree unit
+                                               :orgpad/link-type :bidirected} ]])}
+          [:i.far.fa-arrows-h]]
+        [:span.fill]
+        [:span.btn
+          {:title "Flip direction"
+           :on-click (partial swap-link-direction component unit)}
+          [:i.far.fa-exchange]
+          [:span.btn-icon-label "Flip"]]]]))
+
 (defn- render-edge-prop-menu
   [params]
   [:div.map-props-toolbar
@@ -605,6 +638,7 @@
    (render-link-width1 params)
    (render-link-style1 params)
    (render-link-arrow-pos params)
+   (render-link-directions params)
    ])
 
 (defn- edge-unit-editor-static

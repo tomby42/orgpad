@@ -683,6 +683,10 @@
   [env _ {:keys [orgpad/link-arrow-pos] :as payload}]
   (update-link-props env payload { :orgpad/link-arrow-pos link-arrow-pos }))
 
+(defmethod mutate :orgpad.units/map-view-link-type
+  [env _ {:keys [orgpad/link-type] :as payload}]
+  (update-link-props env payload { :orgpad/link-type link-type }))
+
 ;; TODO - remove children that are not siblings (edge is strict parent and not connect them)
 (defmethod mutate :orgpad.units/map-view-link-remove
   [{:keys [state global-cache]} _ id]
