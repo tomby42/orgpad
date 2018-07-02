@@ -576,7 +576,8 @@
                                    :orgpad/unit-border-width 2
                                    :orgpad/unit-corner-x 5
                                    :orgpad/unit-corner-y 5
-                                   :orgpad/unit-border-style "solid" }
+                                   :orgpad/unit-border-style "solid"
+								   :orgpad/unit-padding 5 }
 
                                 :orgpad.map-view/link-props
                                  { :orgpad/view-type :orgpad.map-view/link-props

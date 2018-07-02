@@ -194,7 +194,8 @@
   [unit-tree & [selection]]
   (child-vertex-props (fn [prop id]
                         (when prop
-                          (let [bw (* 2 (:orgpad/unit-border-width prop))]
+                          (let [bw (* 2 (+ (:orgpad/unit-padding prop)
+						                               (:orgpad/unit-border-width prop)))]
                             {:bb [(:orgpad/unit-position prop)
                                   (++ (:orgpad/unit-position prop)
                                       [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]

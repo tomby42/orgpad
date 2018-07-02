@@ -77,6 +77,10 @@
                                                                       :style style
                                                                       :prop-name :orgpad/unit-border-width
                                                                       :max 100})))
+          (frame "Padding" (slider/render-slider (slider-params {:component component
+                                                                 :style style
+                                                                 :prop-name :orgpad/unit-padding
+                                                                 :max 100})))
           ]])
 
 (defn render-color-picker
