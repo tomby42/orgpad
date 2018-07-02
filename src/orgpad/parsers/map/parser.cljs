@@ -741,7 +741,7 @@
         selected (into #{} (comp
                             (filter #(geom/bbs-intersect? bb (:bb %)))
                             (map :id)) bbs)]
-    {:state (store/transact state [[:selections (-> unit-tree ot/uid keypath)] selected])}))
+    {:state (store/transact state [[:app-state :selections (-> unit-tree ot/uid keypath)] selected])}))
 
 (defmethod mutate :orgpad.units/remove-units
   [env _ [{:keys [pid view-name]} selection]]
@@ -750,7 +750,7 @@
                              {:id uid
                               :view-name view-name
                               :ctx-unit pid}))]
-    {:state (store/transact (:state res) [[:selections (keypath pid)] nil])}))
+    {:state (store/transact (:state res) [[:app-state :selections (keypath pid)] nil])}))
 
 (defmethod mutate :orgpad.units/try-make-new-links-unit
   [env _ {:keys [unit-tree selection position style]}]
