@@ -10,7 +10,7 @@
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.rum :as trum]
-            [orgpad.tools.geom :as geom]
+            [orgpad.tools.geom :as geom :refer [-- ++ *c screen->canvas canvas->screen]]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.dom :as dom]
@@ -149,11 +149,11 @@
         bbs (map :bb (ot/child-bbs unit-tree selection))
         bb (geom/bbs-bbox bbs)
         transf (-> unit-tree :view :orgpad/transform)
-        bb-screen-coord (mapv (partial geom/canvas->screen transf) bb)
+        bb-screen-coord (mapv (partial canvas->screen transf) bb)
         inside? (every? (partial geom/insideBB bb-screen-coord) screen-bbox)]
     (if inside?
-      (mapv (partial geom/screen->canvas transf) [(geom/++ (screen-bbox 0) bb-border)
-                                                  (geom/-- (screen-bbox 1) bb-border)])
+      (mapv (partial screen->canvas transf) [(++ (screen-bbox 0) bb-border)
+                                                  (-- (screen-bbox 1) bb-border)])
       bb)))
 
 (defn- gen-nodes-toolbar
@@ -185,7 +185,7 @@
   (let [selection (get-in app-state [:selections (ot/uid unit-tree)])
         bb (compute-bb component unit-tree selection)
         pos (bb 0)
-        [width height] (geom/-- (bb 1) (bb 0))
+        [width height] (-- (bb 1) (bb 0))
         style (merge {:width width
                       :height height}
                      (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
@@ -205,17 +205,17 @@
                    bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
                    ox (.-left bbox)
                    oy (.-top bbox)]
-               (g/line (geom/screen->canvas tr [(- (@local-state :link-start-x) ox)
-                                                (- (@local-state :link-start-y) oy)])
-                       (geom/screen->canvas tr [(- (@local-state :mouse-x) ox)
-                                                (- (@local-state :mouse-y) oy)])
+               (g/line (screen->canvas tr [(- (@local-state :link-start-x) ox)
+                                           (- (@local-state :link-start-y) oy)])
+                       (screen->canvas tr [(- (@local-state :mouse-x) ox)
+                                           (- (@local-state :mouse-y) oy)])
                        {:css {:zIndex 2} :key 1})))]))
 
 (defn- node-unit-editor-style
   [prop]
-  (let [pos (prop :orgpad/unit-position)
-        width (prop :orgpad/unit-width)
+  (let [width (prop :orgpad/unit-width)
 	  	  height (prop :orgpad/unit-height)
+        pos (-- (prop :orgpad/unit-position) [(/ width 2) (/ height 2)])
 			  bw (prop :orgpad/unit-border-width)]
   (merge { :width (+ width (* 2 bw))
            :height (+ height (* 2 bw)) }
@@ -304,10 +304,10 @@
                    bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
                    ox (.-left bbox)
                    oy (.-top bbox)]
-               (g/line (geom/screen->canvas tr [(- (@local-state :link-start-x) ox)
-                                                (- (@local-state :link-start-y) oy)])
-                       (geom/screen->canvas tr [(- (@local-state :mouse-x) ox)
-                                                (- (@local-state :mouse-y) oy)])
+               (g/line (screen->canvas tr [(- (@local-state :link-start-x) ox)
+                                           (- (@local-state :link-start-y) oy)])
+                       (screen->canvas tr [(- (@local-state :mouse-x) ox)
+                                           (- (@local-state :mouse-y) oy)])
                        {:css {:zIndex 2} :key 1})))])))))
 
 (defn- simple-node-unit-editor

@@ -5,7 +5,7 @@
             [orgpad.effects.core :as eff]
             [orgpad.components.registry :as registry]
             [orgpad.tools.colls :as colls]
-            [orgpad.tools.geom :as geom]
+            [orgpad.tools.geom :as geom :refer [-- ++ *c screen->canvas canvas->screen]]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.order-numbers :as ordn]
             [orgpad.tools.geocache :as geocache]
@@ -105,14 +105,15 @@
         h (if style (:orgpad/unit-height style) (:orgpad/unit-height default-props))]
     (geocache/create! global-cache parent view-name)
     (geocache/update-box! global-cache parent view-name
-                          (get (store/tempids new-state) -1) pos
+                          (get (store/tempids new-state) -1) (-- pos [(/ w 2) (/ h 2)])
                           [w h])
     { :state new-state } ))
 
 (defn- compute-translate
-  [translate scale new-pos old-pos]
-  [(+ (translate 0) (/ (- (new-pos 0) (old-pos 0)) scale))
-   (+ (translate 1) (/ (- (new-pos 1) (old-pos 1)) scale))])
+  [translate scale new-pos old-pos & [mult]]
+  (let [m (or mult 1)]
+    [(+ (translate 0) (/ (* m (- (new-pos 0) (old-pos 0))) scale))
+     (+ (translate 1) (/ (* m (- (new-pos 1) (old-pos 1))) scale))]))
 
 (defmethod mutate :orgpad.units/map-view-canvas-move
   [{:keys [state]} _ {:keys [view unit-id old-pos new-pos]}]
@@ -147,10 +148,11 @@
                                                :orgpad/type :orgpad/unit-view-child })
                                  [:db/add unit-id :orgpad/props-refs -1]])
           (store/transact state [[:db/add id :orgpad/unit-position new-translate]]))
-        size [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]]
+        size [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
+        size2 (*c size 0.5)]
     (geocache/update-box! global-cache (ot/pid parent-view) (:orgpad/view-name parent-view)
-                          unit-id new-translate size
-                          (prop' :orgpad/unit-position) size)
+                          unit-id (-- new-translate size2) size
+                          (-- (prop' :orgpad/unit-position) size2) size)
     ;; (js/console.log "moving unit to" unit-id new-translate size " - " (prop' :orgpad/unit-position) size)
     { :state new-state } ))
 
@@ -221,7 +223,7 @@
   (let [new-size (->
                   (compute-translate [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
                                      (-> parent-view :orgpad/transform :scale)
-                                     new-pos old-pos)
+                                     new-pos old-pos 2)
                   (as-> x [(max MIN-SIZE (x 0))
                            (max MIN-SIZE (x 1))]))]
     ;; (js/console.log "Resize" new-size)
@@ -231,11 +233,13 @@
 (defn- update-geocache-after-resize
   [{:keys [global-cache]} {:keys [parent-view unit-tree]} prop size]
   ;; (js/console.log "update-geocache-after-resize" prop size)
-  (geocache/update-box! global-cache (ot/pid parent-view) (:orgpad/view-name parent-view)
-                        (ot/uid unit-tree) (:orgpad/unit-position prop)
-                        [(:orgpad/unit-width size) (:orgpad/unit-height size)]
-                        (:orgpad/unit-position prop)
-                        [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]))
+  (let [new-size [(:orgpad/unit-width size) (:orgpad/unit-height size)]
+        old-size [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]]
+    (geocache/update-box! global-cache (ot/pid parent-view) (:orgpad/view-name parent-view)
+                          (ot/uid unit-tree) (-- (:orgpad/unit-position prop) (*c new-size 0.5))
+                          new-size
+                          (-- (:orgpad/unit-position prop) (*c old-size 0.5))
+                          old-size)))
 
 (defmethod mutate :orgpad.units/map-view-unit-resize
   [env _ payload]
@@ -314,12 +318,14 @@
                 prop' (merge (ot/get-style-from-db state
                                                    :orgpad.map-view/vertex-props-style
                                                    (:orgpad/view-style prop))
-                             prop)]
+                             prop)
+                new-size [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
+                old-size [(e :orgpad/unit-width) (e :orgpad/unit-height)]]
             (geocache/update-box! global-cache parent-id parent-name
-                                  (ot/uid unit-tree) (e :orgpad/unit-position)
-                                  [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
-                                  (e :orgpad/unit-position)
-                                  [(e :orgpad/unit-width) (e :orgpad/unit-height)])))))))
+                                  (ot/uid unit-tree) (-- (e :orgpad/unit-position) (*c new-size 0.5))
+                                  new-size
+                                  (-- (e :orgpad/unit-position) (*c old-size 0.5))
+                                  old-size)))))))
 
 (defn- switch-active
   [{:keys [state global-cache]}
@@ -361,13 +367,13 @@
                                                     :orgpad.map-view/vertex-props
                                                     :orgpad.map-view/vertex-props-style)]
       (let [u-pos (prop :orgpad/unit-position)
-            w     (prop :orgpad/unit-width)
-            h     (prop :orgpad/unit-height)]
-        (geom/insideBB [u-pos (geom/++ u-pos [w h])] pos)))))
+            d     [(/ (prop :orgpad/unit-width) 2)
+                   (/ (prop :orgpad/unit-height) 2)]]
+        (geom/insideBB [(-- u-pos d) (++ u-pos d)] pos)))))
 
 (defn- find-closest-unit
   [map-unit-tree begin-unit-id position]
-  (let [pos (geom/screen->canvas (-> map-unit-tree :view :orgpad/transform) position)]
+  (let [pos (screen->canvas (-> map-unit-tree :view :orgpad/transform) position)]
     (->> map-unit-tree
          :unit
          :orgpad/refs
@@ -382,7 +388,7 @@
         prop2 (ds/find-props-base (:unit closest-unit) pred)
         bbox (geom/link-bbox (prop1 :orgpad/unit-position) (prop2 :orgpad/unit-position) mid-pt)
         pos (bbox 0)
-        size (geom/-- (bbox 1) (bbox 0))]
+        size (-- (bbox 1) (bbox 0))]
     (jcolls/aset! global-cache uid "link-info" view-name [pos size])
     (geocache/update-box! global-cache parent-id view-name
                           uid pos size nil nil
@@ -433,16 +439,16 @@
   [{:keys [state]} _ {:keys [prop parent-view unit-tree pos start-pos end-pos mid-pt t]}]
   (let [id (prop :db/id)
         tr (parent-view :orgpad/transform)
-        pos-tr (geom/screen->canvas tr pos)
+        pos-tr (screen->canvas tr pos)
         pos' (bez/get-point-on-quadratic-curve start-pos pos-tr end-pos t 0.5)
         old-mid-pt (bez/get-point-on-quadratic-curve start-pos mid-pt end-pos t 0.5)
-        mid-pt' (geom/-- pos' (geom/*c (geom/++ start-pos end-pos) 0.5))
+        mid-pt' (-- pos' (*c (++ start-pos end-pos) 0.5))
         vprop (ot/get-props-view-child (:props unit-tree) (:orgpad/view-name parent-view)
                                        (-> parent-view :orgpad/refs first :db/id) :orgpad.map-view/vertex-props)]
     { :state (store/transact state (into [[:db/add id :orgpad/link-mid-pt mid-pt']]
                                          (when (-> vprop nil? not)
-                                           [[:db/add (:db/id vprop) :orgpad/unit-position (geom/++ (:orgpad/unit-position vprop)
-                                                                                                   (geom/-- pos' old-mid-pt))]])))}))
+                                           [[:db/add (:db/id vprop) :orgpad/unit-position (++ (:orgpad/unit-position vprop)
+                                                                                                   (-- pos' old-mid-pt))]])))}))
 
 (defmethod mutate :orgpad.units/map-view-unit-border-color
   [env _ {:keys [color] :as payload}]
@@ -814,8 +820,8 @@
         position (:orgpad/unit-position vprop)
         transform (:orgpad/transform parent-view)
         bb (dom/dom-bb->bb (aget global-cache parent-id "bbox"))
-        [w h] (geom/-- (bb 1) (bb 0))
-        new-translate (geom/-- [(/ w 2) (/ h 2)] (geom/*c position (-> transform :scale)))
+        [w h] (-- (bb 1) (bb 0))
+        new-translate (-- [(/ w 2) (/ h 2)] (*c position (-> transform :scale)))
         new-transformation (merge transform { :translate new-translate })]
     {:state (if (:db/id parent-view)
               (store/transact state [[:db/add (:db/id parent-view) :orgpad/transform new-transformation]])
@@ -849,8 +855,8 @@
   [{:keys [state global-cache]} _ {:keys [view parent-id pos zoom]}]
   (let [z (* (-> view :orgpad/transform :scale) zoom)
         z' (if (< z 0.3) 0.3 z)
-        p (geom/screen->canvas (:orgpad/transform view) pos)
-        translate (geom/-- pos (geom/*c p z'))
+        p (screen->canvas (:orgpad/transform view) pos)
+        translate (-- pos (*c p z'))
         transf {:translate translate :scale z'}]
     {:state (if (:db/id view)
               (store/transact state [[:db/add (:db/id view) :orgpad/transform transf]])
@@ -863,7 +869,7 @@
 
 (defmethod mutate :orgpad.units/paste-to-map
   [{:keys [state global-cache]} _ {:keys [pid data position view-name transform]}]
-  (let [pos (geom/screen->canvas transform position)
+  (let [pos (screen->canvas transform position)
         data' (assoc data :entities (ot/update-children-position data pos 0.5))
         {:keys [db temp->ids]} (ot/past-descendants-to-db state pid data')]
     (doseq [u (ot/get-all-paste-children-bbox data')]
@@ -874,7 +880,7 @@
         (geocache/update-box! global-cache
                               rid
                               (:view-name u)
-                              (-> u :uid temp->ids) (:pos u)
+                              (-> u :uid temp->ids) (-- (:pos u) (*c (:size u) 0.5))
                               (:size u))))
     {:state db}))
 

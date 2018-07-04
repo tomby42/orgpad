@@ -90,11 +90,12 @@
     (let [prop (ot/get-props-view-child-styled props view-name pid
                                                :orgpad.map-view/vertex-props
                                                :orgpad.map-view/vertex-props-style)
-          pos (prop :orgpad/unit-position)
+          pos (-- (prop :orgpad/unit-position)
+                  [(/ (prop :orgpad/unit-width) 2) (/ (prop :orgpad/unit-height) 2)])
           selections (get-in app-state [:selections pid])
           selected? (= (:db/id unit) (first selections))
           ;; selected? (= (unit :db/id) (-> @local-state :selected-unit first ot/uid))
-          style (merge { :width (prop :orgpad/unit-width)
+          style (merge {:width (prop :orgpad/unit-width)
                         :height (prop :orgpad/unit-height)
                         :borderWidth (prop :orgpad/unit-border-width)
                         :borderStyle (prop :orgpad/unit-border-style)

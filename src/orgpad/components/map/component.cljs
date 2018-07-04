@@ -11,7 +11,7 @@
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.rum :as trum]
-            [orgpad.tools.geom :as geom]
+            [orgpad.tools.geom :as geom :refer [-- ++ *c screen->canvas canvas->screen]]
             [orgpad.tools.jcolls :as jcolls]
             [orgpad.tools.geocache :as geocache]
             [orgpad.tools.colls :as colls]
@@ -66,8 +66,8 @@
         pos (get-rel-mouse-pos component unit-tree ev)
         linfo (when (= (:mode app-state) :write)
                 (ot/get-nearest-link unit-tree
-                                     (geom/screen->canvas (-> unit-tree :view :orgpad/transform)
-                                                          pos)))]
+                                     (screen->canvas (-> unit-tree :view :orgpad/transform)
+                                                     pos)))]
     ;; (js/console.log "nearest link" linfo)
     ;; (jev/block-propagation ev)
     (swap! local-state merge { :mouse-x (.-clientX ev)
@@ -160,8 +160,8 @@
   [local-state {:keys [orgpad/transform]}]
   (let [bb (geom/points-bbox [(:start-mouse-x local-state) (:start-mouse-y local-state)]
                              [(:mouse-x local-state) (:mouse-y local-state)])
-        pos (geom/screen->canvas transform (bb 0))
-        pos1 (geom/screen->canvas transform (bb 1))]
+        pos (screen->canvas transform (bb 0))
+        pos1 (screen->canvas transform (bb 1))]
     [pos pos1]))
 
 (defn- select-units-by-bb
@@ -229,22 +229,44 @@
                             (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
                             (-> parent-view :orgpad/transform :scale)))))
 
+;; (defn- unit-move
+;;   [parent-view local-state ev]
+;;   (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)
+;;         pos (get-in @local-state [:selected-unit 1 :orgpad/unit-position])]
+;;     (when el
+;;       (dom/set-translate el (pos 0) (pos 1) (.-clientX ev) (.-clientY ev)
+;;                          (@local-state :start-mouse-x) (@local-state :start-mouse-y)
+;;                          (-> parent-view :orgpad/transform :scale)))))
+
 (defn- unit-move
   [parent-view local-state ev]
   (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)
-        pos (get-in @local-state [:selected-unit 1 :orgpad/unit-position])]
+        width (get-in @local-state [:selected-unit 1 :orgpad/unit-width])
+        height (get-in @local-state [:selected-unit 1 :orgpad/unit-height])
+        pos (-- (get-in @local-state [:selected-unit 1 :orgpad/unit-position])
+                [(/ width 2) (/ height 2)])]
     (when el
       (dom/set-translate el (pos 0) (pos 1) (.-clientX ev) (.-clientY ev)
                          (@local-state :start-mouse-x) (@local-state :start-mouse-y)
                          (-> parent-view :orgpad/transform :scale)))))
 
+
+;; (defn- unit-resize
+;;   [parent-view local-state ev]
+;;   (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)]
+;;     (when el
+;;       (dom/update-size el (.-clientX ev) (.-clientY ev)
+;;                        (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
+;;                        (-> parent-view :orgpad/transform :scale)))))
+
 (defn- unit-resize
   [parent-view local-state ev]
   (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)]
     (when el
-      (dom/update-size el (.-clientX ev) (.-clientY ev)
-                       (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
-                       (-> parent-view :orgpad/transform :scale)))))
+      (dom/update-size-translate el (.-clientX ev) (.-clientY ev)
+                                 (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
+                                 (-> parent-view :orgpad/transform :scale)))))
+
 
 (defn- update-link-shape
   [component local-state ev]
@@ -315,11 +337,11 @@
   [component unit-tree local-state view]
   (let [[pos pos1] (geom/points-bbox [(:start-mouse-x local-state) (:start-mouse-y local-state)]
                                      [(:mouse-x local-state) (:mouse-y local-state)])
-        [width height] (geom/-- pos1 pos)
+        [width height] (-- pos1 pos)
         bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")]
     [:div.selection-box {:style (merge {:width width
                                         :height height}
-                                       (css/transform {:translate (geom/-- pos [(.-left bbox) (.-top bbox)])}))}]))
+                                       (css/transform {:translate (-- pos [(.-left bbox) (.-top bbox)])}))}]))
 
 (defn normalize-mouse-data
   [ev]
@@ -510,13 +532,13 @@
     (if (aget global-cache id)
       (let [children-cache (cu/build-children-old-node-cache old-node)
             iz (/ 1 (-> view-unit :orgpad/transform :scale))
-            pos (geom/*c (-> view-unit :orgpad/transform :translate)
+            pos (*c (-> view-unit :orgpad/transform :translate)
                          iz)
             bbox (or (aget global-cache id "bbox")
                      (get-default-bbox))
-            size (geom/*c [(- (.-right bbox) (.-left bbox))
-                           (- (.-bottom bbox) (.-top bbox))]
-                          iz)
+            size (*c [(- (.-right bbox) (.-left bbox))
+                      (- (.-bottom bbox) (.-top bbox))]
+                     iz)
             vis-units (geocache/visible-units global-cache id (:orgpad/view-name view-unit) pos size)]
         ;; (js/console.log "vis units" unit view-unit vis-units global-cache children-cache)
         (map (juxt identity children-cache) (concat keep-units vis-units)))
@@ -594,7 +616,7 @@
                                    :orgpad/link-dash #js [0 0]
                                    :orgpad/link-mid-pt [0 0]
                                    :orgpad/link-type :directed
-                                   :orgpad/link-arrow-pos 85 }}
+                                   :orgpad/link-arrow-pos 65 }}
   :orgpad/needs-children-info true
   :orgpad/view-name           "Map View"
   :orgpad/view-icon           "far fa-share-alt"
