@@ -236,9 +236,9 @@
   (let [new-size [(:orgpad/unit-width size) (:orgpad/unit-height size)]
         old-size [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]]
     (geocache/update-box! global-cache (ot/pid parent-view) (:orgpad/view-name parent-view)
-                          (ot/uid unit-tree) (-- (:orgpad/unit-position prop) (*c new-size 0.5))
+                          (ot/uid unit-tree) (ot/left-top (:orgpad/unit-position prop) new-size)
                           new-size
-                          (-- (:orgpad/unit-position prop) (*c old-size 0.5))
+                          (ot/left-top (:orgpad/unit-position prop) old-size)
                           old-size)))
 
 (defmethod mutate :orgpad.units/map-view-unit-resize
@@ -322,9 +322,9 @@
                 new-size [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
                 old-size [(e :orgpad/unit-width) (e :orgpad/unit-height)]]
             (geocache/update-box! global-cache parent-id parent-name
-                                  (ot/uid unit-tree) (-- (e :orgpad/unit-position) (*c new-size 0.5))
+                                  (ot/uid unit-tree) (ot/left-top (e :orgpad/unit-position) new-size)
                                   new-size
-                                  (-- (e :orgpad/unit-position) (*c old-size 0.5))
+                                  (ot/left-top (e :orgpad/unit-position) old-size)
                                   old-size)))))))
 
 (defn- switch-active
@@ -381,7 +381,7 @@
          first)))
 
 (defn- update-geocache-after-new-link
-  [state global-cache parent-id uid view-name begin-unit-id closest-unit mid-pt]
+  [state global-cache parent-id uid view-name begin-unit-id closest-unit mid-pt cyclic?]
   (let [bu (store/query state [:entity begin-unit-id])
         pred (vertex-props-pred view-name)
         prop1 (ds/find-props bu pred)
@@ -391,7 +391,11 @@
         size (-- (bbox 1) (bbox 0))]
     (jcolls/aset! global-cache uid "link-info" view-name [pos size])
     (geocache/update-box! global-cache parent-id view-name
-                          uid pos size nil nil
+                          uid
+                          (if cyclic?
+                            (ot/left-top pos [(:orgpad/unit-width prop1) (:orgpad/unit-height prop1)])
+                            pos)
+                          size nil nil
                           #js [begin-unit-id (ot/uid closest-unit)])))
 
 (defmethod mutate :orgpad.units/try-make-new-link-unit
@@ -432,23 +436,28 @@
       (update-geocache-after-new-link state global-cache (ot/uid map-unit-tree)
                                       (get (store/tempids new-state) -1)
                                       (ot/view-name map-unit-tree)
-                                      begin-unit-id closest-unit mid-pt-rel))
+                                      begin-unit-id closest-unit mid-pt-rel cyclic?))
     { :state new-state }))
 
 (defmethod mutate :orgpad.units/map-view-link-shape
-  [{:keys [state]} _ {:keys [prop parent-view unit-tree pos start-pos end-pos mid-pt t]}]
+  [{:keys [state]} _ {:keys [prop parent-view unit-tree pos start-pos end-pos mid-pt t cyclic? start-size]}]
   (let [id (prop :db/id)
         tr (parent-view :orgpad/transform)
         pos-tr (screen->canvas tr pos)
-        pos' (bez/get-point-on-quadratic-curve start-pos pos-tr end-pos t 0.5)
-        old-mid-pt (bez/get-point-on-quadratic-curve start-pos mid-pt end-pos t 0.5)
-        mid-pt' (-- pos' (*c (++ start-pos end-pos) 0.5))
+        start-pos' (if cyclic? (ot/left-top start-pos start-size) start-pos)
+        end-pos' (if cyclic? (ot/left-top end-pos start-size) end-pos)
+        mid-pt'' (if cyclic? (ot/left-top mid-pt start-size) mid-pt)
+        pos' (bez/get-point-on-quadratic-curve start-pos' pos-tr end-pos' t 0.5)
+        old-mid-pt (bez/get-point-on-quadratic-curve start-pos' mid-pt'' end-pos' t 0.5)
+        mid-pt' (-- pos' (*c (++ start-pos' end-pos') 0.5))
         vprop (ot/get-props-view-child (:props unit-tree) (:orgpad/view-name parent-view)
-                                       (-> parent-view :orgpad/refs first :db/id) :orgpad.map-view/vertex-props)]
+                                       (-> parent-view :orgpad/refs first :db/id)
+                                       :orgpad.map-view/vertex-props)]
     { :state (store/transact state (into [[:db/add id :orgpad/link-mid-pt mid-pt']]
                                          (when (-> vprop nil? not)
-                                           [[:db/add (:db/id vprop) :orgpad/unit-position (++ (:orgpad/unit-position vprop)
-                                                                                                   (-- pos' old-mid-pt))]])))}))
+                                           [[:db/add (:db/id vprop) :orgpad/unit-position
+                                             (++ (:orgpad/unit-position vprop)
+                                                 (-- pos' old-mid-pt))]])))}))
 
 (defmethod mutate :orgpad.units/map-view-unit-border-color
   [env _ {:keys [color] :as payload}]
@@ -880,7 +889,7 @@
         (geocache/update-box! global-cache
                               rid
                               (:view-name u)
-                              (-> u :uid temp->ids) (-- (:pos u) (*c (:size u) 0.5))
+                              (-> u :uid temp->ids) (ot/left-top (:pos u) (:size u))
                               (:size u))))
     {:state db}))
 

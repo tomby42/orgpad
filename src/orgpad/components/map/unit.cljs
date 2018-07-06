@@ -190,7 +190,7 @@
 (def ^:private link-eq-fns [identical? = identical? identical? identical? identical? identical?])
 
 (defn- update-geocache-for-link-changes
-  [component pid view-name uid start-pos end-pos mid-pt-rel refs]
+  [component pid view-name uid start-pos end-pos mid-pt-rel refs cyclic? start-size]
   (let [global-cache (lc/get-global-cache component)
         bbox (geom/link-bbox start-pos end-pos mid-pt-rel)
         id1 (-> refs (nth 0) ot/uid-safe)
@@ -200,7 +200,7 @@
         [old-pos old-size] (aget global-cache uid "link-info" view-name)]
     (aset global-cache uid "link-info" view-name [pos size])
     (geocache/update-box! global-cache pid view-name uid
-                          pos size old-pos old-size
+                          (if cyclic? (ot/left-top pos start-size) pos) size old-pos old-size
                           #js[id1 id2])))
 
 (defn- mk-lnk-vtx-prop
@@ -221,7 +221,8 @@
                                     }]])) 0))))
 
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
-  [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic?]} app-state pcomponent view-name pid local-state]
+  [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic? start-size]}
+   app-state pcomponent view-name pid local-state]
   (try
     (let [prop (ot/get-props-view-child-styled props view-name pid
                                                :orgpad.map-view/link-props :orgpad.map-view/link-props-style)
@@ -234,24 +235,27 @@
           ctl-style (css/transform {:translate (-- (++ mid-pt [(-> prop :orgpad/link-width)
                                                                (-> prop :orgpad/link-width)])
                                                    [10 10])})
-          ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)]
+          ctl-pt (geom/link-middle-ctl-point start-pos end-pos mid-pt)
+          start-pos' (when cyclic? (ot/left-top start-pos start-size))
+          mid-pt' (when cyclic? (ot/left-top mid-pt start-size))]
       ;; (js/window.console.log "rendering " (unit :db/id))
       ;; ugly o'hacks
       ;; move it to component mount and component did update
       (update-geocache-for-link-changes pcomponent pid view-name (unit :db/id)
                                         start-pos end-pos (prop :orgpad/link-mid-pt)
-                                        (unit :orgpad/refs))
+                                        (unit :orgpad/refs) cyclic? start-size)
       (when (ot/get-props-no-ctx (:orgpad/props-refs unit) view-name :orgpad/atomic-view :orgpad/unit-view)
         (mk-lnk-vtx-prop component unit-tree view-name pid mid-pt))
       (html
        [:div {}
         (if cyclic?
-          (g/arc (geom/link-arc-center start-pos mid-pt)
-                 (geom/link-arc-radius start-pos mid-pt) 0 math/pi2 style)
+          (g/arc (geom/link-arc-center start-pos' mid-pt')
+                 (geom/link-arc-radius start-pos' mid-pt')
+                 0 math/pi2 style)
           (g/quadratic-curve start-pos end-pos ctl-pt style))
         (when (not= (prop :orgpad/link-type) :undirected)
           (if cyclic?
-            (make-arrow-arc start-pos mid-pt prop)
+            (make-arrow-arc start-pos' mid-pt' prop)
             (make-arrow-quad start-pos end-pos ctl-pt prop)))
         (when (and (= (prop :orgpad/link-type) :bidirected) (not cyclic?))
           (make-arrow-quad end-pos start-pos ctl-pt prop))]))

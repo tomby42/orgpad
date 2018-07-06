@@ -87,6 +87,7 @@
       (let [[link-unit link-prop link-info link-dist-info] linfo]
         (start-change-link-shape link-unit link-prop component (:start-pos link-info) (:end-pos link-info)
                                  [(aget link-dist-info "x") (aget link-dist-info "y")] (aget link-dist-info "t")
+                                 (:cyclic? link-info) (:start-size link-info)
                                  local-state ev))
       (lc/transact! component [[ :orgpad.units/deselect-all {:pid (ot/uid unit-tree)} ]]))))
 
@@ -270,7 +271,7 @@
 
 (defn- update-link-shape
   [component local-state ev]
-  (let [[unit-tree prop parent-view start-pos end-pos mid-pt t] (@local-state :selected-link)
+  (let [[unit-tree prop parent-view start-pos end-pos mid-pt t cyclic? start-size] (@local-state :selected-link)
         bbox (lc/get-global-cache component (-> parent-view :orgpad/refs first :db/id) "bbox")]
     (swap! local-state assoc :link-menu-show :none)
     (lc/transact! component
@@ -282,6 +283,8 @@
                      :end-pos end-pos
                      :mid-pt mid-pt
                      :t t
+                     :cyclic? cyclic?
+                     :start-size start-size
                      :pos [(mouse-node-rel-x bbox ev)
                            (mouse-node-rel-y bbox ev)]}]])
     (update-mouse-position local-state ev)))
@@ -614,9 +617,10 @@
                                    :orgpad/link-color "#000000ff"
                                    :orgpad/link-width 2
                                    :orgpad/link-dash #js [0 0]
-                                   :orgpad/link-mid-pt [0 0]
+
+                                  :orgpad/link-mid-pt [0 0]
                                    :orgpad/link-type :directed
-                                   :orgpad/link-arrow-pos 65 }}
+                                   :orgpad/link-arrow-pos 50 }}
   :orgpad/needs-children-info true
   :orgpad/view-name           "Map View"
   :orgpad/view-icon           "far fa-share-alt"
