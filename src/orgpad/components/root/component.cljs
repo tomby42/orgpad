@@ -135,23 +135,24 @@
 
 		:orgpad/right-toolbar [
 			[{:elem :btn
-				:id "level-up"
-					:icon "far fa-sign-out-alt"
-					:title "Leave current unit"
-					:on-click #(lc/transact! (:component %1)
+			  :id "level-up"
+				:icon "far fa-share-square"
+        :label "Back"
+				:title "Leave current unit"
+				:on-click #(lc/transact! (:component %1)
 							[[:orgpad/root-unit-close {
-							:db/id (:id %1)
-							:orgpad/view-name ((:view %1) :orgpad/view-name)
-							:orgpad/view-type ((:view %1) :orgpad/view-type)
-							:orgpad/view-path ((:path-info %1) :orgpad/view-path) }]])
-					:hidden #(= (:id %1) 0)}
+							  :db/id (:id %1)
+							  :orgpad/view-name ((:view %1) :orgpad/view-name)
+							  :orgpad/view-type ((:view %1) :orgpad/view-type)
+							  :orgpad/view-path ((:path-info %1) :orgpad/view-path) }]])
+				:hidden #(= (:id %1) 0)}
 			]
 			[{:elem :btn
 				:id "edit-mode"
-					:icon "far fa-pencil"
-					:title "Edit mode"
-					:active #(= (:mode %1) :write)
-											:on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :write]]]) }
+				:icon "far fa-pencil"
+				:title "Edit mode"
+				:active #(= (:mode %1) :write)
+				   					:on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :write]]]) }
        {:elem :btn
         :id "read-mode"
         :icon "far fa-eye"
@@ -159,25 +160,24 @@
         :active #(= (:mode %1) :read)
 								:on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :read]]]) }
        ]
-                           [{:elem :roll
-                             :id "debug"
-                             :icon "far fa-bug"
-                             :label "Debug"
-                             :hidden #(not= (-> %1 :app-state :enable-experimental-features?) true)
-                             :roll-items [{:id "swap-all-links"
-                                           :icon "far fa-exchange"
-                                           :label "Swap All Links"
-                                           :on-click #(lc/transact! (:component %1) [[:orgpad/debug-swap-all-links true]])}]}]
-							[{:elem :btn
-								:id "settings"
-                :label "Settings"
-                :icon "fa fa-cog"
-                :on-click #(swap! (:root-local-state %1) assoc :show-settings true)
-                }
-               {:elem :btn
-                :id "help"
-                :icon "far fa-question-circle"
-                :label "Help"
-                :on-click #(js/window.open "help.html" "_blank")}
-               ]]
+      [{:elem :roll
+        :id "debug"
+        :icon "far fa-bug"
+        :label "Debug"
+        :hidden #(not= (-> %1 :app-state :enable-experimental-features?) true)
+        :roll-items [{:id "swap-all-links"
+                      :icon "far fa-exchange"
+                      :label "Swap All Links"
+                      :on-click #(lc/transact! (:component %1) [[:orgpad/debug-swap-all-links true]])}]}]
+			[{:elem :btn
+				:id "settings"
+        :label "Settings"
+        :icon "fa fa-cog"
+        :on-click #(swap! (:root-local-state %1) assoc :show-settings true) }
+       {:elem :btn
+        :id "help"
+        :icon "far fa-question-circle"
+        :label "Help"
+        :on-click #(js/window.open "help.html" "_blank")}
+       ]]
   })
