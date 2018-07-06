@@ -89,7 +89,8 @@
   (try
     (let [prop (ot/get-props-view-child-styled props view-name pid
                                                :orgpad.map-view/vertex-props
-                                               :orgpad.map-view/vertex-props-style)
+                                               :orgpad.map-view/vertex-props-style
+                                               :orgpad/map-view)
           pos (-- (prop :orgpad/unit-position)
                   [(/ (prop :orgpad/unit-width) 2) (/ (prop :orgpad/unit-height) 2)])
           selections (get-in app-state [:selections pid])
@@ -225,7 +226,8 @@
    app-state pcomponent view-name pid local-state]
   (try
     (let [prop (ot/get-props-view-child-styled props view-name pid
-                                               :orgpad.map-view/link-props :orgpad.map-view/link-props-style)
+                                               :orgpad.map-view/link-props :orgpad.map-view/link-props-style
+                                               :orgpad/map-view)
           mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
           style {:css { :zIndex -1 }
                  :canvas {:strokeStyle (format-color (prop :orgpad/link-color))

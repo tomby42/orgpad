@@ -7,6 +7,7 @@
             [orgpad.tools.colls :as colls]
             [orgpad.tools.geom :refer [++ -- *c] :as geom]
             [orgpad.tools.bezier :as bez]
+            [orgpad.components.registry :as reg]
             [goog.string :as gstring]
             [goog.string.format]))
 
@@ -173,10 +174,11 @@
     (->> styles (drop-while #(not= (:orgpad/style-name %) style-name)) first)))
 
 (defn get-props-view-child-styled
-  [props view-name pid prop-name style-type]
-  (let [prop (get-props-view-child props view-name pid prop-name)
+  [props view-name pid prop-name style-type component-type]
+  (let [default-prop (-> component-type reg/get-component-info :orgpad/child-props-default style-type)
+        prop (get-props-view-child props view-name pid prop-name)
         style (get-style props (:orgpad/view-style prop) style-type)]
-    (merge style prop)))
+    (merge default-prop style prop)))
 
 (defn child-vertex-props
   [prop-fn unit-tree & [selection]]
@@ -188,7 +190,8 @@
                                   :props
                                   (get-props-view-child-styled name id
                                                                :orgpad.map-view/vertex-props
-                                                               :orgpad.map-view/vertex-props-style))]
+                                                               :orgpad.map-view/vertex-props-style
+                                                               :orgpad/map-view))]
                      (prop-fn prop (uid u))))
                  (if selection
                    (filter #(contains? selection (uid %)) (refs unit-tree))
@@ -598,7 +601,8 @@
 (defn- link-dist-info
   [p {:keys [props unit]} {:keys [start-pos end-pos cyclic? start-size]} pid view-name]
   (let [prop (get-props-view-child-styled props view-name pid
-                                          :orgpad.map-view/link-props :orgpad.map-view/link-props-style)
+                                          :orgpad.map-view/link-props :orgpad.map-view/link-props-style
+                                          :orgpad/map-view)
         d [(-> prop :orgpad/link-width)
            (-> prop :orgpad/link-width)]
         mid-pt (geom/link-middle-point start-pos end-pos (:orgpad/link-mid-pt prop))]

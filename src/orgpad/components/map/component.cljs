@@ -618,7 +618,7 @@
                                    :orgpad/link-width 2
                                    :orgpad/link-dash #js [0 0]
 
-                                  :orgpad/link-mid-pt [0 0]
+                                   :orgpad/link-mid-pt [0 0]
                                    :orgpad/link-type :directed
                                    :orgpad/link-arrow-pos 50 }}
   :orgpad/needs-children-info true

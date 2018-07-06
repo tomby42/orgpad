@@ -365,7 +365,8 @@
   (let [view-name (ot/view-name map-unit-tree)]
     (when-let [prop (ot/get-props-view-child-styled (:props u) view-name (ot/uid map-unit-tree)
                                                     :orgpad.map-view/vertex-props
-                                                    :orgpad.map-view/vertex-props-style)]
+                                                    :orgpad.map-view/vertex-props-style
+                                                    :orgpad/map-view)]
       (let [u-pos (prop :orgpad/unit-position)
             d     [(/ (prop :orgpad/unit-width) 2)
                    (/ (prop :orgpad/unit-height) 2)]]
