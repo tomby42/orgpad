@@ -7,8 +7,13 @@
             [orgpad.tools.colls :as colls]
             [orgpad.tools.geom :refer [++ -- *c] :as geom]
             [orgpad.tools.bezier :as bez]
+            [orgpad.components.registry :as reg]
             [goog.string :as gstring]
             [goog.string.format]))
+
+(defn left-top
+  [pos size]
+  (-- pos (*c size 0.5)))
 
 (defn uid
   [unit]
@@ -169,10 +174,11 @@
     (->> styles (drop-while #(not= (:orgpad/style-name %) style-name)) first)))
 
 (defn get-props-view-child-styled
-  [props view-name pid prop-name style-type]
-  (let [prop (get-props-view-child props view-name pid prop-name)
+  [props view-name pid prop-name style-type component-type]
+  (let [default-prop (-> component-type reg/get-component-info :orgpad/child-props-default style-type)
+        prop (get-props-view-child props view-name pid prop-name)
         style (get-style props (:orgpad/view-style prop) style-type)]
-    (merge style prop)))
+    (merge default-prop style prop)))
 
 (defn child-vertex-props
   [prop-fn unit-tree & [selection]]
@@ -184,7 +190,8 @@
                                   :props
                                   (get-props-view-child-styled name id
                                                                :orgpad.map-view/vertex-props
-                                                               :orgpad.map-view/vertex-props-style))]
+                                                               :orgpad.map-view/vertex-props-style
+                                                               :orgpad/map-view))]
                      (prop-fn prop (uid u))))
                  (if selection
                    (filter #(contains? selection (uid %)) (refs unit-tree))
@@ -194,10 +201,11 @@
   [unit-tree & [selection]]
   (child-vertex-props (fn [prop id]
                         (when prop
-                          (let [bw (* 2 (:orgpad/unit-border-width prop))]
-                            {:bb [(:orgpad/unit-position prop)
+                          (let [bw (* 2 (:orgpad/unit-border-width prop))
+                                d [(-> prop :orgpad/unit-width (/ 2)) (-> prop :orgpad/unit-height (/ 2))]]
+                            {:bb [(-- (:orgpad/unit-position prop) d)
                                   (++ (:orgpad/unit-position prop)
-                                      [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]
+                                      d
                                       [bw bw])]
                              :id id})))
                       unit-tree selection))
@@ -410,10 +418,23 @@
 (defn get-prop-from-db-styles
   [state props prop style-type]
   (let [id (prop :db/id)
-        prop' (if id (store/query state [:entity id]) prop)
+        prop' (if (and id state) (store/query state [:entity id]) prop)
         style (get-style props (:orgpad/view-style prop') style-type)
-        style' (dscript/entity->map (store/query state [:entity (:db/id style)]))]
+        style' (if state (dscript/entity->map (store/query state [:entity (:db/id style)])) style)]
     (merge style' prop')))
+
+(defn get-prop-wiht-style
+  [unit-tree view-name pid style-type]
+  (let [prop (-> unit-tree
+                 :props
+                 (get-props-view-child view-name pid :orgpad.map-view/vertex-props))]
+    (get-prop-from-db-styles nil (:props unit-tree) prop style-type)))
+
+(defn get-size
+  [unit-tree view-name pid]
+  (-> unit-tree
+      (get-prop-wiht-style view-name pid :orgpad.map-view/vertex-props-style)
+      (as-> x [(:orgpad/unit-width x) (:orgpad/unit-height x)])))
 
 (defn get-style-from-db
   [state style-type style-name]
@@ -569,21 +590,26 @@
     (map (fn [l]
            (let [refs (-> l :unit :orgpad/refs)
                  id1 (-> refs (nth 0) uid-safe)
-                 id2 (-> refs (nth 1) uid-safe)]
+                 id2 (-> refs (nth 1) uid-safe)
+                 cyclic? (= id1 id2)]
              [l {:start-pos (get-pos (mus id1) view-name pid)
+                 :start-size (when cyclic? (get-size (mus id1) view-name pid))
                  :end-pos (get-pos (mus id2) view-name pid)
-                 :cyclic? (= id1 id2) }]))
+                 :cyclic? cyclic? }]))
          links)))
 
 (defn- link-dist-info
-  [p {:keys [props unit]} {:keys [start-pos end-pos cyclic?]} pid view-name]
+  [p {:keys [props unit]} {:keys [start-pos end-pos cyclic? start-size]} pid view-name]
   (let [prop (get-props-view-child-styled props view-name pid
-                                          :orgpad.map-view/link-props :orgpad.map-view/link-props-style)
+                                          :orgpad.map-view/link-props :orgpad.map-view/link-props-style
+                                          :orgpad/map-view)
         d [(-> prop :orgpad/link-width)
            (-> prop :orgpad/link-width)]
         mid-pt (geom/link-middle-point start-pos end-pos (:orgpad/link-mid-pt prop))]
     (if cyclic?
-      (let [nearest-point (geom/arc-nearest-point start-pos mid-pt p)]
+      (let [start-pos' (left-top start-pos start-size)
+            mid-pt' (left-top mid-pt start-size)
+            nearest-point (geom/arc-nearest-point start-pos' mid-pt' p)]
         [#js {:x (nth nearest-point 0)
               :y (nth nearest-point 1)
               :t 0.5

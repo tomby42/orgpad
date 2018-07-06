@@ -15,11 +15,12 @@
   (-> view :orgpad/refs first :db/id))
 
 (defn- start-change-link-shape
-  [unit-tree prop component start-pos end-pos mid-pt t local-state ev]
+  [unit-tree prop component start-pos end-pos mid-pt t cyclic? start-size local-state ev]
   (.stopPropagation ev)
   (let [parent-view (aget component "parent-view")]
     (swap! local-state merge {:local-mode :link-shape
-                              :selected-link [unit-tree prop parent-view start-pos end-pos mid-pt t]
+                              :selected-link [unit-tree prop parent-view start-pos end-pos mid-pt t
+                                              cyclic? start-size]
                               :link-menu-show :maybe
                               :selected-unit nil
                               :mouse-x (if (.-clientX ev) (.-clientX ev) (aget ev "touches" 0 "clientX"))
