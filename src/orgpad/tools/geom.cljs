@@ -93,6 +93,15 @@
   [start-pt mid-pt]
   (/ (distance start-pt mid-pt) 2))
 
+(defn arc-nearest-point
+  [start-pt mid-pt p]
+  (let [center (link-arc-center start-pt mid-pt)
+        radius (link-arc-radius start-pt mid-pt)
+        dist (distance p center)]
+    (if (< dist 0.0001) ;; in close distance from center
+      radius
+      (++ center (*c (-- p center) (/ radius dist))))))
+
 (defn link-bbox
   [start-pt end-pt mid-pt-rel]
   (let [mid-pt (link-middle-point start-pt end-pt mid-pt-rel)]

@@ -1,4 +1,4 @@
-(ns ^{:doc "File input componet"}
+(ns ^{:doc "File input component"}
   orgpad.components.input.file
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
@@ -26,15 +26,14 @@
         (on-change (vec zip-result)))))))
 
 (rum/defcs file-input < rum/static
-  [state {:keys [class-name type on-change]} & children]
+  [state {:keys [attr type on-change]} & children]
 
-  [ :div { :className class-name
-           :onClick (fn [ev]
-                      (-> state (trum/ref-node :fileInput) .click)) }
+  [ :span (merge attr {:onClick (fn [ev]
+                      (-> state (trum/ref-node :fileInput) .click)) })
 
    [ :input.hidden-input-style { :type "file"
                                  :ref "fileInput"
-                                 :style { :position "absolute",
+                                 :style { :position "absolute"
                                           :top "-9999px" }
                                  :name "files[]"
                                  :onChange #(load-files % on-change (or type "text")) } ]

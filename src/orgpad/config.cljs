@@ -7,6 +7,7 @@
             [orgpad.components.root.ci]
             [orgpad.components.map.ci]
             [orgpad.parsers.default-root]
+            [orgpad.parsers.default-debug]
             [orgpad.parsers.atomic.parser]
             [orgpad.parsers.map.parser]
             [orgpad.parsers.jupyter.parser]

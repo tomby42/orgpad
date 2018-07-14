@@ -1,12 +1,15 @@
 (ns ^{:doc "Core orgpad functionality"}
-  orgpad.core.orgpad
+    orgpad.core.orgpad
   (:require
    [cljs.reader :as reader]
    [datascript.core   :as d]
    [orgpad.core.store :as store]
    [orgpad.tools.colls :as colls]
+   [orgpad.tools.orgpad :as ot]
    [orgpad.components.registry :as cregistry]
-   [ajax.core :as ajax]))
+   [ajax.core :as ajax]
+   [goog.string :as gstring]
+   [goog.string.format]))
 
 (def orgpad-db-schema
   {
@@ -38,6 +41,8 @@
    :orgpad/link-width {}
    :orgpad/link-dash {}
    :orgpad/link-mid-pt {}
+   :orgpad/link-directed {}
+   :orgpad/link-arrow-pos {}
    :orgpad/refs-order  {}
    :orgpad/text        {}
    :orgpad/response    {}
@@ -45,6 +50,7 @@
    :orgpad/independent {}
    :orgpad/view-style {}
    :orgpad/style-name {}
+   :orgpad/context-unit {}
    })
 
 (defn default-styles-qry
@@ -53,44 +59,45 @@
     (into [] (comp
               (filter :orgpad/child-props-style-types)
               (mapcat (fn [cdef]
-                        (map #(assoc (-> cdef :orgpad/child-props-default %) :db/id (vswap! counter dec))
+                        (map #(assoc (get-in cdef [:orgpad/child-props-default (:key %)])
+                                     :db/id (vswap! counter dec))
                              (:orgpad/child-props-style-types cdef)))))
           (vals (cregistry/get-registry)))))
 
 (defn db-contains-styles?
   [db]
   (let [styles (into #{}
-                     (mapcat :orgpad/child-props-style-types)
+                     (comp
+                      (mapcat :orgpad/child-props-style-types)
+                      (map :key))
                      (vals (cregistry/get-registry)))]
-  (-> db
-      (store/query '[:find ?e
-                     :in $ ?contains
-                     :where
-                     [?e :orgpad/view-type ?vt]
-                     [(?contains ?vt)]]
-                   [#(contains? styles %)])
-      empty?
-      not)))
+    (-> db
+        (store/query '[:find ?e
+                       :in $ ?contains
+                       :where
+                       [?e :orgpad/view-type ?vt]
+                       [(?contains ?vt)]]
+                     [#(contains? styles %)])
+        empty?
+        not)))
 
 (defn insert-default-styles
   [db]
   (let [counter (volatile! 0)
         qry (default-styles-qry)]
-    (js/console.log "insert default styles" qry)
     (store/transact db qry)))
 
 (defn empty-orgpad-db
   []
-  (-> (store/new-datom-atom-store {} (d/empty-db orgpad-db-schema))
+  (-> (store/new-datom-atom-store {:app-state {:mode :write}} (d/empty-db orgpad-db-schema))
       (store/transact [{ :db/id 0,
-                         :orgpad/props-refs 1
-                         :orgpad/type :orgpad/root-unit }
+                        :orgpad/props-refs 1
+                        :orgpad/type :orgpad/root-unit }
                        { :db/id 1,
-                         :orgpad/type :orgpad/root-unit-view,
-                         :orgpad/refs 0 }
+                        :orgpad/type :orgpad/root-unit-view,
+                        :orgpad/refs 0 }
                        ] {})
-      insert-default-styles
-      (store/transact [[:mode] :write] {})))
+      insert-default-styles))
 
 (defn- update-refs-orders
   [db]
@@ -102,7 +109,7 @@
                        [?eid :orgpad/refs-order ?o]])]
 
     (mapv (fn [[eid o]]
-            [:db/add eid :orgpad/refs-order (apply sorted-set o)])
+            [:db/add eid :orgpad/refs-order (apply sorted-set-by colls/first-< o)])
           refs-orders)))
 
 (defn- unescape-atoms
@@ -116,18 +123,40 @@
     (mapv (fn [[eid a]]
             [:db/add eid :orgpad/atom (js/window.unescape a)]) atoms)))
 
+(defn- remove-view-stack
+  [db]
+  (let [stack (store/query db
+                           '[:find ?s .
+                             :in $
+                             :where
+                             [1 :orgpad/view-stack ?s]])]
+    (if (nil? stack)
+      []
+      [[:db/retract 1 :orgpad/view-stack stack]])))
+
+(defn- app-state
+  [db]
+  (-> db (store/query [:app-state]) first))
+
+(defn move-app-state-qry
+  [db]
+  [[] {:app-state (-> db (store/query []) first)}])
+
 (defn- update-db
   [db]
   (let [qry
         (colls/minto []
                      (update-refs-orders db)
                      (unescape-atoms db)
-                     (if (not (db-contains-styles? db))
-                       (default-styles-qry)
-                       nil))]
-    (if (empty? qry)
-      db
-      (store/transact db qry {}))))
+                     (remove-view-stack db)
+                     (when (not (db-contains-styles? db))
+                       (default-styles-qry)))
+        app-state-qry (when (not (app-state db))
+                        (move-app-state-qry db))]
+    ;; (js/console.log db)
+    (cond-> db
+           (-> qry empty? not) (store/transact qry {})
+           (-> app-state-qry empty? not) (store/transact app-state-qry))))
 
 (defn orgpad-db
   [data]
@@ -142,8 +171,10 @@
 
 (defn- compress-db
   [db]
-  (let [c (aget js/LZString "compressToBase64")]
-    (c (pr-str db))))
+  (let [compress (aget js/LZString "compressToBase64")]
+    (if (-> db (store/query []) first :app-state :compress-saved-files?)
+      (compress (pr-str db))
+      (pr-str db))))
 
 (defn store-db
   [db storage-el]
@@ -165,12 +196,27 @@
            content)
       content)))
 
+(defn- substitute-time-date
+  [file-name]
+  (let [dobj (js/Date.)
+        date (gstring/format "%04d-%02d-%02d" (.getFullYear dobj) (inc (.getMonth dobj)) (.getDate dobj))
+        time (gstring/format "%02d-%02d-%02d" (.getHours dobj) (.getMinutes dobj) (.getSeconds dobj))]
+    (-> file-name
+        (clojure.string/replace "%d" date)
+        (clojure.string/replace "%D" date)
+        (clojure.string/replace "%t" time)
+        (clojure.string/replace "%T" time))))
+
 (defn- file-name
-  [defualt-name]
-  (let [p (js/document.location.pathname.lastIndexOf "/")]
-    (if (not= p -1)
-      (js/document.location.pathname.substr (inc p))
-      defualt-name)))
+  [default-name db]
+  (let [filename (-> db (store/query []) first :app-state :orgpad-filename)
+        orgpad-filename (when filename (substitute-time-date filename))
+        p (js/document.location.pathname.lastIndexOf "/")]
+    (if orgpad-filename
+      orgpad-filename
+      (if (not= p -1)
+        (js/document.location.pathname.substr (inc p))
+        default-name))))
 
 (defn- store-file
   [filename content mime-type]
@@ -189,12 +235,12 @@
 (defn export-html-by-uri
   [db storage-el]
   (store-db db storage-el)
-  (let [filename (file-name "orgpad.html")]
+  (let [filename (file-name "orgpad.html" db)]
     (store-file filename (full-html) "text/html")))
 
 (defn save-file-by-uri
   [db]
-  (let [filename (.replace (file-name "orgpad.orgpad") "html" "orgpad")]
+  (let [filename (.replace (file-name "untitled.orgpad" db) "html" "orgpad")]
     (store-file filename (compress-db db) "text/plain")))
 
 (defn load-orgpad
@@ -203,6 +249,24 @@
 
 (defn download-orgpad-from-url
   [url transact!]
-  (ajax/GET url { :handler #(transact! [[ :orgpad/load-orgpad [%] ]])
-                  :error-handler #(js/console.log (str "Error while downloading from " url " " %))
-                  :format :text }))
+  (ajax/GET url {:handler #(transact! [[ :orgpad/load-orgpad [%] ]])
+                 :error-handler #(js/console.log (str "Error while downloading from " url " " %))
+                 :format :text }))
+
+(defn- get-root-traslations
+  [db rid]
+  (into {}
+        (map (fn [[k v]] [k (:translate v)]))
+        (store/query db '[:find ?vn ?t
+                          :in $ ?r
+                          :where
+                          [?r :orgpad/props-refs ?p]
+                          [?p :orgpad/view-name ?vn]
+                          [?p :orgpad/transform ?t]]
+                     [rid])))
+
+(defn import-orgpad
+  [state files]
+  (let [file-state (load-orgpad state files)
+        trans (get-root-traslations state 0)]
+    (ot/merge-orgpads state file-state 0 trans)))

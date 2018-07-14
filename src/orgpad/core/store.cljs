@@ -236,7 +236,7 @@
   (undo
     [store]
     (let [[tx finger] (undo-info (.-history-records store))]
-       (if (-> tx nil? not)
+      (if (-> tx nil? not)
         (tx-report->store store (d/with (.-db store)
                                         (dtool/datoms->rev-tx tx))
                           finger)
@@ -466,3 +466,8 @@
   "Creates new datom-atom store from reader value"
   [{:keys [datom atom]}]
   (DatomAtomStore. datom atom nil))
+
+(defn datom-atom-store-ds-db
+  "Get Datascript DB from DatomAtomStore"
+  [store]
+  (-> store .-datom .-db))

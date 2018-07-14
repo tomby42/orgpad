@@ -8,12 +8,26 @@
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.geocache :as geocache]
             [orgpad.tools.jcolls :as jscolls]
+            [orgpad.tools.dom :as dom]
             [orgpad.components.registry :as registry]))
 
 (defn- find-root-view-info
   [db]
   (let [root-unit (store/query db [:entity 0])]
     (ds/find-props root-unit (fn [u] (= (u :orgpad/type) :orgpad/root-unit-view)))))
+
+(defn- get-view-stack
+  [db]
+  (let [stack (-> db (store/query [:app-state :orgpad/view-stack]) first)]
+    (if stack
+      stack
+      [])))
+
+(defn- set-view-stack
+  [db view-stack]
+  (if (empty? view-stack)
+    (store/transact db [[:app-state :orgpad/view-stack] nil])
+    (store/transact db [[:app-state :orgpad/view-stack] view-stack])))
 
 (defmethod read :orgpad/root-view
   [{ :keys [state query] :as env } k params]
@@ -25,9 +39,11 @@
         root-info
         (registry/get-component-info :orgpad/root-view)
 
+        view-stack (get-view-stack db)
+
         [_ cr-id v-name v-type v-path]
-        (if (root-view-info :orgpad/view-stack)
-          (->> root-view-info :orgpad/view-stack sort last)
+        (if view-stack
+          (last view-stack)
           [nil nil nil nil nil])
 
         view-name
@@ -58,27 +74,27 @@
         root-view-info (find-root-view-info state)
         old-root (ot/uid value)
         current-root (-> root-view-info :orgpad/refs last :db/id)]
-    (not= current-root old-root)))
+    (or (not-empty (get-view-stack state))
+        (not= current-root old-root))))
 
 (defmethod read :orgpad/app-state
   [{ :keys [state] :as env } _ _]
-  (-> state (store/query []) first))
+  (-> state (store/query [:app-state]) first))
 
 (defmethod mutate :orgpad/app-state
   [{:keys [state]} _ path-val]
-  { :state (store/transact state path-val) })
+  {:state (store/transact state [(->> path-val first (into [:app-state])) (second path-val)])})
 
 (defmethod updated? :orgpad/app-state
   [_ { :keys [state] } _]
-  (store/changed? state []))
+  (store/changed? state [:app-state]))
 
 (defmethod mutate :orgpad/root-view-stack
   [{ :keys [state parser-state-push!] } _ { :keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
-  (let [root-view-info (find-root-view-info state)
-        rvi-id (root-view-info :db/id)
-        pos (or (-> root-view-info :orgpad/view-stack count) 0)]
+  (let [view-stack (get-view-stack state)
+        pos (or (and view-stack (count view-stack)) 0)]
     (parser-state-push! :orgpad/root-view [])
-    { :state (store/transact state [[:db/add rvi-id :orgpad/view-stack [pos id view-name view-type view-path]]]) }))
+    { :state (set-view-stack state (conj view-stack [pos id view-name view-type view-path])) }))
 
 (defn update-parser-state!
   [db old new]
@@ -118,12 +134,12 @@
 
 (defmethod mutate :orgpad/root-unit-close
   [{ :keys [state parser-state-pop!] } _ params]
-  (let [root-view-info (find-root-view-info state)
-        rvi-id (root-view-info :db/id)
-        view-stack (->> root-view-info :orgpad/view-stack sort (into []))
-        last-view (last view-stack)]
-    (parser-state-pop! :orgpad/root-view [] (if (sequent? state view-stack) (partial update-parser-state! state) nil))
-    { :state (store/transact state [[:db/retract rvi-id :orgpad/view-stack last-view] ]) }))
+  (let [view-stack (get-view-stack state)]
+    (parser-state-pop! :orgpad/root-view []
+                       (if (sequent? state view-stack)
+                         (partial update-parser-state! state)
+                         nil))
+    { :state (set-view-stack state (pop view-stack)) }))
 
 (defmethod mutate :orgpad/root-view-conf
   [{ :keys [state force-update!] } _ [{:keys [unit view path-info] } {:keys [attr value]}]]
@@ -158,20 +174,41 @@
     :effect #(orgpad/save-file-by-uri state) })
 
 (defmethod mutate :orgpad/load-orgpad
-  [{ :keys [state force-update! transact!] } _ files]
-  { :state (store/transact state [[:loading] true])
-    :effect #(transact! [[ :orgpad/loaded (orgpad/load-orgpad state files) ]])})
+  [{:keys [state force-update! transact!] } _ files]
+  {:state (store/transact state [[:app-state :loading] true])
+   :effect #(try
+              (transact! [[:orgpad/loaded (orgpad/load-orgpad state files)]])
+              (catch :default e
+                (js/console.log "error loading" e)
+                ;; TODO - show error message
+                ))})
 
-(defmethod mutate :orgpad/loaded
-  [{ :keys [force-update! global-cache]} _ new-state]
-  (force-update!)
+(defmethod mutate :orgpad/import-orgpad
+  [{ :keys [state force-update! transact!] } _ files]
+  {:state (store/transact state [[:app-state :loading] true])
+   :effect #(try
+              (transact! [[:orgpad/loaded (orgpad/import-orgpad state files)]])
+              (catch :default e
+                (js/console.log "error importing" e)
+                ;; TODO - show error message
+                ))})
+
+(defn- reset-n-rebuild
+  [{:keys [force-update! global-cache]} new-state]
   (jscolls/clear! global-cache)
   (geocache/rebuild! global-cache new-state)
+  (force-update!))
+
+(defmethod mutate :orgpad/loaded
+  [env _ new-state]
+  (reset-n-rebuild env new-state)
+  (when-let [name (-> new-state (store/query [:app-state]) first :orgpad-name)]
+    (dom/set-el-text (dom/ffind-tag :title) name))
   { :state new-state })
 
 (defmethod mutate :orgpad/download-orgpad-from-url
   [{ :keys [state transact!] } _ url]
-  { :state (store/transact state [[:loading] true])
+  { :state (store/transact state [[:app-state :loading] true])
     :effect #(orgpad/download-orgpad-from-url url transact!) })
 
 (defmethod read :orgpad/undoable?
@@ -182,15 +219,66 @@
   [{ :keys [state] } _ _]
   (store/redoable? state))
 
+;; TODO - if unit that we are editing do not exist pop the stack unit it exist
+;; (defn- resolve-parser-state!
+;;   [{:keys [state parser-state-pop! parser-state-push!]} new-state]
+;;   (let [view-stack (get-view-stack state)
+;;         new-view-stack (get-view-stack new-state)]
+;;     (case (compare (count view-stack) (count new-view-stack))
+;;       1 (parser-state-pop! :orgpad/root-view []
+;;                            (if (sequent? state view-stack)
+;;                              (partial update-parser-state! state)
+;;                              nil))
+;;       -1 (parser-state-push! :orgpad/root-view [])
+;;       nil)))
+
+(defn- not-exists?
+  [state uid]
+  (->> (store/query state [:entity uid]) (into {}) empty?))
+
+(defn- descendant?
+  [new-state old-state pid did]
+  (let [u (if (not-exists? new-state did)
+            (-> old-state (store/query [:entity did]) ds/entity->map)
+            (-> new-state (store/query [:entity did]) ds/entity->map))
+        uid  (if (or (= (:orgpad/type u) :orgpad/unit)
+                     (= (:orgpad/type u) :orgpad/root-unit))
+               (:db/id u)
+               (-> u :orgpad/refs first :db/id))]
+    (if (not-exists? new-state uid)
+      (ot/is-descendant? old-state pid uid)
+      (ot/is-descendant? new-state pid uid))))
+
+(defn- resolve-parser-state!
+  [{:keys [state parser-state-pop! force-update!]} new-state]
+  (let [old-view-stack (get-view-stack state)
+        es (:datom (store/changed-entities new-state))]
+    (reduce (fn [state' [_ cr-id _ _ _]]
+              (if (or (not-exists? state' cr-id)
+                      (not-every? (partial descendant? state' state cr-id) es))
+                (let [view-stack (get-view-stack state')]
+                  (parser-state-pop! :orgpad/root-view []
+                                     (if (sequent? state view-stack)
+                                       (partial update-parser-state! state)
+                                       nil))
+                  (set-view-stack state' (pop view-stack)))
+                (reduced state')))
+              new-state old-view-stack)))
+
+;; update if view-stack updated
 (defmethod mutate :orgpad/undo
-  [{ :keys [state global-cache] } _ _]
-  (let [new-state (store/undo state)]
+  [{ :keys [state global-cache] :as env } _ _]
+  (let [new-state (->> state
+                       store/undo
+                       (resolve-parser-state! env))]
     (geocache/update-changed-units! global-cache state new-state (:datom (store/changed-entities new-state)))
     { :state new-state }))
 
 (defmethod mutate :orgpad/redo
-  [{ :keys [state global-cache] } _ _]
-  (let [new-state (store/redo state)]
+  [{ :keys [state global-cache] :as env } _ _]
+  (let [new-state (->> state
+                       store/redo
+                       (resolve-parser-state! env))]
     (geocache/update-changed-units! global-cache state new-state (:datom (store/changed-entities new-state)))
     { :state new-state }))
 
@@ -209,11 +297,11 @@
 
 (defmethod mutate :orgpad.units/select
   [{:keys [state]} _ {:keys [pid uid]}]
-  {:state (store/transact state [[:selections (keypath pid)] #{uid}])})
+  {:state (store/transact state [[:app-state :selections (keypath pid)] #{uid}])})
 
 (defmethod mutate :orgpad.units/deselect-all
   [{:keys [state]} _ {:keys [pid]}]
-  {:state (store/transact state [[:selections (keypath pid)] nil])})
+  {:state (store/transact state [[:app-state :selections (keypath pid)] nil])})
 
 (defmethod mutate :orgpad.units/select-by-pattern
   [{:keys [state]} _ {:keys [params unit-tree]}]
@@ -222,19 +310,19 @@
                                                                   (:selection-text params))
         cnt (count selected-units)]
     (println "selected: " pid selected-units (set (map first selected-units)))
-    {:state (store/transact state [[:selections (keypath pid)] (set (map first selected-units))])
+    {:state (store/transact state [[:app-state :selections (keypath pid)] (set (map first selected-units))])
      :response (str "Selected " cnt
                     (if (< cnt 2) " unit." " units."))}))
 
 (defmethod mutate :orgpad.units/copy
   [{:keys [state]} _ {:keys [pid selection]}]
   (let [data (ot/copy-descendants-from-db state pid [] selection)]
-    (js/console.log "copy " data)
-    {:state (store/transact state [[:clipboards (keypath pid)] data])}))
+    ;; (js/console.log "copy " data)
+    {:state (store/transact state [[:app-state :clipboards (keypath pid)] data])}))
 
 (defmethod read :orgpad/styles
   [{:keys [state]} _ {:keys [view-type]}]
-  (store/query state '[:find [(pull ?e [*])]
+  (store/query state '[:find [(pull ?e [*]) ...]
                        :in $ ?view-type
                        :where
                        [?e :orgpad/view-type ?view-type]]
@@ -242,12 +330,29 @@
 
 (defmethod read :orgpad/style
   [{:keys [state]} _ {:keys [view-type style-name]}]
-  (store/query state '[:find (pull ?e [*]) .
-                       :in $ ?view-type ?style-name
-                       :where
-                       [?e :orgpad/view-type ?view-type]
-                       [?e :orgpad/style-name ?style-name]]
-               [view-type style-name]))
+  (ot/get-style-from-db state view-type style-name))
+
+(defmethod mutate :orgpad.style/update
+  [{:keys [state]} _ {:keys [style prop-name prop-val]}]
+  ;; (js/console.log "orgpad.style/update" style prop-name prop-val)
+  {:state (store/transact state [[:db/add (:db/id style) prop-name prop-val]])})
+
+(defn- get-style-default
+  [type]
+  (-> (registry/get-registry)
+      vals
+      (->> (drop-while #(nil? (get-in % [:orgpad/child-props-default type]))))
+      first
+      (get-in [:orgpad/child-props-default type])))
+
+(defmethod mutate :orgpad.style/new
+  [{:keys [state]} _ {:keys [type name]}]
+  (let [style (-> type
+                  get-style-default
+                  (assoc :orgpad/style-name name :db/id -1))
+        new-state (store/transact state [style])]
+    ;; (js/console.log "orgpad.style/new" type name style)
+    {:state new-state}))
 
 (defmethod read :orgpad/root-view-stack-info
   [{:keys [parser-stack-info]} _ [key params]]

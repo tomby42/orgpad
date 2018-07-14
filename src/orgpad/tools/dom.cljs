@@ -15,21 +15,51 @@
     #js [(.exec tr-rex tr)
          (.exec sc-rex tr)]))
 
-(defn update-translate
-  [el new-x new-y old-x old-y parent-scale]
-  (let [ts (parse-transform el)
-        x (js/parseInt (aget ts 0 1))
-        y (js/parseInt (aget ts 0 2))]
+(defn set-translate
+  [el x y new-x new-y old-x old-y parent-scale & [ts']]
+  (let [ts (or ts' (parse-transform el))]
     (aset el "style" "transform" (str "translate("
                                       (+ x (/ (- new-x old-x) parent-scale)) "px, "
                                       (+ y (/ (- new-y old-y) parent-scale)) "px) "
                                       (aget ts 1)))))
 
+(defn update-translate
+  [el new-x new-y old-x old-y parent-scale]
+  (let [ts (parse-transform el)
+        x (js/parseFloat (aget ts 0 1))
+        y (js/parseFloat (aget ts 0 2))]
+    (set-translate el x y new-x new-y old-x old-y parent-scale ts)))
+
 (defn update-size
   [el new-x new-y old-x old-y parent-scale]
   (let [w (aget el "style" "width")
         h (aget el "style" "height")
-        ww (-> w (.substring 0 (- (.-length w) 2)) js/parseInt)
-        hh (-> h (.substring 0 (- (.-length h) 2)) js/parseInt)]
+        ww (-> w (.substring 0 (- (.-length w) 2)) js/parseFloat)
+        hh (-> h (.substring 0 (- (.-length h) 2)) js/parseFloat)]
     (aset el "style" "width" (str (js/Math.round (+ ww (/ (- new-x old-x) parent-scale))) "px"))
     (aset el "style" "height" (str (js/Math.round (+ hh (/ (- new-y old-y) parent-scale))) "px"))))
+
+(defn update-size-translate
+  [el new-x new-y old-x old-y parent-scale]
+  (let [ts (parse-transform el)
+        x (js/parseFloat (aget ts 0 1))
+        y (js/parseFloat (aget ts 0 2))
+        w (aget el "style" "width")
+        h (aget el "style" "height")
+        ww (-> w (.substring 0 (- (.-length w) 2)) js/parseFloat)
+        hh (-> h (.substring 0 (- (.-length h) 2)) js/parseFloat)]
+    (aset el "style" "width" (str (js/Math.round (+ ww (/ (* 2 (- new-x old-x)) parent-scale))) "px"))
+    (aset el "style" "height" (str (js/Math.round (+ hh (/ (* 2 (- new-y old-y)) parent-scale))) "px"))
+    (aset el "style" "transform" (str "translate("
+                                      (- x (/ (- new-x old-x) parent-scale)) "px, "
+                                      (- y (/ (- new-y old-y) parent-scale)) "px) "
+                                      (aget ts 1)))))
+
+(defn ffind-tag
+  "tag-name is keyword"
+  [tag-name]
+  (-> tag-name name js/document.getElementsByTagName (aget 0)))
+
+(defn set-el-text
+  [el text]
+  (aset el "text" text))

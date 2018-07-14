@@ -13,9 +13,13 @@ resources/**/compiled*
 .lein-plugins/
 .lein-failures
 .nrepl-port
+<<<<<<< HEAD
 .nrepl-history
 figwheel_server.log
 .cljs_rhino_repl
 resources/public/css/
 node_modules/
 *.swp
+*.swo
+.swp
+.rebel_readline_history

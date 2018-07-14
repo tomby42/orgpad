@@ -3,7 +3,7 @@
   <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>ORGPAD</title>
-    <link rel="stylesheet" type="text/css" href="css/orgpad.css">
+    <link rel="stylesheet" type="text/css" href="css/orgpad.css?v=0.1.6.beta">
     <link rel="stylesheet" type="text/css" href="js/tinymce/skins/lightgray/skin.min.css">
     <link rel="stylesheet" type="text/css" href="js/tinymce/skins/lightgray/content.min.css">
     <script src="js/tinymce/tinymce.min.js"></script>
@@ -26,10 +26,16 @@
   <body>
     <script id="store" type="text/plain; charset=utf-8"></script>
     <div id="orgpad"></div>
-    <script type="text/javascript" src="js/compiled/orgpad.js"></script>
+    <script type="text/javascript" src="js/compiled/orgpad.js?v=0.1.6.beta"></script>
     <script>
       orgpad.core.boot.init({'root-el': document.getElementById("orgpad"),
                              'storage-el': document.getElementById("store")});
+    </script>
+    <script>
+     function confirmExit() {
+         return "You have attempted to leave this page. All unsaved data will be lost. Are you sure?";
+     }
+     window.onbeforeunload = confirmExit;
     </script>
   </body>
 </html>

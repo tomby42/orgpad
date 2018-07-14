@@ -2,16 +2,16 @@
   :description "Orgpad - universal tool for thoughts managing and co-sharing."
   :url "http://www.orgpad.org/"
 
-  :dependencies [[org.clojure/clojure         "1.8.0"]
-                 [org.clojure/clojurescript   "1.9.946"]
-                 [org.clojure/core.async      "0.3.465"]
+  :dependencies [[org.clojure/clojure         "1.9.0"]
+                 [org.clojure/clojurescript   "1.10.339"]
+                 [org.clojure/core.async      "0.4.474"]
                  [org.clojure/test.check      "0.9.0"]
-                 [datascript                  "0.16.3"]
-                 [com.rpl/specter             "1.0.5"]
+                 [datascript                  "0.16.6"]
+                 [com.rpl/specter             "1.1.1"]
                  ;; [rum                         "0.9.1"] ;; local modified copy src/rum 0.10.8
                  [sablono                     "0.7.7"]
                  [com.cemerick/url            "0.1.1"]
-                 [cljs-ajax                   "0.6.0"]
+                 [cljs-ajax                   "0.7.3"]
                  [cljsjs/react                "15.6.1-0"]
                  [cljsjs/react-dom            "15.6.1-0"]
                  [cljsjs/react-sanfona        "0.0.14-0"]
@@ -20,19 +20,22 @@
                  [cljsjs/react-motion         "0.3.1-0"]  ;; *
                  [cljsjs/react-select         "1.0.0-rc.3"]
                  [cljsjs/latlon-geohash       "1.1.0-0"] ;; *
-                 [doo                         "0.1.8"]
-                 [org.clojure/data.avl        "0.0.17"]]
+                 [doo                         "0.1.10"]
+                 ;; [org.clojure/data.avl        "0.0.17"] ;; we have own fixed copy
+                 [io.replikativ/superv.async  "0.2.9"]]
 
   :npm {:dependencies [;;["jupyter-js-services" "0.48.0"]
                        ["jupyter-js-services" "0.21.1"]
                        ["babel-polyfill" "6.23.0"]
-                       ["mathjax" "2.7.2"]]}
+                       ;; ["mathjax" "2.7.2"]
+                       ["bezier-js" "2.2.5"]
+                       ]}
 
   :plugins [[lein-cljsbuild "1.1.7"]
-            [lein-figwheel "0.5.13"] ;; needs update to lein 2.5.3 at least
+            [lein-figwheel "0.5.16"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             [lein-localrepo "0.5.3"]
-            [lein-doo "0.1.7"]
+            [lein-doo "0.1.10"]
             [lein-npm "0.6.2"]]
 
   :hooks [leiningen.less leiningen.cljsbuild]
@@ -45,15 +48,15 @@
          :target-path "resources/public/css"}
 
   :profiles {:dev
-             {:dependencies [[com.cemerick/piggieback "0.2.1"]
-                             [org.clojure/tools.nrepl "0.2.12"]
-                             [figwheel-sidecar        "0.5.13"]
-                             [binaryage/devtools      "0.9.4"]]
+             {:dependencies [[cider/piggieback "0.3.6"]
+                             [org.clojure/tools.nrepl "0.2.13"]
+                             [figwheel-sidecar        "0.5.16"]
+                             [binaryage/devtools      "0.9.10"]]
               }
 
-             :repl {:plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]] }}
+             :repl {:plugins [[cider/cider-nrepl "0.17.0"]] }}
 
-  :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
+  :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
 
   :cljsbuild
   {
@@ -70,9 +73,13 @@
                         :output-dir "resources/public/js/compiled/out"
                         :source-map-timestamp true
                         :language-in :ecmascript5
-                        :externs ["node_modules/jupyter-js-services/dist/index.js"]
+                        ;; :install-deps true
+                        ;; :npm-deps {:bezier-js "2.2.5"}
+                        :externs ["node_modules/jupyter-js-services/dist/index.js" "dev-resources/js/bezier.js"]
                         :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
-                                        :provides ["jupyter.services"]}]
+                                        :provides ["jupyter.services"]}
+                                       {:file "dev-resources/js/bezier.js"
+                                        :provides ["Bezier"]}]
                         }}
 
             {:id "test"
@@ -84,11 +91,15 @@
                         :optimizations :whitespace
                         :pretty-print true
                         :language-in :ecmascript5
-                        :externs ["node_modules/babel-polyfill/dist/polyfill.js", "node_modules/jupyter-js-services/dist/index.js"]
+                        ;; :install-deps true
+                        ;; :npm-deps {:bezier-js "2.2.5"}
+                        :externs ["node_modules/babel-polyfill/dist/polyfill.js", "node_modules/jupyter-js-services/dist/index.js" "dev-resources/js/bezier.js"]
                         :foreign-libs [{:file "node_modules/babel-polyfill/dist/polyfill.js"
                                         :provides ["babel.polyfill"]},
                                        {:file "node_modules/jupyter-js-services/dist/index.js"
-                                        :provides ["jupyter.services"]}]
+                                        :provides ["jupyter.services"]}
+                                       {:file "dev-resources/js/bezier.js"
+                                        :provides ["Bezier"]}]
                         }}
 
             {:id "prod"
@@ -99,9 +110,13 @@
                         :pretty-print false
                         :language-in :ecmascript5
                         :closure-warnings {:externs-validation :off :non-standard-jsdoc :off}
-                        :externs ["node_modules/jupyter-js-services/dist/index.js"]
+                        ;; :install-deps true
+                        ;; :npm-deps {:bezier-js "2.2.5"}
+                        :externs ["node_modules/jupyter-js-services/dist/index.js" "dev-resources/js/bezier.js"]
                         :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
-                                        :provides ["jupyter.services"]}]
+                                        :provides ["jupyter.services"]}
+                                       {:file "dev-resources/js/bezier.js"
+                                        :provides ["Bezier"]}]
                         }}]
 
    :test-commands {"test" ["phantomjs"

@@ -3,6 +3,8 @@
 .map-view {
   width: 100%;
   height: 100%;
+  flex-grow: 1;
+  order: 1;
   position: relative;
 
   overflow-x: hidden;
@@ -13,6 +15,10 @@
 
     .map-view-child {
       position: absolute;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
 
     .link-control {
@@ -22,20 +28,31 @@
     }
 
     .leader-control {
-        border-radius: 100%;
+        // border-radius: 100%;
         cursor: pointer;
-        background-color: rgba(104, 174, 240, 0.1);
+        // background-color: black; // rgba(104, 174, 240, 0.1);
+        color: rgba(255, 255, 255, 0);
         width: 20px;
         height: 20px;
+        top: 0px;
+        left: 0px;
         &:hover {
-            background-color: rgba(120, 190, 255, 0.1);
+            // background-color: black; // rgba(120, 190, 255, 0.1);
+            color:rgba(0, 0, 0, 1);;
+        }
+        & i {
+            position: absolute;
+            top: 0px;
+            left: 0px;
         }
     }
 
     .select-check {
         position: absolute;
-        right: 5px;
-        top: 5px;
+        right: 8px;
+        top: 8px;
+        width: 10px;
+        height: 10px;
     }
   }
 
@@ -49,71 +66,6 @@
 
       &.simple {
           border-top: 2px dashed #e42c2c;
-      }
-
-      .toolbar {
-          position: absolute;
-          width: 100%;
-          min-width: 263px;
-          height: 24px;
-          top: -28px;
-          left: -2px;
-          background-color: #fff;
-          border: 2px dashed red;
-          white-space: nowrap;
-      }
-
-      .lft-btn {
-          float: left;
-          text-align: center;
-          width: 18px;
-          height: 18px;
-          padding: 3px;
-          display: inline-block;
-          &:hover {
-              background-color: #ccc;
-          }
-          &.active {
-              background-color: #aaa;
-          }
-      }
-
-      .rt-btn {
-          float: right;
-          text-align: center;
-          width: 18px;
-          height: 18px;
-          padding: 3px;
-          display: block;
-          &:hover {
-              background-color: #ccc;
-          }
-          &.active {
-              background-color: #aaa;
-          }
-      }
-
-      .lft-sep {
-          float: left;
-          background-color: red;
-          width: 2px;
-          height: 18px;
-          margin: 3px;
-      }
-
-      .rt-sep {
-          float: right;
-          background-color: red;
-          width: 2px;
-          height: 18px;
-          margin: 3px;
-      }
-
-      .lft-text {
-          float: left;
-          font-size: 12pt;
-          padding-top: 5px;
-          padding-bottom: 5px;
       }
 
       .resize-handle-corner {
@@ -134,18 +86,6 @@
           width: 100%;
           height: 20px;
           z-index: 2;
-      }
-  }
-
-  .slider {
-      input {
-          margin: 5px;
-      }
-
-      .val {
-          width: 30px;
-          position: relative;
-          top: -5px;
       }
   }
 
@@ -188,27 +128,6 @@
       position: absolute;
   }
 
-  .map-local-menu {
-      position: absolute;
-      top: 0px;
-      left: 49%;
-      border: 1px solid;
-      padding: 5px;
-      & > span {
-          margin-right: 5px;
-          padding: 5px;
-
-      }
-      & > span:last-child {
-          margin-right: 0px;
-      }
-      & > span:hover {
-          background-color: #ccc;
-      }
-      & > span.active {
-          background-color: #aaa;
-      }
-  }
 }
 
 
@@ -223,25 +142,76 @@
 
 .map-tuple {
     width: 100%;
-    height: 100%;
+    flex-grow: 1;
+    order: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
 .map-tuple-clicker-left {
-    width: 10px;
+    width: 20px;
     height: 100%;
+    //float: left;
+    //display: flex;
     position: absolute;
-    background-color: rgba(200, 200, 200, 0.1);
-    left: 0;
-    top: 0;
+    // background-color: rgba(200, 200, 200, 0.1);
+    left: 0px;
+    top: 0px;
+    color: rgba(255, 255, 255, 0);
+    & i {
+        position: relative;
+        top: 40%;
+        // height: 10%;
+    }
+
+    &:hover {
+        color: black;
+    }
+}
+
+.map-tuple-child {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    // min-width: 85%;
+    height: 100%;
+    overflow: auto;
+    // display: flex;
+    //float: left;
 }
 
 .map-tuple-clicker-right {
-    width: 10px;
+    width: 20px;
     height: 100%;
+    // display: flex;
+    // float: right;
     position: absolute;
-    background-color: rgba(200, 200, 200, 0.1);
-    right: 0;
-    top: 0;
+    // background-color: rgba(200, 200, 200, 0.1);
+    color: rgba(255, 255, 255, 0);
+    right: 0px;
+    top: 0px;
+    text-align: right;
+    & i {
+        position: relative;
+        top: 40%;
+    }
+    &:hover {
+        color: black;
+    }
+}
+
+.map-tuple-tab {
+    height: 100%;
+    width: 100%;
+    display: flex;
+
+    & tr {
+        width: 100%;
+        height: 100%;
+        display: flex;
+    }
 }
 
 .map-tuple-menu {
@@ -275,16 +245,20 @@
 .map-props-toolbar {
     position: absolute;
     right: 0px;
-    top: 10%;
-    // height: 80%;
-    width: 205px;
-    border: 1px solid black;
+    top: 0px;
+    height: 100%;
+    // width: 220px;
+    border-left: 2px solid black;
+    border-right: 2px solid black;
     padding: 10px;
     overflow-y: auto;
     overflow-x: hidden;
     background-color: white;
 
     & > div {
+        margin-top: 10px;
         margin-bottom: 20px;
+        margin-left: 5px;
+        margin-right: 5px;
     }
 }

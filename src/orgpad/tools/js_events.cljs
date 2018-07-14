@@ -24,3 +24,19 @@
     ;; (.stopPropagation ev)
     (block-propagation ev)
     (f ev)))
+
+(defn mouse-node-x
+  [ev]
+  (-> ev .-nativeEvent .-offsetX))
+
+(defn mouse-node-y
+  [ev]
+  (-> ev .-nativeEvent .-offsetY))
+
+(defn mouse-node-rel-x
+  [bbox ev]
+  (- (.-clientX ev) (.-left bbox)))
+
+(defn mouse-node-rel-y
+  [bbox ev]
+  (- (.-clientY ev) (.-top bbox)))

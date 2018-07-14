@@ -3,8 +3,9 @@
   (:require [clojure.data.avl :as avl]
             [orgpad.core.store :as store]
             [orgpad.tools.geohash :as geohash]
-            [orgpad.tools.geom :as geom]
+            [orgpad.tools.geom :as geom :refer [-- ++ *c]]
             [orgpad.tools.jcolls :as jcolls]
+            [orgpad.tools.orgpad :as ot]
             [goog.object :as gobject]))
 
 ;; TODO use es6 Map
@@ -96,7 +97,7 @@
   (if (and start end mid-pt)
     (let [bbox (geom/link-bbox (start 3) (end 3) mid-pt)
           pos (bbox 0)
-          size (geom/-- (bbox 1) (bbox 0))]
+          size (-- (bbox 1) (bbox 0))]
       [pos size])
     [nil nil]))
 
@@ -105,7 +106,7 @@
      [?map-prop :orgpad/unit-width ?w]
      [?map-prop :orgpad/unit-height ?h]]
     [(size ?unit ?map-prop ?w ?h)
-     [?unit :orgpad/refs ?style]
+     [?unit :orgpad/props-refs ?style]
      [?map-prop :orgpad/view-style ?style-name]
      [?style :orgpad/style-name ?style-name]
      [?style :orgpad/unit-width ?w]
@@ -134,7 +135,7 @@
   '[[(mid-pt ?unit ?map-prop ?mid-pt)
      [?map-prop :orgpad/link-mid-pt ?mid-pt]]
     [(mid-pt ?unit ?map-prop ?mid-pt)
-     [?unit :orgpad/refs ?style]
+     [?unit :orgpad/props-refs ?style]
      [?map-prop :orgpad/view-style ?style-name]
      [?style :orgpad/style-name ?style-name]
      [?style :orgpad/link-mid-pt ?mid-pt]]])
@@ -173,7 +174,8 @@
     (doseq [[pid view-name] parent-views]
       (create! global-cache pid view-name))
     (doseq [[pid uid view-name pos w h] vertices]
-      (update-box! global-cache pid view-name uid pos [w h]))
+      (let [size [w h]]
+        (update-box! global-cache pid view-name uid (ot/left-top pos size) size)))
     (doseq [[pid uid view-name mid-pt refs-order] edges]
       (let [vs (refs-order->vertices refs-order)
             start (vertices-map [pid (vs 0) view-name])
@@ -181,7 +183,11 @@
             [pos size] (link-dims start end mid-pt)]
         (jcolls/aset! global-cache uid "link-info" view-name [pos size])
         (update-box! global-cache pid view-name
-                     uid pos size nil nil #js [(vs 0) (vs 1)])))))
+                     uid
+                     (if (= (vs 0) (vs 1))
+                       (ot/left-top pos [(vs 4) (vs 5)])
+                       pos)
+                     size nil nil #js [(vs 0) (vs 1)])))))
 
 (defn copy
   [global-cache pid src dst]
@@ -244,8 +250,11 @@
               data (or old-info new-info)
               [pid uid view-name] data
               [_ _ _ pos w h] new-info
-              [_ _ _ old-pos old-w old-h] old-info]
-          (update-box! global-cache pid view-name uid pos [w h] old-pos [old-w old-h]))
+              [_ _ _ old-pos old-w old-h] old-info
+              size [w h]
+              old-size [old-w old-h]]
+          (update-box! global-cache pid view-name uid (ot/left-top pos size) size
+                       (ot/left-top old-pos old-size) old-size))
         (let [old-info (get-in info [:old :info])
               new-info (get-in info [:new :info])
               data (or old-info new-info)
@@ -257,4 +266,12 @@
           (when (and pos size)
             (jcolls/aset! global-cache uid "link-info" view-name [pos size]))
           (update-box! global-cache pid view-name
-                       uid pos size old-pos old-size #js [(get-in info [:new :v1 1]) (get-in info [:new :v2 1])]))))))
+                       uid
+                       (if (= (get-in info [:new :v1 1]) (get-in info [:new :v2 1]))
+                         (ot/left-top pos [(get-in info [:new :v1 4]) (get-in info [:new :v1 5])])
+                         pos) size
+                       (if (= (get-in info [:old :v1 1]) (get-in info [:old :v2 1]))
+                         (ot/left-top old-pos [(get-in info [:old :v1 4]) (get-in info [:old :v2 5])])
+                         old-pos)
+                       old-size
+                       #js [(get-in info [:new :v1 1]) (get-in info [:new :v2 1])]))))))
