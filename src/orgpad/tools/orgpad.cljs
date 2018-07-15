@@ -178,7 +178,8 @@
   (let [default-prop (-> component-type reg/get-component-info :orgpad/child-props-default style-type)
         prop (get-props-view-child props view-name pid prop-name)
         style (get-style props (:orgpad/view-style prop) style-type)]
-    (merge default-prop style prop)))
+    (when prop
+      (merge default-prop style prop))))
 
 (defn child-vertex-props
   [prop-fn unit-tree & [selection]]
