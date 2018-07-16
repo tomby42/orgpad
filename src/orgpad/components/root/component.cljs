@@ -123,14 +123,16 @@
 		 :icon "far fa-undo-alt"
 		 :title "Undo"
 		 :on-click #(lc/transact! (:component %1) [[ :orgpad/undo true ]])
-		 :disabled #(not (lc/query (:component %1) :orgpad/undoable? [] true))
+		 :disabled #(or (not (lc/query (:component %1) :orgpad/undoable? [] true))
+                    (not= (-> %1 :view :orgpad/view-type) :orgpad/map-view))
 		 :hidden #(= (:mode %1) :read)}
     {:elem :btn
 	   :id "redo"
 		 :icon "far fa-redo-alt"
 		 :title "Redo"
 		 :on-click #(lc/transact! (:component %1) [[ :orgpad/redo true ]])
-		 :disabled #(not (lc/query (:component %1) :orgpad/redoable? [] true))
+		 :disabled #(or (not (lc/query (:component %1) :orgpad/redoable? [] true))
+                    (not= (-> %1 :view :orgpad/view-type) :orgpad/map-view))
 		 :hidden #(= (:mode %1) :read)} ]]
 
 		:orgpad/right-toolbar [
@@ -152,13 +154,13 @@
 				:icon "far fa-pencil"
 				:title "Edit mode"
 				:active #(= (:mode %1) :write)
-				   					:on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :write]]]) }
+				:on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :write]]]) }
        {:elem :btn
         :id "read-mode"
         :icon "far fa-eye"
         :title "Read mode"
         :active #(= (:mode %1) :read)
-								:on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :read]]]) }
+				:on-click #(lc/transact! (:component %1) [[:orgpad/app-state [[:mode] :read]]]) }
        ]
       [{:elem :roll
         :id "debug"

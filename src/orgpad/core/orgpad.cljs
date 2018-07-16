@@ -86,15 +86,15 @@
   [db]
   (let [counter (volatile! 0)
         qry (default-styles-qry)]
-    (store/transact db qry)))
+    (store/transact db qry {})))
 
 (defn empty-orgpad-db
   []
   (-> (store/new-datom-atom-store {:app-state {:mode :write}} (d/empty-db orgpad-db-schema))
-      (store/transact [{ :db/id 0,
+      (store/transact [{:db/id 0,
                         :orgpad/props-refs 1
                         :orgpad/type :orgpad/root-unit }
-                       { :db/id 1,
+                       {:db/id 1,
                         :orgpad/type :orgpad/root-unit-view,
                         :orgpad/refs 0 }
                        ] {})

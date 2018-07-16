@@ -180,7 +180,6 @@
   [local-state params data]
   (map (partial gen-element local-state params) data))
 
-
 (defn- gen-side
   "Generates one side of the toolbar from the input data, interposing each section with separators."
   [local-state params data]

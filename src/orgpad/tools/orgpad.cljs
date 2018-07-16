@@ -13,7 +13,8 @@
 
 (defn left-top
   [pos size]
-  (-- pos (*c size 0.5)))
+  (when pos
+    (-- pos (*c size 0.5))))
 
 (defn uid
   [unit]
