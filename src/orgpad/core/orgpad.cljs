@@ -37,6 +37,7 @@
    :orgpad/unit-corner-x {}
    :orgpad/unit-corner-y {}
    :orgpad/unit-border-style {}
+   :orgpad/unit-padding {}
    :orgpad/link-color {}
    :orgpad/link-width {}
    :orgpad/link-dash {}

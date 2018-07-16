@@ -103,7 +103,8 @@
                         :borderColor (-> prop :orgpad/unit-border-color format-color)
                         :borderRadius (str (prop :orgpad/unit-corner-x) "px "
                                            (prop :orgpad/unit-corner-y) "px")
-                        :backgroundColor (-> prop :orgpad/unit-bg-color format-color) }
+                        :backgroundColor (-> prop :orgpad/unit-bg-color format-color)
+						:padding (prop :orgpad/unit-padding) }
                        (css/transform { :translate pos })
                        (when (and selected? (:quick-edit @local-state)) {:zIndex 2})) ]
       ;;(js/window.console.log "rendering " (unit :db/id) (and selected? (:quick-edit @local-state)))
