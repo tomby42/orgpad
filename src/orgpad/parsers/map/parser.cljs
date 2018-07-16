@@ -482,6 +482,10 @@
   [env _ {:keys [orgpad/unit-border-style] :as payload}]
   (update-propagated-prop env payload nil { :orgpad/unit-border-style unit-border-style }))
 
+(defmethod mutate :orgpad.units/map-view-unit-padding
+  [env _ {:keys [orgpad/unit-padding] :as payload}]
+  (update-propagated-prop env payload nil { :orgpad/unit-padding unit-padding }))
+
 (defmethod mutate :orgpad.units/map-view-unit-style
   [{:keys [state] :as env} _ {:keys [orgpad/view-style prop] :as payload}]
   (let [old-style (ot/get-style-from-db state :orgpad.map-view/vertex-props-style (:orgpad/view-style prop))

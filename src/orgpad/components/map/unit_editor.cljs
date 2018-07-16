@@ -216,7 +216,7 @@
   (let [width (prop :orgpad/unit-width)
 	  	  height (prop :orgpad/unit-height)
         pos (-- (prop :orgpad/unit-position) [(/ width 2) (/ height 2)])
-			  bw (prop :orgpad/unit-border-width)]
+			  bw (+ (prop :orgpad/unit-padding) (prop :orgpad/unit-border-width))]
   (merge { :width (+ width (* 2 bw))
            :height (+ height (* 2 bw)) }
            (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))))
@@ -465,6 +465,13 @@
      [ :div.center "Border Style" ]
      (styles/render-selection styles/border-styles style on-change)] ))
 
+(defn- render-padding
+  [{:keys [prop] :as params}]
+  (styles/frame "Padding"
+                (render-slider (merge params {:max 100
+                                              :prop-name :orgpad/unit-padding
+                                              :action :orgpad.units/map-view-unit-padding }))))
+
 (defn- render-styles-list
   [{:keys [component unit prop parent-view local-state selection]}]
   (let [styles-list (lc/query component :orgpad/styles {:view-type :orgpad.map-view/vertex-props-style} true)
@@ -504,7 +511,8 @@
    (render-height params)
    (render-border-width1 params)
    (render-border-radius1 params)
-   (render-border-style1 params)])
+   (render-border-style1 params)
+   (render-padding params)])
 
 (defn- node-unit-editor-static
   [component {:keys [view] :as unit-tree} app-state local-state]
