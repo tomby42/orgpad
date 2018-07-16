@@ -357,3 +357,8 @@
 (defmethod read :orgpad/root-view-stack-info
   [{:keys [parser-stack-info]} _ [key params]]
   (parser-stack-info key params))
+
+(defmethod mutate :orgpad/log
+  [{:keys [state]} _ _]
+
+  {:state state})

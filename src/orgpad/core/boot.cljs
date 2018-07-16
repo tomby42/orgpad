@@ -6,6 +6,7 @@
             [orgpad.core.orgpad :as orgpad]
             [orgpad.parsers.default-unit :as ps]
             [cemerick.url :as url]
+            [orgpad.net.com :as net]
             [orgpad.config]))
 
 (enable-console-print!)
@@ -31,6 +32,8 @@
                                   ;; (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack
                                   (str "https://cryptic-headland-94862.herokuapp.com/" from)
                                   ]]))
+    (when false
+      (net/start! "ws://localhost:3000/com"))
     (.log js/console "ORGPAD BOOT.")))
 
 (defn on-js-reload [])

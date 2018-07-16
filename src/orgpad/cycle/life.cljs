@@ -74,24 +74,24 @@
                 (vswap! parser-state update-in [:stack [key params]] pop)))
 
             (parser-mutate [key-params-tuple]
-              (let [[new-store key-params-read effects]
+              (let [env {:global-cache global-cache
+                         :force-update! (partial parser/force-update! force-update-all force-update-part)
+                         :parser-state-push! parser-state-push!
+                         :parser-state-pop! parser-state-pop!
+                         :parser-stack-info parser-stack-info
+                         :transact! parser-mutate }
+                    [new-store key-params-read effects]
                     (reduce
                      (fn [[store key-params-read effects] [key params & [type] :as kp]]
                        (if (= type :read)
                          [store (conj key-params-read kp) effects]
                          (let [{:keys [state effect]}
-                               (mutate-fn { :state store
-                                            :global-cache global-cache
-                                            :force-update! (partial parser/force-update! force-update-all force-update-part)
-                                            :parser-state-push! parser-state-push!
-                                            :parser-state-pop! parser-state-pop!
-                                            :parser-stack-info parser-stack-info
-                                            :transact! parser-mutate } key params)]
+                               (mutate-fn (assoc env :state store) key params)]
                            [state key-params-read
                             (if (nil? effect)
                               effects
-                              (conj effects effect))] )))
-                     [@state [] []] key-params-tuple)
+                              (conj effects effect))])))
+                     [@state [] []] (conj key-params-tuple [:orgpad/log @state]))
 
                     key-params-read' (if (empty? key-params-read)
                                        (-> @parser-state (dissoc :stack) keys)

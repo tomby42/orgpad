@@ -20,7 +20,9 @@
   (changed-entities [store]
     "Returns collection of ids of changed entities")
   (reset-changes [store]
-    "Returns new store with reset cumulative changes"))
+    "Returns new store with reset cumulative changes")
+  (cumulative-changes [store]
+    "Returns cumulative changes from last call of reset-changes"))
 
 (defprotocol IStoreHistory
 
@@ -232,6 +234,10 @@
                  #{}
                  (.-meta store)))
 
+  (cumulative-changes
+    [store]
+    (.-cumulative-changes store))
+
   IStoreHistory
   (undo
     [store]
@@ -330,9 +336,11 @@
 (defn- stransact
   "specter transact"
   [store [path action]]
-  (if (fn? action)
-    (s/transform path action store)
-    (s/setval path action store) ))
+  (with-meta
+    (if (fn? action)
+      (s/transform path action store)
+      (s/setval path action store))
+    {:changed? true}))
 
 (deftype DatomAtomStore [datom atom meta]
 
@@ -387,9 +395,16 @@
   (reset-changes
     [store]
     (DatomAtomStore. (reset-changes (.-datom store))
-                     (.-atom store)
+                     (with-meta (.-atom store) nil)
                      (.-meta store)))
 
+  (cumulative-changes
+    [store]
+    (let [ameta (meta (.-atom store))]
+      {:datom (cumulative-changes store)
+       :atom (if (and ameta (:changed? ameta))
+               (.-atom store)
+               nil)}))
 
   IStoreHistory
   (undo
