@@ -315,12 +315,7 @@
   (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
         [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id) (:orgpad/view-type old-prop))]
     (when (and prop unit)
-      (let [pos (prop :orgpad/unit-position)
-            width (prop :orgpad/unit-width) height (prop :orgpad/unit-height)
-            bw (prop :orgpad/unit-border-width)
-            style (merge {:width (+ width (* 2 bw))
-                          :height (+ height (* 2 bw))}
-                         (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))]
+      (let [style (node-unit-editor-style prop)]
         [:div {:key "node-unit-editor" :ref "unit-editor-node"}
          [:div {:className "map-view-unit-selected simple"
                 :style style

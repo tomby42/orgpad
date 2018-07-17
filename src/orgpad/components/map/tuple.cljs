@@ -57,9 +57,8 @@
      (when child-tree
        [:div.map-tuple-child (rum/with-key (node/node child-tree app-state) 2)])
      (when (= (:mode app-state) :read)
-       [ :div.map-tuple-clicker-left [:i.fa.fa-2x.fa-angle-left] ]
-       [ :div.map-tuple-clicker-right [:i.fa.fa-2x.fa-angle-right] ])
-
+       [[ :div.map-tuple-clicker-left [:i.fa.fa-2x.fa-angle-left] ]
+        [ :div.map-tuple-clicker-right [:i.fa.fa-2x.fa-angle-right] ]])
      ]))
 
 (rum/defcc map-tuple-component < trum/istatic lc/parser-type-mixin-context
