@@ -9,7 +9,8 @@
             [orgpad.tools.geocache :as geocache]
             [orgpad.tools.jcolls :as jscolls]
             [orgpad.tools.dom :as dom]
-            [orgpad.components.registry :as registry]))
+            [orgpad.components.registry :as registry]
+            [orgpad.net.com :as net]))
 
 (defn- find-root-view-info
   [db]
@@ -359,6 +360,10 @@
   (parser-stack-info key params))
 
 (defmethod mutate :orgpad/log
-  [{:keys [state]} _ _]
-
-  {:state state})
+  [{:keys [transact! state]} _ old-state]
+  (let [net-udate-ignore? (store/query state [:net-update-ignore?])]
+    {:state (store/transact state [[:net-update-ignore?] false])
+     :effect #(when (and (not= net-udate-ignore? :all)
+                         (net/is-online?))
+                ;; sync changes with server
+                )}))

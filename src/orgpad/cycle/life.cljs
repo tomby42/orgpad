@@ -87,7 +87,7 @@
                          [store (conj key-params-read kp) effects]
                          (let [{:keys [state effect]}
                                (mutate-fn (assoc env :state store) key params)]
-                           [state key-params-read
+                           [(or state store) key-params-read
                             (if (nil? effect)
                               effects
                               (conj effects effect))])))

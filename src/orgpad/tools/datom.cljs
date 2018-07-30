@@ -35,7 +35,7 @@
   (->> datom-seq
        (reduce (fn [o->n datom]
                  (let [uid (.-e datom)]
-                   (if (contains? old-uid->new-uid uid)
+                   (if (o->n uid)
                      o->n
                      (assoc! o->n uid (newid)))))
                (transient old-uid->new-uid))

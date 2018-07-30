@@ -23,7 +23,9 @@
                                  (-> :orgpad/root-view registry/get-component-info :orgpad/class)
                                  global-cfg)
         u (url/url (aget js/window "location" "href"))
-        from (-> u .-query (get "u"))]
+        from (-> u .-query (get "u"))
+        online-id (-> u :query (get "o"))]
+    (js/console.log (:query u))
     (when init-data
       ((:parser-mutate context) [[:orgpad/loaded db]]))
     (when from
@@ -32,8 +34,8 @@
                                   ;; (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack
                                   (str "https://cryptic-headland-94862.herokuapp.com/" from)
                                   ]]))
-    (when false
-      (net/start! "ws://localhost:3000/com"))
+    (when online-id
+      ((:parser-mutate context) [[:orgpad.net/connect-to-server ["ws://localhost:3000/com" online-id]]]))
     (.log js/console "ORGPAD BOOT.")))
 
 (defn on-js-reload [])

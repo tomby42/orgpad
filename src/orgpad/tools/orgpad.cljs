@@ -677,11 +677,28 @@
                     :orgpad/refs-order (update-refs-order o->n v)
                     v)))))
 
+;; TODO: should be solved by call to server to get unique uuid
+(defn- pseudo-squuid
+  []
+  (-> (js/Date.)
+      .getTime
+      (* 1000)
+      (+ (-> (js/Math.random) (* 1000) js/Math.floor))))
+
 (defn datoms-uid->squuid
   [datom-seq & [o->n]]
-  (datom/remap-datom-seq-eids datom-seq (or o->n {}) ds/squuid remap-datom))
+  (datom/remap-datom-seq-eids datom-seq (or o->n {}) pseudo-squuid remap-datom))
+
+(defn- ensure-root-first
+  [datom-seq]
+  (let [root (->> datom-seq (filter #(= (.-v %) :orgpad/root-unit)) first)
+        root-view (->> datom-seq (filter #(= (.-v %) :orgpad/root-unit-view)) first)]
+    (assoc {} (.-e root) 0 (.-e root-view) 1)))
 
 (defn datoms-squuid->uid
-  [datom-seq & [first-id o->n]]
-  (let [index (volatile! (or first-id 0))]
-    (datom/remap-datom-seq-eids datom-seq (or o->n {}) #(vswap! index inc) remap-datom)))
+  [datom-seq & [first-id o2n]]
+  (let [o->n (or o2n (ensure-root-first datom-seq))
+        index (volatile! (or first-id (-> o->n count dec)))]
+    (assoc
+     (datom/remap-datom-seq-eids datom-seq o->n #(vswap! index inc) remap-datom)
+     :last-index @index)))

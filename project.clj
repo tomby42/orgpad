@@ -4,9 +4,13 @@
 
   :dependencies [[org.clojure/clojure         "1.9.0"]
                  [org.clojure/clojurescript   "1.10.339"]
+                 [org.clojure/tools.deps.alpha "0.5.442"]
                  [org.clojure/core.async      "0.4.474"]
                  [org.clojure/test.check      "0.9.0"]
                  [datascript                  "0.16.6"]
+                 [datascript-transit          "0.2.2"
+                  :exclusions [com.cognitect/transit-clj
+                               com.cognitect/transit-cljs]]
                  [com.rpl/specter             "1.1.1"]
                  ;; [rum                         "0.9.1"] ;; local modified copy src/rum 0.10.8
                  [sablono                     "0.7.7"]
@@ -39,9 +43,18 @@
             [lein-less "1.7.5"]
             [lein-localrepo "0.5.3"]
             [lein-doo "0.1.10"]
-            [lein-npm "0.6.2"]]
+            [lein-npm "0.6.2"]
+            ;;[lein-tools-deps "0.4.1"]
+            ;;[lein-git-deps "0.0.1-SNAPSHOT"]
+            ]
 
   :hooks [leiningen.less leiningen.cljsbuild]
+
+  ;;:git-dependencies [["https://github.com/tomby42/datascript"]]
+
+  ;;:middleware [lein-tools-deps.plugin/resolve-dependencies-with-deps-edn]
+
+  ;;:lein-tools-deps/config {:config-files [:install :user :project]}
 
   :source-paths ["src"]
 

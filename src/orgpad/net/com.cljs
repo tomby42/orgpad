@@ -1,7 +1,7 @@
 (ns orgpad.net.com
   (:require
    [clojure.string  :as str]
-   [cljs.core.async :as async  :refer (<! >! put! chan)]
+   [cljs.core.async :as async  :refer (<! >! put! chan close! put!)]
    [taoensso.encore :as encore :refer-macros (have have?)]
    [taoensso.timbre :as timbre :refer-macros (tracef debugf infof warnf errorf)]
    [taoensso.sente  :as sente  :refer (cb-success?)]
@@ -43,7 +43,9 @@
 (defn event-msg-handler
   "Wraps `-event-msg-handler` with logging, error catching, etc."
   [{:as ev-msg :keys [id ?data event]}]
-  (-event-msg-handler ev-msg))
+  (-event-msg-handler ev-msg)
+  (when-let [ch (:res-chan @sente-client)]
+    (put! ch ev-msg)))
 
 (defmethod -event-msg-handler
   :default ; Default/fallback case (no other matching handler)
@@ -56,7 +58,7 @@
     (if (:first-open? new-state-map)
       (do
         (js/console.log "Channel socket successfully established!:" new-state-map)
-        (swap! assoc sente-client :connected? true))
+        (swap! sente-client assoc :connected? true))
       (js/console.log "Channel socket state change:" new-state-map))))
 
 (defmethod -event-msg-handler :chsk/recv
@@ -68,21 +70,27 @@
 (defmethod -event-msg-handler :chsk/handshake
   [{:as ev-msg :keys [?data]}]
   (let [[?uid ?csrf-token ?handshake-data] ?data]
-    (js/console.log "Handshake: %s" ?data)))
+    (js/console.log "Handshake: %s" (prn ?data))))
 
 (defmethod -event-msg-handler :orgpad.server/response
   [{:as ev-msg :keys [?data]}]
-  (js/console.log "State update event from server:" ?data)
-  )
+  (js/console.log "Response event from server:" ev-msg))
 
 ;;;; Sente event router (our `event-msg-handler` loop)
 
-(defn- stop-router! [] (when-let [stop-f (:router_ @sente-client)] (stop-f)))
+(defn- stop-router! []
+  (when-let [stop-f (:router_ @sente-client)]
+    (stop-f))
+  (when-let [ch (:res-chan @sente-client)]
+    (close! ch)))
+
 (defn- start-router! []
   (stop-router!)
-  (swap! sente-client assoc sente-client :router_
+  (swap! sente-client assoc
+         :router_
          (sente/start-client-chsk-router!
-          (:ch-recv @sente-client) event-msg-handler)))
+          (:ch-recv @sente-client) event-msg-handler)
+         :res-chan (chan 1000)))
 
 ;;;; Init stuff
 

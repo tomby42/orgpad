@@ -1,5 +1,5 @@
 (ns ^{:doc "Core orgpad functionality"}
-    orgpad.core.orgpad
+  orgpad.core.orgpad
   (:require
    [cljs.reader :as reader]
    [datascript.core   :as d]
