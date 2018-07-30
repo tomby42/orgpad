@@ -74,33 +74,38 @@
         pos  [(/ (- (:center-x position) (translate 0)) scale)
               (/ (- (:center-y position) (translate 1)) scale)]
         new-state
-        (store/transact
-         state [ { :db/id -1
-                   :orgpad/type :orgpad/unit
-                   :orgpad/props-refs (if style [-2 (:db/id style)] -2)
-                   :orgpad/refs -3 }
+        (-> state
+            (store/with-history-mode {:new-record true
+                                      :mode :acc})
+            (store/transact
+             [ { :db/id -1
+                :orgpad/type :orgpad/unit
+                :orgpad/props-refs (if style [-2 (:db/id style)] -2)
+                :orgpad/refs -3 }
 
-                (merge default-props
-                       { :db/id -2
-                         :orgpad/refs -1
-                         :orgpad/type :orgpad/unit-view-child
-                         :orgpad/view-name view-name
-                         :orgpad/unit-position pos
-                         :orgpad/context-unit parent
-                         :orgpad/unit-visibility true } )
+              (merge default-props
+                     { :db/id -2
+                      :orgpad/refs -1
+                      :orgpad/type :orgpad/unit-view-child
+                      :orgpad/view-name view-name
+                      :orgpad/unit-position pos
+                      :orgpad/context-unit parent
+                      :orgpad/unit-visibility true } )
 
-                { :db/id -3
-                  :orgpad/props-refs -4
-                  :orgpad/type :orgpad/unit }
+              { :db/id -3
+               :orgpad/props-refs -4
+               :orgpad/type :orgpad/unit }
 
-                (merge default-props
-                       { :db/id -4
-                         :orgpad/refs -3
-                         :orgpad/type :orgpad/unit-view-child-propagated
-                         :orgpad/view-name view-name } )
+              (merge default-props
+                     { :db/id -4
+                      :orgpad/refs -3
+                      :orgpad/type :orgpad/unit-view-child-propagated
+                      :orgpad/view-name view-name } )
 
-                [:db/add parent :orgpad/refs -1]
-                ])
+              [:db/add parent :orgpad/refs -1]])
+
+            (as-> s (store/transact s [[:app-state :selections (keypath parent)] #{(-> s store/tempids (get -1))}]))
+            (store/with-history-mode :add))
         w (if style (:orgpad/unit-width style) (:orgpad/unit-width default-props))
         h (if style (:orgpad/unit-height style) (:orgpad/unit-height default-props))]
     (geocache/create! global-cache parent view-name)

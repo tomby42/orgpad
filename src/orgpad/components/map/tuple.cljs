@@ -25,9 +25,10 @@
 (defn- render-write-mode
   [component { :keys [unit view props] :as unit-tree } app-state local-state]
   (let [child-tree (ot/active-child-tree unit view)]
-    [ :div { :className "map-tuple" }
+    [ :div {:className "map-tuple"
+            :key "child"}
       (when child-tree
-        (rum/with-key (node/node child-tree app-state) 2)) ]))
+        (node/node child-tree app-state)) ]))
 
 (defn- find-map-tuple-node
   [e]
@@ -55,10 +56,10 @@
                                      (not= (:mode app-state) :quick-write))
                             (omt/switch-active-sheet component unit-tree (comp-dir e)))) }
      (when child-tree
-       [:div.map-tuple-child (rum/with-key (node/node child-tree app-state) 2)])
+       [:div.map-tuple-child {:key "child"} (node/node child-tree app-state)])
      (when (= (:mode app-state) :read)
-       [[ :div.map-tuple-clicker-left [:i.fa.fa-2x.fa-angle-left] ]
-        [ :div.map-tuple-clicker-right [:i.fa.fa-2x.fa-angle-right] ]])
+       [[ :div.map-tuple-clicker-left {:key "left"} [:i.fa.fa-2x.fa-angle-left] ]
+        [ :div.map-tuple-clicker-right {:key "right"} [:i.fa.fa-2x.fa-angle-right]  ]])
      ]))
 
 (rum/defcc map-tuple-component < trum/istatic lc/parser-type-mixin-context
