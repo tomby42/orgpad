@@ -124,13 +124,14 @@
 
 
 (defn- start-unit-resize
-  [local-state ev]
+  [local-state mode ev]
   (set-mouse-pos! (jev/touch-pos ev))
   (swap! local-state merge { :local-mode :unit-resize
                              :start-mouse-x (.-clientX (jev/touch-pos ev))
                              :start-mouse-y (.-clientY (jev/touch-pos ev))
                              :mouse-x (.-clientX (jev/touch-pos ev))
-                             :mouse-y (.-clientY (jev/touch-pos ev)) }))
+                             :mouse-y (.-clientY (jev/touch-pos ev))
+               :resize-mode mode }))
 
 (defn- start-links
   [unit-tree selection local-state ev]
@@ -214,9 +215,9 @@
 (defn- node-unit-editor-style
   [prop]
   (let [width (prop :orgpad/unit-width)
-	  	  height (prop :orgpad/unit-height)
+        height (prop :orgpad/unit-height)
         pos (-- (prop :orgpad/unit-position) [(/ width 2) (/ height 2)])
-			  bw (+ (prop :orgpad/unit-padding) (prop :orgpad/unit-border-width))]
+        bw (+ (prop :orgpad/unit-padding) (prop :orgpad/unit-border-width))]
   (merge { :width (+ width (* 2 bw))
            :height (+ height (* 2 bw)) }
            (css/transform { :translate [(- (pos 0) 2) (- (pos 1) 2)] }))))
@@ -273,6 +274,15 @@
     (tbar/toolbar (str "uedit-toolbar " (if (:full-toolbar @local-state) "full" "mini"))
                   params left-toolbar right-toolbar)))
 
+(defn- resize-handle
+  "Add resize-handle. Class suffixes are top-left, top, top-right, right, bottom-right, bottom, bottom-left, and left."
+  [mode local-state]
+  (let [class-name (str "resize-handle-" mode)]
+    [:span
+     {:class class-name :id class-name
+      :onMouseDown (jev/make-block-propagation #(start-unit-resize local-state (keyword mode) %))
+      :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (keyword mode) (aget % "touches" 0)))}]))
+
 (defn- node-unit-editor1
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
@@ -282,33 +292,25 @@
         (nodes-unit-editor1 component unit-tree app-state local-state parent-view prop)
         (let [style (node-unit-editor-style prop)]
           [:div {:key "node-unit-editor" :ref "unit-editor-node"}
-           [:div {:className "map-view-unit-selected"
-                  :style style
-                  :key 0
-                  :onDoubleClick (jev/make-block-propagation #(enable-quick-edit local-state))
-                  :onMouseDown (jev/make-block-propagation #(start-unit-move app-state local-state %))
-                  :onTouchStart (jev/make-block-propagation #(start-unit-move app-state local-state (aget % "touches" 0)))
-                  }
-           ; add other resize directions
-            [:span.resize-handle-corner
-             {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
-              :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
-              }]
-            [:span.resize-handle-bottom
-             {:onMouseDown (jev/make-block-propagation #(start-unit-resize local-state %))
-              :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (aget % "touches" 0)))
-              }]
-           (gen-toolbar sel-unit-tree unit-tree app-state local-state)]
-           (when (= (@local-state :local-mode) :make-link)
-             (let [tr (parent-view :orgpad/transform)
-                   bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
-                   ox (.-left bbox)
-                   oy (.-top bbox)]
-               (g/line (screen->canvas tr [(- (@local-state :link-start-x) ox)
-                                           (- (@local-state :link-start-y) oy)])
-                       (screen->canvas tr [(- (@local-state :mouse-x) ox)
-                                           (- (@local-state :mouse-y) oy)])
-                       {:css {:zIndex 2} :key 1})))])))))
+            [:div {:className "map-view-unit-selected"
+                   :style style
+                   :key 0
+                   :onDoubleClick (jev/make-block-propagation #(enable-quick-edit local-state))
+                   :onMouseDown (jev/make-block-propagation #(start-unit-move app-state local-state %))
+                   :onTouchStart (jev/make-block-propagation #(start-unit-move app-state local-state (aget % "touches" 0)))}
+              (for [mode ["top-left" "top" "top-right" "right" "bottom-right" "bottom" "bottom-left" "left"]]
+                (resize-handle mode local-state))
+              (gen-toolbar sel-unit-tree unit-tree app-state local-state)]
+            (when (= (@local-state :local-mode) :make-link)
+              (let [tr (parent-view :orgpad/transform)
+                    bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
+                    ox (.-left bbox)
+                    oy (.-top bbox)]
+                (g/line (screen->canvas tr [(- (@local-state :link-start-x) ox)
+                                            (- (@local-state :link-start-y) oy)])
+                        (screen->canvas tr [(- (@local-state :mouse-x) ox)
+                                            (- (@local-state :mouse-y) oy)])
+                        {:css {:zIndex 2} :key 1})))])))))
 
 (defn- simple-node-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
