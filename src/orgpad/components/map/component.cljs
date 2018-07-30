@@ -260,14 +260,25 @@
 ;;                        (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
 ;;                        (-> parent-view :orgpad/transform :scale)))))
 
+(defn- compute-resize
+  [resize-mode diff-x diff-y]
+  [(case resize-mode
+    (:top-left :left :bottom-left) (- diff-x)
+    (:top :bottom) 0
+    (:top-right :right :bottom-right) diff-x)
+   (case resize-mode
+    (:top-left :top :top-right) (- diff-y)
+    (:left :right) 0
+    (:bottom-left :bottom :bottom-right) diff-y)])
+
 (defn- unit-resize
   [parent-view local-state ev]
   (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)]
     (when el
-      (dom/update-size-translate el (.-clientX ev) (.-clientY ev)
-                                 (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
-                                 (-> parent-view :orgpad/transform :scale)))))
-
+      (let [raw-diff-x (- (.-clientX ev) (@mouse-pos :mouse-x))
+            raw-diff-y (- (.-clientY ev) (@mouse-pos :mouse-y))
+            [diff-x diff-y] (compute-resize (:resize-mode @local-state) raw-diff-x raw-diff-y)]
+      (dom/update-size-translate-diff el diff-x diff-y (-> parent-view :orgpad/transform :scale))))))
 
 (defn- update-link-shape
   [component local-state ev]

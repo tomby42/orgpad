@@ -131,7 +131,7 @@
                              :start-mouse-y (.-clientY (jev/touch-pos ev))
                              :mouse-x (.-clientX (jev/touch-pos ev))
                              :mouse-y (.-clientY (jev/touch-pos ev))
-               :resize-mode mode }))
+                             :resize-mode mode }))
 
 (defn- start-links
   [unit-tree selection local-state ev]
