@@ -172,19 +172,19 @@
                                                        :max 100
                                                        :get-prop (partial get-nth-component 1)
                                                        :set-prop (partial set-nth-component-js 1)})))
-          (frame "Mid point relative position"
-                 (slider/render-slider (slider-params {:component component
-                                                       :style style
-                                                       :prop-name :orgpad/link-mid-pt
-                                                       :max 1000
-                                                       :get-prop (partial get-nth-component 0)
-                                                       :set-prop (partial set-nth-component 0)}))
-                 (slider/render-slider (slider-params {:component component
-                                                       :style style
-                                                       :prop-name :orgpad/link-mid-pt
-                                                       :max 1000
-                                                       :get-prop (partial get-nth-component 1)
-                                                       :set-prop (partial set-nth-component 1)})))
+          ;(frame "Mid point relative position"
+          ;       (slider/render-slider (slider-params {:component component
+          ;                                             :style style
+          ;                                             :prop-name :orgpad/link-mid-pt
+          ;                                             :max 1000
+          ;                                             :get-prop (partial get-nth-component 0)
+          ;                                             :set-prop (partial set-nth-component 0)}))
+          ;       (slider/render-slider (slider-params {:component component
+          ;                                             :style style
+          ;                                             :prop-name :orgpad/link-mid-pt
+          ;                                             :max 1000
+          ;                                             :get-prop (partial get-nth-component 1)
+          ;                                             :set-prop (partial set-nth-component 1)})))
           (frame "Arrow position" (slider/render-slider (slider-params {:component component
                                                                         :style style
                                                                         :prop-name :orgpad/link-arrow-pos
