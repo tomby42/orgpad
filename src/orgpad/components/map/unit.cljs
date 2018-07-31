@@ -84,6 +84,19 @@
     (css/hex-color->rgba c)
     c))
 
+(defn- sheet-indicator
+  [active? id]
+  [:i { :className (str (if active? "fa" "far") " fa-circle") :id id }])
+
+(defn- insert-sheet-indicators
+  [unit-tree color]
+  (let [[active-sheet total-sheets] (ot/get-sheet-number unit-tree)]
+    (when (> total-sheets 1)
+      [:div.tuple-page-indicator { :style { :color color }}
+        (map
+          #(sheet-indicator (= % (dec active-sheet)) (str "square-" %))
+          (range total-sheets))])))
+
 (rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} app-state pcomponent view-name pid local-state]
   (try
@@ -96,15 +109,16 @@
           selections (get-in app-state [:selections pid])
           selected? (= (:db/id unit) (first selections))
           ;; selected? (= (unit :db/id) (-> @local-state :selected-unit first ot/uid))
+          border-color (-> prop :orgpad/unit-border-color format-color)
           style (merge {:width (prop :orgpad/unit-width)
                         :height (prop :orgpad/unit-height)
                         :borderWidth (prop :orgpad/unit-border-width)
                         :borderStyle (prop :orgpad/unit-border-style)
-                        :borderColor (-> prop :orgpad/unit-border-color format-color)
+                        :borderColor border-color
                         :borderRadius (str (prop :orgpad/unit-corner-x) "px "
                                            (prop :orgpad/unit-corner-y) "px")
                         :backgroundColor (-> prop :orgpad/unit-bg-color format-color)
-						:padding (prop :orgpad/unit-padding) }
+                        :padding (prop :orgpad/unit-padding) }
                        (css/transform { :translate pos })
                        (when (and selected? (:quick-edit @local-state)) {:zIndex 2})) ]
       ;;(js/window.console.log "rendering " (unit :db/id) (and selected? (:quick-edit @local-state)))
@@ -147,9 +161,9 @@
             :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
             :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
             :onMouseUp #(open-unit pcomponent unit-tree local-state) }
-           [:i.far.fa-sign-in-alt]]
-          )
-
+           [:i.far.fa-sign-in-alt]])
+        (when (= (ot/view-type unit-tree) :orgpad/map-tuple-view)
+          (insert-sheet-indicators unit-tree border-color))
         (when (contains? selections (:db/id unit))
           [:span.fa.fa-check-circle.fa-lg.select-check {:style {:right (+ (/ (prop :orgpad/unit-corner-y) 2) 8) }}])
         ]))
