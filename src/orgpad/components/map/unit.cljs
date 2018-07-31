@@ -94,7 +94,7 @@
     (when (> total-sheets 1)
       [:div.tuple-page-indicator { :style { :color color }}
         (map
-          #(sheet-indicator (= % (dec active-sheet)) (str "square-" %))
+          #(sheet-indicator (= % (dec active-sheet)) (str "circle-" %))
           (range total-sheets))])))
 
 (rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
