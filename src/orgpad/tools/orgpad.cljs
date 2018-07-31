@@ -33,20 +33,20 @@
   (-> parent-view :orgpad/refs first :db/id))
 
 (defn view-name
-  [unit]
-  (-> unit :view :orgpad/view-name))
+  [unit-tree]
+  (-> unit-tree :view :orgpad/view-name))
 
 (defn view-type
-  [unit]
-  (-> unit :view :orgpad/view-type))
+  [unit-tree]
+  (-> unit-tree :view :orgpad/view-type))
 
 (defn refs
-  [unit]
-  (-> unit :unit :orgpad/refs))
+  [unit-tree]
+  (-> unit-tree :unit :orgpad/refs))
 
 (defn refs-uid
-  [unit]
-  (->> unit :unit :orgpad/refs (map uid)))
+  [unit-tree]
+  (->> unit-tree :unit :orgpad/refs (map uid)))
 
 (defn refs-count
   [unit]

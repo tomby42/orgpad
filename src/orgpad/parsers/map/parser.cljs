@@ -730,9 +730,10 @@
       { :state (:state env) }
       (let [active-idx (view :orgpad/active-unit)
             ruid (-> unit (ot/get-sorted-ref active-idx) ot/uid)
-            active-pos (if (= active-idx (dec nof-sheets)) 0 active-idx)
+            last? (= active-idx (dec nof-sheets))
+            active-pos (if last? (- nof-sheets 2) active-idx)
             switch-qry (switch-active env { :unit-tree unit-tree
-                                            :direction 1
+                                            :direction (if last? -1 1)
                                             :nof-sheets nof-sheets
                                             :new-active-pos active-pos})
             remove-qry (remove-unit env {:id ruid})
