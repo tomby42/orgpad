@@ -39,8 +39,8 @@
     (aset el "style" "width" (str (js/Math.round (+ ww (/ (- new-x old-x) parent-scale))) "px"))
     (aset el "style" "height" (str (js/Math.round (+ hh (/ (- new-y old-y) parent-scale))) "px"))))
 
-(defn update-size-translate
-  [el new-x new-y old-x old-y parent-scale]
+(defn update-size-translate-diff
+  [el diff-x diff-y parent-scale]
   (let [ts (parse-transform el)
         x (js/parseFloat (aget ts 0 1))
         y (js/parseFloat (aget ts 0 2))
@@ -48,12 +48,16 @@
         h (aget el "style" "height")
         ww (-> w (.substring 0 (- (.-length w) 2)) js/parseFloat)
         hh (-> h (.substring 0 (- (.-length h) 2)) js/parseFloat)]
-    (aset el "style" "width" (str (js/Math.round (+ ww (/ (* 2 (- new-x old-x)) parent-scale))) "px"))
-    (aset el "style" "height" (str (js/Math.round (+ hh (/ (* 2 (- new-y old-y)) parent-scale))) "px"))
+    (aset el "style" "width" (str (js/Math.round (+ ww (/ (* 2 diff-x) parent-scale))) "px"))
+    (aset el "style" "height" (str (js/Math.round (+ hh (/ (* 2 diff-y) parent-scale))) "px"))
     (aset el "style" "transform" (str "translate("
-                                      (- x (/ (- new-x old-x) parent-scale)) "px, "
-                                      (- y (/ (- new-y old-y) parent-scale)) "px) "
+                                      (- x (/ diff-x parent-scale)) "px, "
+                                      (- y (/ diff-y parent-scale)) "px) "
                                       (aget ts 1)))))
+
+(defn update-size-translate
+  [el new-x new-y old-x old-y parent-scale]
+  (update-size-translate-diff el (- new-x old-x) (- new-y old-y) parent-scale))
 
 (defn ffind-tag
   "tag-name is keyword"

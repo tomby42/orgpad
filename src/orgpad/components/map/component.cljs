@@ -145,17 +145,30 @@
                                 (@local-state :start-mouse-y)]
                       :new-pos new-pos }]])))
 
+(defn- compute-resize
+  [resize-mode diff-x diff-y]
+  [(case resize-mode
+    (:top-left :left :bottom-left) (- diff-x)
+    (:top :bottom) 0
+    (:top-right :right :bottom-right) diff-x)
+   (case resize-mode
+    (:top-left :top :top-right) (- diff-y)
+    (:left :right) 0
+    (:bottom-left :bottom :bottom-right) diff-y)])
+
 (defn- stop-unit-resize
-  [component local-state new-pos]
-  (let [[unit-tree prop parent-view] (@local-state :selected-unit)]
+  [component local-state new-x new-y]
+  (let [[unit-tree prop parent-view] (@local-state :selected-unit)
+         old-x (@local-state :start-mouse-x)
+         old-y (@local-state :start-mouse-y)
+         [diff-x diff-y] (compute-resize (:resize-mode @local-state) (- new-x old-x) (- new-y old-y))]
     (lc/transact! component
                   [[:orgpad.units/map-view-unit-resize
                     {:prop prop
                      :parent-view parent-view
                      :unit-tree unit-tree
-                     :old-pos [(@local-state :start-mouse-x)
-                               (@local-state :start-mouse-y)]
-                     :new-pos new-pos }]])))
+                     :old-pos [old-x old-y]
+                     :new-pos [(+ old-x diff-x) (+ old-y diff-y)]}]])))
 
 (defn- get-transformed-bb
   [local-state {:keys [orgpad/transform]}]
@@ -196,7 +209,7 @@
       :mouse-down (resolve-mouse-down component unit-tree local-state ev)
       :canvas-move (stop-canvas-move component unit-tree local-state [(.-clientX ev) (.-clientY ev)])
       :unit-move (stop-unit-move component local-state [(.-clientX ev) (.-clientY ev)])
-      :unit-resize (stop-unit-resize component local-state [(.-clientX ev) (.-clientY ev)])
+      :unit-resize (stop-unit-resize component local-state (.-clientX ev) (.-clientY ev))
       :units-move (stop-units-move component local-state [(.-clientX ev) (.-clientY ev)])
       :make-link (make-link component unit-tree local-state [(mouse-node-rel-x bbox ev) (mouse-node-rel-y bbox ev)])
       :link-shape (when (= (@local-state :link-menu-show) :maybe)
@@ -264,10 +277,10 @@
   [parent-view local-state ev]
   (let [el (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)]
     (when el
-      (dom/update-size-translate el (.-clientX ev) (.-clientY ev)
-                                 (@mouse-pos :mouse-x) (@mouse-pos :mouse-y)
-                                 (-> parent-view :orgpad/transform :scale)))))
-
+      (let [raw-diff-x (- (.-clientX ev) (@mouse-pos :mouse-x))
+            raw-diff-y (- (.-clientY ev) (@mouse-pos :mouse-y))
+            [diff-x diff-y] (compute-resize (:resize-mode @local-state) raw-diff-x raw-diff-y)]
+      (dom/update-size-translate-diff el diff-x diff-y (-> parent-view :orgpad/transform :scale))))))
 
 (defn- update-link-shape
   [component local-state ev]
