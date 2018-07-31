@@ -5,6 +5,7 @@
 
 (def default-config-full
   #js { :inline false
+        :auto_focus true
         :theme "modern"
         :plugins "advlist autolink autoresize lists link image charmap print preview hr anchor pagebreak
                                    searchreplace wordcount visualblocks visualchars code fullscreen
