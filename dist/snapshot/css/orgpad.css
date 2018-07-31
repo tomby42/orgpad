@@ -5001,11 +5001,47 @@ readers do not read off random characters that represent icons */
 .map-view .map-view-unit-selected.simple {
   border-top: 2px dashed #e42c2c;
 }
-.map-view .map-view-unit-selected .resize-handle-corner {
+.map-view .map-view-unit-selected .resize-handle-top-left {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  cursor: nwse-resize;
+  width: 20px;
+  height: 20px;
+  z-index: 3;
+}
+.map-view .map-view-unit-selected .resize-handle-top {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  cursor: row-resize;
+  width: 100%;
+  height: 20px;
+  z-index: 2;
+}
+.map-view .map-view-unit-selected .resize-handle-top-right {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  cursor: nesw-resize;
+  width: 20px;
+  height: 20px;
+  z-index: 3;
+}
+.map-view .map-view-unit-selected .resize-handle-right {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  cursor: col-resize;
+  height: 100%;
+  width: 20px;
+  z-index: 2;
+}
+.map-view .map-view-unit-selected .resize-handle-bottom-right {
   position: absolute;
   bottom: 0px;
-  cursor: nwse-resize;
   right: 0px;
+  cursor: nwse-resize;
   width: 20px;
   height: 20px;
   z-index: 3;
@@ -5013,10 +5049,28 @@ readers do not read off random characters that represent icons */
 .map-view .map-view-unit-selected .resize-handle-bottom {
   position: absolute;
   bottom: 0px;
-  cursor: row-resize;
   left: 0px;
+  cursor: row-resize;
   width: 100%;
   height: 20px;
+  z-index: 2;
+}
+.map-view .map-view-unit-selected .resize-handle-bottom-left {
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  cursor: nesw-resize;
+  width: 20px;
+  height: 20px;
+  z-index: 3;
+}
+.map-view .map-view-unit-selected .resize-handle-left {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  cursor: col-resize;
+  height: 100%;
+  width: 20px;
   z-index: 2;
 }
 .map-view .map-view-border-edit- {
