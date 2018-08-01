@@ -112,12 +112,25 @@
         new-value (update-in (aget root "value")
                              [:unit :orgpad/refs]
                              update idx
-                             assoc :unit unit' :props props)]
+                             (fn [unit-tree]
+                               (let [v (:view unit-tree)
+                                     view (or
+                                           (-> {:orgpad/props-refs props}
+                                               (ds/find-props-all
+                                                (partial ot/props-pred-no-ctx (:orgpad/view-name v)
+                                                         (:orgpad/view-type v) (or (:orgpad/type v)
+                                                                                   :orgpad/unit-view)))
+                                               first)
+                                           v)]
+                                 (assoc unit-tree
+                                        :unit unit'
+                                        :props props
+                                        :view view))))]
     ;; (js/console.log "update-parser-state!" idx child)
-    ;; (js/console.log unit')
-    ;; (js/console.log props)
-    ;; (js/console.log new-value)
-    ;; (js/console.log root)
+    ;; (js/console.log "unit'" unit')
+    ;; (js/console.log "props" props)
+    ;; (js/console.log "new-value" new-value)
+    ;; (js/console.log "root" root)
     (aset child "value" (assoc (aget child "value") :unit unit' :props props))
     (aset root "children" idx child)
     (aset root "value" new-value)
@@ -362,7 +375,7 @@
 (defmethod mutate :orgpad/log
   [{:keys [transact! state]} _ old-state]
   (let [net-udate-ignore? (store/query state [:net-update-ignore?])]
-    {:state (store/transact state [[:net-update-ignore?] false])
+    {:state (store/transact state [[:net-update-ignore?] :none])
      :effect #(when (and (not= net-udate-ignore? :all)
                          (net/is-online?))
                 ;; sync changes with server

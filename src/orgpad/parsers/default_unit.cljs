@@ -33,20 +33,9 @@
 
 ;;; default read method
 
-(defn- make-view-type-name-filter
-  [type view-type view-name]
-  (fn [u]
-    (let [res
-          (and u
-               (= (u :orgpad/view-type) view-type)
-               (= (u :orgpad/type) type)
-               (or (= (u :orgpad/view-name) view-name)
-                   (= (u :orgpad/view-name) "*")))]
-      res)))
-
 (defn- get-view-props
   [unit {:keys [orgpad/view-type orgpad/view-name orgpad/type]}]
-  (ds/find-props-all unit (make-view-type-name-filter type view-type view-name)))
+  (ds/find-props-all unit (partial ot/props-pred-no-ctx view-name view-type type)))
 
 (defn- get-path-info
   [unit view-path]
