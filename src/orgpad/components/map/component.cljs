@@ -37,7 +37,7 @@
                      :view-name (view :orgpad/view-name)
                      :transform (view :orgpad/transform)
                      :position pos
-                     :style (lc/query component :orgpad/style {:view-type :orgpad.map-view/vertex-props-style
+                    :style (lc/query component :orgpad/style {:view-type :orgpad.map-view/vertex-props-style
                                                                :style-name "default"} true) } ]] ))
 
 (defn- start-canvas-move
@@ -615,7 +615,7 @@
                                    :orgpad/unit-corner-x 5
                                    :orgpad/unit-corner-y 5
                                    :orgpad/unit-border-style "solid"
-								   :orgpad/unit-padding 5 }
+								                   :orgpad/unit-padding 5 }
 
                                 :orgpad.map-view/link-props
                                  { :orgpad/view-type :orgpad.map-view/link-props

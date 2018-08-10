@@ -55,17 +55,20 @@
              :props
              (filter (fn [prop] (and prop (= (prop :db/id) prop-id))))
              first)
+        style-type
+        (if (= prop-view-type :orgpad.map-view/vertex-props)
+          :orgpad.map-view/vertex-props-style
+          :orgpad.map-view/link-props-style)
         sel-style
         (->> sel-unit
              :props
              (filter (fn [prop] (and prop
                                      (= (:orgpad/style-name prop) (:orgpad/view-style sel-prop))
                                      (= (:orgpad/view-type prop)
-                                        (if (= prop-view-type :orgpad.map-view/vertex-props)
-                                          :orgpad.map-view/vertex-props-style
-                                          :orgpad.map-view/link-props-style)))))
-             first)]
-    [sel-unit (merge sel-style sel-prop)]))
+                                        style-type))))
+             first)
+        default-style (-> :orgpad/map-view registry/get-component-info :orgpad/child-props-default style-type)]
+    [sel-unit (merge default-style sel-style sel-prop)]))
 
 (defn- render-slider
   [{:keys [component unit prop parent-view local-state max min prop-name action selection]}]
