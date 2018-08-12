@@ -6,6 +6,7 @@
             [orgpad.core.store :as store]
             [orgpad.core.orgpad :as orgpad]
             [orgpad.parsers.default-unit :as dp :refer [read mutate updated?]]
+            [orgpad.tools.colls :as colls]
             [orgpad.tools.dscript :as ds]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.geocache :as geocache]
@@ -370,6 +371,21 @@
         new-state (store/transact state [style])]
     ;; (js/console.log "orgpad.style/new" type name style)
     {:state new-state}))
+
+(defmethod mutate :orgpad.style/remove
+  [{:keys [state]} _ {:keys [id name type]}]
+  (let [prop-type (ot/prop-type-style->prop-type type)
+        find-all '[:find [?p ...] 
+                   :in $ ?name ?prop-type
+                   :where
+                    [?p :orgpad/view-type ?prop-type]
+                    [?p :orgpad/view-style ?name]]
+        uids (store/query state find-all [name prop-type])
+        remove-query [[:db.fn/retractEntity id]]
+        remove-style-query (map #(vector :db/retract % :orgpad/view-style name) uids)  
+        add-style-query (map #(vector :db/add % :orgpad/view-style "default") uids)]
+    {:state (store/transact state
+              (colls/minto remove-query remove-style-query add-style-query))}))
 
 (defmethod read :orgpad/root-view-stack-info
   [{:keys [parser-stack-info]} _ [key params]]
