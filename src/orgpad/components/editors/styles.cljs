@@ -206,6 +206,48 @@
   (let [style (->> styles-list (drop-while #(not= (:orgpad/style-name %) active-style)) first)]
     ((style-type->editor active-type) component style)))
 
+(defn- gen-style-list-elem
+  [component active-type active-style style]
+  (let [name (:orgpad/style-name style)
+        class-name (str "style-label " (if (= active-style name) "active" ""))]
+    [:span.style {:key name} 
+      [:span
+       {:onClick #(lc/transact! component 
+                     [[:orgpad/app-state [[:styles active-type :active-style] name]]])
+        :className class-name}
+        name]
+      (when (not= name "default")
+        [:span.style-button
+         {:title "Remove style"
+          :onClick #(lc/transact! component
+                      [[:orgpad.style/remove 
+                        {:id (:db/id style)
+                         :name (:orgpad/style-name style)
+                         :type (:orgpad/view-type style)}]
+                        (when (= active-style name) 
+                          [:orgpad/app-state [[:styles active-type :active-style] nil ]])
+                        ])}
+          [:i.far.fa-trash-alt]])]))
+
+(defn- gen-style-list
+  [component local-state active-type styles-list active-style]
+  [:div.styles-list
+    (map (partial gen-style-list-elem component active-type active-style) styles-list)
+    [:span.new-style
+      [:input {:type "text"
+               :onChange #(swap! local-state assoc :new-style-name (-> % .-target .-value))
+               :value (or (:new-style-name @local-state) "")
+               :placeholder "new style name"}]
+      [:span.far.fa-plus-circle
+       {:onClick #(when (:new-style-name @local-state)
+                   (lc/transact! component
+                                [[:orgpad.style/new {:name (:new-style-name @local-state)
+                                                     :type active-type}]
+                                 [:orgpad/app-state [[:styles active-type :active-style]
+                                                     (:new-style-name @local-state)]]])
+                   (swap! local-state assoc :new-style-name nil)
+                   )}]]])
+
 (rum/defcc styles-editor < lc/parser-type-mixin-context (rum/local init-state)
   [component app-state on-close]
   (let [styles-types (styles-types-list)
@@ -230,30 +272,7 @@
                        (:name s)])
                     styles-types))]
      [:div.editor
-      [:div.styles-list
-       (into [] (map (fn [s]
-                       (let [n (:orgpad/style-name s)]
-                         [:span {:onClick #(lc/transact! component [[:orgpad/app-state
-                                                                     [[:styles active-type :active-style] n]]])
-                                 :key n
-                                 :className (if (= active-style n) "active" "")}
-                          (:orgpad/style-name s)]))
-                     styles-list))
-       [:span.new-style
-        [:input {:type "text"
-                 :onChange #(swap! local-state assoc :new-style-name (-> % .-target .-value))
-                 :value (or (:new-style-name @local-state) "")
-                 :placeholder "new style name"}]
-        [:span.far.fa-plus-circle
-         {:onClick #(when (:new-style-name @local-state)
-                     (lc/transact! component
-                                  [[:orgpad.style/new {:name (:new-style-name @local-state)
-                                                       :type active-type}]
-                                   [:orgpad/app-state [[:styles active-type :active-style]
-                                                       (:new-style-name @local-state)]]])
-                     (swap! local-state assoc :new-style-name nil)
-                     )}]]
-       ]
+      (gen-style-list component local-state active-type styles-list active-style) 
       [:div.style-editor
        (render-style-editor component active-type styles-list active-style)
        ]

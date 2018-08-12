@@ -479,6 +479,9 @@
   {:orgpad.map-view/vertex-props :orgpad.map-view/vertex-props-style
    :orgpad.map-view/link-props :orgpad.map-view/link-props-style})
 
+(def prop-type-style->prop-type
+  (clojure.set/map-invert prop-type->prop-type-style))
+
 (defn get-pos-props
   [db root-id]
   (-> db
