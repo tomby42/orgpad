@@ -185,7 +185,7 @@
         (update-box! global-cache pid view-name
                      uid
                      (if (= (vs 0) (vs 1))
-                       (ot/left-top pos [(vs 4) (vs 5)])
+                       (ot/left-top pos [(start 4) (start 5)])
                        pos)
                      size nil nil #js [(vs 0) (vs 1)])))))
 
