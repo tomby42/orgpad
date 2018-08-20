@@ -53,11 +53,15 @@
             (loop []
               (let [[v ch] (alts! [res-chan in-chan])]
                 (when v
+                  (when (= ch res-chan)
+                    (case (get-in v [:?data 1 :action])
+                      :orgpad.server/update-orgpad (transact! [[:orgpad.net/update-db v]])
+                      nil))
                   (recur)))))
-          (let [{:keys [db mapping]} (transform-db (-> state .-datom .-db))
+          (let [{:keys [db]} (transform-db (-> state .-datom .-db))
                 _ (js/console.log "creating new orgpad on server" (-> state .-datom .-db) db)
                 _ (net/send-cmd {:action :orgpad.server/create-orgpad
-                                 :params {:atom (assoc (.-atom state) :uid->squuid mapping)
+                                 :params {:atom (-> state .-atom (select-keys [:app-state]))
                                           :db (dt/write-transit-str db)}})
                 data (<! (discard-all-but res-chan is-response?))
                 u (url/url (aget js/window "location" "href"))]
@@ -66,3 +70,10 @@
               (aset js/window "location" "href"
                     (str (assoc-in u [:query "o"] (get-in data [:?data 1 :result :orgpad.server/uuid])))))
             ))))))
+
+(defn update!
+  [uuid changes]
+  (when (and uuid (or (:atom changes) (-> changes :db seq)))
+    (net/send-cmd {:action :orgpad.server/update-orgpad
+                   :params (assoc changes
+                                  :orgpad.server/uuid uuid)})))

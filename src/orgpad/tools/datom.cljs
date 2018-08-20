@@ -37,7 +37,7 @@
                  (let [uid (.-e datom)]
                    (if (o->n uid)
                      o->n
-                     (assoc! o->n uid (newid)))))
+                     (assoc! o->n uid (newid uid)))))
                (transient old-uid->new-uid))
        persistent!))
 

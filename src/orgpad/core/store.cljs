@@ -52,7 +52,7 @@
 
 (defprotocol IHistoryRecords
 
-  (push [this record] [this record meta]
+  (push [this record] [this record meta_]
     "Returns new hitory record with 'record' and 'meta' added to history")
 
   (undo-info [this]
@@ -159,7 +159,7 @@
                  (if (empty? tx-data)
                    (.-changed-entities store)
                    (reduce (fn [ens d] (conj ens (.-e d))) (.-changed-entities store) tx-data))
-                 (merge (.-meta store)
+                 (merge (.-meta_ store)
                         { :orgpad.store/tempids (:tempids tx-report) }))))
 
 (defn- tx-report->only-db-store
@@ -175,17 +175,17 @@
                    (reduce (fn [ens d] (conj ens (.-e d))) (.-changed-entities store) tx-data)
                    (.-changed-entities store))
                  (if (:tempids params)
-                   (merge (.-meta store)
+                   (merge (.-meta_ store)
                           {:orgpad.store/tempids (:tempids tx-report)})
-                   (.-meta store)))))
+                   (.-meta_ store)))))
 
-(deftype DatomStore [db history-records cumulative-changes changed-entities meta]
+(deftype DatomStore [db history-records cumulative-changes changed-entities meta_]
 
   IWithMeta
   (-with-meta [_ new-meta] (DatomStore. db history-records cumulative-changes changed-entities new-meta))
 
   IMeta
-  (-meta [_] meta)
+  (-meta [_] meta_)
 
   IStore
   (query
@@ -232,7 +232,7 @@
                  (.-history-records store)
                  []
                  #{}
-                 (.-meta store)))
+                 (.-meta_ store)))
 
   (cumulative-changes
     [store]
@@ -259,11 +259,11 @@
 
   (tag
     [store tag]
-    (DatomStore. db (tag-finger history-records tag) cumulative-changes changed-entities (.-meta store)))
+    (DatomStore. db (tag-finger history-records tag) cumulative-changes changed-entities (.-meta_ store)))
 
   (with-history-mode
     [store mode]
-    (DatomStore. db (set-history-mode history-records mode) cumulative-changes changed-entities (.-meta store)))
+    (DatomStore. db (set-history-mode history-records mode) cumulative-changes changed-entities (.-meta_ store)))
 
   IStoreHistoryInfo
   (history-info
@@ -282,7 +282,7 @@
   ITempids
   (tempids
     [store]
-    (-> store .-meta :orgpad.store/tempids))
+    (-> store .-meta_ :orgpad.store/tempids))
 
   IPrintWithWriter
   (-pr-writer
@@ -299,7 +299,7 @@
          (= (.-history-records store) (.-history-records other))
          (= (.-cumulative-changes store) (.-cumulative-changes other))
          (= (.-changed-entities store) (.-changed-entities other))
-         (= (.-meta store) (.-meta other))))
+         (= (.-meta_ store) (.-meta_ other))))
   )
 
 (defn new-datom-store
@@ -321,17 +321,21 @@
   (let [f (first qry)]
     (or (= :find f) (= :entity f) (= :entities f))))
 
+(defn- fnamespace
+  [x]
+  (when (and (-> x nil? not)
+             (keyword? x))
+    (namespace x)))
+
 (defn- datom-transact-query?
   "Returns true if 'qry' is datascript transaction query"
   [qry]
-  (let [f (first qry)
-        fnamespace #(when (and (-> % nil? not)
-                               (keyword? %))
-                      (namespace %))]
+  (let [f (first qry)]
     (or (= f :entities)
         (contains? f :db/id)
         (= (-> f first fnamespace) "db")
-        (= (-> f first fnamespace) "db.fn")) ))
+        (= (-> f first fnamespace) "db.fn")
+        (= (-> f type) datascript.db/Datom))))
 
 (defn- stransact
   "specter transact"
@@ -342,13 +346,13 @@
       (s/setval path action store))
     {:changed? true}))
 
-(deftype DatomAtomStore [datom atom meta]
+(deftype DatomAtomStore [datom atom meta_]
 
   IWithMeta
   (-with-meta [_ new-meta] (DatomAtomStore. datom atom new-meta))
 
   IMeta
-  (-meta [_] meta)
+  (-meta [_] meta_)
 
   IStore
   (query
@@ -366,14 +370,14 @@
   (transact
     [store qry]
     (if (datom-transact-query? qry)
-      (DatomAtomStore. (transact (.-datom store) qry) (.-atom store) (.-meta store))
-      (DatomAtomStore. (.-datom store) (stransact (.-atom store) qry) (.-meta store))))
+      (DatomAtomStore. (transact (.-datom store) qry) (.-atom store) (.-meta_ store))
+      (DatomAtomStore. (.-datom store) (stransact (.-atom store) qry) (.-meta_ store))))
 
   (transact
     [store qry params]
     (if (datom-transact-query? qry)
-      (DatomAtomStore. (transact (.-datom store) qry params) (.-atom store) (.-meta store))
-      (DatomAtomStore. (.-datom store) (stransact (.-atom store) qry) (.-meta store))))
+      (DatomAtomStore. (transact (.-datom store) qry params) (.-atom store) (.-meta_ store))
+      (DatomAtomStore. (.-datom store) (stransact (.-atom store) qry) (.-meta_ store))))
 
   IStoreChanges
   (changed?
@@ -396,12 +400,12 @@
     [store]
     (DatomAtomStore. (reset-changes (.-datom store))
                      (with-meta (.-atom store) nil)
-                     (.-meta store)))
+                     (.-meta_ store)))
 
   (cumulative-changes
     [store]
     (let [ameta (meta (.-atom store))]
-      {:datom (cumulative-changes store)
+      {:datom (cumulative-changes (.-datom store))
        :atom (if (and ameta (:changed? ameta))
                (.-atom store)
                nil)}))
@@ -411,25 +415,25 @@
     [store]
     (DatomAtomStore. (undo (.-datom store))
                      (.-atom store)
-                     (.-meta store)))
+                     (.-meta_ store)))
 
   (redo
     [store]
     (DatomAtomStore. (redo (.-datom store))
                      (.-atom store)
-                     (.-meta store)))
+                     (.-meta_ store)))
 
   (tag
     [store tag_]
     (DatomAtomStore. (tag (.-datom store) tag_)
                      (.-atom store)
-                     (.-meta store)))
+                     (.-meta_ store)))
 
   (with-history-mode
     [store mode]
     (DatomAtomStore. (with-history-mode (.-datom store) mode)
                      (.-atom store)
-                     (.-meta store)))
+                     (.-meta_ store)))
 
   IStoreHistoryInfo
   (history-info
@@ -465,7 +469,7 @@
       [store other]
     (and (= (.-datom store) (.-datom other))
          (= (.-atom store) (.-atom other))
-         (= (.-meta store) (.-meta other))))
+         (= (.-meta_ store) (.-meta_ other))))
   )
 
 (defn new-datom-atom-store

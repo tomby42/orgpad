@@ -687,7 +687,13 @@
 
 (defn datoms-uid->squuid
   [datom-seq & [o->n]]
-  (datom/remap-datom-seq-eids datom-seq (or o->n {}) pseudo-squuid remap-datom))
+  (let [new-indices (volatile! {})]
+    (assoc
+     (datom/remap-datom-seq-eids datom-seq (or o->n {}) #(let [new-squuid (pseudo-squuid)]
+                                                           (vswap! new-indices assoc % new-squuid)
+                                                           new-squuid)
+                                 remap-datom)
+     :new-indices @new-indices)))
 
 (defn- ensure-root-first
   [datom-seq]
@@ -698,7 +704,12 @@
 (defn datoms-squuid->uid
   [datom-seq & [first-id o2n]]
   (let [o->n (or o2n (ensure-root-first datom-seq))
-        index (volatile! (or first-id (-> o->n count dec)))]
+        index (volatile! (or first-id (-> o->n count dec)))
+        new-indices (volatile! {})]
     (assoc
-     (datom/remap-datom-seq-eids datom-seq o->n #(vswap! index inc) remap-datom)
-     :last-index @index)))
+     (datom/remap-datom-seq-eids datom-seq o->n #(let [new-idx (vswap! index inc)]
+                                                   (vswap! new-indices assoc % new-idx)
+                                                   new-idx)
+                                 remap-datom)
+     :last-index @index
+     :new-indices @new-indices)))

@@ -1,6 +1,8 @@
 (ns ^{:doc "Default root read/write parser"}
   orgpad.parsers.default-root
-  (:require [com.rpl.specter :refer [keypath]]
+  (:require [clojure.set :as set]
+            [com.rpl.specter :refer [keypath]]
+            [datascript.transit :as dt]
             [orgpad.core.store :as store]
             [orgpad.core.orgpad :as orgpad]
             [orgpad.parsers.default-unit :as dp :refer [read mutate updated?]]
@@ -10,7 +12,8 @@
             [orgpad.tools.jcolls :as jscolls]
             [orgpad.tools.dom :as dom]
             [orgpad.components.registry :as registry]
-            [orgpad.net.com :as net]))
+            [orgpad.net.com :as net]
+            [orgpad.effects.net :as enet]))
 
 (defn- find-root-view-info
   [db]
@@ -263,7 +266,7 @@
       (ot/is-descendant? old-state pid uid)
       (ot/is-descendant? new-state pid uid))))
 
-(defn- resolve-parser-state!
+(defn resolve-parser-state!
   [{:keys [state parser-state-pop! force-update!]} new-state]
   (let [old-view-stack (get-view-stack state)
         es (:datom (store/changed-entities new-state))]
@@ -372,11 +375,34 @@
   [{:keys [parser-stack-info]} _ [key params]]
   (parser-stack-info key params))
 
+(defn- comp-changes
+  [state net-update-ignore?]
+  (if (and (not= net-update-ignore? :all)
+           (net/is-online?))
+    (let [changes (store/cumulative-changes state)
+          _ (js/console.log "changes: " changes)
+          atom (-> state (store/query []) first)
+          {:keys [datoms mapping new-indices]}
+          (ot/datoms-uid->squuid (:datom changes) (:uid->squuid atom))
+          new-atom (assoc atom
+                          :net-update-ignore? :none
+                          :uid->squuid mapping
+                          :squuid->uid (merge (:squuid->uid atom)
+                                              (set/map-invert new-indices)))]
+      [[[] new-atom] datoms])
+    [[[:net-update-ignore?] :none] nil]))
+
 (defmethod mutate :orgpad/log
   [{:keys [transact! state]} _ old-state]
-  (let [net-udate-ignore? (store/query state [:net-update-ignore?])]
-    {:state (store/transact state [[:net-update-ignore?] :none])
-     :effect #(when (and (not= net-udate-ignore? :all)
+  (let [net-update-ignore? (-> state (store/query [:net-update-ignore?]) first)
+        [new-atom-qry datoms] (comp-changes state net-update-ignore?)]
+    (js/console.log "log:" net-update-ignore? new-atom-qry datoms)
+    {:state (store/transact state new-atom-qry)
+     :effect #(when (and (not= net-update-ignore? :all)
                          (net/is-online?))
-                ;; sync changes with server
-                )}))
+                (let [atom (second new-atom-qry)]
+                  (js/console.log "log:" state old-state)
+                  (enet/update! (:orgpad-uuid atom)
+                                (cond-> {:atom nil :db (dt/write-transit-str [])}
+                                  (not= net-update-ignore? :global) (assoc :db (dt/write-transit-str datoms))
+                                  (not= net-update-ignore? :local) (assoc :atom (select-keys atom [:app-state]))))))}))
