@@ -364,28 +364,50 @@
       (get-in [:orgpad/child-props-default type])))
 
 (defmethod mutate :orgpad.style/new
-  [{:keys [state]} _ {:keys [type name]}]
-  (let [style (-> type
-                  get-style-default
+  [{:keys [state]} _ {:keys [type name based-on]}]
+  (let [style (-> (ot/get-style-from-db state type based-on) 
                   (assoc :orgpad/style-name name :db/id -1))
         new-state (store/transact state [style])]
     ;; (js/console.log "orgpad.style/new" type name style)
     {:state new-state}))
 
-(defmethod mutate :orgpad.style/remove
-  [{:keys [state]} _ {:keys [id name type]}]
+(defn- uids-with-style
+  "Get all unit ids having given style."
+  [state name type]
   (let [prop-type (ot/prop-type-style->prop-type type)
         find-all '[:find [?p ...] 
                    :in $ ?name ?prop-type
                    :where
                     [?p :orgpad/view-type ?prop-type]
-                    [?p :orgpad/view-style ?name]]
-        uids (store/query state find-all [name prop-type])
-        remove-query [[:db.fn/retractEntity id]]
-        remove-style-query (map #(vector :db/retract % :orgpad/view-style name) uids)  
-        add-style-query (map #(vector :db/add % :orgpad/view-style "default") uids)]
+                    [?p :orgpad/view-style ?name]]]
+    (store/query state find-all [name prop-type])))
+
+(defn- change-style-name-query
+  [uids old-name new-name]
+  (let [remove-style-query (map #(vector :db/retract % :orgpad/view-style old-name) uids)  
+        add-style-query (map #(vector :db/add % :orgpad/view-style new-name) uids)]
+    (into [] (concat remove-style-query add-style-query))))
+
+(defmethod mutate :orgpad.style/remove
+  [{:keys [state]} _ {:keys [id name type]}]
+  (let [uids (uids-with-style state name type)
+        remove-query [[:db.fn/retractEntity id]]]
     {:state (store/transact state
-              (colls/minto remove-query remove-style-query add-style-query))}))
+              (into remove-query (change-style-name-query uids name "default")))}))
+
+(defmethod mutate :orgpad.style/edit
+  [{:keys [state]} _ {:keys [id old-name new-name type based-on]}]
+  (let [style (if based-on (-> (ot/get-style-from-db state type based-on) 
+                               (assoc :orgpad/style-name new-name :db/id id))
+                           (-> (ot/get-style-from-db state type old-name) 
+                               (assoc :orgpad/style-name new-name)))
+        update-units (not= name new-name)
+        uids (when update-units (uids-with-style state old-name type))
+        remove-query [[:db.fn/retractEntity id]]        
+        new-state (store/transact state
+                    (colls/minto remove-query [style] (change-style-name-query uids old-name new-name)))]
+    (js/console.log "orgpad.style/edit" type old-name new-name based-on style)
+    {:state new-state}))
 
 (defmethod read :orgpad/root-view-stack-info
   [{:keys [parser-stack-info]} _ [key params]]

@@ -7,6 +7,7 @@
             [orgpad.tools.dscript :as ds]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
+            [orgpad.tools.styles :as styles]
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.rum :as trum]
             [orgpad.tools.dom :as dom]
@@ -15,7 +16,7 @@
             [orgpad.components.menu.color.picker :as cpicker]))
 
 (def init-state
-  {})
+  { :style-box :hidden })
 
 (def border-styles
   [ "none" "solid" "dotted" "dashed" "double" "groove" "ridge" "inset" "outset" ])
@@ -26,17 +27,21 @@
    [:div.center label ]
    body])
 
+(defn- selection-option
+  [selection name]
+  (let [selected (= name selection)
+        disabled (= name nil)]
+    [:option {:key name :selected selected :disabled disabled} name]))
+
 (defn render-selection
-  [styles style on-change]
-  (into
-   [:select.fake-center
-    {:onMouseDown jev/stop-propagation
-     :onMouseMove jev/stop-propagation
-     :onBlur jev/stop-propagation
-     :onChange #(on-change (-> % .-target .-value)) } ]
-   (map (fn [s]
-          [:option (if (= s style) { :selected true } {}) s])
-        styles)))
+  [options selection on-change]
+  (let [options' (if (= selection nil) (conj (seq options) nil) options)]
+    (into [:select.fake-center
+     {:onMouseDown jev/stop-propagation
+      :onMouseMove jev/stop-propagation
+      :onBlur jev/stop-propagation
+      :onChange #(on-change (-> % .-target .-value)) }
+      (map (partial selection-option selection) options')])))
 
 (defn styles-types-list
   []
@@ -206,8 +211,15 @@
   (let [style (->> styles-list (drop-while #(not= (:orgpad/style-name %) active-style)) first)]
     ((style-type->editor active-type) component style)))
 
+(defn- set-edit-style-box
+  [local-state style]
+  (swap! local-state assoc :style-box :edit)
+  (swap! local-state assoc :style-name (:orgpad/style-name style))
+  (swap! local-state assoc :edited-style style)
+  (swap! local-state assoc :style-based-on nil))
+                       
 (defn- gen-style-list-elem
-  [component active-type active-style style]
+  [component local-state active-type active-style style]
   (let [name (:orgpad/style-name style)
         class-name (str "style-label " (if (= active-style name) "active" ""))]
     [:span.style {:key name} 
@@ -217,8 +229,15 @@
         :className class-name}
         name]
       (when (not= name "default")
-        [:span.style-button
-         {:title "Remove style"
+      (list
+        [:span.style-btn
+         {:key "rename-btn"
+          :title "Rename style"
+          :onClick #(set-edit-style-box local-state style)}
+          [:i.far.fa-pencil]]
+        [:span.style-btn
+         {:title "Edit style"
+          :key "remove-btn"
           :onClick #(lc/transact! component
                       [[:orgpad.style/remove 
                         {:id (:db/id style)
@@ -227,34 +246,99 @@
                         (when (= active-style name) 
                           [:orgpad/app-state [[:styles active-type :active-style] nil ]])
                         ])}
-          [:i.far.fa-trash-alt]])]))
+          [:i.far.fa-trash-alt]]
+          )
+      )]))
 
-(defn- gen-style-list
+(defn- set-new-style-box
+  [local-state]
+  (swap! local-state assoc :style-box :new)
+  (swap! local-state assoc :style-name nil)
+  (swap! local-state assoc :style-based-on "default"))
+
+(defn- add-new-style
+  [component local-state active-type]
+  (lc/transact! component
+    [[:orgpad.style/new {:name (:style-name @local-state)
+                         :type active-type
+                         :based-on (:style-based-on @local-state)}]
+     [:orgpad/app-state [[:styles active-type :active-style]
+                         (:style-name @local-state)]]])
+  (swap! local-state assoc :style-box :hidden))
+
+(defn- edit-style
+  [component local-state active-type]
+  (let [style (:edited-style @local-state)]
+    (lc/transact! component
+      [[:orgpad.style/edit {:id (:db/id style)
+                            :old-name (:orgpad/style-name style)
+                            :new-name (:style-name @local-state)
+                            :based-on (:style-based-on @local-state)
+                            :type active-type}]
+       [:orgpad/app-state [[:styles active-type :active-style]
+                           (:style-name @local-state)]]])
+    (swap! local-state assoc :style-box :hidden)))
+
+(defn- gen-new-edit-style
+  [component local-state active-type mode styles-list]
+  (let [style-name (:style-name @local-state)
+        enabled (and (not= style-name nil) (not= style-name ""))
+        apply-btn-icon (if (= mode :new) "fa-plus-circle" "fa-pencil")
+        apply-btn-label (if (= mode :new) "Create" "Change")
+        apply-btn-class (str "btn" (when (not enabled) " disabled"))]
+    (list
+      [:span.edit
+        {:key "style-name"}
+        [:span.label "Style name:"]
+        [:input {:type "text"
+                 :onChange #(swap! local-state assoc :style-name (-> % .-target .-value))
+                 :value (or style-name "")}]]
+      [:span.edit
+        {:key "based-on"}
+        [:span.label "Based on:"]
+        (render-selection (map :orgpad/style-name styles-list) (:style-based-on @local-state)
+          #(swap! local-state assoc :style-based-on %))]
+      [:span.btn-box
+        [:span
+          {:className apply-btn-class
+           :onClick #(when enabled
+                       (if (= mode :new)
+                         (add-new-style component local-state active-type)
+                         (edit-style component local-state active-type)))}
+          [:i {:className (str "far " apply-btn-icon) }]
+          [:span.btn-icon-label apply-btn-label]]
+        [:span.btn
+          {:onClick #(swap! local-state assoc :style-box :hidden)}
+          [:span.btn-label "Cancel"]]])))
+
+(defn- gen-style-box
+  [component local-state active-type styles-list]
+  (let [mode (:style-box @local-state)
+        gen-new-edit-style' (partial gen-new-edit-style component local-state active-type mode)]
+    [:span.style-box
+      (case mode
+        :hidden [:span.btn-box
+                  [:span.btn
+                   {:onClick #(set-new-style-box local-state)}
+                    [:i.far.fa-plus-circle]
+                    [:span.btn-icon-label "Create a new style"]]]
+        :new (gen-new-edit-style' styles-list)
+        :edit (gen-new-edit-style'
+                (remove #(= % (:edited-style @local-state)) styles-list)))]))
+
+(defn- gen-left-panel
   [component local-state active-type styles-list active-style]
-  [:div.styles-list
-    (map (partial gen-style-list-elem component active-type active-style) styles-list)
-    [:span.new-style
-      [:input {:type "text"
-               :onChange #(swap! local-state assoc :new-style-name (-> % .-target .-value))
-               :value (or (:new-style-name @local-state) "")
-               :placeholder "new style name"}]
-      [:span.far.fa-plus-circle
-       {:onClick #(when (:new-style-name @local-state)
-                   (lc/transact! component
-                                [[:orgpad.style/new {:name (:new-style-name @local-state)
-                                                     :type active-type}]
-                                 [:orgpad/app-state [[:styles active-type :active-style]
-                                                     (:new-style-name @local-state)]]])
-                   (swap! local-state assoc :new-style-name nil)
-                   )}]]])
+  [:div.left-panel
+    [:div.styles-list
+      (map (partial gen-style-list-elem component local-state active-type active-style) styles-list)]
+    (gen-style-box component local-state active-type styles-list)])
 
 (rum/defcc styles-editor < lc/parser-type-mixin-context (rum/local init-state)
   [component app-state on-close]
   (let [styles-types (styles-types-list)
         local-state (trum/comp->local-state component)
         active-type (or (-> app-state :styles :active-type) (-> styles-types first :key))
-        styles-list (sort #(compare (:orgpad/style-name %1) (:orgpad/style-name %2))
-                          (lc/query component :orgpad/styles {:view-type active-type} true))
+        styles-list (styles/get-sorted-style-list component active-type)
         active-style (or (-> app-state :styles active-type :active-style)
                          (-> styles-list first :orgpad/style-name))]
     ;; (js/console.log styles-list)
@@ -272,7 +356,7 @@
                        (:name s)])
                     styles-types))]
      [:div.editor
-      (gen-style-list component local-state active-type styles-list active-style) 
+      (gen-left-panel component local-state active-type styles-list active-style) 
       [:div.style-editor
        (render-style-editor component active-type styles-list active-style)
        ]
