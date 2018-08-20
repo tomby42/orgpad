@@ -217,7 +217,19 @@
   (swap! local-state assoc :style-name (:orgpad/style-name style))
   (swap! local-state assoc :edited-style style)
   (swap! local-state assoc :style-based-on nil))
-                       
+                      
+(defn- remove-style
+  [component style active-type active-style]
+  (let [name (:orgpad/style-name style)
+        remove-tr [:orgpad.style/remove {:id (:db/id style)
+                                         :name name
+                                         :type (:orgpad/view-type style)}]
+        selection-tr [:orgpad/app-state [[:styles active-type :active-style] nil ]]]
+    (lc/transact! component
+      (if (= active-style name)
+        [remove-tr selection-tr]
+        [remove-tr]))))
+
 (defn- gen-style-list-elem
   [component local-state active-type active-style style]
   (let [name (:orgpad/style-name style)
@@ -231,21 +243,14 @@
       (when (not= name "default")
       (list
         [:span.style-btn
-         {:key "rename-btn"
-          :title "Rename style"
+         {:key "edit-btn"
+          :title "Edit style"
           :onClick #(set-edit-style-box local-state style)}
           [:i.far.fa-pencil]]
         [:span.style-btn
-         {:title "Edit style"
+         {:title "Remove style"
           :key "remove-btn"
-          :onClick #(lc/transact! component
-                      [[:orgpad.style/remove 
-                        {:id (:db/id style)
-                         :name (:orgpad/style-name style)
-                         :type (:orgpad/view-type style)}]
-                        (when (= active-style name) 
-                          [:orgpad/app-state [[:styles active-type :active-style] nil ]])
-                        ])}
+          :onClick #(remove-style component style active-type active-style)}
           [:i.far.fa-trash-alt]]
           )
       )]))
