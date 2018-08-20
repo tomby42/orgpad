@@ -13,6 +13,7 @@
             [orgpad.tools.geom :as geom :refer [-- ++ *c screen->canvas canvas->screen]]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
+            [orgpad.tools.styles :as styles]
             [orgpad.tools.dom :as dom]
             [orgpad.tools.math :refer [normalize-range]]
             [orgpad.components.graphics.primitives :as g]
@@ -22,7 +23,7 @@
             [goog.string.format]
             [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-link]]
             [orgpad.components.input.slider :as slider]
-            [orgpad.components.editors.styles :as styles]))
+            [orgpad.components.editors.styles :as stedit]))
 
 (def ^:private edge-menu-conf {
   :always-open? false
@@ -405,34 +406,34 @@
                                                  :unit-tree unit
                                                  :prop-name :color
                                                  :prop-val c}]])))]
-    (styles/frame (if (= action :orgpad.units/map-view-unit-border-color)
+    (stedit/frame (if (= action :orgpad.units/map-view-unit-border-color)
                     "Border Color"
                     "Background Color") (cpicker/color-picker color {} on-change))))
 
 (defn- render-width
   [{:keys [prop] :as params}]
-  (styles/frame "Width"
+  (stedit/frame "Width"
                 (render-slider (merge params {:max js/window.innerWidth
                                               :prop-name :orgpad/unit-width
                                               :action :orgpad.units/map-view-unit-set-size }))))
 
 (defn- render-height
   [{:keys [prop] :as params}]
-  (styles/frame "Height"
+  (stedit/frame "Height"
                 (render-slider (merge params {:max js/window.innerHeight
                                               :prop-name :orgpad/unit-height
                                               :action :orgpad.units/map-view-unit-set-size }))))
 
 (defn- render-border-width1
   [{:keys [prop] :as params}]
-  (styles/frame "Border Width"
+  (stedit/frame "Border Width"
                 (render-slider (merge params {:max 20
                                               :prop-name :orgpad/unit-border-width
                                               :action :orgpad.units/map-view-unit-border-width }))))
 
 (defn- render-border-radius1
   [{:keys [prop] :as params}]
-   (styles/frame "Border Radius"
+   (stedit/frame "Border Radius"
                  (render-slider (merge params
                                        {:max 50
                                         :prop-name :orgpad/unit-corner-x
@@ -463,18 +464,18 @@
                                        :prop-val val } ]])))]
     [ :div.map-view-border-edit {}
      [ :div.center "Border Style" ]
-     (styles/render-selection styles/border-styles style on-change)] ))
+     (stedit/render-selection stedit/border-styles style on-change)] ))
 
 (defn- render-padding
   [{:keys [prop] :as params}]
-  (styles/frame "Padding"
+  (stedit/frame "Padding"
                 (render-slider (merge params {:max 100
                                               :prop-name :orgpad/unit-padding
                                               :action :orgpad.units/map-view-unit-padding }))))
 
 (defn- render-styles-list
   [{:keys [component unit prop parent-view local-state selection]}]
-  (let [styles-list (lc/query component :orgpad/styles {:view-type :orgpad.map-view/vertex-props-style} true)
+  (let [styles-list (styles/get-sorted-style-list component :orgpad.map-view/vertex-props-style)
         style (:orgpad/view-style prop)
         on-change (if (nil? selection)
                     (fn [val]
@@ -494,7 +495,7 @@
                                        :prop-val val } ]])))]
     [ :div.map-view-border-edit {}
      [ :div.center "Style" ]
-     (styles/render-selection (map :orgpad/style-name styles-list) style on-change)]
+     (stedit/render-selection (map :orgpad/style-name styles-list) style on-change)]
     )
   )
 
@@ -571,7 +572,7 @@
 
 (defn- render-link-styles-list
   [{:keys [component unit prop parent-view local-state]}]
-  (let [styles-list (lc/query component :orgpad/styles {:view-type :orgpad.map-view/link-props-style} true)
+  (let [styles-list (styles/get-sorted-style-list component :orgpad.map-view/link-props-style)
         style (:orgpad/view-style prop)
         on-change (fn [val]
                     (lc/transact! component [[:orgpad.units/map-view-style-link
@@ -581,7 +582,7 @@
                                                :orgpad/view-style val} ]]))]
     [ :div.map-view-border-edit {}
      [ :div.center "Style" ]
-     (styles/render-selection (map :orgpad/style-name styles-list) style on-change)]
+     (stedit/render-selection (map :orgpad/style-name styles-list) style on-change)]
     )
   )
 
