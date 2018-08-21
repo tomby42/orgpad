@@ -4,6 +4,7 @@
             [com.rpl.specter :as s :refer-macros [select transform setval]]
             [sablono.core :as html :refer-macros [html]]
             [orgpad.cycle.life :as lc]
+            [orgpad.tools.colls :as colls]
             [orgpad.tools.dscript :as ds]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
@@ -241,19 +242,18 @@
         :className class-name}
         name]
       (when (not= name "default")
-      (list
-        [:span.style-btn
-         {:key "edit-btn"
-          :title "Edit style"
-          :onClick #(set-edit-style-box local-state style)}
-          [:i.far.fa-pencil]]
-        [:span.style-btn
-         {:title "Remove style"
-          :key "remove-btn"
-          :onClick #(remove-style component style active-type active-style)}
-          [:i.far.fa-trash-alt]]
-          )
-      )]))
+        (list
+          [:span.style-btn
+           {:key "edit-btn"
+            :title "Edit style"
+            :onClick #(set-edit-style-box local-state style)}
+            [:i.far.fa-pencil]]
+          [:span.style-btn
+           {:title "Remove style"
+            :key "remove-btn"
+            :onClick #(remove-style component style active-type active-style)}
+            [:i.far.fa-trash-alt]]
+            ))]))
 
 (defn- set-new-style-box
   [local-state]
@@ -273,15 +273,27 @@
 
 (defn- edit-style
   [component local-state active-type]
-  (let [style (:edited-style @local-state)]
-    (lc/transact! component
-      [[:orgpad.style/edit {:id (:db/id style)
-                            :old-name (:orgpad/style-name style)
-                            :new-name (:style-name @local-state)
-                            :based-on (:style-based-on @local-state)
-                            :type active-type}]
-       [:orgpad/app-state [[:styles active-type :active-style]
-                           (:style-name @local-state)]]])
+  (let [style (:edited-style @local-state)
+        id (:db/id style)
+        old-name (:orgpad/style-name style)
+        new-name (:style-name @local-state)
+        based-on (:style-based-on @local-state)
+        rebase-query (when based-on
+                       [[:orgpad.style/rebase {:id id
+                                              :name old-name
+                                              :type active-type
+                                              :based-on based-on}]])
+        rename-query (when (not= old-name new-name)
+                       [[:orgpad.style/rename {:id id
+                                              :old-name old-name
+                                              :new-name new-name
+                                              :type active-type}]
+                        [:orgpad/app-state [[:styles active-type :active-style]
+                                            (:style-name @local-state)]]])]
+    (js/console.log (colls/minto [] rebase-query rename-query))
+    (when (or rebase-query rename-query)
+      (lc/transact! component
+        (colls/minto [] rebase-query rename-query)))
     (swap! local-state assoc :style-box :hidden)))
 
 (defn- gen-new-edit-style
