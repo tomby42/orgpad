@@ -171,6 +171,7 @@
         edges (store/query db link-all-query [links-rules])
         vertices-map (into {} (map (fn [vinfo] [(subvec vinfo 0 3) vinfo])) vertices)
         parent-views (into #{} (map (fn [vinfo] [(nth vinfo 0) (nth vinfo 2)])) vertices)]
+    (create! global-cache 0 "default") ;; create default cache when nothing loaded
     (doseq [[pid view-name] parent-views]
       (create! global-cache pid view-name))
     (doseq [[pid uid view-name pos w h] vertices]
