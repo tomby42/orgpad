@@ -11,12 +11,19 @@
 
 (defn prop->css
   [prop]
- {:width (prop :orgpad/unit-width)
-  :height (prop :orgpad/unit-height)
-  :borderWidth (prop :orgpad/unit-border-width)
-  :borderStyle (prop :orgpad/unit-border-style)
-  :borderColor (-> prop :orgpad/unit-border-color css/format-color)
-  :borderRadius (str (prop :orgpad/unit-corner-x) "px "
-                     (prop :orgpad/unit-corner-y) "px")
-  :backgroundColor (-> prop :orgpad/unit-bg-color css/format-color)
-  :padding (prop :orgpad/unit-padding)})
+  {:width (prop :orgpad/unit-width)
+   :height (prop :orgpad/unit-height)
+   :borderWidth (prop :orgpad/unit-border-width)
+   :borderStyle (prop :orgpad/unit-border-style)
+   :borderColor (-> prop :orgpad/unit-border-color css/format-color)
+   :borderRadius (str (prop :orgpad/unit-corner-x) "px "
+                      (prop :orgpad/unit-corner-y) "px")
+   :backgroundColor (-> prop :orgpad/unit-bg-color css/format-color)
+   :padding (prop :orgpad/unit-padding)})
+                 
+(defn gen-link-canvas
+  [prop]
+  {:strokeStyle (css/format-color (prop :orgpad/link-color))
+   :lineWidth (prop :orgpad/link-width)
+   :lineCap "round"
+   :lineDash (prop :orgpad/link-dash)})

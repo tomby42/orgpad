@@ -162,34 +162,6 @@
   (func/memoize' map-unit {:key-fn #(-> % first ot/uid)
                            :eq-fns [identical? identical? identical? identical? identical? identical?]}))
 
-(defn- make-arrow-quad
-  [start-pos end-pos ctl-pt prop]
-  (let [arrow-pos (* (prop :orgpad/link-arrow-pos) 0.01)
-        p1 (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos arrow-pos)
-        dir (-> p1 (-- (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos (- arrow-pos 0.01))) normalize)
-        ptmp (++ p1 (*c dir -10))
-        n (-> dir geom/normal)
-        p2 (++ ptmp (*c n 10))
-        p3 (++ ptmp (*c (-- n) 10))
-        style { :css { :zIndex -1 }
-                :canvas { :strokeStyle (-> prop :orgpad/link-color css/format-color)
-                          :lineWidth (prop :orgpad/link-width)
-                          :lineCap "round" } }]
-    (g/poly-line [p2 p1 p3] style)))
-
-(defn- make-arrow-arc
-  [s e prop]
-  (let [dir (normalize (-- s e))
-        n (geom/normal dir)
-        s' (++ (*c n -10) s)
-        p1 (++ (*c dir 10) s')
-        p2 (++ (*c dir -10) s')
-        style { :css { :zIndex -1 }
-                :canvas { :strokeStyle (-> prop :orgpad/link-color css/format-color)
-                          :lineWidth (prop :orgpad/link-width)
-                          :lineCap "round" } }]
-    (g/poly-line [p1 s p2] style)))
-
 (def ^:private link-eq-fns [identical? = identical? identical? identical? identical? identical?])
 
 (defn- update-geocache-for-link-changes
@@ -232,10 +204,7 @@
                                                :orgpad/map-view)
           mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
           style {:css { :zIndex -1 }
-                 :canvas {:strokeStyle (css/format-color (prop :orgpad/link-color))
-                          :lineWidth (prop :orgpad/link-width)
-                          :lineCap "round"
-                          :lineDash (prop :orgpad/link-dash)}}
+                 :canvas (styles/gen-link-canvas prop)}
           ctl-style (css/transform {:translate (-- (++ mid-pt [(-> prop :orgpad/link-width)
                                                                (-> prop :orgpad/link-width)])
                                                    [10 10])})
@@ -259,10 +228,10 @@
           (g/quadratic-curve start-pos end-pos ctl-pt style))
         (when (not= (prop :orgpad/link-type) :undirected)
           (if cyclic?
-            (make-arrow-arc start-pos' mid-pt' prop)
-            (make-arrow-quad start-pos end-pos ctl-pt prop)))
+            (g/make-arrow-arc start-pos' mid-pt' prop)
+            (g/make-arrow-quad start-pos end-pos ctl-pt prop)))
         (when (and (= (prop :orgpad/link-type) :bidirected) (not cyclic?))
-          (make-arrow-quad end-pos start-pos ctl-pt prop))]))
+          (g/make-arrow-quad end-pos start-pos ctl-pt prop))]))
     (catch :default e
       (js/console.log "link render error" unit-tree start-pos end-pos cyclic? view-name pid  e) ;; TODO - show error
       nil)))
