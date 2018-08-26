@@ -68,3 +68,10 @@
            "," (-> c (bit-shift-right 16) (bit-and 255))
            "," (-> c (bit-shift-right 8) (bit-and 255))
            "," (/ (-> c (bit-and 255)) 255)")"))))
+
+(defn format-color
+  [c]
+  (if (= (.-length c) 9)
+    (hex-color->rgba c)
+    c))
+
