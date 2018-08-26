@@ -207,10 +207,30 @@
   {:orgpad.map-view/vertex-props-style render-vertex-props-style
    :orgpad.map-view/link-props-style render-link-props-style})
 
-(defn render-style-editor
+(defn- example-vertex-props-style
+  [style]
+  [:div.style-example
+    [:div {:style (styles/prop->css style)}
+      [:h1 "Example"]]])
+
+(defn- example-link-props-style
+  [style]
+  [:div.style-example
+    "TODO!"
+  ]
+  )
+
+(def style-type->example
+  {:orgpad.map-view/vertex-props-style example-vertex-props-style
+   :orgpad.map-view/link-props-style example-link-props-style})
+
+(defn- render-style-editor
   [component active-type styles-list active-style]
   (let [style (->> styles-list (drop-while #(not= (:orgpad/style-name %) active-style)) first)]
-    ((style-type->editor active-type) component style)))
+    [:div.style-editor
+      [:div.style-props
+        ((style-type->editor active-type) component style)]
+      ((style-type->example active-type) style)]))
 
 (defn- set-edit-style-box
   [local-state style]
@@ -384,5 +404,4 @@
                      styles-types)]
       [:div.editor
         (gen-left-panel component local-state active-type styles-list active-style) 
-        [:div.style-editor
-          (render-style-editor component active-type styles-list active-style)]]]))
+        (render-style-editor component active-type styles-list active-style)]]))

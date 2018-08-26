@@ -16,6 +16,7 @@
             [orgpad.tools.js-events :as jev]
             [orgpad.tools.orgpad :refer [mapped-children mapped-links] :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
+            [orgpad.tools.styles :as styles]
             [orgpad.tools.bezier :as bez]
             [orgpad.tools.math :as math]
             [orgpad.tools.geocache :as geocache]
@@ -78,12 +79,6 @@
     (lc/transact! component [[ :orgpad.units/select {:pid (parent-id parent-view)
                                                      :uid (ot/uid unit-tree)} ]])))
 
-(defn- format-color
-  [c]
-  (if (= (.-length c) 9)
-    (css/hex-color->rgba c)
-    c))
-
 (defn- sheet-indicator
   [active? id]
   [:i { :className (str (if active? "fa" "far") " fa-circle") :id id }])
@@ -109,16 +104,8 @@
           selections (get-in app-state [:selections pid])
           selected? (= (:db/id unit) (first selections))
           ;; selected? (= (unit :db/id) (-> @local-state :selected-unit first ot/uid))
-          border-color (-> prop :orgpad/unit-border-color format-color)
-          style (merge {:width (prop :orgpad/unit-width)
-                        :height (prop :orgpad/unit-height)
-                        :borderWidth (prop :orgpad/unit-border-width)
-                        :borderStyle (prop :orgpad/unit-border-style)
-                        :borderColor border-color
-                        :borderRadius (str (prop :orgpad/unit-corner-x) "px "
-                                           (prop :orgpad/unit-corner-y) "px")
-                        :backgroundColor (-> prop :orgpad/unit-bg-color format-color)
-                        :padding (prop :orgpad/unit-padding) }
+          border-color (-> prop :orgpad/unit-border-color css/format-color)
+          style (merge (styles/prop->css prop)
                        (css/transform { :translate pos })
                        (when (and selected? (:quick-edit @local-state)) {:zIndex 2})) ]
       ;;(js/window.console.log "rendering " (unit :db/id) (and selected? (:quick-edit @local-state)))
@@ -185,7 +172,7 @@
         p2 (++ ptmp (*c n 10))
         p3 (++ ptmp (*c (-- n) 10))
         style { :css { :zIndex -1 }
-                :canvas { :strokeStyle (-> prop :orgpad/link-color format-color)
+                :canvas { :strokeStyle (-> prop :orgpad/link-color css/format-color)
                           :lineWidth (prop :orgpad/link-width)
                           :lineCap "round" } }]
     (g/poly-line [p2 p1 p3] style)))
@@ -198,7 +185,7 @@
         p1 (++ (*c dir 10) s')
         p2 (++ (*c dir -10) s')
         style { :css { :zIndex -1 }
-                :canvas { :strokeStyle (-> prop :orgpad/link-color format-color)
+                :canvas { :strokeStyle (-> prop :orgpad/link-color css/format-color)
                           :lineWidth (prop :orgpad/link-width)
                           :lineCap "round" } }]
     (g/poly-line [p1 s p2] style)))
@@ -245,7 +232,7 @@
                                                :orgpad/map-view)
           mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
           style {:css { :zIndex -1 }
-                 :canvas {:strokeStyle (format-color (prop :orgpad/link-color))
+                 :canvas {:strokeStyle (css/format-color (prop :orgpad/link-color))
                           :lineWidth (prop :orgpad/link-width)
                           :lineCap "round"
                           :lineDash (prop :orgpad/link-dash)}}
