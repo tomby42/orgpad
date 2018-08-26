@@ -4,8 +4,9 @@
   (:require [rum.core :as rum]
             [sablono.core :as html :refer-macros [html]]
             [orgpad.tools.rum :as trum]
-            [orgpad.tools.geom :as geom]
+            [orgpad.tools.geom :refer [++ -- *c normalize] :as geom]
             [orgpad.tools.math :as math]
+            [orgpad.tools.bezier :as bez]
             [orgpad.tools.colls :as colls]
             [orgpad.tools.css :as css]))
 
@@ -136,3 +137,32 @@
   [center radius start-angle stop-angle style]
   (let [bbox (arc-bbox center radius)]
     (render-curve style (bbox 0) (bbox 1))))
+
+(defn make-arrow-quad
+  [start-pos end-pos ctl-pt prop]
+  (let [arrow-pos (* (prop :orgpad/link-arrow-pos) 0.01)
+        p1 (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos arrow-pos)
+        dir (-> p1 (-- (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos (- arrow-pos 0.01))) normalize)
+        ptmp (++ p1 (*c dir -10))
+        n (-> dir geom/normal)
+        p2 (++ ptmp (*c n 10))
+        p3 (++ ptmp (*c (-- n) 10))
+        style { :css { :zIndex -1 }
+                :canvas { :strokeStyle (-> prop :orgpad/link-color css/format-color)
+                          :lineWidth (prop :orgpad/link-width)
+                          :lineCap "round" } }]
+    (poly-line [p2 p1 p3] style)))
+
+(defn make-arrow-arc
+  [s e prop]
+  (let [dir (normalize (-- s e))
+        n (geom/normal dir)
+        s' (++ (*c n -10) s)
+        p1 (++ (*c dir 10) s')
+        p2 (++ (*c dir -10) s')
+        style { :css { :zIndex -1 }
+                :canvas { :strokeStyle (-> prop :orgpad/link-color css/format-color)
+                          :lineWidth (prop :orgpad/link-width)
+                          :lineCap "round" } }]
+    (poly-line [p1 s p2] style)))
+
