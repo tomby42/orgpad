@@ -426,7 +426,7 @@
         style' (if state (dscript/entity->map (store/query state [:entity (:db/id style)])) style)]
     (merge style' prop')))
 
-(defn get-prop-wiht-style
+(defn get-prop-with-style
   [unit-tree view-name pid style-type]
   (let [prop (-> unit-tree
                  :props
@@ -436,7 +436,7 @@
 (defn get-size
   [unit-tree view-name pid]
   (-> unit-tree
-      (get-prop-wiht-style view-name pid :orgpad.map-view/vertex-props-style)
+      (get-prop-with-style view-name pid :orgpad.map-view/vertex-props-style)
       (as-> x [(:orgpad/unit-width x) (:orgpad/unit-height x)])))
 
 (defn get-style-from-db
@@ -478,6 +478,9 @@
 (def prop-type->prop-type-style
   {:orgpad.map-view/vertex-props :orgpad.map-view/vertex-props-style
    :orgpad.map-view/link-props :orgpad.map-view/link-props-style})
+
+(def prop-type-style->prop-type
+  (clojure.set/map-invert prop-type->prop-type-style))
 
 (defn get-pos-props
   [db root-id]

@@ -6,6 +6,7 @@
             [orgpad.core.store :as store]
             [orgpad.core.orgpad :as orgpad]
             [orgpad.parsers.default-unit :as dp :refer [read mutate updated?]]
+            [orgpad.tools.colls :as colls]
             [orgpad.tools.dscript :as ds]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.geocache :as geocache]
@@ -336,40 +337,6 @@
   (let [data (ot/copy-descendants-from-db state pid [] selection)]
     ;; (js/console.log "copy " data)
     {:state (store/transact state [[:app-state :clipboards (keypath pid)] data])}))
-
-(defmethod read :orgpad/styles
-  [{:keys [state]} _ {:keys [view-type]}]
-  (store/query state '[:find [(pull ?e [*]) ...]
-                       :in $ ?view-type
-                       :where
-                       [?e :orgpad/view-type ?view-type]]
-               [view-type]))
-
-(defmethod read :orgpad/style
-  [{:keys [state]} _ {:keys [view-type style-name]}]
-  (ot/get-style-from-db state view-type style-name))
-
-(defmethod mutate :orgpad.style/update
-  [{:keys [state]} _ {:keys [style prop-name prop-val]}]
-  ;; (js/console.log "orgpad.style/update" style prop-name prop-val)
-  {:state (store/transact state [[:db/add (:db/id style) prop-name prop-val]])})
-
-(defn- get-style-default
-  [type]
-  (-> (registry/get-registry)
-      vals
-      (->> (drop-while #(nil? (get-in % [:orgpad/child-props-default type]))))
-      first
-      (get-in [:orgpad/child-props-default type])))
-
-(defmethod mutate :orgpad.style/new
-  [{:keys [state]} _ {:keys [type name]}]
-  (let [style (-> type
-                  get-style-default
-                  (assoc :orgpad/style-name name :db/id -1))
-        new-state (store/transact state [style])]
-    ;; (js/console.log "orgpad.style/new" type name style)
-    {:state new-state}))
 
 (defmethod read :orgpad/root-view-stack-info
   [{:keys [parser-stack-info]} _ [key params]]
