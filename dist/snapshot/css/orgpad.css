@@ -5795,7 +5795,8 @@ readers do not read off random characters that represent icons */
   background-color: white;
   font-family: Gill Sans Extrabold, sans-serif;
   font-size: 14px;
-  cursor: pointer;
+  display: flex;
+  flex-direction: column;
 }
 .styles-editor .header {
   font-size: 24px;
@@ -5808,6 +5809,7 @@ readers do not read off random characters that represent icons */
   float: left;
 }
 .styles-editor .header .close {
+  cursor: pointer;
   float: right;
   padding-right: 30px;
 }
@@ -5821,6 +5823,7 @@ readers do not read off random characters that represent icons */
 .styles-editor .styles-names span {
   padding: 10px;
   display: inline-flex;
+  cursor: pointer;
 }
 .styles-editor .styles-names span:hover {
   background-color: #66ddff;
@@ -5830,46 +5833,145 @@ readers do not read off random characters that represent icons */
 }
 .styles-editor .editor {
   width: 100%;
-  height: 100%;
-}
-.styles-editor .editor .styles-list {
-  float: left;
-  width: 10%;
-  height: 100%;
-  border-right: 2px solid black;
-  padding: 9px;
-}
-.styles-editor .editor .styles-list span {
+  max-width: 100%;
+  flex-grow: 1;
   display: flex;
-  padding: 5px;
+  overflow: auto;
 }
-.styles-editor .editor .styles-list span:hover {
-  background-color: #66ddff;
+.styles-editor .editor .left-panel {
+  width: 250px;
+  min-width: 250px;
+  border-right: 2px solid black;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
 }
-.styles-editor .editor .styles-list span.active {
+.styles-editor .editor .left-panel .styles-list {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 1;
+  overflow-y: auto;
+}
+.styles-editor .editor .left-panel .styles-list .style {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  height: 28px;
+  font-size: 16px;
+}
+.styles-editor .editor .left-panel .styles-list .style .style-label {
+  cursor: pointer;
+  flex-grow: 1;
+  padding: 4px;
+}
+.styles-editor .editor .left-panel .styles-list .style .style-label.active {
   background-color: #33adff;
 }
-.styles-editor .editor .styles-list span:last-child:hover {
-  background-color: white;
+.styles-editor .editor .left-panel .styles-list .style .style-label:hover {
+  background-color: #66ddff;
 }
-.styles-editor .editor .new-style input {
-  width: 75%;
+.styles-editor .editor .left-panel .styles-list .style .style-btn {
+  cursor: pointer;
+  padding: 2px;
 }
-.styles-editor .editor .new-style span:hover {
-  color: #33adff;
+.styles-editor .editor .left-panel .styles-list .style .style-btn:hover {
+  background-color: #66ddff;
+}
+.styles-editor .editor .left-panel .style-box {
+  border-top: 2px solid black;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.styles-editor .editor .left-panel .style-box .edit {
+  width: 100%;
+  display: flex;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.styles-editor .editor .left-panel .style-box .edit .label {
+  padding-right: 5px;
+}
+.styles-editor .editor .left-panel .style-box .edit input {
+  flex-grow: 1;
+  width: 10px;
+}
+.styles-editor .editor .left-panel .style-box .edit select {
+  flex-grow: 1;
+}
+.styles-editor .editor .left-panel .style-box .btn-box {
+  display: flex;
+  justify-content: center;
+}
+.styles-editor .editor .left-panel .style-box .btn-box .btn {
+  font-size: 18px;
+  cursor: pointer;
+  height: 23px;
+  padding-left: 3px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  display: inline-block;
+}
+.styles-editor .editor .left-panel .style-box .btn-box .btn:hover {
+  background-color: #66ddff;
+}
+.styles-editor .editor .left-panel .style-box .btn-box .btn.disabled {
+  background-color: #ddd;
+  cursor: pointer;
+  color: #666;
+}
+.styles-editor .editor .left-panel .style-box .btn-box .btn-icon-label {
+  text-align: left;
+  padding-top: 3px;
+  padding-right: 7px;
+  padding-left: 3px;
+}
+.styles-editor .editor .left-panel .style-box .btn-box .btn-label {
+  text-align: left;
+  padding-top: 3px;
+  padding-right: 7px;
+  padding-left: 4px;
 }
 .styles-editor .editor .style-editor {
-  float: left;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
-.styles-editor .editor .style-editor span {
+.styles-editor .editor .style-editor .style-props {
+  flex-grow: 1;
+  flex-shrink: 1;
+  overflow-y: auto;
+  min-height: 200px;
+}
+.styles-editor .editor .style-editor .style-props span {
   float: left;
   margin: 10px;
 }
-.styles-editor .editor .style-editor .fake-center {
+.styles-editor .editor .style-editor .style-props .fake-center {
   margin-left: 12px;
   margin-right: 12px;
   margin-bottom: 5px;
   margin-top: 5px;
+}
+.styles-editor .editor .style-editor .style-example {
+  flex-grow: 0;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  overflow: auto;
+  position: relative;
+  bottom: 0px;
+  max-height: 200px;
+}
+.styles-editor .editor .style-editor .style-example h1 {
+  text-align: center;
+}
+.styles-editor .editor .style-editor .style-example .unit-example {
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .slider input {
   margin: 5px;
