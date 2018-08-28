@@ -387,6 +387,7 @@
           new-atom (assoc atom
                           :net-update-ignore? :none
                           :uid->squuid mapping
+                          :uid-last-index (or (->> new-indices keys (apply max)) (:uid-last-index atom))
                           :squuid->uid (merge (:squuid->uid atom)
                                               (set/map-invert new-indices)))]
       [[[] new-atom] datoms])

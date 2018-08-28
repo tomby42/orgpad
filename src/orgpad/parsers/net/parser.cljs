@@ -25,7 +25,7 @@
         datom (dt/read-transit-str db)
         {:keys [datoms mapping last-index]}
         (ot/datoms-squuid->uid (seq datom))
-        _ (js/console.log "set-db" datom datoms atom)
+        _ (js/console.log "set-db" datom datoms atom last-index)
         new-state (store/new-datom-atom-store (-> atom
                                                   (assoc
                                                    :orgpad-uuid (get-in res [:?data 1 :params :orgpad.server/uuid])
