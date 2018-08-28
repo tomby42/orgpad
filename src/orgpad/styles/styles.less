@@ -26,7 +26,7 @@
       float: right;
       padding-right: 30px;
       &:hover {
-        color: #333333; 
+        color: #333333;
       }
     }
   }
@@ -57,14 +57,18 @@
 
   .editor {
     width: 100%;
+    max-width: 100%;
     flex-grow: 1;
     display: flex;
+    overflow: auto;
 
     .left-panel {
       width: 250px;
+      min-width: 250px;
       border-right: 2px solid black;
       display: flex;
       flex-direction: column;
+      overflow: auto;
 
       .styles-list {
         display: flex;
@@ -80,12 +84,12 @@
           flex-wrap: nowrap;
           height: 28px;
           font-size: 16px;
-        
+
           .style-label {
             cursor: pointer;
             flex-grow: 1;
             padding: 4px;
-           
+
             &.active {
               background-color: @select-color;
             }
@@ -94,12 +98,12 @@
           .style-label:hover {
             background-color: @hover-color;
           }
-         
+
           .style-btn {
             cursor: pointer;
             padding: 2px;
           }
-          
+
           .style-btn:hover {
             background-color: @hover-color;
           }
@@ -163,7 +167,7 @@
             padding-right: 7px;
             padding-left: 3px;
           }
-            
+
           .btn-label {
             text-align: left;
             padding-top: 3px;
@@ -184,6 +188,7 @@
         flex-grow: 1;
         flex-shrink: 1;
         overflow-y: auto;
+        min-height: 200px;
 
         & span {
           float: left;
@@ -204,6 +209,10 @@
         display: flex;
         justify-content: center;
         padding: 10px;
+        overflow: auto;
+        position: relative;
+        bottom: 0px;
+        max-height: 200px;
 
         & h1 {
           text-align: center;
@@ -231,4 +240,3 @@
        top: -5px;
    }
 }
-
