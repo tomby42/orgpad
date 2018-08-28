@@ -39,11 +39,11 @@
   [options selection on-change]
   (let [options' (if (= selection nil) (conj (seq options) nil) options)]
     (into [:select.fake-center
-     {:onMouseDown jev/stop-propagation
-      :onMouseMove jev/stop-propagation
-      :onBlur jev/stop-propagation
-      :onChange #(on-change (-> % .-target .-value)) }
-      (map (partial selection-option selection) options')])))
+           {:onMouseDown jev/stop-propagation
+            :onMouseMove jev/stop-propagation
+            :onBlur jev/stop-propagation
+            :onChange #(on-change (-> % .-target .-value)) }]
+          (map (partial selection-option selection) options'))))
 
 (defn styles-types-list
   []
@@ -156,7 +156,7 @@
          :title "Directed link both ways"
          :on-click #((transact! component style :orgpad/link-type) :bidirected)}
         [:i.far.fa-arrows-h]]
-      [:span.fill]]))                
+      [:span.fill]]))
 
 (defn render-link-sizes
   [component style]
@@ -210,8 +210,9 @@
 (defn- example-vertex-props-style
   [style]
   [:div.style-example
-    [:div {:style (styles/prop->css style)}
-      [:h1 "Example"]]])
+   [:div.unit-example {:style (styles/prop->css style)}
+    [:center [:h3 "Lorem Ipsum"]]
+    [:p "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec non nisl euismod, auctor libero quis, scelerisque lorem. Cras quis iaculis sem. Phasellus congue dignissim libero, at auctor dui sodales a."]]])
 
 (defn- example-link-props-style
   [style]
@@ -243,11 +244,12 @@
 
 (defn- set-edit-style-box
   [local-state style]
-  (swap! local-state assoc :style-box :edit)
-  (swap! local-state assoc :style-name (:orgpad/style-name style))
-  (swap! local-state assoc :edited-style style)
-  (swap! local-state assoc :style-based-on nil))
-                      
+  (swap! local-state assoc
+         :style-box :edit
+         :style-name (:orgpad/style-name style)
+         :edited-style style
+         :style-based-on nil))
+
 (defn- remove-style
   [component local-state style active-type active-style]
   (let [name (:orgpad/style-name style)
@@ -271,7 +273,7 @@
   [component local-state active-type active-style style]
   (let [name (:orgpad/style-name style)
         class-name (str "style-label " (if (= active-style name) "active" ""))]
-    [:span.style {:key name} 
+    [:span.style {:key name}
       [:span
        {:onClick #(change-active-style component local-state active-type name)
         :className class-name}
@@ -412,5 +414,5 @@
                       (:name s)])
                      styles-types)]
       [:div.editor
-        (gen-left-panel component local-state active-type styles-list active-style) 
+        (gen-left-panel component local-state active-type styles-list active-style)
         (render-style-editor component active-type styles-list active-style)]]))

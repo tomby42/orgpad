@@ -12,4 +12,5 @@
             orgpad.parsers.map.parser
             orgpad.parsers.jupyter.parser
             orgpad.parsers.ci.parser
-            orgpad.parsers.net.parser))
+            orgpad.parsers.net.parser
+            orgpad.parsers.styles.parser))
