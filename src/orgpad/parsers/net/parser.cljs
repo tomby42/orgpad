@@ -42,22 +42,26 @@
 
 (defmethod mutate :orgpad.net/update-db
   [{:keys [state global-cache] :as env} _ res]
-  (let [{:keys [db atom]} (get-in res [:?data 1 :result])
-        datom (dt/read-transit-str db)
-        uid->squuid (-> state (store/query [:uid->squuid]) first)
-        last-index (-> state (store/query [:uid-last-index]) first)
-        {:keys [datoms mapping last-index new-indices]}
-        (ot/datoms-squuid->uid datom
-                               last-index
-                               (-> state (store/query [:squuid->uid]) first))
-        new-state (-> state
-                      (store/transact datoms)
-                      (store/transact [[] (merge (-> state (store/query []) first)
-                                                 atom
-                                                 {:squuid->uid mapping
-                                                  :uid->squuid (merge uid->squuid (set/map-invert new-indices))
-                                                  :uid-last-index last-index
-                                                  :net-update-ignore? :all})]))]
-    (dr/resolve-parser-state! env new-state)
-    (geocache/update-changed-units! global-cache state new-state (:datom (store/changed-entities new-state)))
-    {:state new-state}))
+  (if (= (get-in res [:?data 1 :result]) :orgpad.server/error)
+    (let [e (get-in res [:?data 1 :error])]
+      (js/console.log "UPDATE ERROR: " (get-in res [:?data 1]))
+      {:state state})
+    (let [{:keys [db atom]} (get-in res [:?data 1 :result])
+          datom (dt/read-transit-str db)
+          uid->squuid (-> state (store/query [:uid->squuid]) first)
+          last-index (-> state (store/query [:uid-last-index]) first)
+          {:keys [datoms mapping last-index new-indices]}
+          (ot/datoms-squuid->uid datom
+                                 last-index
+                                 (-> state (store/query [:squuid->uid]) first))
+          new-state (-> state
+                        (store/transact datoms)
+                        (store/transact [[] (merge (-> state (store/query []) first)
+                                                   atom
+                                                   {:squuid->uid mapping
+                                                    :uid->squuid (merge uid->squuid (set/map-invert new-indices))
+                                                    :uid-last-index last-index
+                                                    :net-update-ignore? :all})]))]
+      (dr/resolve-parser-state! env new-state)
+      (geocache/update-changed-units! global-cache state new-state (:datom (store/changed-entities new-state)))
+      {:state new-state})))

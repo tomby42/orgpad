@@ -594,14 +594,18 @@
   (let [links (mapped? unit-tree view-name :orgpad.map-view/link-props) ;; (filter #(>= (-> % :unit :orgpad/refs count) 0) (mapped? unit-tree view-name :orgpad.map-view/link-props))
         mus   (into {} (map (fn [u] [(uid u) u])) m-units)]
     (map (fn [l]
-           (let [refs (-> l :unit :orgpad/refs)
-                 id1 (-> refs (nth 0) uid-safe)
-                 id2 (-> refs (nth 1) uid-safe)
-                 cyclic? (= id1 id2)]
-             [l {:start-pos (get-pos (mus id1) view-name pid)
-                 :start-size (when cyclic? (get-size (mus id1) view-name pid))
-                 :end-pos (get-pos (mus id2) view-name pid)
-                 :cyclic? cyclic? }]))
+           (try
+             (let [refs (-> l :unit :orgpad/refs)
+                   id1 (-> refs (nth 0) uid-safe)
+                   id2 (-> refs (nth 1) uid-safe)
+                   cyclic? (= id1 id2)]
+               [l {:start-pos (get-pos (mus id1) view-name pid)
+                   :start-size (when cyclic? (get-size (mus id1) view-name pid))
+                   :end-pos (get-pos (mus id2) view-name pid)
+                   :cyclic? cyclic? }])
+             (catch :default e
+               (js/console.log "Mapped link error:" e)
+               [-1 {}])))
          links)))
 
 (defn- link-dist-info
@@ -678,6 +682,7 @@
                                             v)
                     :orgpad/context-unit nv
                     :orgpad/refs-order (update-refs-order o->n v)
+                    :orgpad/transform (if (map? v) (into [] v) (into {} v))
                     v)))))
 
 ;; TODO: should be solved by call to server to get unique uuid
