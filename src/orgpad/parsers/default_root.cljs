@@ -364,7 +364,7 @@
   [{:keys [transact! state]} _ old-state]
   (let [net-update-ignore? (-> state (store/query [:net-update-ignore?]) first)
         [new-atom-qry datoms] (comp-changes state net-update-ignore?)]
-    (js/console.log "log:" net-update-ignore? new-atom-qry datoms)
+    ;; (js/console.log "log:" net-update-ignore? new-atom-qry datoms)
     {:state (store/transact state new-atom-qry)
      :effect #(when (and (not= net-update-ignore? :all)
                          (net/is-online?))
