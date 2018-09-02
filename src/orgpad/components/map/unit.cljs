@@ -107,7 +107,7 @@
           border-color (-> prop :orgpad/unit-border-color css/format-color)
           style (merge (styles/prop->css prop)
                        (css/transform { :translate pos })
-                       (when (and selected? (:quick-edit @local-state)) {:zIndex 2})) ]
+                       (when selected? {:zIndex (if (:quick-edit @local-state) 2 1)})) ]
       ;;(js/window.console.log "rendering " (unit :db/id) (and selected? (:quick-edit @local-state)))
       (when selected?
         (select-unit unit-tree prop pcomponent local-state component))
