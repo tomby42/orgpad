@@ -151,8 +151,8 @@
            [:i.far.fa-sign-in-alt]])
         (when (= (ot/view-type unit-tree) :orgpad/map-tuple-view)
           (insert-sheet-indicators unit-tree border-color))
-        (when (contains? selections (:db/id unit))
-          [:span.fa.fa-check-circle.fa-lg.select-check {:style {:right (+ (/ (prop :orgpad/unit-corner-y) 2) 8) }}])
+        ;;(when (contains? selections (:db/id unit))
+        ;;  [:span.fa.fa-check-circle.fa-lg.select-check {:style {:right (+ (/ (prop :orgpad/unit-corner-y) 2) 8) }}])
         ]))
     (catch :default e
       (js/console.log "Unit render error" e)
