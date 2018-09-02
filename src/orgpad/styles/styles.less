@@ -183,12 +183,11 @@
       flex-grow: 1;
       display: flex;
       flex-direction: column;
+      overflow-y: auto;
 
       .style-props {
         flex-grow: 1;
-        flex-shrink: 1;
-        overflow-y: auto;
-        min-height: 200px;
+        flex-shrink: 0;
 
         & span {
           float: left;
@@ -205,14 +204,14 @@
 
       .style-example {
         flex-grow: 0;
-        flex-shrink: 0;
+        flex-shrink: 1;
         display: flex;
         justify-content: center;
         padding: 10px;
         overflow: auto;
         position: relative;
         bottom: 0px;
-        max-height: 200px;
+        min-height: 50px;
 
         & h1 {
           text-align: center;
