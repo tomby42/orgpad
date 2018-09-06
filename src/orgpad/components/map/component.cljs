@@ -347,6 +347,7 @@
 (defn- handle-blur
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
+    (handle-mouse-up component unit-tree app-state ev)
     (swap! local-state merge init-state)))
 
 (defn- render-selection-box
