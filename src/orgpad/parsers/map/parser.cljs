@@ -111,7 +111,7 @@
     (geocache/create! global-cache parent view-name)
     (geocache/update-box! global-cache parent view-name
                           (get (store/tempids new-state) -1) (-- pos [(/ w 2) (/ h 2)])
-                          [w h])
+                          (geom/ensure-size [w h]))
     { :state new-state } ))
 
 (defn- compute-translate
@@ -153,7 +153,7 @@
                                                :orgpad/type :orgpad/unit-view-child })
                                  [:db/add unit-id :orgpad/props-refs -1]])
           (store/transact state [[:db/add id :orgpad/unit-position new-translate]]))
-        size [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
+        size (geom/ensure-size [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)])
         size2 (*c size 0.5)]
     (geocache/update-box! global-cache (ot/pid parent-view) (:orgpad/view-name parent-view)
                           unit-id (-- new-translate size2) size
@@ -238,8 +238,8 @@
 (defn- update-geocache-after-resize
   [{:keys [global-cache]} {:keys [parent-view unit-tree]} prop size]
   ;; (js/console.log "update-geocache-after-resize" prop size)
-  (let [new-size [(:orgpad/unit-width size) (:orgpad/unit-height size)]
-        old-size [(:orgpad/unit-width prop) (:orgpad/unit-height prop)]]
+  (let [new-size (geom/ensure-size [(:orgpad/unit-width size) (:orgpad/unit-height size)])
+        old-size (geom/ensure-size [(:orgpad/unit-width prop) (:orgpad/unit-height prop)])]
     (geocache/update-box! global-cache (ot/pid parent-view) (:orgpad/view-name parent-view)
                           (ot/uid unit-tree) (ot/left-top (:orgpad/unit-position prop) new-size)
                           new-size
@@ -324,8 +324,8 @@
                                                    :orgpad.map-view/vertex-props-style
                                                    (:orgpad/view-style prop))
                              prop)
-                new-size [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)]
-                old-size [(e :orgpad/unit-width) (e :orgpad/unit-height)]]
+                new-size (geom/ensure-size [(prop' :orgpad/unit-width) (prop' :orgpad/unit-height)])
+                old-size (geom/ensure-size [(e :orgpad/unit-width) (e :orgpad/unit-height)])]
             (geocache/update-box! global-cache parent-id parent-name
                                   (ot/uid unit-tree) (ot/left-top (e :orgpad/unit-position) new-size)
                                   new-size
@@ -394,7 +394,7 @@
         prop2 (ds/find-props-base (:unit closest-unit) pred)
         bbox (geom/link-bbox (prop1 :orgpad/unit-position) (prop2 :orgpad/unit-position) mid-pt)
         pos (bbox 0)
-        size (-- (bbox 1) (bbox 0))]
+        size (geom/ensure-size (-- (bbox 1) (bbox 0)))]
     (jcolls/aset! global-cache uid "link-info" view-name [pos size])
     (geocache/update-box! global-cache parent-id view-name
                           uid
@@ -901,7 +901,7 @@
                               rid
                               (:view-name u)
                               (-> u :uid temp->ids) (ot/left-top (:pos u) (:size u))
-                              (:size u))))
+                              (-> u :size geom/ensure-size))))
     {:state db}))
 
 (defmethod mutate :orgpad.units/map-view-link-swap-dir

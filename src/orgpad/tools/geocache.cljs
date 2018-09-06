@@ -91,13 +91,12 @@
   [refs-order]
   (into [] (map (fn [[_ uid]] uid)) refs-order))
 
-
 (defn- link-dims
   [start end mid-pt]
   (if (and start end mid-pt)
     (let [bbox (geom/link-bbox (start 3) (end 3) mid-pt)
           pos (bbox 0)
-          size (-- (bbox 1) (bbox 0))]
+          size (geom/ensure-size (-- (bbox 1) (bbox 0)))]
       [pos size])
     [nil nil]))
 
@@ -175,7 +174,7 @@
     (doseq [[pid view-name] parent-views]
       (create! global-cache pid view-name))
     (doseq [[pid uid view-name pos w h] vertices]
-      (let [size [w h]]
+      (let [size (geom/ensure-size [w h])]
         (update-box! global-cache pid view-name uid (ot/left-top pos size) size)))
     (doseq [[pid uid view-name mid-pt refs-order] edges]
       (let [vs (refs-order->vertices refs-order)
@@ -252,8 +251,8 @@
               [pid uid view-name] data
               [_ _ _ pos w h] new-info
               [_ _ _ old-pos old-w old-h] old-info
-              size [w h]
-              old-size [old-w old-h]]
+              size (geom/ensure-size [w h])
+              old-size (geom/ensure-size [old-w old-h])]
           (update-box! global-cache pid view-name uid (ot/left-top pos size) size
                        (ot/left-top old-pos old-size) old-size))
         (let [old-info (get-in info [:old :info])

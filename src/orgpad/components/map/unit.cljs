@@ -171,7 +171,7 @@
         id1 (-> refs (nth 0) ot/uid-safe)
         id2 (-> refs (nth 1) ot/uid-safe)
         pos (bbox 0)
-        size (-- (bbox 1) (bbox 0))
+        size (geom/ensure-size (-- (bbox 1) (bbox 0)))
         [old-pos old-size] (aget global-cache uid "link-info" view-name)]
     (aset global-cache uid "link-info" view-name [pos size])
     (geocache/update-box! global-cache pid view-name uid
