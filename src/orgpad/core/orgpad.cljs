@@ -170,12 +170,18 @@
       (update-db (cljs.reader/read-string raw-data)))
     (empty-orgpad-db)))
 
+(defn- pprint-db
+  [db]
+  (binding [cljs.pprint/*print-right-margin* 20]
+    (with-out-str (cljs.pprint/pprint db))))
+
 (defn- compress-db
   [db]
-  (let [compress (aget js/LZString "compressToBase64")]
+  (let [compress (aget js/LZString "compressToBase64")
+        str-db (pprint-db db)]
     (if (-> db (store/query []) first :app-state :compress-saved-files?)
-      (compress (pr-str db))
-      (pr-str db))))
+      (compress str-db)
+      str-db)))
 
 (defn store-db
   [db storage-el]
