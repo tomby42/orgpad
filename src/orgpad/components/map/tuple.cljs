@@ -111,10 +111,10 @@
  :orgpad/map-tuple-view
  {
   :orgpad/default-view-info   { :orgpad/view-type :orgpad/map-tuple-view
-                                 :orgpad/view-name "default"
-                                 :orgpad/active-unit 0 }
+                                :orgpad/view-name "default"
+                                :orgpad/active-unit 0 }
   :orgpad/child-default-view-info   { :orgpad/view-type :orgpad/atomic-view
-                                       :orgpad/view-name "default" }
+                                      :orgpad/view-name "default" }
   :orgpad/class               map-tuple-component
   :orgpad/needs-children-info true
   :orgpad/view-name           "Book View"

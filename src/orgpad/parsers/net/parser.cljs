@@ -36,9 +36,12 @@
                                               (-> (:schema datom)
                                                   d/empty-db
                                                   (d/with datoms)
-                                                  :db-after))]
+                                                  :db-after))
+        qry (ot/update-vprops-from-propagated-qry new-state)
+        _ (js/console.log "vprop update:" qry)
+        new-state1 (if (empty? qry) new-state (store/transact new-state qry {}))]
     {:state (store/transact state [[:net-update-ignore?] :all])
-     :effect #(transact! [[:orgpad/loaded new-state]])}))
+     :effect #(transact! [[:orgpad/loaded new-state1]])}))
 
 (defmethod mutate :orgpad.net/update-db
   [{:keys [state global-cache] :as env} _ res]
@@ -54,8 +57,10 @@
           (ot/datoms-squuid->uid datom
                                  last-index
                                  (-> state (store/query [:squuid->uid]) first))
+          datoms1 (ot/filter-vprop-when-not-active state datoms)
+          _ (js/console.log "filtering datoms" datoms datoms1)
           new-state (-> state
-                        (store/transact datoms)
+                        (store/transact datoms1)
                         (store/transact [[] (merge (-> state (store/query []) first)
                                                    atom
                                                    {:squuid->uid mapping

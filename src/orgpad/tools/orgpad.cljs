@@ -25,8 +25,12 @@
   (or (uid unit) (:db/id unit)))
 
 (defn sort-refs
-  [unit]
-  (into [] (sort #(compare (uid %1) (uid %2)) (unit :orgpad/refs))))
+  [unit & [by]]
+  (let [uid-fn (or by uid)]
+    (->> unit
+         :orgpad/refs
+         (sort #(compare (uid-fn %1) (uid-fn %2)))
+         (into []))))
 
 (defn pid
   [parent-view]
@@ -767,10 +771,15 @@
     [?v :orgpad/view-name ?view-name]
     [?v :orgpad/active-unit ?active-unit]])
 
-(defn- update-vprops-from-propagated-qry
+(defn- get-propagated-keys
+  []
+  (-> :orgpad/map-tuple-view
+      reg/get-component-info
+      (get-in [:orgpad/propagated-props-from-children :orgpad.map-view/vertex-props])))
+
+(defn update-vprops-from-propagated-qry
   [db]
-  (let [prop-keys (-> (reg/get-component-info :orgpad/map-tuple-view)
-                      (get-in [:orgpad/propagated-props-from-children :orgpad.map-view/vertex-props]))
+  (let [prop-keys (get-propagated-keys)
         vprops (store/query db vprops-qry)
         vprops-prop (store/query db vprops-prop-qry)
         sheet-views (store/query db sheet-view-qry)
@@ -778,55 +787,54 @@
         units-vprops-prop (group-by #(vector (% 0) (% 1) (% 3) (% 4)) vprops-prop)]
     (reduce (fn [qry [v vprop ctx view-name]]
               ;; (js/console.log "probing" v vprop ctx view-name (store/query db [:entity v]))
-              (let [refs (-> db (store/query [:entity v]) :orgpad/refs
-                             (->> (sort #(compare (:db/id %1) (:db/id %2))) (into [])))
+              (let [refs (-> db (store/query [:entity v]) (sort-refs :db/id))
                     n (-> units-sheet-views (get  [v view-name])
                               (as-> x (if x (get-in x [0 3]) 0)))
                     ref (refs n)
                     vprop (-> db (store/query [:entity vprop]) dscript/entity->map)
                     vprop-prop-id (-> units-vprops-prop (get-in  [[v (:db/id ref) ctx view-name] 2]) first)
                     vprop-prop (-> db (store/query [:entity vprop-prop-id]) dscript/entity->map)]
-                (conj qry (merge vprop (select-keys vprop-prop prop-keys)))))
+                (conj qry (merge (-> vprop (dissoc :orgpad/refs)) (select-keys vprop-prop prop-keys)))))
             [] vprops)))
 
-(defn- filter-vprop-when-not-active
+(def ^:private pick-tuple-view-active-unit-qry
+  '[:find ?active-unit .
+    :in $ ?u ?view-name
+    :where
+    [?u :orgpad/props-refs ?v]
+    [?v :orgpad/type :orgpad/unit-view]
+    [?v :orgpad/view-type :orgpad/map-tuple-view]
+    [?v :orgpad/view-name ?view-name]
+    [?v :orgpad/active-unit ?active-unit]])
+
+(defn filter-vprop-when-not-active
   [store datoms]
-  (let [propagated-vprops (-> (reg/get-component-info :orgpad/map-tuple-view)
-                              :orgpad/propagated-props-from-children
-                              :orgpad.map-view/vertex-props
-                              set)
+  (let [propagated-vprops (set (get-propagated-keys))
         new-vprops (into #{} (comp
                               (filter #(and (= (.-a %) :orgpad/type)
                                             (= (.-v %) :orgpad/unit-view-child)))
                               (map #(.-e %))) datoms)
-        vprops-prop (into #{} (comp (filter (fn [d]
-                                              (if (contains? propagated-vprops (.-a d))
-                                                (let [e (store/query store [:entity (.-e d)])]
-                                                  (if (and e (= (:orgpad/type e)
-                                                                :orgpad/unit-view-child-propagated))
-                                                    true
-                                                    false))
-                                                false)))
-                                            (map #(.-e %))) datoms)]
+        vprop-prop-refs (into #{}
+                              (map (fn [d]
+                                     (when-let [e (store/query store [:entity (.-e d)])]
+                                       (when (= (:orgpad/type e) :orgpad/unit-view-child-propagated)
+                                         (-> e :orgpad/refs first :db/id)))))
+                              datoms)]
     (filter (fn [d]
               (cond
-                (contains? new-vprops (.-e d)) false
+                (contains? new-vprops (.-e d)) true
                 (contains? propagated-vprops (.-a d))
                 (let [e (store/query store [:entity (.-e d)])]
-                  (if (= (:orgpad/type e) :orgpad/unit-view-child)
-                    (let [v (store/query store [:entity (-> e :orgpad/refs :db/id)])
-                          refs (-> v :orgpad/refs (->> (sort #(compare (:db/id %1) (:db/id %2))) (into [])))
-                          sheet-view (store/query store '[:find ?active-unit .
-                                                          :in $ ?u ?view-name
-                                                          :where
-                                                          [?u :orgpad/props-refs ?v]
-                                                          [?v :orgpad/type :orgpad/unit-view]
-                                                          [?v :orgpad/view-type :orgpad/map-tuple-view]
-                                                          [?v :orgpad/view-name ?view-name]]
-                                                  [(:db/id v) (:orgpad/view-name v)])
-                          ]
-                      )
+                  (js/console.log "entity" e)
+                  (if (and e (= (:orgpad/type e) :orgpad/unit-view-child))
+                    (let [v (store/query store [:entity (-> e :orgpad/refs first :db/id)])
+                          refs (sort-refs v :db/id)
+                          active-unit (or
+                                       (store/query store pick-tuple-view-active-unit-qry
+                                                    [(:db/id v) (:orgpad/view-name e)])
+                                       0)]
+                      (js/console.log "active units" vprop-prop-refs refs active-unit d)
+                      (contains? vprop-prop-refs (->> active-unit (nth refs) :db/id)))
                     true))
                 :else true))
-          datoms)
-  ))
+            datoms)))
