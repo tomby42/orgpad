@@ -23,28 +23,28 @@
   (let [text (:orgpad/jupyter-code view)
         codes (scrape-code text)]
     (lc/transact! component [[:orgpad.jupyter/exec
-                              { :id id
-                                :view view
-                                :codes codes
-                                :url (:orgpad/jupyter-url view) }]])))
+                              {:id id
+                               :view view
+                               :codes codes
+                               :url (:orgpad/jupyter-url view)}]])))
 
 (defn- render-url-input
   [component id view]
   (println "render url input" id view)
-  [ :div { :className "react-tagsinput url-editor" }
-   [ :input { :value (:orgpad/jupyter-url view)
-              :placeholder "Jupyter nb server"
-              :onChange (fn [e]
-                          (lc/transact!
-                           component
-                           [[:orgpad.jupyter/update
-                             { :db/id id
-                               :orgpad/view view
-                               :key :orgpad/jupyter-url
-                               :val (-> e .-target .-value) } ] ] ) ) } ]
-   [ :div { :className "exec-button" :title "Execute"
-            :onClick #(try-exec-code component id view) }
-    [ :i { :className "fa fa-cogs" } ] ]])
+  [:div {:className "react-tagsinput url-editor"}
+   [:input {:value (:orgpad/jupyter-url view)
+            :placeholder "Jupyter nb server"
+            :onChange (fn [e]
+                        (lc/transact!
+                         component
+                         [[:orgpad.jupyter/update
+                           {:db/id id
+                            :orgpad/view view
+                            :key :orgpad/jupyter-url
+                            :val (-> e .-target .-value)}]]))}]
+   [:div {:className "exec-button" :title "Execute"
+          :onClick #(try-exec-code component id view)}
+    [:i {:className "fa fa-cogs"}]]])
 
 (defn- render-code-editor
   [component id view]
@@ -58,10 +58,10 @@
                        (lc/transact!
                         component
                         [[:orgpad.jupyter/update
-                          { :db/id id
-                            :orgpad/view view
-                            :key :orgpad/jupyter-code
-                            :val (.call (aget target "getContent") target) } ]] )))))
+                          {:db/id id
+                           :orgpad/view view
+                           :key :orgpad/jupyter-code
+                           :val (.call (aget target "getContent") target)}]])))))
 
 (defn- render-results
   [results]
@@ -75,17 +75,15 @@
 (defn- render-write-mode
   [component {:keys [unit view]} app-state]
   (let [uid (unit :db/id)]
-    [ :div { :className "jupyter-view" }
+    [:div {:className "jupyter-view"}
      (render-url-input component uid view)
      (render-code-editor component uid view)
-     (render-results (:orgpad/jupyter-results view))
-     ]
-    ))
+     (render-results (:orgpad/jupyter-results view))]))
 
 (defn- render-read-mode
   [component {:keys [view]} app-state]
-  [ :div { :className "jupyter-view" }
-   (render-results (:orgpad/jupyter-results view)) ])
+  [:div {:className "jupyter-view"}
+   (render-results (:orgpad/jupyter-results view))])
 
 (rum/defcc jupyter-component < rum/static lc/parser-type-mixin-context
   [component unit-tree app-state]
@@ -95,10 +93,9 @@
 
 (registry/register-component-info
  :orgpad/jupyter-view
- { :orgpad/default-view-info   { :orgpad/view-type :orgpad/jupyter-view
-                                 :orgpad/view-name "default" }
-   :orgpad/class               jupyter-component
-   :orgpad/needs-children-info false
-   :orgpad/view-name           "Jupyter View"
-   :orgpad/view-icon           "far fa-server"
-  })
+ {:orgpad/default-view-info   {:orgpad/view-type :orgpad/jupyter-view
+                               :orgpad/view-name "default"}
+  :orgpad/class               jupyter-component
+  :orgpad/needs-children-info false
+  :orgpad/view-name           "Jupyter View"
+  :orgpad/view-icon           "far fa-server"})

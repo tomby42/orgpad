@@ -135,8 +135,7 @@
   IEquiv
   (-equiv [record other]
     (and (= (.-history record) (.-history other))
-         (= (.-history-finger record) (.-history-finger other))))
-)
+         (= (.-history-finger record) (.-history-finger other)))))
 
 (defn- new-history-records
   [& [history-records]]
@@ -160,7 +159,7 @@
                    (.-changed-entities store)
                    (reduce (fn [ens d] (conj ens (.-e d))) (.-changed-entities store) tx-data))
                  (merge (.-meta_ store)
-                        { :orgpad.store/tempids (:tempids tx-report) }))))
+                        {:orgpad.store/tempids (:tempids tx-report)}))))
 
 (defn- tx-report->only-db-store
   "Returns new datom store with new db only, rest of properties are preserved if not required to update in params"
@@ -294,13 +293,12 @@
 
   IEquiv
   (-equiv
-      [store other]
+    [store other]
     (and (= (.-db store) (.-db other))
          (= (.-history-records store) (.-history-records other))
          (= (.-cumulative-changes store) (.-cumulative-changes other))
          (= (.-changed-entities store) (.-changed-entities other))
-         (= (.-meta_ store) (.-meta_ other))))
-  )
+         (= (.-meta_ store) (.-meta_ other)))))
 
 (defn new-datom-store
   "Creates new datom store with initial 'db' and optional history 'history-records'"
@@ -359,13 +357,13 @@
     [store qry]
     (if (datom-query? qry)
       (query (.-datom store) qry)
-      (s/select qry (.-atom store) )) )
+      (s/select qry (.-atom store))))
 
   (query
     [store qry params]
     (if (datom-query? qry)
       (query (.-datom store) qry params)
-      (s/select qry (.-atom store)) ))
+      (s/select qry (.-atom store))))
 
   (transact
     [store qry]
@@ -466,11 +464,10 @@
 
   IEquiv
   (-equiv
-      [store other]
+    [store other]
     (and (= (.-datom store) (.-datom other))
          (= (.-atom store) (.-atom other))
-         (= (.-meta_ store) (.-meta_ other))))
-  )
+         (= (.-meta_ store) (.-meta_ other)))))
 
 (defn new-datom-atom-store
   "Creates new datom-atom store with initial value 'init-value',

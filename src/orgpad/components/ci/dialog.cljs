@@ -19,7 +19,7 @@
 
   [:div.ci-msg-list {:ref "list-node"}
    (map-indexed (fn [idx msg]
-                  [:div { :key idx }
+                  [:div {:key idx}
                    [:div.text
                     (:orgpad/text msg)]
                    [:div.response

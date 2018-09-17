@@ -5,15 +5,12 @@
 
 (defn register-component-info
   [name component-info]
-
   (swap! component-register assoc name component-info))
 
 (defn get-component-info
   [name]
-
   (get @component-register name :not-found))
 
 (defn get-registry
   []
-
   @component-register)

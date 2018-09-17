@@ -12,8 +12,7 @@
    [goog.string.format]))
 
 (def orgpad-db-schema
-  {
-   :orgpad/type        {}
+  {:orgpad/type        {}
    :orgpad/atom        {}
    :orgpad/tags        {:db/cardinality :db.cardinality/many}
    :orgpad/desc        {}
@@ -51,8 +50,7 @@
    :orgpad/independent {}
    :orgpad/view-style {}
    :orgpad/style-name {}
-   :orgpad/context-unit {}
-   })
+   :orgpad/context-unit {}})
 
 (defn default-styles-qry
   []
@@ -93,11 +91,10 @@
   (-> (store/new-datom-atom-store {:app-state {:mode :write}} (d/empty-db orgpad-db-schema))
       (store/transact [{:db/id 0,
                         :orgpad/props-refs 1
-                        :orgpad/type :orgpad/root-unit }
+                        :orgpad/type :orgpad/root-unit}
                        {:db/id 1,
                         :orgpad/type :orgpad/root-unit-view,
-                        :orgpad/refs 0 }
-                       ] {})
+                        :orgpad/refs 0}] {})
       insert-default-styles))
 
 (defn- update-refs-orders
@@ -156,8 +153,8 @@
                         (move-app-state-qry db))]
     ;; (js/console.log db)
     (cond-> db
-           (-> qry empty? not) (store/transact qry {})
-           (-> app-state-qry empty? not) (store/transact app-state-qry))))
+      (-> qry empty? not) (store/transact qry {})
+      (-> app-state-qry empty? not) (store/transact app-state-qry))))
 
 (defn orgpad-db
   [data]
@@ -250,9 +247,9 @@
 
 (defn download-orgpad-from-url
   [url transact!]
-  (ajax/GET url {:handler #(transact! [[ :orgpad/load-orgpad [%] ]])
+  (ajax/GET url {:handler #(transact! [[:orgpad/load-orgpad [%]]])
                  :error-handler #(js/console.log (str "Error while downloading from " url " " %))
-                 :format :text }))
+                 :format :text}))
 
 (defn- get-root-traslations
   [db rid]

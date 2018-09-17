@@ -11,9 +11,9 @@
     (let [effects (<! effect-chan)]
       (doseq [effect effects]
         (effect))
-      (recur) )))
+      (recur))))
 
 (defn do-effects
   "Realize effects asynchronously"
   [effects]
-  (put! effect-chan effects) )
+  (put! effect-chan effects))

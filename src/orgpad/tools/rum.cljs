@@ -21,25 +21,25 @@
 
 (defn gen-update-mixin
   [update-fn]
-  { :did-mount
-     (fn [state]
-       (update-fn state)
-       state)
+  {:did-mount
+   (fn [state]
+     (update-fn state)
+     state)
 
-    :did-update
-      (fn [state]
-        (update-fn state)
-        state) })
+   :did-update
+   (fn [state]
+     (update-fn state)
+     state)})
 
 (defn gen-reg-mixin
   [reg-fn unreg-fn]
-  { :did-mount
-     (fn [state]
-       (reg-fn state))
+  {:did-mount
+   (fn [state]
+     (reg-fn state))
 
-    :will-unmount
-     (fn [state]
-       (unreg-fn state)) })
+   :will-unmount
+   (fn [state]
+     (unreg-fn state))})
 
 (defn ref
   "Given state and ref handle, returns React component"
@@ -54,8 +54,8 @@
 (def istatic
   "Mixin. Will avoid re-render if none of component’s arguments have changed.
    Does equality check (identical?) on all arguments"
-  { :should-update
-    (fn [old-state new-state]
+  {:should-update
+   (fn [old-state new-state]
       ;; (when (not (colls/shallow-eq
       ;;             (:rum/args old-state) (:rum/args new-state)))
       ;;   (println "should-update")
@@ -63,16 +63,16 @@
       ;;   (println "new" (:rum/args new-state)))
         ;; (println "eq" (colls/shallow-eq
         ;;               (:rum/args old-state) (:rum/args new-state)))
-      (not
-       (colls/shallow-eq
-        (:rum/args old-state) (:rum/args new-state)))) })
+     (not
+      (colls/shallow-eq
+       (:rum/args old-state) (:rum/args new-state))))})
 
 (defn statical
   "Create mixin. Will avoid re-render if none of component’s arguments have changed.
    Does equality check (depends on feeded vector of equality functions) on all arguments"
   [eq-fns]
-  { :should-update
-    (fn [old-state new-state]
+  {:should-update
+   (fn [old-state new-state]
       ;; (when (not
       ;;        (colls/semi-shallow-eq
       ;;         (:rum/args old-state) (:rum/args new-state) eq-fns))
@@ -80,14 +80,14 @@
       ;;   (println "old" (:rum/args old-state))
       ;;   (println "new" (:rum/args new-state)))
 
-      (let [new-args (:rum/args new-state)
-            old-args (:rum/args old-state)]
-        (or
-         (empty? old-args)
-         (empty? new-state)
-         (not
-          (colls/semi-shallow-eq
-           old-args new-args eq-fns))))) })
+     (let [new-args (:rum/args new-state)
+           old-args (:rum/args old-state)]
+       (or
+        (empty? old-args)
+        (empty? new-state)
+        (not
+         (colls/semi-shallow-eq
+          old-args new-args eq-fns)))))})
 
 (defn force-update
   [comp]

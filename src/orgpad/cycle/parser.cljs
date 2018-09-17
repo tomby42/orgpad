@@ -9,10 +9,10 @@
   (let [tree' @tree]
     (vreset! tree #js [])
     (let [val   (read env k params)
-          node  #js { :value val
-                      :children @tree
-                      :key k
-                      :params params }]
+          node  #js {:value val
+                     :children @tree
+                     :key k
+                     :params params}]
       (.push tree' node)
       (vreset! tree tree')
       val)))
@@ -22,9 +22,9 @@
 
   (let [tree (volatile! #js [])]
     (parse-query- (merge env
-                         { :query parse-query-
-                           :tree tree })
-                 k params)
+                         {:query parse-query-
+                          :tree tree})
+                  k params)
     (-> tree deref (aget 0))))
 
 (defn- mark-changed
@@ -39,10 +39,10 @@
 (defn clone-node
   [node]
   (let [children (aget node "children")]
-    #js { :value (aget node "value")
-          :children (amap children i ret (clone-node (aget children i)))
-          :key (aget node "key")
-          :params (aget node "params") }))
+    #js {:value (aget node "value")
+         :children (amap children i ret (clone-node (aget children i)))
+         :key (aget node "key")
+         :params (aget node "params")}))
 
 (defn- update-parsed-query-
   [{:keys [read tree] :as env} & [key params]]
@@ -59,7 +59,7 @@
     (if (aget node "me-changed?")
       (do
         (vreset! tree #js [])
-        (let [val (parse-query- (merge env { :query parse-query- :old-node node })
+        (let [val (parse-query- (merge env {:query parse-query- :old-node node})
                                 (aget node "key") (aget node "params"))]
           (vreset! tree #js [old-tree (.concat tree' @tree)])
           val))
@@ -88,18 +88,18 @@
 
 (defn update-parsed-query
   [state read old-tree changed? force-update-all force-update-part global-cache]
-  (let [tree (volatile! #js [#js [(mark-changed { :query-changed? changed?
-                                                  :force-update-all force-update-all
-                                                  :force-update-part force-update-part
-                                                  :changed-entities (to-js (store/changed-entities state))
-                                                  :state state } old-tree)] #js []])]
+  (let [tree (volatile! #js [#js [(mark-changed {:query-changed? changed?
+                                                 :force-update-all force-update-all
+                                                 :force-update-part force-update-part
+                                                 :changed-entities (to-js (store/changed-entities state))
+                                                 :state state} old-tree)] #js []])]
     (vreset! force-update-all false)
     (vreset! force-update-part {})
-    (update-parsed-query- { :state state
-                            :query update-parsed-query-
-                            :read read
-                            :global-cache global-cache
-                            :tree tree })
+    (update-parsed-query- {:state state
+                           :query update-parsed-query-
+                           :read read
+                           :global-cache global-cache
+                           :tree tree})
     (-> tree deref (aget 1 0))))
 
 (defn force-update!

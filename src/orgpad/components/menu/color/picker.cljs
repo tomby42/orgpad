@@ -16,9 +16,9 @@
       (assoc :palette (old :palette))
       (assoc :lid (old :lid))))
 
-(def ^:private remount 
-  { :did-remount transfer-palette
-    :transfer-state transfer-palette })
+(def ^:private remount
+  {:did-remount transfer-palette
+   :transfer-state transfer-palette})
 
 (defn- create-color-picker
   [state]
@@ -62,6 +62,6 @@
 (rum/defc color-picker < rum/static (trum/gen-reg-mixin create-color-picker destroy-color-picker)
   (trum/gen-update-mixin update-color) remount
   [color props on-change]
-  [ :div (merge props { :ref "color-picker"
-                        :onMouseDown jev/stop-propagation
-                        :onMouseUp jev/stop-propagation }) ])
+  [:div (merge props {:ref "color-picker"
+                      :onMouseDown jev/stop-propagation
+                      :onMouseUp jev/stop-propagation})])

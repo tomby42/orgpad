@@ -42,9 +42,7 @@
                   (eci/send-response {:msg-id (:msg-id msg)
                                       :text (:text msg)
                                       :done? true
-                                      :response (str "Sorry I can't understand '" (:text msg) "'.")}))))}
-
-   ])
+                                      :response (str "Sorry I can't understand '" (:text msg) "'.")}))))}])
 
 (def ^:private select-utterance->intent-desc
   [{:regexp #"(?i)^quit"
@@ -66,9 +64,7 @@
                                              :local-context-state (:ci-state msg)
                                              :done? true
                                              :params params
-                                             :action :orgpad.units/select-by-pattern})))))}
-
-    ])
+                                             :action :orgpad.units/select-by-pattern})))))}])
 
 (ci/register-ci :default :default (tci/create-regexp-parser utterance->intent-desc))
 (ci/register-ci :default :select (tci/create-regexp-parser select-utterance->intent-desc))

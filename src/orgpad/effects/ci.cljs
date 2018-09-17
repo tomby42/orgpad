@@ -35,7 +35,7 @@
           (swap! ci-state assoc :parser-chan nil)
           (respond resp))
         (ask? resp))
-      (recur) )))
+      (recur))))
 
 (defn send-msg
   [msg]

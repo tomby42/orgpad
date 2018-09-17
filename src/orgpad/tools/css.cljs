@@ -29,11 +29,11 @@
 
 (defn- style
   [s]
-  { :WebkitTransform s
-    :MozTransform s
-    :OTransform s
-    :msTransform s
-    :transform s })
+  {:WebkitTransform s
+   :MozTransform s
+   :OTransform s
+   :msTransform s
+   :transform s})
 
 (defn translate
   [p]
@@ -67,7 +67,7 @@
       (str "rgba(" (-> c (bit-shift-right 24) (bit-and 255))
            "," (-> c (bit-shift-right 16) (bit-and 255))
            "," (-> c (bit-shift-right 8) (bit-and 255))
-           "," (/ (-> c (bit-and 255)) 255)")"))))
+           "," (/ (-> c (bit-and 255)) 255) ")"))))
 
 (defn format-color
   [c]

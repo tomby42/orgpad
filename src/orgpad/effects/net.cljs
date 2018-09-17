@@ -68,8 +68,7 @@
             (js/console.log "orgpad created" data)
             (when (not= (get-in data [:?data 1 :result]) :orgpad.server/error)
               (aset js/window "location" "href"
-                    (str (assoc-in u [:query "o"] (get-in data [:?data 1 :result :orgpad.server/uuid])))))
-            ))))))
+                    (str (assoc-in u [:query "o"] (get-in data [:?data 1 :result :orgpad.server/uuid])))))))))))
 
 (defn update!
   [uuid changes]

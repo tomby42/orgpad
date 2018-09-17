@@ -9,32 +9,31 @@
 
 (defn change-view-type
   [component unit-tree view-type]
-  (lc/transact! component 
+  (lc/transact! component
                 [[:orgpad/root-view-conf [unit-tree
-                                          { :attr :orgpad/view-type
-                                           :value view-type }]]])
-  )
+                                          {:attr :orgpad/view-type
+                                           :value view-type}]]]))
 
 (defn switch-active-sheet
   [component unit-tree dir]
-  (lc/transact! component [[ :orgpad.sheet/switch-active
-                            { :unit-tree unit-tree
-                              :direction dir
-                              :nof-sheets (ot/refs-count unit-tree) } ]]))
+  (lc/transact! component [[:orgpad.sheet/switch-active
+                            {:unit-tree unit-tree
+                             :direction dir
+                             :nof-sheets (ot/refs-count unit-tree)}]]))
 
 (defn new-sheet
   [component unit-tree]
-  (lc/transact! component [[ :orgpad.units/new-sheet unit-tree ]]))
+  (lc/transact! component [[:orgpad.units/new-sheet unit-tree]]))
 
 (defn remove-active-sheet
   [component unit-tree]
-  (lc/transact! component [[ :orgpad.units/remove-active-sheet-unit unit-tree ]]))
+  (lc/transact! component [[:orgpad.units/remove-active-sheet-unit unit-tree]]))
 
 (defn remove-unit
   [component params local-state]
   (swap! local-state assoc :selected-unit nil)
-  (lc/transact! component [[ :orgpad.units/remove-unit
-                             params ]]))
+  (lc/transact! component [[:orgpad.units/remove-unit
+                            params]]))
 
 (defn remove-units
   [component params selection]
@@ -72,10 +71,10 @@
                                                             :position pos}]]))))
 
 (defn open-unit
-  [component { :keys [unit view path-info] }]
-  (let [{ :keys [orgpad/view-name orgpad/view-type] } view
+  [component {:keys [unit view path-info]}]
+  (let [{:keys [orgpad/view-name orgpad/view-type]} view
         view-path (path-info :orgpad/view-path)]
-    (lc/transact! component [[ :orgpad/root-view-stack { :db/id (unit :db/id)
-                                                         :orgpad/view-name view-name
-                                                         :orgpad/view-type view-type
-                                                         :orgpad/view-path view-path } ]])))
+    (lc/transact! component [[:orgpad/root-view-stack {:db/id (unit :db/id)
+                                                       :orgpad/view-name view-name
+                                                       :orgpad/view-type view-type
+                                                       :orgpad/view-path view-path}]])))

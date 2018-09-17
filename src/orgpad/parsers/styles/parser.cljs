@@ -78,9 +78,9 @@
         props-refs-uids (uids-with-props-refs state id)]
     ;(js/console.log "orgpad.style/remove" id name type replace-name' replace-id)
     {:state (store/transact state
-              (colls/minto [[:db.fn/retractEntity id]]
-                            (change-style-name-query name-uids name replace-name')
-                            (add-props-refs-id-query props-refs-uids replace-id)))}))
+                            (colls/minto [[:db.fn/retractEntity id]]
+                                         (change-style-name-query name-uids name replace-name')
+                                         (add-props-refs-id-query props-refs-uids replace-id)))}))
 
 (defmethod mutate :orgpad.style/rename
   [{:keys [state]} _ {:keys [id old-name new-name type]}]
@@ -89,7 +89,7 @@
                       [:db/add id :orgpad/style-name new-name]]]
     ;(js/console.log "orgpad.style/rename" id old-name new-name type)
     {:state (store/transact state
-              (into rename-query (change-style-name-query uids old-name new-name)))}))
+                            (into rename-query (change-style-name-query uids old-name new-name)))}))
 
 (defmethod mutate :orgpad.style/rebase
   [{:keys [state]} _ {:keys [id name type based-on]}]

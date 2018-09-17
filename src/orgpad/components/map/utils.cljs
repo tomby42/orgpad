@@ -24,8 +24,8 @@
                               :link-menu-show :maybe
                               :selected-unit nil
                               :mouse-x (if (.-clientX ev) (.-clientX ev) (aget ev "touches" 0 "clientX"))
-                              :mouse-y (if (.-clientY ev) (.-clientY ev) (aget ev "touches" 0 "clientY")) })
-    (lc/transact! component [[ :orgpad.units/deselect-all {:pid (parent-id parent-view)} ]])))
+                              :mouse-y (if (.-clientY ev) (.-clientY ev) (aget ev "touches" 0 "clientY"))})
+    (lc/transact! component [[:orgpad.units/deselect-all {:pid (parent-id parent-view)}]])))
 
 (defn- start-link
   [local-state ev]

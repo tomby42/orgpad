@@ -21,7 +21,7 @@
        (map :orgpad/view-name)
        (cons "default")
        set
-       (map (fn [n] #js { :value n :label n }))
+       (map (fn [n] #js {:value n :label n}))
        into-array))
 
 (defn- render-view-names-core
@@ -29,26 +29,25 @@
   (let [current-name (view :orgpad/view-name)
         list-of-view-names (list-of-view-names unit (view :orgpad/view-type))]
     (js/React.createElement js/Select
-                            #js { :value current-name
-                                  :options list-of-view-names
-                                  :onInputChange #(do (swap! local-state merge { :typed % }) %)
-                                  :onChange (fn [ev]
-                                              (lc/transact! component
-                                                            [[:orgpad/root-view-conf [unit-tree
-                                                                                      { :attr :orgpad/view-name
-                                                                                        :value (.-value ev) }]]]))
-                                 })))
+                            #js {:value current-name
+                                 :options list-of-view-names
+                                 :onInputChange #(do (swap! local-state merge {:typed %}) %)
+                                 :onChange (fn [ev]
+                                             (lc/transact! component
+                                                           [[:orgpad/root-view-conf [unit-tree
+                                                                                     {:attr :orgpad/view-name
+                                                                                      :value (.-value ev)}]]]))})))
 
 (defn- render-view-names
   [component unit-tree local-state]
-  [ :div { :className "view-name" }
+  [:div {:className "view-name"}
    (render-view-names-core component unit-tree local-state)
-   [ :span { :className "far fa-plus-circle view-name-add"
-             :title "New view"
-             :onClick #(lc/transact! component
-                                     [[:orgpad/root-new-view [unit-tree
-                                                              { :attr :orgpad/view-name
-                                                                :value (@local-state :typed) }]]]) } ] ])
+   [:span {:className "far fa-plus-circle view-name-add"
+           :title "New view"
+           :onClick #(lc/transact! component
+                                   [[:orgpad/root-new-view [unit-tree
+                                                            {:attr :orgpad/view-name
+                                                             :value (@local-state :typed)}]]])}]])
 
 (defn- normalize-range
   [min max val]
@@ -57,21 +56,19 @@
       (js/Math.max min)
       (js/Math.min max)))
 
-
 (defn- render-history
   [component local-state]
   (let [[h-finger h-cnt] (lc/query component :orgpad/history-info [] true)]
-    [ :div.history-slider
-     [ :input { :type "range" :min -1 :max (dec h-cnt) :step 1 :value (or h-finger (dec h-cnt))
-                :style { :width (* h-cnt 10) }
-                :onMouseDown jev/stop-propagation
-                :onBlur jev/stop-propagation
-                :onChange #(lc/transact! component
-                                         [[ :orgpad/history-change
-                                            { :old-finger (or h-finger h-cnt)
-                                              :new-finger (normalize-range -1 h-cnt
-                                                                           (-> % .-target .-value))}]])
-               }]]))
+    [:div.history-slider
+     [:input {:type "range" :min -1 :max (dec h-cnt) :step 1 :value (or h-finger (dec h-cnt))
+              :style {:width (* h-cnt 10)}
+              :onMouseDown jev/stop-propagation
+              :onBlur jev/stop-propagation
+              :onChange #(lc/transact! component
+                                       [[:orgpad/history-change
+                                         {:old-finger (or h-finger h-cnt)
+                                          :new-finger (normalize-range -1 h-cnt
+                                                                       (-> % .-target .-value))}]])}]]))
 
 (defn- gen-view-toolbar
   [{:keys [unit view] :as unit-tree} view-type]
@@ -79,12 +76,12 @@
     (if (and (= view-type :orgpad/map-tuple-view) (not (ot/no-sheets? unit-tree)))
       (let [ac-unit-tree (ot/active-child-tree unit view)
             ac-view-types-roll (tbar/gen-view-types-roll (:view ac-unit-tree) :ac-unit-tree "Current page" "page-views" #(= (:mode %1) :read))
-            last-sec (- (count view-toolbar) 1) ]
-        (update-in view-toolbar [last-sec] conj ac-view-types-roll ))
+            last-sec (- (count view-toolbar) 1)]
+        (update-in view-toolbar [last-sec] conj ac-view-types-roll))
       view-toolbar)))
 
-(rum/defcc status < rum/reactive (rum/local { :unroll false :view-menu-unroll false :typed "" :history false }) lc/parser-type-mixin-context
-  [component { :keys [unit view path-info] :as unit-tree } app-state root-local-state]
+(rum/defcc status < rum/reactive (rum/local {:unroll false :view-menu-unroll false :typed "" :history false}) lc/parser-type-mixin-context
+  [component {:keys [unit view path-info] :as unit-tree} app-state root-local-state]
   (let [id (unit :db/id)
         local-state (trum/comp->local-state component)
         msg-list (lc/query component :orgpad.ci/msg-list [])

@@ -9,32 +9,30 @@
 (defn- bind-atom
   [state-atom & [key]]
   (let [key (or key :orgpad.cycle/bind-atom)]
-    { :will-mount
-      (fn [state]
-        (let [component   (:rum/react-component state)]
-          (add-watch state-atom key
-                     (fn [_ _ _ _]
-                       (rum/request-render component)
-                       ))
-          state))
+    {:will-mount
+     (fn [state]
+       (let [component   (:rum/react-component state)]
+         (add-watch state-atom key
+                    (fn [_ _ _ _]
+                      (rum/request-render component)))
+         state))
 
-      :will-unmount
-      (fn [state]
-        (remove-watch state-atom key)
-        state)
-     }))
+     :will-unmount
+     (fn [state]
+       (remove-watch state-atom key)
+       state)}))
 
 (def parser-type-mixin
-  { :class-properties { :childContextTypes { :parser-read js/React.PropTypes.func
-                                             :parser-mutate js/React.PropTypes.func
-                                             :global-conf js/React.PropTypes.array
-                                             :global-cache js/React.PropTypes.object } } })
+  {:class-properties {:childContextTypes {:parser-read js/React.PropTypes.func
+                                          :parser-mutate js/React.PropTypes.func
+                                          :global-conf js/React.PropTypes.array
+                                          :global-cache js/React.PropTypes.object}}})
 
 (def parser-type-mixin-context
-  { :class-properties { :contextTypes { :parser-read js/React.PropTypes.func
-                                        :parser-mutate js/React.PropTypes.func
-                                        :global-conf js/React.PropTypes.array
-                                        :global-cache js/React.PropTypes.object } } })
+  {:class-properties {:contextTypes {:parser-read js/React.PropTypes.func
+                                     :parser-mutate js/React.PropTypes.func
+                                     :global-conf js/React.PropTypes.array
+                                     :global-cache js/React.PropTypes.object}}})
 
 (defn- parser-mixin
   [state parser-state read-fn mutate-fn update-fn global-cfg]
@@ -48,84 +46,84 @@
                   (->> (map #(aget % "value")))))
 
             (parser-read [key params disable-cache?]
-              (let [pstate-cur (@parser-state [key params])]
-                (if (nil? pstate-cur)
-                  (let [pstate (parser/parse-query {:state @state
-                                                    :read read-fn
-                                                    :parser-stack-info parser-stack-info
-                                                    :global-cache global-cache} key params)]
-                    (when (not disable-cache?)
-                      (vswap! parser-state assoc [key params] pstate))
-                    (aget pstate "value"))
-                  (aget pstate-cur "value"))))
+                         (let [pstate-cur (@parser-state [key params])]
+                           (if (nil? pstate-cur)
+                             (let [pstate (parser/parse-query {:state @state
+                                                               :read read-fn
+                                                               :parser-stack-info parser-stack-info
+                                                               :global-cache global-cache} key params)]
+                               (when (not disable-cache?)
+                                 (vswap! parser-state assoc [key params] pstate))
+                               (aget pstate "value"))
+                             (aget pstate-cur "value"))))
 
             (parser-state-push! [key params]
               ;; (println (@parser-state [key params]))
-              (vswap! parser-state update-in [:stack [key params]] (fnil conj [])
-                      (parser/clone-node (@parser-state [key params]))))
+                                (vswap! parser-state update-in [:stack [key params]] (fnil conj [])
+                                        (parser/clone-node (@parser-state [key params]))))
 
             (parser-state-pop! [key params update!]
               ;; (println (last (get-in @parser-state [:stack [key params]])))
-              (let [current-state (get @parser-state [key params])
-                    old-state (-> @parser-state (get-in [:stack [key params]]) peek)]
-                (when update!
-                  (update! old-state current-state)
-                  (vswap! parser-state assoc [key params] old-state))
-                (vswap! parser-state update-in [:stack [key params]] pop)))
+                               (let [current-state (get @parser-state [key params])
+                                     old-state (-> @parser-state (get-in [:stack [key params]]) peek)]
+                                 (when update!
+                                   (update! old-state current-state)
+                                   (vswap! parser-state assoc [key params] old-state))
+                                 (vswap! parser-state update-in [:stack [key params]] pop)))
 
             (parser-mutate [key-params-tuple]
-              (let [env {:global-cache global-cache
-                         :force-update! (partial parser/force-update! force-update-all force-update-part)
-                         :parser-state-push! parser-state-push!
-                         :parser-state-pop! parser-state-pop!
-                         :parser-stack-info parser-stack-info
-                         :transact! parser-mutate }
-                    [new-store key-params-read effects]
-                    (reduce
-                     (fn [[store key-params-read effects] [key params & [type] :as kp]]
-                       (if (= type :read)
-                         [store (conj key-params-read kp) effects]
-                         (let [{:keys [state effect]}
-                               (mutate-fn (assoc env :state store) key params)]
-                           [(or state store) key-params-read
-                            (if (nil? effect)
-                              effects
-                              (conj effects effect))])))
-                     [@state [] []] (conj key-params-tuple [:orgpad/log @state]))
+                           (let [env {:global-cache global-cache
+                                      :force-update! (partial parser/force-update! force-update-all force-update-part)
+                                      :parser-state-push! parser-state-push!
+                                      :parser-state-pop! parser-state-pop!
+                                      :parser-stack-info parser-stack-info
+                                      :transact! parser-mutate}
+                                 [new-store key-params-read effects]
+                                 (reduce
+                                  (fn [[store key-params-read effects] [key params & [type] :as kp]]
+                                    (if (= type :read)
+                                      [store (conj key-params-read kp) effects]
+                                      (let [{:keys [state effect]}
+                                            (mutate-fn (assoc env :state store) key params)]
+                                        [(or state store) key-params-read
+                                         (if (nil? effect)
+                                           effects
+                                           (conj effects effect))])))
+                                  [@state [] []] (conj key-params-tuple [:orgpad/log @state]))
 
-                    key-params-read' (if (empty? key-params-read)
-                                       (-> @parser-state (dissoc :stack) keys)
-                                       key-params-read)]
+                                 key-params-read' (if (empty? key-params-read)
+                                                    (-> @parser-state (dissoc :stack) keys)
+                                                    key-params-read)]
 
-                (doseq [[key params] key-params-read']
-                  (let [pstate-cur (@parser-state [key params])
-                        pstate (parser/update-parsed-query
-                                new-store read-fn pstate-cur update-fn
-                                force-update-all force-update-part
-                                global-cache)]
-                    (vswap! parser-state assoc [key params] pstate)))
+                             (doseq [[key params] key-params-read']
+                               (let [pstate-cur (@parser-state [key params])
+                                     pstate (parser/update-parsed-query
+                                             new-store read-fn pstate-cur update-fn
+                                             force-update-all force-update-part
+                                             global-cache)]
+                                 (vswap! parser-state assoc [key params] pstate)))
 
-                (reset! state (store/reset-changes new-store))
+                             (reset! state (store/reset-changes new-store))
 
-                (eff/do-effects effects) ))]
+                             (eff/do-effects effects)))]
 
-      { :child-context
-        (fn [_]
-          { :parser-read
-            parser-read
+      {:child-context
+       (fn [_]
+         {:parser-read
+          parser-read
 
-            :parser-mutate
-            parser-mutate
+          :parser-mutate
+          parser-mutate
 
-            :global-conf
-            #js [global-cfg]
+          :global-conf
+          #js [global-cfg]
 
-            :global-cache
-            global-cache }) })))
+          :global-cache
+          global-cache})})))
 
 (defn- container-mixin
   [component]
-  { :render (fn [state] [(component) state]) })
+  {:render (fn [state] [(component) state])})
 
 (defn- create-root-class
   [init-store read-fn mutate-fn update-fn root-component global-cfg]

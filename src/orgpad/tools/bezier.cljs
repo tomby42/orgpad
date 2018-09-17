@@ -3,8 +3,7 @@
   (:require [orgpad.tools.geom :refer [++ *c] :as geom]
             [orgpad.tools.colls :as colls]
             ;; [bezier-js]
-            [Bezier]
-            ))
+            [Bezier]))
 
 (def ^:private bezier-js (aget js/window "Bezier"))
 
@@ -33,9 +32,7 @@
                      q'
                      (recur (inc i)
                             (assoc! q' i (++ (*c (get q' i) t')
-                                             (*c (get q' (inc i)) t))))
-                     ))))
-        ))))
+                                             (*c (get q' (inc i)) t))))))))))))
 
 (defn nearest-point-on
   "returns {x: 2, y: 2, t: 1, d: 1.4142135623730951}"

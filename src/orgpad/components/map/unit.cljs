@@ -26,7 +26,7 @@
 
 (defn- select-unit
   [unit-tree prop pcomponent local-state component]
-  (swap! local-state merge { :selected-unit [unit-tree prop (aget pcomponent "parent-view") component] }))
+  (swap! local-state merge {:selected-unit [unit-tree prop (aget pcomponent "parent-view") component]}))
 
 (def mapped-children-mem
   (memoize mapped-children))
@@ -66,31 +66,31 @@
                (or (=  pre-quick-edit 0)
                    (not pre-quick-edit)))
       (run-dbl-click-check local-state))
-    (swap! local-state merge { :local-mode :try-unit-move
-                               :selected-unit [unit-tree prop parent-view component]
-                               :selected-node new-node
-                               :quick-edit false
-                               :pre-quick-edit (finc pre-quick-edit)
-                               :start-mouse-x (.-clientX (jev/touch-pos ev))
-                               :start-mouse-y (.-clientY (jev/touch-pos ev))
-                               :mouse-x (.-clientX (jev/touch-pos ev))
-                               :mouse-y (.-clientY (jev/touch-pos ev)) })
+    (swap! local-state merge {:local-mode :try-unit-move
+                              :selected-unit [unit-tree prop parent-view component]
+                              :selected-node new-node
+                              :quick-edit false
+                              :pre-quick-edit (finc pre-quick-edit)
+                              :start-mouse-x (.-clientX (jev/touch-pos ev))
+                              :start-mouse-y (.-clientY (jev/touch-pos ev))
+                              :mouse-x (.-clientX (jev/touch-pos ev))
+                              :mouse-y (.-clientY (jev/touch-pos ev))})
     (set-mouse-pos! (jev/touch-pos ev))
-    (lc/transact! component [[ :orgpad.units/select {:pid (parent-id parent-view)
-                                                     :uid (ot/uid unit-tree)} ]])))
+    (lc/transact! component [[:orgpad.units/select {:pid (parent-id parent-view)
+                                                    :uid (ot/uid unit-tree)}]])))
 
 (defn- sheet-indicator
   [active? id]
-  [:i { :className (str (if active? "fa" "far") " fa-circle") :id id }])
+  [:i {:className (str (if active? "fa" "far") " fa-circle") :id id}])
 
 (defn- insert-sheet-indicators
   [unit-tree color]
   (let [[active-sheet total-sheets] (ot/get-sheet-number unit-tree)]
     (when (> total-sheets 1)
-      [:div.tuple-page-indicator { :style { :color color }}
-        (map
-          #(sheet-indicator (= % (dec active-sheet)) (str "circle-" %))
-          (range total-sheets))])))
+      [:div.tuple-page-indicator {:style {:color color}}
+       (map
+        #(sheet-indicator (= % (dec active-sheet)) (str "circle-" %))
+        (range total-sheets))])))
 
 (rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} app-state pcomponent view-name pid local-state]
@@ -106,13 +106,13 @@
           ;; selected? (= (unit :db/id) (-> @local-state :selected-unit first ot/uid))
           border-color (-> prop :orgpad/unit-border-color css/format-color)
           style (merge (styles/prop->css prop)
-                       (css/transform { :translate pos })
-                       (when selected? {:zIndex (if (:quick-edit @local-state) 2 1)})) ]
+                       (css/transform {:translate pos})
+                       (when selected? {:zIndex (if (:quick-edit @local-state) 2 1)}))]
       ;;(js/window.console.log "rendering " (unit :db/id) (and selected? (:quick-edit @local-state)))
       (when selected?
         (select-unit unit-tree prop pcomponent local-state component))
       (html
-       [ :div
+       [:div
         (if (= (app-state :mode) :write)
           {:style style :className "map-view-child" :key (unit :db/id)
            :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
@@ -125,8 +125,7 @@
            :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
            :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
            :onWheel jev/stop-propagation
-           :ref "unit-node"
-           })
+           :ref "unit-node"})
         (node/node unit-tree
                    (assoc app-state
                           :mode
@@ -138,22 +137,22 @@
             [:div.map-view-child.hat
              {:style {:top 0
                       :width (prop :orgpad/unit-width)
-                      :height (prop :orgpad/unit-height) }
+                      :height (prop :orgpad/unit-height)}
               :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)}
              ;; (when (contains? selections (:db/id unit))
              ;;  [:span.fa.fa-check-circle.fa-lg.select-check])
-             ])
-          [ :div.map-view-child.leader-control
-           { :style {:left (/ (prop :orgpad/unit-corner-x) 2)}
+])
+          [:div.map-view-child.leader-control
+           {:style {:left (/ (prop :orgpad/unit-corner-x) 2)}
             :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
             :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-            :onMouseUp #(open-unit pcomponent unit-tree local-state) }
+            :onMouseUp #(open-unit pcomponent unit-tree local-state)}
            [:i.far.fa-sign-in-alt]])
         (when (= (ot/view-type unit-tree) :orgpad/map-tuple-view)
           (insert-sheet-indicators unit-tree border-color))
         ;;(when (contains? selections (:db/id unit))
         ;;  [:span.fa.fa-check-circle.fa-lg.select-check {:style {:right (+ (/ (prop :orgpad/unit-corner-y) 2) 8) }}])
-        ]))
+]))
     (catch :default e
       (js/console.log "Unit render error" e)
       nil)))
@@ -192,8 +191,7 @@
                                     :unit-tree unit-tree
                                     :style (lc/query component :orgpad/style
                                                      {:view-type :orgpad.map-view/vertex-props-style
-                                                      :style-name "default"} true)
-                                    }]])) 0))))
+                                                      :style-name "default"} true)}]])) 0))))
 
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic? start-size]}
@@ -203,7 +201,7 @@
                                                :orgpad.map-view/link-props :orgpad.map-view/link-props-style
                                                :orgpad/map-view)
           mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
-          style {:css { :zIndex -1 }
+          style {:css {:zIndex -1}
                  :canvas (styles/gen-link-canvas prop)}
           ctl-style (css/transform {:translate (-- (++ mid-pt [(-> prop :orgpad/link-width)
                                                                (-> prop :orgpad/link-width)])
@@ -253,7 +251,7 @@
     (html
      [:div
       (conj
-       (colls/minto [ :div { :className "map-view-canvas" :style style } ]
+       (colls/minto [:div {:className "map-view-canvas" :style style}]
                     (map #(map-link-mem (% 0) (% 1) app-state component view-name pid local-state) m-links)
                     (map #(map-unit-mem % app-state component view-name pid local-state) m-units))
        (uedit/unit-editor unit-tree app-state local-state))

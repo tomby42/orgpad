@@ -38,7 +38,7 @@
 (defmulti -event-msg-handler
   "Multimethod to handle Sente `event-msg`s"
   :id ; Dispatch on event-id
-  )
+)
 
 (defn event-msg-handler
   "Wraps `-event-msg-handler` with logging, error catching, etc."

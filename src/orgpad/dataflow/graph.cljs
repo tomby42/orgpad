@@ -5,10 +5,9 @@
             [orgpad.data.union-find :as uf]))
 
 (def empty-dataflow
-  { :nodes {}
-    :connections {}
-    :components (uf/union-find)
-   })
+  {:nodes {}
+   :connections {}
+   :components (uf/union-find)})
 
 (defn unit->dataflow-node
   [dataflow unit-id dataflow-info]

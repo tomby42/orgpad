@@ -6,8 +6,8 @@
 (defn get-sorted-style-list
   [component style-type]
   (sort
-    #(compare (:orgpad/style-name %1) (:orgpad/style-name %2))
-    (lc/query component :orgpad/styles {:view-type style-type} true)))
+   #(compare (:orgpad/style-name %1) (:orgpad/style-name %2))
+   (lc/query component :orgpad/styles {:view-type style-type} true)))
 
 (defn prop->css
   [prop]
@@ -20,7 +20,7 @@
                       (prop :orgpad/unit-corner-y) "px")
    :backgroundColor (-> prop :orgpad/unit-bg-color css/format-color)
    :padding (prop :orgpad/unit-padding)})
-                 
+
 (defn gen-link-canvas
   [prop]
   {:strokeStyle (css/format-color (prop :orgpad/link-color))

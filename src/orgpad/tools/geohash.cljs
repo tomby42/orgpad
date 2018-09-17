@@ -30,7 +30,7 @@
   "Maps geohash to x, y in plane"
   [h]
   (let [c (decode h)]
-    [(lalo->px (aget c "lon" )) (lalo->px (aget c "lat" ))]))
+    [(lalo->px (aget c "lon")) (lalo->px (aget c "lat"))]))
 
 (defn- steps
   "Returns [dx dy] for horizontal and vertical step for given resolution"

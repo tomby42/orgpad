@@ -24,7 +24,7 @@
   [border-width pts]
   (let [bb (comp-bb border-width pts)]
     [(inc (- (>- bb 1 0) (>- bb 0 0)))
-     (inc (- (>- bb 1 1) (>- bb 0 1))) ]))
+     (inc (- (>- bb 1 1) (>- bb 0 1)))]))
 
 (defn- left-top-corner
   [pts]
@@ -91,8 +91,8 @@
   (let [border-width (comp-border-width style)
         [w h] (dims border-width pts)
         [l t] (left-top-corner pts)
-        style (merge (or (:css style) {}) (css/transform { :translate [l t] }))]
-    [ :canvas { :className "graphics primitive" :width w  :height h :style style :ref "canvas"} ]))
+        style (merge (or (:css style) {}) (css/transform {:translate [l t]}))]
+    [:canvas {:className "graphics primitive" :width w  :height h :style style :ref "canvas"}]))
 
 (rum/defc line < rum/static (trum/gen-update-mixin draw-line)
   [start end style]
@@ -147,10 +147,10 @@
         n (-> dir geom/normal)
         p2 (++ ptmp (*c n 10))
         p3 (++ ptmp (*c (-- n) 10))
-        style { :css { :zIndex -1 }
-                :canvas { :strokeStyle (-> prop :orgpad/link-color css/format-color)
-                          :lineWidth (prop :orgpad/link-width)
-                          :lineCap "round" } }]
+        style {:css {:zIndex -1}
+               :canvas {:strokeStyle (-> prop :orgpad/link-color css/format-color)
+                        :lineWidth (prop :orgpad/link-width)
+                        :lineCap "round"}}]
     (poly-line [p2 p1 p3] style)))
 
 (defn make-arrow-arc
@@ -160,9 +160,9 @@
         s' (++ (*c n -10) s)
         p1 (++ (*c dir 10) s')
         p2 (++ (*c dir -10) s')
-        style { :css { :zIndex -1 }
-                :canvas { :strokeStyle (-> prop :orgpad/link-color css/format-color)
-                          :lineWidth (prop :orgpad/link-width)
-                          :lineCap "round" } }]
+        style {:css {:zIndex -1}
+               :canvas {:strokeStyle (-> prop :orgpad/link-color css/format-color)
+                        :lineWidth (prop :orgpad/link-width)
+                        :lineCap "round"}}]
     (poly-line [p1 s p2] style)))
 

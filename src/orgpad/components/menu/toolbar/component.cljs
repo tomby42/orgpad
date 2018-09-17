@@ -73,7 +73,7 @@
   "Returns data for section with all hidden elements filtered out."
   [params data]
   (filter (partial visible-elem? params)
-    (map #(if (= (:elem %) :roll) (filter-roll-items params %) %) data)))
+          (map #(if (= (:elem %) :roll) (filter-roll-items params %) %) data)))
 
 (defn- filter-side
   "Returns data for side with hidden elements in all sections filtered out and removed empty sections."
@@ -119,20 +119,20 @@
         is-active (get-active active is-disabled params)
         button-class (str elem (when is-disabled " disabled") (when is-active " active"))
         label-class (if icon "btn-icon-label" "btn-label")
-        icon-span (when icon [:i { :key (str id "-icon") :className (str icon " fa-lg fa-fw") }])
-        label-span (when label [:span { :key (str id "-label") :className label-class } label])]
+        icon-span (when icon [:i {:key (str id "-icon") :className (str icon " fa-lg fa-fw")}])
+        label-span (when label [:span {:key (str id "-label") :className label-class} label])]
     (if (and load-files (not is-disabled))
-      (if/file-input { :on-change #(wrap-toolbar-action local-state (fn [] (on-click params %)))
-                       :attr {:className button-class :key id :title title} }
+      (if/file-input {:on-change #(wrap-toolbar-action local-state (fn [] (on-click params %)))
+                      :attr {:className button-class :key id :title title}}
                      icon-span label-span)
-    [:span
-      {:key id
-       :className button-class
-       :title title
-       :onClick (gen-action is-disabled on-click local-state params)
-       :onMouseDown (gen-action is-disabled on-mouse-down local-state params)
-       :onTouchStart (gen-action is-disabled on-touch-start local-state params)}
-      icon-span label-span])))
+      [:span
+       {:key id
+        :className button-class
+        :title title
+        :onClick (gen-action is-disabled on-click local-state params)
+        :onMouseDown (gen-action is-disabled on-mouse-down local-state params)
+        :onTouchStart (gen-action is-disabled on-touch-start local-state params)}
+       icon-span label-span])))
 
 (defn- gen-roll
   "Generates one roll from the input data."
@@ -148,11 +148,11 @@
          :className button-class
          :title title
          :onClick (when (not is-disabled) (jev/make-block-propagation #(swap! local-state update-in [:open] toggle-open-state id)))}
-        (when icon [:i { :key (str id "-icon") :className (str icon " fa-lg fa-fw") }])
-        (when label [:span { :key (str id "-label") :className label-class } label])
-        [:i { :key (str id "-caret") :className "fa fa-caret-down" }]]
+        (when icon [:i {:key (str id "-icon") :className (str icon " fa-lg fa-fw")}])
+        (when label [:span {:key (str id "-label") :className label-class} label])
+        [:i {:key (str id "-caret") :className "fa fa-caret-down"}]]
        (when (= (:open @local-state) id)
-         [:span.roll-items { :key (str id "-roll-items") }
+         [:span.roll-items {:key (str id "-roll-items")}
           (map (partial gen-button local-state params "roll-item") roll-items)])])))
 
 (defn- gen-text
@@ -183,10 +183,10 @@
 (defn- gen-side
   "Generates one side of the toolbar from the input data, interposing each section with separators."
   [local-state params data]
-  (let [sep-data (map #(identity [:span.sep {:key (str (:id (nth % 0)) "-sep") }]) data)]
+  (let [sep-data (map #(identity [:span.sep {:key (str (:id (nth % 0)) "-sep")}]) data)]
     (drop-last (interleave
-      (map (partial gen-section local-state params) data)
-      sep-data))))
+                (map (partial gen-section local-state params) data)
+                sep-data))))
 
 (rum/defcc toolbar < (rum/local {:open nil}) lc/parser-type-mixin-context
   "Toolbar component"
@@ -197,19 +197,19 @@
            :onMouseDown jev/block-propagation
            :onTouchStart jev/block-propagation
            :onDoubleClick jev/block-propagation}
-      (gen-side local-state params (filter-side params left-data))
-      [:span.fill]
-      (gen-side local-state params (filter-side params right-data))]))
+     (gen-side local-state params (filter-side params left-data))
+     [:span.fill]
+     (gen-side local-state params (filter-side params right-data))]))
 
 (defn- view-types-roll-items
   "Get a list of available views except :orgpad/root-view as roll items."
   [current-type unit-tree-key]
   (->> (dissoc (registry/get-registry) :orgpad/root-view)
-       (map (fn [[view-type info]] { :id view-type
-                                     :label (info :orgpad/view-name)
-                                     :icon (info :orgpad/view-icon)
-                                     :on-click #(omt/change-view-type (:component %1) (unit-tree-key %1) view-type)
-                                     :active (= current-type view-type) }))
+       (map (fn [[view-type info]] {:id view-type
+                                    :label (info :orgpad/view-name)
+                                    :icon (info :orgpad/view-icon)
+                                    :on-click #(omt/change-view-type (:component %1) (unit-tree-key %1) view-type)
+                                    :active (= current-type view-type)}))
        (sort-by :label)))
 
 (defn gen-view-types-roll
@@ -219,8 +219,8 @@
         current-name (:orgpad/view-name current-info)
         current-icon (:orgpad/view-icon current-info)]
     {:elem :roll
-      :id id
-      :icon current-icon
-      :title (str title-prefix ": " current-name)
-      :roll-items (view-types-roll-items (:orgpad/view-type view) unit-tree-key)
-      :hidden hidden }))
+     :id id
+     :icon current-icon
+     :title (str title-prefix ": " current-name)
+     :roll-items (view-types-roll-items (:orgpad/view-type view) unit-tree-key)
+     :hidden hidden}))

@@ -24,17 +24,17 @@
                     :msg-id (or (:msg-id msg) (-> state' store/tempids (get -1)))
                     :ask? (partial ask? transact!)
                     :respond (partial respond transact!))]
-    { :state state'
-      :effect #(ci/send-msg msg')}))
+    {:state state'
+     :effect #(ci/send-msg msg')}))
 
 (defmethod mutate :orgpad.ci/update-msg
   [{:keys [state]} _ response]
-  { :state (store/transact state [{:db/id (:msg-id response)
-                                   :done? false
-                                   :orgpad/type :orgpad/msg
-                                   :orgpad/text (:text response)
-                                   :orgpad/context (or (:local-context response) :default)
-                                   :orgpad/response (:response response)}] {:cumulative-changes true}) })
+  {:state (store/transact state [{:db/id (:msg-id response)
+                                  :done? false
+                                  :orgpad/type :orgpad/msg
+                                  :orgpad/text (:text response)
+                                  :orgpad/context (or (:local-context response) :default)
+                                  :orgpad/response (:response response)}] {:cumulative-changes true})})
 
 (defmethod mutate :orgpad.ci/run-ation
   [{:keys [state] :as env} _ response]
@@ -50,7 +50,7 @@
      :effect (:effect minfo)}))
 
 (defmethod read :orgpad.ci/msg-list
-  [{ :keys [state] :as env } _ params]
+  [{:keys [state] :as env} _ params]
   (let [msgs (store/query state '[:find ?id ?text ?response ?done ?context
                                   :in $
                                   :where
@@ -64,7 +64,7 @@
           (map #(zipmap [:db/id :orgpad/text :orgpad/response :done? :orgpad/context] %) msgs))))
 
 (defmethod updated? :orgpad.ci/msg-list
-  [_ { :keys [state] } _]
+  [_ {:keys [state]} _]
   (store/changed? state '[:find ?id
                           :in $
                           :where

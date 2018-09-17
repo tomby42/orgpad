@@ -35,7 +35,7 @@
     (store/transact db [[:app-state :orgpad/view-stack] view-stack])))
 
 (defmethod read :orgpad/root-view
-  [{ :keys [state query] :as env } k params]
+  [{:keys [state query] :as env} k params]
   (let [db state
 
         root-view-info
@@ -67,14 +67,14 @@
 
 ;;    (println "root parser" current-root-id view-name view-type view-path)
 
-    (query (merge env { :view-name view-name
-                        :unit-id current-root-id
-                        :view-type view-type
-                        :view-path view-path })
-           :orgpad/unit-view params) ))
+    (query (merge env {:view-name view-name
+                       :unit-id current-root-id
+                       :view-type view-type
+                       :view-path view-path})
+           :orgpad/unit-view params)))
 
 (defmethod updated? :orgpad/root-view
-  [node { :keys [state] } _]
+  [node {:keys [state]} _]
   (let [value (aget node "value")
         root-view-info (find-root-view-info state)
         old-root (ot/uid value)
@@ -83,7 +83,7 @@
         (not= current-root old-root))))
 
 (defmethod read :orgpad/app-state
-  [{ :keys [state] :as env } _ _]
+  [{:keys [state] :as env} _ _]
   (-> state (store/query [:app-state]) first))
 
 (defmethod mutate :orgpad/app-state
@@ -91,15 +91,15 @@
   {:state (store/transact state [(->> path-val first (into [:app-state])) (second path-val)])})
 
 (defmethod updated? :orgpad/app-state
-  [_ { :keys [state] } _]
+  [_ {:keys [state]} _]
   (store/changed? state [:app-state]))
 
 (defmethod mutate :orgpad/root-view-stack
-  [{ :keys [state parser-state-push!] } _ { :keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path] }]
+  [{:keys [state parser-state-push!]} _ {:keys [db/id orgpad/view-name orgpad/view-type orgpad/view-path]}]
   (let [view-stack (get-view-stack state)
         pos (or (and view-stack (count view-stack)) 0)]
     (parser-state-push! :orgpad/root-view [])
-    { :state (set-view-stack state (conj view-stack [pos id view-name view-type view-path])) }))
+    {:state (set-view-stack state (conj view-stack [pos id view-name view-type view-path]))}))
 
 (defn update-parser-state!
   [db old new]
@@ -110,7 +110,7 @@
                         (fn [node] (= (-> node (aget "value") ot/uid)
                                       uid)))
         unit (-> child (aget "value") :unit)
-        props (-> db (store/query[:entity (:db/id unit)])
+        props (-> db (store/query [:entity (:db/id unit)])
                   ds/props->maps)
         unit' (assoc unit :orgpad/props-refs props)
         new-value (update-in (aget root "value")
@@ -151,28 +151,26 @@
                                  [(= ?x ?u)]] [parent uid]))))
 
 (defmethod mutate :orgpad/root-unit-close
-  [{ :keys [state parser-state-pop!] } _ params]
+  [{:keys [state parser-state-pop!]} _ params]
   (let [view-stack (get-view-stack state)]
     (parser-state-pop! :orgpad/root-view []
                        (if (sequent? state view-stack)
                          (partial update-parser-state! state)
                          nil))
-    { :state (set-view-stack state (pop view-stack)) }))
+    {:state (set-view-stack state (pop view-stack))}))
 
 (defmethod mutate :orgpad/root-view-conf
-  [{ :keys [state force-update!] } _ [{:keys [unit view path-info] } {:keys [attr value]}]]
+  [{:keys [state force-update!]} _ [{:keys [unit view path-info]} {:keys [attr value]}]]
   (let [path-info-id (path-info :db/id)]
     (force-update!)
-    { :state
-      (if path-info-id
-        (store/transact state [[:db/add path-info-id attr value]])
-        (store/transact state [(merge path-info { :db/id -1
-                                                  :orgpad/refs (unit :db/id)
-                                                  :orgpad/type :orgpad/unit-path-info
-                                                  attr value })
-                               [:db/add (unit :db/id) :orgpad/props-refs -1]
-                               ]))
-     }))
+    {:state
+     (if path-info-id
+       (store/transact state [[:db/add path-info-id attr value]])
+       (store/transact state [(merge path-info {:db/id -1
+                                                :orgpad/refs (unit :db/id)
+                                                :orgpad/type :orgpad/unit-path-info
+                                                attr value})
+                              [:db/add (unit :db/id) :orgpad/props-refs -1]]))}))
 
 (defmethod mutate :orgpad/root-new-view
   [env _ [unit-tree attr]]
@@ -182,34 +180,34 @@
       (mutate :orgpad/root-view-conf [unit-tree attr])))
 
 (defmethod mutate :orgpad/export-as-html
-  [{ :keys [state] } _ storage-el]
-  { :state state
-    :effect #(orgpad/export-html-by-uri state storage-el) })
+  [{:keys [state]} _ storage-el]
+  {:state state
+   :effect #(orgpad/export-html-by-uri state storage-el)})
 
 (defmethod mutate :orgpad/save-orgpad
-  [{ :keys [state] } _ _]
-  { :state state
-    :effect #(orgpad/save-file-by-uri state) })
+  [{:keys [state]} _ _]
+  {:state state
+   :effect #(orgpad/save-file-by-uri state)})
 
 (defmethod mutate :orgpad/load-orgpad
-  [{:keys [state force-update! transact!] } _ files]
+  [{:keys [state force-update! transact!]} _ files]
   {:state (store/transact state [[:app-state :loading] true])
    :effect #(try
               (transact! [[:orgpad/loaded (orgpad/load-orgpad state files)]])
               (catch :default e
                 (js/console.log "error loading" e)
                 ;; TODO - show error message
-                ))})
+))})
 
 (defmethod mutate :orgpad/import-orgpad
-  [{ :keys [state force-update! transact!] } _ files]
+  [{:keys [state force-update! transact!]} _ files]
   {:state (store/transact state [[:app-state :loading] true])
    :effect #(try
               (transact! [[:orgpad/loaded (orgpad/import-orgpad state files)]])
               (catch :default e
                 (js/console.log "error importing" e)
                 ;; TODO - show error message
-                ))})
+))})
 
 (defn- reset-n-rebuild
   [{:keys [force-update! global-cache]} new-state]
@@ -222,19 +220,19 @@
   (reset-n-rebuild env new-state)
   (when-let [name (-> new-state (store/query [:app-state]) first :orgpad-name)]
     (dom/set-el-text (dom/ffind-tag :title) name))
-  { :state new-state })
+  {:state new-state})
 
 (defmethod mutate :orgpad/download-orgpad-from-url
-  [{ :keys [state transact!] } _ url]
-  { :state (store/transact state [[:app-state :loading] true])
-    :effect #(orgpad/download-orgpad-from-url url transact!) })
+  [{:keys [state transact!]} _ url]
+  {:state (store/transact state [[:app-state :loading] true])
+   :effect #(orgpad/download-orgpad-from-url url transact!)})
 
 (defmethod read :orgpad/undoable?
-  [{ :keys [state] } _ _]
+  [{:keys [state]} _ _]
   (store/undoable? state))
 
 (defmethod read :orgpad/redoable?
-  [{ :keys [state] } _ _]
+  [{:keys [state]} _ _]
   (store/redoable? state))
 
 ;; TODO - if unit that we are editing do not exist pop the stack unit it exist
@@ -281,37 +279,37 @@
                                        nil))
                   (set-view-stack state' (pop view-stack)))
                 (reduced state')))
-              new-state old-view-stack)))
+            new-state old-view-stack)))
 
 ;; update if view-stack updated
 (defmethod mutate :orgpad/undo
-  [{ :keys [state global-cache] :as env } _ _]
+  [{:keys [state global-cache] :as env} _ _]
   (let [new-state (->> state
                        store/undo
                        (resolve-parser-state! env))]
     (geocache/update-changed-units! global-cache state new-state (:datom (store/changed-entities new-state)))
-    { :state new-state }))
+    {:state new-state}))
 
 (defmethod mutate :orgpad/redo
-  [{ :keys [state global-cache] :as env } _ _]
+  [{:keys [state global-cache] :as env} _ _]
   (let [new-state (->> state
                        store/redo
                        (resolve-parser-state! env))]
     (geocache/update-changed-units! global-cache state new-state (:datom (store/changed-entities new-state)))
-    { :state new-state }))
+    {:state new-state}))
 
 (defmethod read :orgpad/history-info
-  [{ :keys [state] } _ _]
+  [{:keys [state]} _ _]
   (store/history-info state))
 
 (defmethod mutate :orgpad/history-change
-  [{ :keys [state] :as env } _ { :keys [old-finger new-finger] }]
-  { :state (reduce (fn [state _]
-                     (if (< old-finger new-finger)
-                       (:state (mutate env :orgpad/redo []))
-                       (:state (mutate env :orgpad/undo []))))
-                   state
-                   (range old-finger new-finger (if (< old-finger new-finger) 1 -1))) })
+  [{:keys [state] :as env} _ {:keys [old-finger new-finger]}]
+  {:state (reduce (fn [state _]
+                    (if (< old-finger new-finger)
+                      (:state (mutate env :orgpad/redo []))
+                      (:state (mutate env :orgpad/undo []))))
+                  state
+                  (range old-finger new-finger (if (< old-finger new-finger) 1 -1)))})
 
 (defmethod mutate :orgpad.units/select
   [{:keys [state]} _ {:keys [pid uid]}]

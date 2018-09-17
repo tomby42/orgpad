@@ -54,12 +54,12 @@
       (.push @tree old-node)
       (aget old-node "value"))
     (query (merge env
-                  { :unit-id    uid
-                    :old-node   nil
-                    :view-path  (-> view-path (conj unit-id) (conj (view-unit :orgpad/view-name)))
-                    :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
-                    :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
-                    :view-contexts view-contexts })
+                  {:unit-id    uid
+                   :old-node   nil
+                   :view-path  (-> view-path (conj unit-id) (conj (view-unit :orgpad/view-name)))
+                   :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
+                   :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
+                   :view-contexts view-contexts})
            :orgpad/unit-view params)))
 
 (defn- build-unit
@@ -74,8 +74,8 @@
                                     [])] ;; TODO: hack for links that are units too - need to get all siblings of current unit
                     (mapv (fn [[u o]] (parser' u o))
                           ((:orgpad/visible-children-picker view-info) unit view-unit
-                           (if (and old-node (= (aget old-node "key") :orgpad/unit-view)) old-node nil)
-                           global-cache sort-refs)))))
+                                                                       (if (and old-node (= (aget old-node "key") :orgpad/unit-view)) old-node nil)
+                                                                       global-cache sort-refs)))))
         (let [old-children-nodes (and old-node (aget old-node "children"))
               use-children-nodes? (and old-node
                                        (= (aget old-node "key") :orgpad/unit-view)
@@ -101,7 +101,7 @@
         eunit))))
 
 (defmethod read :orgpad/unit-view
-  [{ :keys [state query old-node tree unit-id view-name view-type view-path view-contexts global-cache] :as env } k params]
+  [{:keys [state query old-node tree unit-id view-name view-type view-path view-contexts global-cache] :as env} k params]
 ;;  (println "read :orgpad/unit-view" unit-id view-name view-type view-path view-contexts k)
 
   (let [db  state
@@ -113,9 +113,9 @@
         (get-path-info unit view-path)
 
         path-info'
-        (assoc (or path-info { :orgpad/view-name view-name
-                               :orgpad/view-type view-type
-                               :orgpad/view-path view-path })
+        (assoc (or path-info {:orgpad/view-name view-name
+                              :orgpad/view-type view-type
+                              :orgpad/view-path view-path})
                :orgpad/type :orgpad/unit-view)
 
         view-info
@@ -125,14 +125,14 @@
         (-> unit (get-view-props path-info') first)
 
         view-unit
-        (or view-unit-local (-> view-info :orgpad/default-view-info (assoc :orgpad/refs [{ :db/id unit-id }])))
+        (or view-unit-local (-> view-info :orgpad/default-view-info (assoc :orgpad/refs [{:db/id unit-id}])))
 
         props-info
         (when (:orgpad/child-props-types view-info)
           (into [] (map (fn [type]
-                          { :orgpad/view-type type
-                            :orgpad/view-name (:orgpad/view-name path-info')
-                            :orgpad/type      :orgpad/unit-view-child }))
+                          {:orgpad/view-type type
+                           :orgpad/view-name (:orgpad/view-name path-info')
+                           :orgpad/type      :orgpad/unit-view-child}))
                 (:orgpad/child-props-types view-info)))
 
         view-contexts'
@@ -159,10 +159,10 @@
     ;;                  :props props }
     ;;                 db)
 
-    { :unit unit'
-      :path-info path-info'
-      :view view-unit
-      :props props }))
+    {:unit unit'
+     :path-info path-info'
+     :view view-unit
+     :props props}))
 
 ;;; Default updated? definition
 
@@ -171,7 +171,7 @@
   false)
 
 (defmethod updated? :orgpad/unit-view
-  [node { :keys [state changed-entities] } force-update-part]
+  [node {:keys [state changed-entities]} force-update-part]
 
   (let [value (aget node "value")
         changed-datom-entities (aget changed-entities "datom")
@@ -185,10 +185,10 @@
 
 (defn- clone-view
   [{:keys [unit view]} new-view-name indexer]
-  [(merge view { :db/id (vswap! indexer dec)
-                 :orgpad/type :orgpad/unit-view
-                 :orgpad/refs (unit :db/id)
-                 :orgpad/view-name new-view-name })
+  [(merge view {:db/id (vswap! indexer dec)
+                :orgpad/type :orgpad/unit-view
+                :orgpad/refs (unit :db/id)
+                :orgpad/view-name new-view-name})
    [:db/add (unit :db/id) :orgpad/props-refs @indexer]])
 
 (defn- clone-props
@@ -210,7 +210,7 @@
     (into []
           (mapcat
            (fn [type]
-             (clone-props state (:db/id unit) ( :orgpad/view-name view) type
+             (clone-props state (:db/id unit) (:orgpad/view-name view) type
                           :orgpad/unit-view-child indexer new-view-name)))
           (info :orgpad/child-props-types))
     []))
@@ -239,5 +239,5 @@
         cloned-propagated-child-props (clone-propagated-child-props state info unit-tree
                                                                     new-view-name indexer)]
     (geocache/copy global-cache (ot/uid unit-tree) (-> unit-tree :view :orgpad/view-name) new-view-name)
-    { :state
-      (store/transact state (colls/minto cloned-view cloned-child-props cloned-propagated-child-props)) }))
+    {:state
+     (store/transact state (colls/minto cloned-view cloned-child-props cloned-propagated-child-props))}))

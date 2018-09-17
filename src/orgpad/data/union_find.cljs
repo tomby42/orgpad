@@ -1,7 +1,7 @@
 (ns
-  ^{:doc "Persistent disjoint set forests using Tarjan's union-find algorithm."
-    :author "based on Jordan Lewis https://github.com/jordanlewis/data.union-find"}
-  orgpad.data.union-find)
+ ^{:doc "Persistent disjoint set forests using Tarjan's union-find algorithm."
+   :author "based on Jordan Lewis https://github.com/jordanlewis/data.union-find"}
+ orgpad.data.union-find)
 
 (defprotocol DisjointSetForest
   "A data structure that maintains information on a number of disjoint sets."
@@ -176,16 +176,16 @@
                 (nil? y-root) ;; universe, or the two inputs are already unioned
                 (= x-root y-root)) newset
             (< x-rank y-rank) (PersistentDSF.
-                                (update-in elt-map [x-root] #(->UFNode (value %) (rank %) y-root))
-                                num-sets _meta)
+                               (update-in elt-map [x-root] #(->UFNode (value %) (rank %) y-root))
+                               num-sets _meta)
             (< y-rank x-rank) (PersistentDSF.
-                                (update-in elt-map [y-root] #(->UFNode (value %) (rank %) x-root))
-                                num-sets _meta)
+                               (update-in elt-map [y-root] #(->UFNode (value %) (rank %) x-root))
+                               num-sets _meta)
             :else (PersistentDSF.
-                    (assoc elt-map
-                           y-root (->UFNode (value y-node) (rank y-node) x-root)
-                           x-root (->UFNode (value x-node) (inc x-rank) (parent x-node)))
-                    num-sets _meta)))))
+                   (assoc elt-map
+                          y-root (->UFNode (value y-node) (rank y-node) x-root)
+                          x-root (->UFNode (value x-node) (inc x-rank) (parent x-node)))
+                   num-sets _meta)))))
 
 (deftype TransientDSF [^:unsynchronized-mutable elt-map
                        ^:unsynchronized-mutable num-sets
@@ -219,7 +219,7 @@
 
   (-persistent! [this]
     (let [elt-map (persistent! elt-map)]
-      (doseq [node (vals elt-map)] (when (mutable-node? node) (set-immutable! node) ))
+      (doseq [node (vals elt-map)] (when (mutable-node? node) (set-immutable! node)))
       (PersistentDSF. elt-map num-sets meta)))
 
   DisjointSetForest
@@ -227,15 +227,15 @@
     (let [node (get elt-map x)
           parent (when node (parent node))]
       (cond
-       (= node nil) [this nil]
-       (= parent nil) [this x]
+        (= node nil) [this nil]
+        (= parent nil) [this x]
        ;; path compression. set the parent of each node on the path we take
        ;; to the root that we find.
-       :else (let [[_ canonical] (get-canonical this parent)]
-               (do (if (mutable-node? node)
-                     (set-parent! node canonical)
-                     (set! elt-map (assoc! elt-map x (->MutableUFNode (value node) (rank node) canonical true))))
-                   [this canonical])))))
+        :else (let [[_ canonical] (get-canonical this parent)]
+                (do (if (mutable-node? node)
+                      (set-parent! node canonical)
+                      (set! elt-map (assoc! elt-map x (->MutableUFNode (value node) (rank node) canonical true))))
+                    [this canonical])))))
   (union [this x y]
     (throw "Use union! on transients"))
 

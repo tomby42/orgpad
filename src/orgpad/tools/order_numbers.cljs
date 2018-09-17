@@ -72,7 +72,7 @@
                 1))
       (str (.substring num1' 0 (inc prefix-len))
            mid-cipher)
-      
+
       (str (.substring num1' 0 prefix-len)
            (-> (.charCodeAt num1' prefix-len)
                (+ (.charCodeAt num2' prefix-len))

@@ -15,13 +15,12 @@
     (fn [& args]
       (let [call-now?  (and
                         immediate?
-                        (not @state) )
+                        (not @state))
             later-fn
             (fn []
               (reset! state nil)
-              (when (not call-now?) (apply f args)) ) ]
+              (when (not call-now?) (apply f args)))]
 
         (js/clearTimeout @state)
         (reset! state (js/setTimeout later-fn bounce-timeout))
-        (when call-now? (apply f args)) )
-      )))
+        (when call-now? (apply f args))))))

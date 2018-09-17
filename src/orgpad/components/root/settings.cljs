@@ -46,24 +46,14 @@
                                                 [[:orgpad/app-state [[:compress-saved-files?]
                                                                      (-> % .-target .-checked)]]])}
                       (if (:compress-saved-files? app-state)
-                        {:checked true} {}))
-       ]]
-     ]
-    ]]
-
-
-   [:div.block
-    [:div.label "Advanced"]
-    [:div.paragraph
-     [:div.line
-      [:div.left "Enable Experimental Features"]
-      [:div.right [:input (merge {:type "checkbox"
-                                  :onChange #(lc/transact! component
-                                                           [[:orgpad/app-state [[:enable-experimental-features?]
-                                                                                (-> % .-target .-checked)]]])}
-                                 (if (:enable-experimental-features? app-state)
-                                   {:checked true} {}))
-
-                   ]]]]
-   ]]
-  )
+                        {:checked true} {}))]]]]] [:div.block
+                                                   [:div.label "Advanced"]
+                                                   [:div.paragraph
+                                                    [:div.line
+                                                     [:div.left "Enable Experimental Features"]
+                                                     [:div.right [:input (merge {:type "checkbox"
+                                                                                 :onChange #(lc/transact! component
+                                                                                                          [[:orgpad/app-state [[:enable-experimental-features?]
+                                                                                                                               (-> % .-target .-checked)]]])}
+                                                                                (if (:enable-experimental-features? app-state)
+                                                                                  {:checked true} {}))]]]]]])

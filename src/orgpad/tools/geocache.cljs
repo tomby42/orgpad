@@ -228,19 +228,19 @@
         (let [vs (refs-order->vertices (linfo 4))
               v1-info (get-vertex-info db (vs 0))
               v2-info (get-vertex-info db (vs 1))]
-          { :type :link
-            :info linfo
-            :v1 v1-info
-            :v2 v2-info }))
-      { :type :vertex
-        :info vinfo })))
+          {:type :link
+           :info linfo
+           :v1 v1-info
+           :v2 v2-info}))
+      {:type :vertex
+       :info vinfo})))
 
 (defn update-changed-units!
   [global-cache old-db new-db changed-units]
   (let [infos (into #{}
                     (comp
-                     (map (fn [uid] { :old (get-info old-db uid)
-                                      :new (get-info new-db uid) }))
+                     (map (fn [uid] {:old (get-info old-db uid)
+                                     :new (get-info new-db uid)}))
                      (filter (fn [{:keys [new old]}] (or new old))))
                     changed-units)]
     (doseq [info infos]

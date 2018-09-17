@@ -28,13 +28,13 @@
 (rum/defcs file-input < rum/static
   [state {:keys [attr type on-change]} & children]
 
-  [ :span (merge attr {:onClick (fn [ev]
-                      (-> state (trum/ref-node :fileInput) .click)) })
+  [:span (merge attr {:onClick (fn [ev]
+                                 (-> state (trum/ref-node :fileInput) .click))})
 
-   [ :input.hidden-input-style { :type "file"
-                                 :ref "fileInput"
-                                 :style { :position "absolute"
-                                          :top "-9999px" }
-                                 :name "files[]"
-                                 :onChange #(load-files % on-change (or type "text")) } ]
-   children ])
+   [:input.hidden-input-style {:type "file"
+                               :ref "fileInput"
+                               :style {:position "absolute"
+                                       :top "-9999px"}
+                               :name "files[]"
+                               :onChange #(load-files % on-change (or type "text"))}]
+   children])

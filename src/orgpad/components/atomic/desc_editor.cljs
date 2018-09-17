@@ -3,16 +3,15 @@
   (:require [rum.core :as rum]
             [orgpad.cycle.life :as lc]))
 
-
 (rum/defcc desc-editor < rum/static lc/parser-type-mixin-context
   [component id view desc]
-  [ :div { :className "react-tagsinput desc-editor" }
-   [ :input { :value desc
-              :placeholder "Write a description"
-              :onChange (fn [e]
-                          (lc/transact!
-                           component
-                           [[:orgpad.desc/update
-                             { :db/id id
-                               :orgpad/view view
-                               :orgpad/desc (-> e .-target .-value) } ] ] ) ) } ] ] )
+  [:div {:className "react-tagsinput desc-editor"}
+   [:input {:value desc
+            :placeholder "Write a description"
+            :onChange (fn [e]
+                        (lc/transact!
+                         component
+                         [[:orgpad.desc/update
+                           {:db/id id
+                            :orgpad/view view
+                            :orgpad/desc (-> e .-target .-value)}]]))}]])

@@ -66,7 +66,7 @@
     (get-sorted-ref unit active-child)))
 
 (defn get-sheet-number
-  [{ :keys [unit view]}]
+  [{:keys [unit view]}]
   [(-> view :orgpad/active-unit inc) (-> unit :orgpad/refs count)])
 
 (defn no-sheets?
@@ -93,11 +93,11 @@
   (if (view :db/id)
     [[:db/add (view :db/id) key val]]
     [(merge view
-            { :db/id -1
-              :orgpad/refs unit-id
-              key val
-              :orgpad/type :orgpad/unit-view })
-     [:db/add unit-id :orgpad/props-refs -1] ]))
+            {:db/id -1
+             :orgpad/refs unit-id
+             key val
+             :orgpad/type :orgpad/unit-view})
+     [:db/add unit-id :orgpad/props-refs -1]]))
 
 (def ^:private rules
   '[[(eq [?e3 ?e4])
@@ -208,7 +208,7 @@
   (child-vertex-props (fn [prop id]
                         (when prop
                           (let [bw (* 2 (+ (:orgpad/unit-padding prop)
-						                               (:orgpad/unit-border-width prop)))
+                                           (:orgpad/unit-border-width prop)))
                                 d [(-> prop :orgpad/unit-width (/ 2)) (-> prop :orgpad/unit-height (/ 2))]]
                             {:bb [(-- (:orgpad/unit-position prop) d)
                                   (++ (:orgpad/unit-position prop)
@@ -327,10 +327,10 @@
                 dscript/entity->map
                 (update :db/id -)
                 (as-> e
-                    (cond-> e
-                      (:orgpad/refs e) (update :orgpad/refs negate-db-id)
-                      (:orgpad/props-refs e) (update :orgpad/props-refs negate-db-id-but-independent')
-                      (:orgpad/refs-order e) (update :orgpad/refs-order update-refs-order')))) units-ids)
+                      (cond-> e
+                        (:orgpad/refs e) (update :orgpad/refs negate-db-id)
+                        (:orgpad/props-refs e) (update :orgpad/props-refs negate-db-id-but-independent')
+                        (:orgpad/refs-order e) (update :orgpad/refs-order update-refs-order')))) units-ids)
       (map #(-> %
                 second
                 (update :db/id -)
@@ -350,16 +350,14 @@
                             (map (fn [unit]
                                    [:db/retract (temp->ids (:db/id unit))
                                     :orgpad/refs-order
-                                    (:orgpad/refs-order unit)
-                                    ])))
+                                    (:orgpad/refs-order unit)])))
                       entities)
         add-qry (into []
                       (comp (filter :orgpad/refs-order)
                             (map (fn [unit]
                                    [:db/add (temp->ids (:db/id unit))
                                     :orgpad/refs-order
-                                    (update-refs-order (comp temp->ids update-uid) (:orgpad/refs-order unit))
-                                    ])))
+                                    (update-refs-order (comp temp->ids update-uid) (:orgpad/refs-order unit))])))
                       entities)]
     (into del-qry add-qry)))
 
@@ -382,11 +380,11 @@
         (comp (filter :orgpad/context-unit)
               (map (fn [unit]
                      (let [ctx-unit (:orgpad/context-unit unit)]
-                     [:db/add (temp->ids (:db/id unit))
-                      :orgpad/context-unit
-                      (if (= ctx-unit old-rpid)
-                        new-rpid
-                        (temp->ids (- ctx-unit)))]))))
+                       [:db/add (temp->ids (:db/id unit))
+                        :orgpad/context-unit
+                        (if (= ctx-unit old-rpid)
+                          new-rpid
+                          (temp->ids (- ctx-unit)))]))))
         entities))
 
 (defn past-descendants-to-db
@@ -617,7 +615,7 @@
                [l {:start-pos (get-pos (mus id1) view-name pid)
                    :start-size (when cyclic? (get-size (mus id1) view-name pid))
                    :end-pos (get-pos (mus id2) view-name pid)
-                   :cyclic? cyclic? }])
+                   :cyclic? cyclic?}])
              (catch :default e
                (js/console.log "Mapped link error:" e)
                [-1 {}])))
@@ -789,7 +787,7 @@
               ;; (js/console.log "probing" v vprop ctx view-name (store/query db [:entity v]))
               (let [refs (-> db (store/query [:entity v]) (sort-refs :db/id))
                     n (-> units-sheet-views (get [v view-name])
-                              (as-> x (if x (get-in x [0 3]) 0)))
+                          (as-> x (if x (get-in x [0 3]) 0)))
                     ref (refs n)
                     vprop (-> db (store/query [:entity vprop]) dscript/entity->map)
                     vprop-prop-id (-> units-vprops-prop (get-in [[v (:db/id ref) view-name] 0 2]))

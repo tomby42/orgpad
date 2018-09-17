@@ -9,8 +9,8 @@
 
 (defn- start-kernel
   [url]
-  (let [connection-info #js { :baseUrl url
-                              :ws (-> url (.split ":") (.slice 1) (.join ":")) }]
+  (let [connection-info #js {:baseUrl url
+                             :ws (-> url (.split ":") (.slice 1) (.join ":"))}]
     (-> (.getSpecs service-kernel connection-info)
         (.then (fn [kernel-specs]
                  (aset connection-info "name" (aget kernel-specs "default"))
@@ -23,7 +23,7 @@
 (defn- kernel-exec
   [kernel code cb]
   (js/console.log "executing code" kernel code)
-  (let [f (.execute kernel #js { :code code })]
+  (let [f (.execute kernel #js {:code code})]
     (doto f
       (aset "onDone" cb)
       (aset "onReply" cb)
@@ -36,4 +36,4 @@
       (-> (start-kernel url)
           (.then (fn [kernel]
                    (kernel-exec kernel code cb))))
-    (kernel-exec kernel code cb))))
+      (kernel-exec kernel code cb))))
