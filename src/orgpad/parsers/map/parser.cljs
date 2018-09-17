@@ -283,8 +283,9 @@
 
 (defn- view-units
   [db unit view]
-  (store/query db (conj propagated-query '[?p :orgpad/type :orgpad/unit-view])
-               [(unit :db/id) (view :orgpad/view-type) [:db/id :orgpad/view-name :orgpad/active-unit]]))
+  (let [vs (store/query db (conj propagated-query '[?p :orgpad/type :orgpad/unit-view])
+                        [(unit :db/id) (view :orgpad/view-type) [:db/id :orgpad/view-name :orgpad/active-unit]])]
+    (if (empty? vs) [view] vs)))
 
 (defn- update-current-active-unit
   [view-units view new-active-unit]
@@ -344,14 +345,14 @@
                                                   unit
                                                   (info :orgpad/propagated-props-from-children)
                                                   view-units)]
-      (update-geocache-after-switch-active state global-cache unit-tree update-trans)
-      (into update-trans
-            (if (view :db/id)
-              [[:db/add (view :db/id) :orgpad/active-unit
-                (or new-active-pos new-active-unit)]]
-              [[:db/add (unit :db/id) :orgpad/props-refs -1]
-               (merge view { :db/id -1
-                             :orgpad/type :orgpad/unit-view
+    (update-geocache-after-switch-active state global-cache unit-tree update-trans)
+    (into update-trans
+          (if (view :db/id)
+            [[:db/add (view :db/id) :orgpad/active-unit
+              (or new-active-pos new-active-unit)]]
+            [[:db/add (unit :db/id) :orgpad/props-refs -1]
+             (merge view { :db/id -1
+                          :orgpad/type :orgpad/unit-view
                              :orgpad/active-unit (or new-active-pos
                                                      new-active-unit) })]) )))
 

@@ -739,13 +739,12 @@
 
 (def vprops-core-rules
   '[[?v :orgpad/props-refs ?vprop]
-    [?vprop :orgpad/type :orgpad/unit-view-child]
     [?vprop :orgpad/view-type :orgpad.map-view/vertex-props]
-    [?vprop :orgpad/context-unit ?ctx]
     [?vprop :orgpad/view-name ?view-name]])
 
 (def vprops-rules
-  (into vprops-core-rules '[[?vprop :orgpad/view-type :orgpad.map-view/vertex-props]]))
+  (into vprops-core-rules '[[?vprop :orgpad/type :orgpad/unit-view-child]
+                            [?vprop :orgpad/context-unit ?ctx]]))
 
 (def vprops-qry
   (into '[:find ?v ?vprop ?ctx ?view-name
@@ -754,10 +753,11 @@
 
 (def vprops-prop-rules
   (into vprops-core-rules '[[?vprop :orgpad/type :orgpad/unit-view-child-propagated]
-                            [?u :orgpad/refs ?v]]))
+                            [?u :orgpad/refs ?v]
+                            [(not= ?u ?v)]]))
 
 (def vprops-prop-qry
-  (into '[:find ?u ?v ?vprop ?ctx ?view-name
+  (into '[:find ?u ?v ?vprop ?view-name
           :in $
           :where] vprops-prop-rules))
 
@@ -784,16 +784,17 @@
         vprops-prop (store/query db vprops-prop-qry)
         sheet-views (store/query db sheet-view-qry)
         units-sheet-views (group-by #(vector (% 0) (% 2)) sheet-views)
-        units-vprops-prop (group-by #(vector (% 0) (% 1) (% 3) (% 4)) vprops-prop)]
+        units-vprops-prop (group-by #(vector (% 0) (% 1) (% 3)) vprops-prop)]
     (reduce (fn [qry [v vprop ctx view-name]]
               ;; (js/console.log "probing" v vprop ctx view-name (store/query db [:entity v]))
               (let [refs (-> db (store/query [:entity v]) (sort-refs :db/id))
-                    n (-> units-sheet-views (get  [v view-name])
+                    n (-> units-sheet-views (get [v view-name])
                               (as-> x (if x (get-in x [0 3]) 0)))
                     ref (refs n)
                     vprop (-> db (store/query [:entity vprop]) dscript/entity->map)
-                    vprop-prop-id (-> units-vprops-prop (get-in  [[v (:db/id ref) ctx view-name] 2]) first)
+                    vprop-prop-id (-> units-vprops-prop (get-in [[v (:db/id ref) view-name] 0 2]))
                     vprop-prop (-> db (store/query [:entity vprop-prop-id]) dscript/entity->map)]
+                ;; (js/console.log "checking vprop prop:" units-vprops-prop v vprop ctx view-name refs n vprop-prop-id vprop-prop)
                 (conj qry (merge (-> vprop (dissoc :orgpad/refs)) (select-keys vprop-prop prop-keys)))))
             [] vprops)))
 
