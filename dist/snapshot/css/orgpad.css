@@ -4445,6 +4445,24 @@ readers do not read off random characters that represent icons */
   padding: 5px;
   width: 100%;
 }
+.hsc {
+  box-shadow: rgba(0, 0, 0, 0.14) 0px 6px 10px 0px, rgba(0, 0, 0, 0.12) 0px 1px 18px 0px, rgba(0, 0, 0, 0.4) 0px 3px 5px -1px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  font-family: Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  left: -999px;
+  min-height: 200px;
+  position: absolute;
+  top: -999px;
+  visibility: hidden;
+  width: 450px;
+  z-index: 3000;
+  background: #ffffff;
+  border-radius: 2px;
+}
 .border-box {
   box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -5980,4 +5998,9 @@ readers do not read off random characters that represent icons */
   text-align: right;
   position: relative;
   top: -5px;
+}
+.root-tmp {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
 }
