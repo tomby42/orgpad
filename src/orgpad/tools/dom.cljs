@@ -67,3 +67,25 @@
 (defn set-el-text
   [el text]
   (aset el "text" text))
+
+(defn create-tmp-div
+  [name class]
+  (let [el (js/document.createElement "div")]
+    (doto el
+      (aset "id" name)
+      (aset "className" class))
+    (js/document.body.appendChild el)
+    el))
+
+(defonce root-tmp-el (create-tmp-div "root-tmp-el" "root-tmp"))
+
+(defn dom-bb-size
+  [bb]
+  [(.-width bb) (.-height bb)])
+
+(defn get-html-size
+  [html]
+  (aset root-tmp-el "innerHTML" html)
+  (-> root-tmp-el
+      .getBoundingClientRect
+      dom-bb-size))
