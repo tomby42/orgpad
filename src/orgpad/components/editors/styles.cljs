@@ -15,6 +15,7 @@
             [orgpad.components.registry :as cregistry]
             [orgpad.components.input.slider :as slider]
             [orgpad.components.graphics.primitives :as g]
+            [orgpad.components.graphics.primitives-svg :as sg]
             [orgpad.components.menu.color.picker :as cpicker]))
 
 (def init-state
@@ -220,14 +221,15 @@
         end-pos [225 50]
         ctl-pt [125 25]
         width (+ 250 (style :orgpad/link-width))
-        height (+ 75 (style :orgpad/link-width))]
+        height (+ 75 (style :orgpad/link-width))
+        final-style {:svg (styles/gen-svg-link-canvas style)}]
     [:div.style-example
      [:div {:style {:width width :height height}}
-      (g/quadratic-curve start-pos end-pos ctl-pt {:canvas (styles/gen-link-canvas style)})
+      (sg/quadratic-curve start-pos end-pos ctl-pt final-style)
       (when (not= link-type :undirected)
-        (g/make-arrow-quad start-pos end-pos ctl-pt style))
+        (sg/make-arrow-quad start-pos end-pos ctl-pt style final-style))
       (when (= link-type :bidirected)
-        (g/make-arrow-quad end-pos start-pos ctl-pt style))]]))
+        (sg/make-arrow-quad end-pos start-pos ctl-pt style final-style))]]))
 
 (def style-type->example
   {:orgpad.map-view/vertex-props-style example-vertex-props-style

@@ -13,6 +13,8 @@
   [prop]
   {:width (prop :orgpad/unit-width)
    :height (prop :orgpad/unit-height)
+   ;; :minWidth (prop :orgpad/unit-width)
+   ;; :minHeight (prop :orgpad/unit-height)
    :borderWidth (prop :orgpad/unit-border-width)
    :borderStyle (prop :orgpad/unit-border-style)
    :borderColor (-> prop :orgpad/unit-border-color css/format-color)
@@ -27,3 +29,11 @@
    :lineWidth (prop :orgpad/link-width)
    :lineCap "round"
    :lineDash (prop :orgpad/link-dash)})
+
+(defn gen-svg-link-canvas
+  [prop]
+  {:stroke (css/format-color (prop :orgpad/link-color))
+   :strokeWidth (prop :orgpad/link-width)
+   :strokeLinecap "round"
+   :fill "none"
+   :strokeDasharray (-> prop :orgpad/link-dash (.join " "))})

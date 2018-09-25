@@ -3,7 +3,9 @@
   (:require [orgpad.core.store :as store]
             [orgpad.effects.core :as eff]
             [orgpad.parsers.default-unit :as dp :refer [read mutate]]
-            [orgpad.tools.orgpad :as orgpad]))
+            [orgpad.tools.orgpad :as orgpad]
+            [orgpad.tools.orgpad-db :as otdb]
+            [orgpad.tools.dom :as dom]))
 
 (defn- update-view-unit
   [db unit-id view key val]
@@ -48,5 +50,9 @@
                                       [?v :orgpad/view-name ?name]
                                       [?v :orgpad/view-type ?type]]
                               [id (:orgpad/view-name view) (:orgpad/view-type view)])
-                 view))]
+                 view))
+        ;; size (dom/get-html-size atom)
+        ;; size-qry (otdb/update-vsize-qry state id (:orgpad/view-name view') size)
+        ]
+    ;; (js/console.log "atom update - qry size update" size-qry size state)
     {:state (update-view-unit state id view' :orgpad/atom atom)}))

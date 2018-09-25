@@ -8,41 +8,15 @@
             [orgpad.tools.math :as math]
             [orgpad.tools.bezier :as bez]
             [orgpad.tools.colls :as colls]
-            [orgpad.tools.css :as css]))
-
-(defn- comp-border-width
-  [style]
-  (or (-> style :canvas :lineWidth) 0))
-
-(defn- comp-bb
-  [border-width pts]
-  (let [bb (apply geom/points-bbox pts)
-        shift [border-width border-width]]
-    [(geom/-- (bb 0) shift) (geom/++ (bb 1) shift)]))
-
-(defn- dims
-  [border-width pts]
-  (let [bb (comp-bb border-width pts)]
-    [(inc (- (>- bb 1 0) (>- bb 0 0)))
-     (inc (- (>- bb 1 1) (>- bb 0 1)))]))
-
-(defn- left-top-corner
-  [pts]
-  [(apply min (map colls/vfirst pts)) (apply min (map colls/vsecond pts))])
+            [orgpad.tools.css :as css]
+            [orgpad.components.graphics.utils :refer [comp-border-width comp-bb dims
+                                                      left-top-corner lp pt-lp arc-bbox
+                                                      comp-quad-arrow-pts comp-arc-arrow-pts]]))
 
 (defn- set-style!
   [ctx style]
   (doseq [[attr val] style]
     (aset ctx (name attr) val)))
-
-(defn- lp
-  "Compute local point coordinate"
-  [p c idx border-width]
-  (+ (- (nth p idx) c) border-width))
-
-(defn- pt-lp
-  [p l t border-width]
-  [(lp p l 0 border-width) (lp p t 1 border-width)])
 
 (defn- get-context
   [state]
@@ -117,12 +91,6 @@
   [start end ctl-pt style]
   (render-curve style start end ctl-pt))
 
-(defn- arc-bbox
-  [center radius]
-  (let [d [radius radius]]
-    [(geom/-- center d)
-     (geom/++ center d)]))
-
 (defn- draw-arc-curve
   [state]
   (let [[center radius start-angle stop-angle] (vec (-> state :rum/args))
@@ -139,30 +107,11 @@
     (render-curve style (bbox 0) (bbox 1))))
 
 (defn make-arrow-quad
-  [start-pos end-pos ctl-pt prop]
-  (let [arrow-pos (* (prop :orgpad/link-arrow-pos) 0.01)
-        p1 (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos arrow-pos)
-        dir (-> p1 (-- (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos (- arrow-pos 0.01))) normalize)
-        ptmp (++ p1 (*c dir -10))
-        n (-> dir geom/normal)
-        p2 (++ ptmp (*c n 10))
-        p3 (++ ptmp (*c (-- n) 10))
-        style {:css {:zIndex -1}
-               :canvas {:strokeStyle (-> prop :orgpad/link-color css/format-color)
-                        :lineWidth (prop :orgpad/link-width)
-                        :lineCap "round"}}]
-    (poly-line [p2 p1 p3] style)))
+  [start-pos end-pos ctl-pt prop style]
+  (let [pts (comp-quad-arrow-pts start-pos end-pos ctl-pt prop)]
+    (poly-line pts style)))
 
 (defn make-arrow-arc
-  [s e prop]
-  (let [dir (normalize (-- s e))
-        n (geom/normal dir)
-        s' (++ (*c n -10) s)
-        p1 (++ (*c dir 10) s')
-        p2 (++ (*c dir -10) s')
-        style {:css {:zIndex -1}
-               :canvas {:strokeStyle (-> prop :orgpad/link-color css/format-color)
-                        :lineWidth (prop :orgpad/link-width)
-                        :lineCap "round"}}]
-    (poly-line [p1 s p2] style)))
-
+  [s e prop style]
+  (let [pts (comp-arc-arrow-pts s e prop)]
+    (poly-line pts style)))

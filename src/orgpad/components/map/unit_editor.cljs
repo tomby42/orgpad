@@ -17,6 +17,7 @@
             [orgpad.tools.dom :as dom]
             [orgpad.tools.math :refer [normalize-range]]
             [orgpad.components.graphics.primitives :as g]
+            [orgpad.components.graphics.primitives-svg :as sg]
             [orgpad.components.menu.toolbar.component :as tbar]
             [orgpad.components.menu.color.picker :as cpicker]
             [goog.string :as gstring]
@@ -206,11 +207,11 @@
              bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
              ox (.-left bbox)
              oy (.-top bbox)]
-         (g/line (screen->canvas tr [(- (@local-state :link-start-x) ox)
-                                     (- (@local-state :link-start-y) oy)])
-                 (screen->canvas tr [(- (@local-state :mouse-x) ox)
-                                     (- (@local-state :mouse-y) oy)])
-                 {:css {:zIndex 2} :key 1})))]))
+         (sg/line (screen->canvas tr [(- (@local-state :link-start-x) ox)
+                                      (- (@local-state :link-start-y) oy)])
+                  (screen->canvas tr [(- (@local-state :mouse-x) ox)
+                                      (- (@local-state :mouse-y) oy)])
+                  {:css {:zIndex 2} :svg {:stroke "black"} :key 1})))]))
 
 (defn- node-unit-editor-style
   [prop]
@@ -304,11 +305,11 @@
                    bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
                    ox (.-left bbox)
                    oy (.-top bbox)]
-               (g/line (screen->canvas tr [(- (@local-state :link-start-x) ox)
-                                           (- (@local-state :link-start-y) oy)])
-                       (screen->canvas tr [(- (@local-state :mouse-x) ox)
-                                           (- (@local-state :mouse-y) oy)])
-                       {:css {:zIndex 2} :key 1})))])))))
+               (sg/line (screen->canvas tr [(- (@local-state :link-start-x) ox)
+                                            (- (@local-state :link-start-y) oy)])
+                        (screen->canvas tr [(- (@local-state :mouse-x) ox)
+                                            (- (@local-state :mouse-y) oy)])
+                        {:css {:zIndex 2} :svg {:stroke "black"} :key 1})))])))))
 
 (defn- simple-node-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]

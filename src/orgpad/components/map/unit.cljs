@@ -22,6 +22,7 @@
             [orgpad.tools.geocache :as geocache]
             [orgpad.tools.func :as func]
             [orgpad.components.graphics.primitives :as g]
+            [orgpad.components.graphics.primitives-svg :as sg]
             [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-change-link-shape parent-id]]))
 
 (defn- select-unit
@@ -201,8 +202,10 @@
                                                :orgpad.map-view/link-props :orgpad.map-view/link-props-style
                                                :orgpad/map-view)
           mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
-          style {:css {:zIndex -1}
-                 :canvas (styles/gen-link-canvas prop)}
+          ;; style {:css {:zIndex -1}
+          ;;        :canvas (styles/gen-link-canvas prop)}
+          style-svg {:css {:zIndex -1}
+                     :svg (styles/gen-svg-link-canvas prop)}
           ctl-style (css/transform {:translate (-- (++ mid-pt [(-> prop :orgpad/link-width)
                                                                (-> prop :orgpad/link-width)])
                                                    [10 10])})
@@ -220,16 +223,16 @@
       (html
        [:div {}
         (if cyclic?
-          (g/arc (geom/link-arc-center start-pos' mid-pt')
-                 (geom/link-arc-radius start-pos' mid-pt')
-                 0 math/pi2 style)
-          (g/quadratic-curve start-pos end-pos ctl-pt style))
+          (sg/arc (geom/link-arc-center start-pos' mid-pt')
+                  (geom/link-arc-radius start-pos' mid-pt')
+                  0 math/pi2 style-svg)
+          (sg/quadratic-curve start-pos end-pos ctl-pt style-svg))
         (when (not= (prop :orgpad/link-type) :undirected)
           (if cyclic?
-            (g/make-arrow-arc start-pos' mid-pt' prop)
-            (g/make-arrow-quad start-pos end-pos ctl-pt prop)))
+            (sg/make-arrow-arc start-pos' mid-pt' prop style-svg)
+            (sg/make-arrow-quad start-pos end-pos ctl-pt prop style-svg)))
         (when (and (= (prop :orgpad/link-type) :bidirected) (not cyclic?))
-          (g/make-arrow-quad end-pos start-pos ctl-pt prop))]))
+          (sg/make-arrow-quad end-pos start-pos ctl-pt prop style-svg))]))
     (catch :default e
       (js/console.log "link render error" unit-tree start-pos end-pos cyclic? view-name pid  e) ;; TODO - show error
       nil)))
