@@ -46,6 +46,14 @@
             :onChange #(on-change (-> % .-target .-value))}]
           (map (partial selection-option selection) options'))))
 
+(defn render-autoresize
+  [autoresize? on-change]
+  [:span
+   [:input (merge {:type "checkbox"
+                   :onChange #(on-change (-> % .-target .-checked))}
+                  (when autoresize? {:checked true}))]
+   "On/Off"])
+
 (defn styles-types-list
   []
   (into #{}
@@ -110,7 +118,9 @@
                                                                   :max 100})))
           (frame "Border Style" (render-selection border-styles
                                                   (:orgpad/unit-border-style style)
-                                                  (transact! component style :orgpad/unit-border-style)))]])
+                                                  (transact! component style :orgpad/unit-border-style)))
+          (frame "Autoresize" (render-autoresize (:orgpad/unit-autoresize? style)
+                                                 (transact! component style :orgpad/unit-autoresize?)))]])
 
 (defn render-vertex-props-style
   [component style]
@@ -327,7 +337,7 @@
                                                :type active-type}]
                         [:orgpad/app-state [[:styles active-type :active-style]
                                             (:style-name @local-state)]]])]
-    (js/console.log (colls/minto [] rebase-query rename-query))
+    ;; (js/console.log (colls/minto [] rebase-query rename-query))
     (when (or rebase-query rename-query)
       (lc/transact! component
                     (colls/minto [] rebase-query rename-query)))

@@ -22,7 +22,6 @@
 
 (defn- get-vprop-by-type
   [db uid type view-name view-type]
-  (js/console.log (into base-qry '[[?u :orgpad/props-refs ?p]]))
   (-> db
       (store/query (into base-qry '[[?u :orgpad/props-refs ?p]])
                    [uid type view-name view-type])
@@ -65,8 +64,25 @@
       (conj [:db/add eid :orgpad/unit-width w])
       (conj [:db/add eid :orgpad/unit-height h])))
 
+(defn- get-full-vprop
+  [db prop]
+  (when prop
+    (let [prop-entity (-> db
+                          (store/query [:entity (nth prop 1)])
+                          dscript/entity->map)
+          prop-style  (-> db
+                          (ot/get-style-from-db :orgpad.map-view/vertex-props-style
+                                                (:orgpad/view-style prop-entity))
+                          dscript/entity->map)]
+      (merge prop-style (dissoc prop-entity :orgpad/unit-width :orgpad/unit-height)))))
+
+(defn update-size
+  [prop [w h]]
+  [(max w (:orgpad/unit-width prop))
+   (max h (:orgpad/unit-height prop))])
+
 (defn update-vsize-qry
-  [db uid view-name [w h]]
+  [db uid view-name size]
   (let [vprop-prop (get-vprop-prop db uid view-name :orgpad.map-view/vertex-props)
         vprop (get-vprop db uid view-name :orgpad.map-view/vertex-props)
         pred-vprop (get-pred-vprop db uid view-name :orgpad.map-view/vertex-props)
@@ -76,10 +92,15 @@
                (-> db (store/query [:entity pred])  (ot/sort-refs :db/id)))
         current (when (and pred refs)
                   (-> refs (nth (or (nth pred-active 1) 0)) :db/id))
-        actual (or (first vprop-prop) (first vprop))]
-    (js/console.log "update-vsize-qry" uid view-name vprop-prop vprop pred-vprop pred-active pred refs current)
+        actual (or (first vprop-prop) (first vprop))
+
+        vprop-prop-full (get-full-vprop db vprop-prop)
+        vprop-full (get-full-vprop db vprop)
+        pred-vprop-full (get-full-vprop db pred-vprop)
+        [w h] (update-size (or vprop-prop-full vprop-full pred-vprop-full) size)]
     (cond-> []
-      vprop-prop (size-qry (nth vprop-prop 1) w h)
-      vprop (size-qry (nth vprop 1) w h)
+      (and vprop-prop (:orgpad/unit-autoresize? vprop-prop-full)) (size-qry (nth vprop-prop 1) w h)
+      (and vprop (:orgpad/unit-autoresize? vprop-full)) (size-qry (nth vprop 1) w h)
       (and pred-vprop
+           (:orgpad/unit-autoresize? pred-vprop-full)
            (= current actual)) (size-qry (nth pred-vprop 1) w h))))

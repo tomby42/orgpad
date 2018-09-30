@@ -37,6 +37,7 @@
    :orgpad/unit-corner-y {}
    :orgpad/unit-border-style {}
    :orgpad/unit-padding {}
+   :orgpad/unit-autoresize? {}
    :orgpad/link-color {}
    :orgpad/link-width {}
    :orgpad/link-dash {}
@@ -149,8 +150,9 @@
                      (remove-view-stack db)
                      (when (not (db-contains-styles? db))
                        (default-styles-qry)))
-        app-state-qry (when (not (app-state db))
-                        (move-app-state-qry db))]
+        app-state-qry  (if (app-state db)
+                         [[[:app-state :orgpad/view-stack] nil]]
+                         (move-app-state-qry db))]
     ;; (js/console.log db)
     (cond-> db
       (-> qry empty? not) (store/transact qry {})

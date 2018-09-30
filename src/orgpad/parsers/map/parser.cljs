@@ -7,6 +7,7 @@
             [orgpad.tools.colls :as colls]
             [orgpad.tools.geom :as geom :refer [-- ++ *c screen->canvas canvas->screen]]
             [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.orgpad-db :as otdb]
             [orgpad.tools.order-numbers :as ordn]
             [orgpad.tools.geocache :as geocache]
             [orgpad.tools.dscript :as ds]
@@ -164,7 +165,7 @@
 (defn- propagated-prop
   [{:keys [unit]} prop view]
   ;; FIXME: update of propageted props should be done when switching view types
-  ;; when we have mix of units with vertex props and units wihout it is not clear what to do
+  ;; when we have mix of units with vertex props and units without it is not clear what to do
   (if (and (-> unit :orgpad/refs empty? not) view (contains? view :orgpad/active-unit)
            (< (:orgpad/active-unit view) (count (:orgpad/refs unit))))
     (let [child-unit (-> unit ot/sort-refs (nth (view :orgpad/active-unit)))
@@ -204,10 +205,10 @@
         {:orgpad/active-unit 0}))))
 
 (defn- update-propagated-prop
-  [{:keys [state] :as env} {:keys [prop parent-view unit-tree] :as payload} comp-val-fn args & [global-update-fn]]
+  [{:keys [state] :as env} {:keys [prop unit-tree] :as payload} comp-val-fn args & [global-update-fn]]
   (let [id (prop :db/id)
         prop' (ot/get-prop-from-db-styles state (:props unit-tree) prop :orgpad.map-view/vertex-props-style) ;;(if id (store/query state [:entity id]) prop)
-        info (registry/get-component-info (-> unit-tree :view :orgpad/view-type))
+        ;; info (registry/get-component-info (-> unit-tree :view :orgpad/view-type))
         sheet-view
         (sheet-view-unit state unit-tree)
         [propagated-unit propagated-prop] (propagated-prop unit-tree prop' sheet-view)
@@ -492,15 +493,45 @@
   [env _ {:keys [orgpad/unit-padding] :as payload}]
   (update-propagated-prop env payload nil {:orgpad/unit-padding unit-padding}))
 
+(defn- get-auto-size
+  [state {:keys [unit-tree]} new-style]
+  (let [size
+        (case (-> unit-tree :view :orgpad/view-type)
+          :orgpad/atomic-view
+          (-> unit-tree :view :orgpad/atom dom/get-html-size)
+
+          :orgpad/map-tuple-view
+          (let [sheet-view (sheet-view-unit state unit-tree)
+                child-unit (-> unit-tree :unit ot/sort-refs (nth (:orgpad/active-unit sheet-view)))]
+            (some->> child-unit
+                     :unit
+                     :orgpad/props-refs
+                     (filter (partial ot/props-pred-no-ctx (:orgpad/view-name sheet-view)
+                                      :orgpad/atomic-view
+                                      :orgpad/unit-view))
+                     first
+                     :orgpad/atom
+                     dom/get-html-size
+                     geom/ensure-width
+                     (otdb/update-size new-style)))
+
+          nil)]
+    (when size
+      {:orgpad/unit-width (size 0)
+       :orgpad/unit-height (size 1)})))
+
 (defmethod mutate :orgpad.units/map-view-unit-style
   [{:keys [state] :as env} _ {:keys [orgpad/view-style prop] :as payload}]
   (let [old-style (ot/get-style-from-db state :orgpad.map-view/vertex-props-style (:orgpad/view-style prop))
         new-style (ot/get-style-from-db state :orgpad.map-view/vertex-props-style view-style)
-        uid (ot/pid prop)]
+        uid (ot/pid prop)
+        size (when (and (-> old-style :orgpad/unit-autoresize? not)
+                        (:orgpad/unit-autoresize? new-style))
+               (get-auto-size state payload new-style))]
     (->
      env
      (update :state #(store/with-history-mode % {:new-record true :mode :acc}))
-     (update-propagated-prop payload nil {:orgpad/view-style view-style})
+     (update-propagated-prop payload nil (merge {:orgpad/view-style view-style} size))
      :state
      (as-> state'
            (let [unit-styles (ot/get-all-unit-styles-names state' uid)]
@@ -527,7 +558,8 @@
   (into []
         (comp
          (filter pred)
-         (map first)) (find-relative db id parents-props-query)))
+         (map first))
+        (find-relative db id parents-props-query)))
 
 (defn- parent?
   [[_ type]]

@@ -85,7 +85,8 @@
 
 (defn get-html-size
   [html]
-  (aset root-tmp-el "innerHTML" html)
-  (-> root-tmp-el
-      .getBoundingClientRect
-      dom-bb-size))
+  (when html
+    (aset root-tmp-el "innerHTML" html)
+    (-> root-tmp-el
+        .getBoundingClientRect
+        dom-bb-size)))

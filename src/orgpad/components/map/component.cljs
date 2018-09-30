@@ -598,7 +598,7 @@
                                     :orgpad/view-style "default"}
 
                                    :orgpad.map-view/vertex-props-style
-                                   {:orgpad/view-type        :orgpad.map-view/vertex-props-style
+                                   {:orgpad/view-type         :orgpad.map-view/vertex-props-style
                                     :orgpad/type              :orgpad/unit-view-child
                                     :orgpad/independent       true
                                     :orgpad/view-name         "*"
@@ -611,7 +611,8 @@
                                     :orgpad/unit-corner-x     5
                                     :orgpad/unit-corner-y     5
                                     :orgpad/unit-border-style "solid"
-                                    :orgpad/unit-padding      5}
+                                    :orgpad/unit-padding      5
+                                    :orgpad/unit-autoresize?  false}
 
                                    :orgpad.map-view/link-props
                                    {:orgpad/view-type :orgpad.map-view/link-props

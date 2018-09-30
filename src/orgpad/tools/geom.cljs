@@ -127,3 +127,7 @@
 (defn ensure-size
   [size]
   (++ size [30 30]))
+
+(defn ensure-width
+  [size]
+  (++ size [30 0]))

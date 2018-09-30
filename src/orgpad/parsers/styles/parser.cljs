@@ -7,6 +7,8 @@
             [orgpad.parsers.default-unit :as dp :refer [read mutate updated?]]
             [orgpad.tools.colls :as colls]
             [orgpad.tools.orgpad :as ot]
+            [orgpad.tools.dom :as dom]
+            [orgpad.tools.orgpad-db :as otdb]
             [orgpad.components.registry :as registry]))
 
 (defmethod read :orgpad/styles
@@ -21,10 +23,35 @@
   [{:keys [state]} _ {:keys [view-type style-name]}]
   (ot/get-style-from-db state view-type style-name))
 
+(defn update-vprop-size-qry
+  [state style-name]
+  (let [text-props (store/query state '[:find ?u ?view-name ?atom
+                                        :in $ ?style-name
+                                        :where
+                                        [?v :orgpad/view-style ?style-name]
+                                        [?u :orgpad/props-refs ?v]
+                                        [?u :orgpad/props-refs ?w]
+                                        [?w :orgpad/atom ?atom]
+                                        [?w :orgpad/view-name ?view-name]]
+                                [style-name])]
+    (mapcat (fn [[uid view-name atom]]
+              (let [size (dom/get-html-size atom)]
+                (otdb/update-vsize-qry state uid view-name size)))
+            text-props)))
+
 (defmethod mutate :orgpad.style/update
   [{:keys [state]} _ {:keys [style prop-name prop-val]}]
   ;; (js/console.log "orgpad.style/update" style prop-name prop-val)
-  {:state (store/transact state [[:db/add (:db/id style) prop-name prop-val]])})
+  (let [new-state (-> state
+                      (store/with-history-mode {:new-record true
+                                                :mode :acc})
+                      (store/transact  [[:db/add (:db/id style) prop-name prop-val]]))
+        qry (when (and (= prop-name :orgpad/unit-autoresize?)
+                       (= prop-val true))
+              (into [] (update-vprop-size-qry new-state (:orgpad/style-name style))))]
+    {:state (cond-> new-state
+              (seq qry) (store/transact qry)
+              true (store/with-history-mode :add))}))
 
 (defmethod mutate :orgpad.style/new
   [{:keys [state]} _ {:keys [type name based-on]}]

@@ -5,11 +5,12 @@
             [orgpad.parsers.default-unit :as dp :refer [read mutate]]
             [orgpad.tools.orgpad :as orgpad]
             [orgpad.tools.orgpad-db :as otdb]
-            [orgpad.tools.dom :as dom]))
+            [orgpad.tools.dom :as dom]
+            [orgpad.tools.geom :as geom]))
 
 (defn- update-view-unit
-  [db unit-id view key val]
-  (store/transact db (orgpad/update-unit-view-query unit-id view key val)))
+  [db unit-id view key val & [qry]]
+  (store/transact db (into (orgpad/update-unit-view-query unit-id view key val) qry)))
 
 (defmethod mutate :orgpad.tags/remove
   [{:keys [state]} _ {:keys [orgpad/view orgpad/tags]}]
@@ -51,8 +52,8 @@
                                       [?v :orgpad/view-type ?type]]
                               [id (:orgpad/view-name view) (:orgpad/view-type view)])
                  view))
-        ;; size (dom/get-html-size atom)
-        ;; size-qry (otdb/update-vsize-qry state id (:orgpad/view-name view') size)
-        ]
+        size (-> atom dom/get-html-size geom/ensure-width)
+        size-qry (otdb/update-vsize-qry state id (:orgpad/view-name view') size)]
     ;; (js/console.log "atom update - qry size update" size-qry size state)
-    {:state (update-view-unit state id view' :orgpad/atom atom)}))
+    ;; TODO update geocache
+    {:state (update-view-unit state id view' :orgpad/atom atom size-qry)}))
