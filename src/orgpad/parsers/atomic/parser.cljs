@@ -56,5 +56,6 @@
         size-qry (otdb/update-vsize-qry state id (:orgpad/view-name view') size)]
     ;; (js/console.log "atom update - qry size update" size-qry size state)
     ;; TODO update geocache
-    (js/console.log (dom/get-html-sizes [{:html atom :width 100} {:html atom :width 200} {:html atom :width 600}]))
+    (js/console.log (dom/get-html-sizes [{:html atom :id 5 :widths [100 200 600]}
+                                         {:html atom :id 6 :widths [150 250]}]))
     {:state (update-view-unit state id view' :orgpad/atom atom size-qry)}))

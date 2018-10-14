@@ -86,43 +86,39 @@
 (defn get-html-size
   [content]
   (when content
-    (js/console.log "get-html-size: " content)
     (aset root-tmp-el "innerHTML" content)
-    (js/console.log "Bounding box: " (-> root-tmp-el
-        .getBoundingClientRect
-        dom-bb-size))
     (-> root-tmp-el
         .getBoundingClientRect
         dom-bb-size)))
 
-(defn get-html-size-bounded
-  [content width]
-  (js/console.log "get-html-size-bounded: " content)
-  (let [content' (str "<div style=\"width: " width "px; display: flex;\"><div id=\"root-tmp-inner\">" content "</div></div>")]
-  ;(let [content' (html [:div {:style {:width width :height height}
-  ;                            :dangerouslySetInnerHTML {:__html content}}])]
-    (when content'
-      (aset root-tmp-el "innerHTML" content')
-      (js/console.log "Bounding box: " (-> root-tmp-el
-          .getBoundingClientRect
-          dom-bb-size))
-      (js/console.log "Child bounding box: "
-        (dom-bb-size
-          (.getBoundingClientRect (.getElementById js/document "root-tmp-inner"))))
-      (-> root-tmp-el
-          .getBoundingClientRect
-          dom-bb-size))))
-
 (defn- gen-wrapped-html
   [{:keys [html width id]}]
-  (str "<div style=\"width: " width "px; display: flex;\"><div id=\"" id "\" style=\"flex-grow: 0\">" html "</div></div>"))
+  (str "<div style=\"width: " width "px; display: flex;\"><div id=\"" id "\">" html "</div></div>\n"))
+
+(defn- gen-wrapped-htmls
+  [{:keys [html widths id]}]
+  (reduce str (map #(gen-wrapped-html {:html html :width %1 :id (str "root-tmp-inner" id "-" %2)}) widths (range))))
+
+(defn get-element-bbox
+  "Get bounding box of HTML element with given id."
+  [id]
+  (dom-bb-size (.getBoundingClientRect (.getElementById js/document id))))
+
+
+(defn- get-wrapped-bb-sizes
+  [{:keys [id widths]}]
+  (let [ids (map #(str "root-tmp-inner" id "-" %) (range (count widths)))]
+    {:id id
+     :bbs (map #(hash-map :width %1
+                          :bb (get-element-bbox %2)) widths ids)}))
 
 ;; Input contents is a vector of the following maps:
 ;; {:html ... string html representation of the content
-;;  :width ... width of the bounding box }
+;;  :id ... entity id
+;;  :widths ... width of the bounding box }
 (defn get-html-sizes
   [contents]
-  (let [contents' (map #(assoc %1 :id (str "root-tmp-inner" %2)) contents (range))
-        content (reduce str (map gen-wrapped-html contents'))]
-    (aset root-tmp-el "innerHTML" content)
-    (map #(dom-bb-size (.getBoundingClientRect (.getElementById js/document (:id %)))) contents')))
+  (let [tmp-content (reduce str (map gen-wrapped-htmls contents))]
+    (js/console.log tmp-content)
+    (aset root-tmp-el "innerHTML" tmp-content)
+    (map #(get-wrapped-bb-sizes %) contents)))
