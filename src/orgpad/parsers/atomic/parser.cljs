@@ -38,27 +38,6 @@
   [{:keys [state transact!]} _ {:keys [db/id orgpad/view orgpad/desc]}]
   {:state (update-view-unit state id view :orgpad/desc desc)})
 
-(defn- compute-size-stats
-  [width height]
-  (let [ratio (/ width height)
-        abs (fn [v] (if (< v 0) (- v) v))
-        error (abs (- 2.0 ratio))]
-    {:width width
-     :height height
-     :ratio ratio
-     :error error}))
-
-(defn compute-optimal-size
-  [sizes]
-  (let [stats (map #(compute-size-stats (% 0) (% 1)) sizes)
-        optimal-height (:height (apply (partial min-key :error) stats))
-        optimal-width (:width (apply (partial min-key :width)
-                                     (filter #(= (:height %) optimal-height) stats)))
-        optimal-height' (max optimal-height 30)
-        optimal-width' (max optimal-width 30)]
-    (js/console.log stats)
-    [optimal-width' optimal-height']))
-
 (defmethod mutate :orgpad.atom/update
   [{:keys [state transact!]} _ {:keys [db/id orgpad/view orgpad/atom]}]
   (let [view' (if (:db/id view)
@@ -73,8 +52,8 @@
                                       [?v :orgpad/view-type ?type]]
                               [id (:orgpad/view-name view) (:orgpad/view-type view)])
                  view))
-        sizes (:bbs (first (dom/get-html-sizes [{:html atom :id id :widths (range 0 1025 25)}])))
-        size (compute-optimal-size sizes)
+        sizes (dom/get-html-sizes {:html atom :widths (range 0 1025 25)})
+        size (dom/compute-optimal-size sizes)
         size-qry (otdb/update-vsize-qry state id (:orgpad/view-name view') size)]
     ;; (js/console.log "atom update - qry size update" size-qry size state)
     ;; TODO update geocache

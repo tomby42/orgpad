@@ -111,12 +111,52 @@
     {:id id
      :bbs (map #(get-element-bbox %) ids)}))
 
-;; Input contents is a vector of the following maps:
+;; The input is a vector of maps defined below.
+(defn get-multihtml-sizes
+  [contents]
+  (let [tmp-content (reduce str (map gen-wrapped-htmls contents))]
+    (aset root-tmp-el "innerHTML" tmp-content)
+    (map #(get-wrapped-bb-sizes %) contents)
+    ;(aset root-tmp-el "innerHTML" "")
+    ))
+
+;; The input is a map:
 ;; {:html ... string html representation of the content
 ;;  :id ... entity id
 ;;  :widths ... width of the bounding box }
 (defn get-html-sizes
-  [contents]
-  (let [tmp-content (reduce str (map gen-wrapped-htmls contents))]
-    (aset root-tmp-el "innerHTML" tmp-content)
-    (map #(get-wrapped-bb-sizes %) contents)))
+  [content]
+  (:bbs (first (get-multihtml-sizes [content]))))
+
+(defn- compute-size-stats
+  [opt-ratio width height]
+  (let [ratio (/ width height)
+        abs (fn [v] (if (< v 0) (- v) v))
+        error (abs (- opt-ratio ratio))]
+    {:width width
+     :height height
+     :ratio ratio
+     :error error}))
+
+(defn- delete-nonoptimal-sizes
+  [stats]
+  (let [min-width-fn (fn [h] (apply min (map :width (filter #(= h (:height %)) stats))))
+        stats' (map #(assoc % :min-width (min-width-fn (:height %))) stats)]
+    (filter #(= (:min-width %) (:width %)) stats')))
+
+; TODO: deal with input parameters for ratio and max width and height
+(defn compute-optimal-size
+  [sizes]
+  (let [opt-ratio 2.0
+        max-width 1000
+        max-height 750
+        stats (map #(compute-size-stats opt-ratio (% 0) (% 1)) sizes)
+        stats' (delete-nonoptimal-sizes stats)
+        optimal-size (apply (partial min-key :error) stats')
+        optimal-width (min max-width (max (:width optimal-size) 30))
+        optimal-height (min max-height (max (:height optimal-size) 30))
+        optimal-width' (if (< optimal-height (:height optimal-size))
+                         (+ optimal-width 10)
+                         optimal-width)]
+    (js/console.log stats')
+    [optimal-width' optimal-height]))
