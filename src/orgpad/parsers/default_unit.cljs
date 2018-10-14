@@ -33,7 +33,7 @@
 
 ;;; default read method
 
-(defn- get-view-props
+(defn get-view-props
   [unit {:keys [orgpad/view-type orgpad/view-name orgpad/type]}]
   (ds/find-props-all unit (partial ot/props-pred-no-ctx view-name view-type type)))
 

@@ -109,8 +109,7 @@
   [{:keys [id widths]}]
   (let [ids (map #(str "root-tmp-inner" id "-" %) (range (count widths)))]
     {:id id
-     :bbs (map #(hash-map :width %1
-                          :bb (get-element-bbox %2)) widths ids)}))
+     :bbs (map #(get-element-bbox %) ids)}))
 
 ;; Input contents is a vector of the following maps:
 ;; {:html ... string html representation of the content
@@ -119,6 +118,5 @@
 (defn get-html-sizes
   [contents]
   (let [tmp-content (reduce str (map gen-wrapped-htmls contents))]
-    (js/console.log tmp-content)
     (aset root-tmp-el "innerHTML" tmp-content)
     (map #(get-wrapped-bb-sizes %) contents)))

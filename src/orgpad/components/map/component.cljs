@@ -598,21 +598,24 @@
                                     :orgpad/view-style "default"}
 
                                    :orgpad.map-view/vertex-props-style
-                                   {:orgpad/view-type         :orgpad.map-view/vertex-props-style
-                                    :orgpad/type              :orgpad/unit-view-child
-                                    :orgpad/independent       true
-                                    :orgpad/view-name         "*"
-                                    :orgpad/style-name        "default"
-                                    :orgpad/unit-width        320
-                                    :orgpad/unit-height       150
-                                    :orgpad/unit-border-color "#009cffff"
-                                    :orgpad/unit-bg-color     "#ffffffff"
-                                    :orgpad/unit-border-width 2
-                                    :orgpad/unit-corner-x     5
-                                    :orgpad/unit-corner-y     5
-                                    :orgpad/unit-border-style "solid"
-                                    :orgpad/unit-padding      5
-                                    :orgpad/unit-autoresize?  false}
+                                   {:orgpad/view-type             :orgpad.map-view/vertex-props-style
+                                    :orgpad/type                  :orgpad/unit-view-child
+                                    :orgpad/independent           true
+                                    :orgpad/view-name             "*"
+                                    :orgpad/style-name            "default"
+                                    :orgpad/unit-width            320
+                                    :orgpad/unit-height           150
+                                    :orgpad/unit-max-width        1000
+                                    :orgpad/unit-max-height       750
+                                    :orgpad/unit-border-color     "#009cffff"
+                                    :orgpad/unit-bg-color         "#ffffffff"
+                                    :orgpad/unit-border-width     2
+                                    :orgpad/unit-corner-x         5
+                                    :orgpad/unit-corner-y         5
+                                    :orgpad/unit-border-style     "solid"
+                                    :orgpad/unit-padding          10
+                                    :orgpad/unit-autoresize?      false
+                                    :orgpad/unit-autoresize-ratio 2.0}
 
                                    :orgpad.map-view/link-props
                                    {:orgpad/view-type :orgpad.map-view/link-props

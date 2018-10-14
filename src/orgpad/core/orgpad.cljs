@@ -30,6 +30,8 @@
    :orgpad/unit-visibility {}
    :orgpad/unit-width  {}
    :orgpad/unit-height {}
+   :orgpad/unit-max-width {}
+   :orgpad/unit-max-height {}
    :orgpad/unit-border-color {}
    :orgpad/unit-bg-color {}
    :orgpad/unit-border-width {}
@@ -38,6 +40,7 @@
    :orgpad/unit-border-style {}
    :orgpad/unit-padding {}
    :orgpad/unit-autoresize? {}
+   :orgpad/unit-autoresize-ratio {}
    :orgpad/link-color {}
    :orgpad/link-width {}
    :orgpad/link-dash {}
