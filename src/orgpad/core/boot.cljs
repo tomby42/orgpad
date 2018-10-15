@@ -33,8 +33,10 @@
                                   ;; from
                                   ;; (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack
                                   (str "https://cryptic-headland-94862.herokuapp.com/" from)]]))
+    ;; (when online-id
+    ;;   ((:parser-mutate context) [[:orgpad.net/connect-to-server ["ws://localhost:3000/com" online-id]]]))
     (when online-id
-      ((:parser-mutate context) [[:orgpad.net/connect-to-server ["ws://localhost:3000/com" online-id]]]))
+      ((:parser-mutate context) [[:orgpad.net/connect-to-server ["ws://104.248.29.162:80/com" online-id]]]))
     (.log js/console "ORGPAD BOOT.")))
 
 (defn on-js-reload [])

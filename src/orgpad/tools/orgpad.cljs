@@ -696,6 +696,7 @@
                     :orgpad/context-unit nv
                     :orgpad/refs-order (update-refs-order o->n v)
                     :orgpad/transform (if (map? v) (into [] v) (into {} v))
+                    :orgpad/link-dash (to-array v)
                     v)))))
 
 ;; TODO: should be solved by call to server to get unique uuid
