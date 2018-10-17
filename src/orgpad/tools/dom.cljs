@@ -153,10 +153,7 @@
         stats (map #(compute-size-stats opt-ratio (% 0) (% 1)) sizes)
         stats' (delete-nonoptimal-sizes stats)
         optimal-size (apply (partial min-key :error) stats')
-        optimal-width (min max-width (max (:width optimal-size) 30))
-        optimal-height (min max-height (max (:height optimal-size) 30))
-        optimal-width' (if (< optimal-height (:height optimal-size))
-                         (+ optimal-width 10)
-                         optimal-width)]
-    (js/console.log stats')
-    [optimal-width' optimal-height]))
+        optimal-width (+ (min max-width (max (:width optimal-size) 30)) 10)
+        optimal-height (min max-height (max (:height optimal-size) 30))]
+    ;(js/console.log stats')
+    [optimal-width optimal-height]))

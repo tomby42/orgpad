@@ -603,8 +603,8 @@
                                     :orgpad/independent           true
                                     :orgpad/view-name             "*"
                                     :orgpad/style-name            "default"
-                                    :orgpad/unit-width            320
-                                    :orgpad/unit-height           150
+                                    :orgpad/unit-width            30
+                                    :orgpad/unit-height           30
                                     :orgpad/unit-max-width        1000
                                     :orgpad/unit-max-height       750
                                     :orgpad/unit-border-color     "#009cffff"
@@ -614,7 +614,7 @@
                                     :orgpad/unit-corner-y         5
                                     :orgpad/unit-border-style     "solid"
                                     :orgpad/unit-padding          10
-                                    :orgpad/unit-autoresize?      false
+                                    :orgpad/unit-autoresize?      true
                                     :orgpad/unit-autoresize-ratio 2.0}
 
                                    :orgpad.map-view/link-props

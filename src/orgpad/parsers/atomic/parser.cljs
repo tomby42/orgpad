@@ -55,7 +55,7 @@
         sizes (dom/get-html-sizes {:html atom :widths (range 0 1025 25)})
         size (dom/compute-optimal-size sizes)
         size-qry (otdb/update-vsize-qry state id (:orgpad/view-name view') size)]
-    ;; (js/console.log "atom update - qry size update" size-qry size state)
-    ;; TODO update geocache
-    (js/console.log "Autoresizing to " size)
+    ; (js/console.log "atom update - qry size update" size-qry size state)
+    ; TODO update geocache
+    ; (js/console.log "Autoresizing to " size)
     {:state (update-view-unit state id view' :orgpad/atom atom size-qry)}))
