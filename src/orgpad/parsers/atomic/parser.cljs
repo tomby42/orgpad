@@ -52,8 +52,10 @@
                                       [?v :orgpad/view-type ?type]]
                               [id (:orgpad/view-name view) (:orgpad/view-type view)])
                  view))
-        size (-> atom dom/get-html-size geom/ensure-width)
+        sizes (dom/get-html-sizes {:html atom :widths (range 0 1025 25)})
+        size (dom/compute-optimal-size sizes)
         size-qry (otdb/update-vsize-qry state id (:orgpad/view-name view') size)]
-    ;; (js/console.log "atom update - qry size update" size-qry size state)
-    ;; TODO update geocache
+    ; (js/console.log "atom update - qry size update" size-qry size state)
+    ; TODO update geocache
+    ; (js/console.log "Autoresizing to " size)
     {:state (update-view-unit state id view' :orgpad/atom atom size-qry)}))

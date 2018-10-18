@@ -498,23 +498,23 @@
   (let [size
         (case (-> unit-tree :view :orgpad/view-type)
           :orgpad/atomic-view
-          (-> unit-tree :view :orgpad/atom dom/get-html-size)
-
+          (let [atom (-> unit-tree :view :orgpad/atom)
+                sizes (dom/get-html-sizes {:html atom :widths (range 0 1025 25)})]
+            (dom/compute-optimal-size sizes))
           :orgpad/map-tuple-view
           (let [sheet-view (sheet-view-unit state unit-tree)
-                child-unit (-> unit-tree :unit ot/sort-refs (nth (:orgpad/active-unit sheet-view)))]
-            (some->> child-unit
-                     :unit
-                     :orgpad/props-refs
-                     (filter (partial ot/props-pred-no-ctx (:orgpad/view-name sheet-view)
-                                      :orgpad/atomic-view
-                                      :orgpad/unit-view))
-                     first
-                     :orgpad/atom
-                     dom/get-html-size
-                     geom/ensure-width
-                     (otdb/update-size new-style)))
-
+                child-unit (-> unit-tree :unit ot/sort-refs (nth (:orgpad/active-unit sheet-view)))
+                atom (some->> child-unit
+                              :unit
+                              :orgpad/props-refs
+                              (filter (partial ot/props-pred-no-ctx (:orgpad/view-name sheet-view)
+                                               :orgpad/atomic-view
+                                               :orgpad/unit-view))
+                              first
+                              :orgpad/atom)
+                sizes (dom/get-html-sizes {:html atom :widths (range 0 1025 25)})
+                size (dom/compute-optimal-size sizes)]
+            (otdb/update-size new-style size))
           nil)]
     (when size
       {:orgpad/unit-width (size 0)
