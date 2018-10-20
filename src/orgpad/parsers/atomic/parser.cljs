@@ -52,7 +52,7 @@
                                       [?v :orgpad/view-type ?type]]
                               [id (:orgpad/view-name view) (:orgpad/view-type view)])
                  view))
-        sizes (dom/get-html-sizes {:html atom :widths (range 0 1025 25)})
+        sizes (dom/get-html-sizes {:html atom})
         size (dom/compute-optimal-size sizes)
         size-qry (otdb/update-vsize-qry state id (:orgpad/view-name view') size)]
     ; (js/console.log "atom update - qry size update" size-qry size state)
