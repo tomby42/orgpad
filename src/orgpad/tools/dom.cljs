@@ -1,6 +1,8 @@
 (ns ^{:doc "DOM utils"}
   orgpad.tools.dom)
 
+(def ^:private DEFAULT-WIDTHS (range 0 1025 25))
+
 (defn dom-bb->bb
   [dom-bb]
   [[(.-left dom-bb) (.-top dom-bb)]
@@ -84,9 +86,94 @@
   [(.-width bb) (.-height bb)])
 
 (defn get-html-size
-  [html]
-  (when html
-    (aset root-tmp-el "innerHTML" html)
+  [content]
+  (when content
+    (aset root-tmp-el "innerHTML" content)
     (-> root-tmp-el
         .getBoundingClientRect
         dom-bb-size)))
+
+(defn- gen-wrapped-html
+  [{:keys [html width id]}]
+  (str "<div style=\"width: " width "px; display: flex;\"><div id=\"" id "\">" html "</div></div>\n"))
+
+(defn- gen-wrapped-htmls
+  [{:keys [html widths id]}]
+  (let [widths (or widths DEFAULT-WIDTHS)]
+    (apply str (map-indexed #(gen-wrapped-html {:html html :width %2 :id (str "root-tmp-inner" id "-" %1)}) widths))))
+
+(defn get-element-bbox
+  "Get bounding box of HTML element with given id."
+  [id]
+  (->> id
+       (.getElementById js/document)
+       .getBoundingClientRect
+       dom-bb-size))
+
+(defn- get-wrapped-bb-sizes
+  [{:keys [id widths]}]
+  (let [widths (or widths DEFAULT-WIDTHS)
+        ids (map #(str "root-tmp-inner" id "-" %) (range (count widths)))]
+    {:id id
+     :bbs (map get-element-bbox ids)}))
+
+;; The input is a vector of maps defined below.
+(defn get-multihtml-sizes
+  [contents]
+  (let [tmp-content (reduce str (map gen-wrapped-htmls contents))]
+    (aset root-tmp-el "innerHTML" tmp-content)
+    (map get-wrapped-bb-sizes contents)))
+
+;; The input is a map:
+;; {:html ... string html representation of the content
+;;  :id ... entity id
+;;  :widths ... width of the bounding box }
+(defn get-html-sizes
+  [content]
+  (-> [content] get-multihtml-sizes first :bbs))
+
+(defn- compute-size-stats
+  [opt-ratio width height]
+  (let [ratio (/ width height)
+        error (js/Math.abs (- opt-ratio ratio))]
+    {:width width
+     :height height
+     :ratio ratio
+     :error error}))
+
+(defn- min-width-fn
+  [stats h]
+  (apply min (into []
+                   (comp
+                    (filter #(= h (:height %)))
+                    (map :width))
+                   stats)))
+
+(defn- delete-nonoptimal-sizes
+  [stats]
+  (into []
+        (comp
+         (map #(assoc % :min-width (min-width-fn stats (:height %))))
+         (filter #(= (:min-width %) (:width %))))
+        stats))
+
+(def ^:private DEFAULT-OPTIMAL-SIZE-PARAMS
+  {:opt-ratio 2.0
+   :max-width 1000
+   :max-height 750
+   :extra-vpadding 20})
+
+; TODO: deal with input parameters for ratio and max width and height
+(defn compute-optimal-size
+  [sizes]
+  (let [{:keys [opt-ratio
+                max-width
+                max-height]} DEFAULT-OPTIMAL-SIZE-PARAMS
+        stats (->> sizes
+                   (map #(compute-size-stats opt-ratio (% 0) (% 1)))
+                   delete-nonoptimal-sizes)
+        optimal-size (apply (partial min-key :error) stats)
+        optimal-width (+ (min max-width (max (:width optimal-size) 30)) 10)
+        optimal-height (+ (min max-height (max (:height optimal-size) 30))
+                          (:extra-vpadding DEFAULT-OPTIMAL-SIZE-PARAMS))]
+    [optimal-width optimal-height]))

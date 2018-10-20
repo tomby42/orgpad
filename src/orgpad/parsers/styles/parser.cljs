@@ -35,7 +35,8 @@
                                         [?w :orgpad/view-name ?view-name]]
                                 [style-name])]
     (mapcat (fn [[uid view-name atom]]
-              (let [size (dom/get-html-size atom)]
+              (let [sizes (dom/get-html-sizes {:html atom})
+                    size (dom/compute-optimal-size sizes)]
                 (otdb/update-vsize-qry state uid view-name size)))
             text-props)))
 
