@@ -95,7 +95,7 @@
 
 (defn- gen-wrapped-html
   [{:keys [html width id]}]
-  (str "<div style=\"width: " width "px; display: flex;\"><div id=\"" id "\" style=\"overflow-y: scroll; overflow-x: hidden;\">" html "</div></div>\n"))
+  (str "<div style=\"width: " width "px; display: flex;\"><div id=\"" id "\" style=\"overflow-y: scroll; overflow-x: visible;\">" html "</div></div>\n"))
 
 (defn- gen-wrapped-htmls
   [{:keys [html widths id]}]
