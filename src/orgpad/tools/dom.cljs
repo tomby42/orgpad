@@ -160,7 +160,9 @@
 (def ^:private DEFAULT-OPTIMAL-SIZE-PARAMS
   {:opt-ratio 2.0
    :max-width 1000
-   :max-height 750})
+   :max-height 750
+   :min-width 30
+   :min-height 30})
 
 ; TODO: deal with input parameters for ratio and max width and height
 (defn compute-optimal-size
@@ -172,6 +174,10 @@
                    (map #(compute-size-stats opt-ratio (% 0) (% 1)))
                    delete-nonoptimal-sizes)
         optimal-size (apply (partial min-key :error) stats)
-        optimal-width (min max-width (max (:width optimal-size) 30))
-        optimal-height (min max-height (max (:height optimal-size) 30))]
+        optimal-width (min max-width
+                           (max (:width optimal-size)
+                                (:min-width DEFAULT-OPTIMAL-SIZE-PARAMS)))
+        optimal-height (min max-height
+                            (max (:height optimal-size)
+                                 (:min-height DEFAULT-OPTIMAL-SIZE-PARAMS)))]
     [optimal-width optimal-height]))
