@@ -95,7 +95,7 @@
 
 (defn- gen-wrapped-html
   [{:keys [html width id]}]
-  (str "<div style=\"width: " width "px; display: flex;\"><div id=\"" id "\">" html "</div></div>\n"))
+  (str "<div style=\"width: " width "px; display: flex;\"><div style=\"overflow-x: visible;\"><div id=\"" id "\" style=\"overflow-y: scroll;\">" html "</div></div></div>\n"))
 
 (defn- gen-wrapped-htmls
   [{:keys [html widths id]}]
@@ -161,7 +161,8 @@
   {:opt-ratio 2.0
    :max-width 1000
    :max-height 750
-   :extra-vpadding 20})
+   :min-width 30
+   :min-height 30})
 
 ; TODO: deal with input parameters for ratio and max width and height
 (defn compute-optimal-size
@@ -173,7 +174,10 @@
                    (map #(compute-size-stats opt-ratio (% 0) (% 1)))
                    delete-nonoptimal-sizes)
         optimal-size (apply (partial min-key :error) stats)
-        optimal-width (+ (min max-width (max (:width optimal-size) 30)) 10)
-        optimal-height (+ (min max-height (max (:height optimal-size) 30))
-                          (:extra-vpadding DEFAULT-OPTIMAL-SIZE-PARAMS))]
+        optimal-width (min max-width
+                           (max (:width optimal-size)
+                                (:min-width DEFAULT-OPTIMAL-SIZE-PARAMS)))
+        optimal-height (min max-height
+                            (max (:height optimal-size)
+                                 (:min-height DEFAULT-OPTIMAL-SIZE-PARAMS)))]
     [optimal-width optimal-height]))
