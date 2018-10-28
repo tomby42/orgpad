@@ -309,7 +309,9 @@
                                             (- (@local-state :link-start-y) oy)])
                         (screen->canvas tr [(- (@local-state :mouse-x) ox)
                                             (- (@local-state :mouse-y) oy)])
-                        {:css {:zIndex 2} :svg {:stroke "black"} :key 1})))])))))
+                        {:css {:zIndex 2} :svg {:stroke "black"
+                                                :stroke-dasharray "4 3"
+                                                :stroke-width 3} :key 1})))])))))
 
 (defn- simple-node-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
