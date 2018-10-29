@@ -39,7 +39,7 @@
                        ]}
 
   :plugins [[lein-cljsbuild "1.1.7"]
-            [lein-figwheel "0.5.16"] ;; needs update to lein 2.5.3 at least
+            [lein-figwheel "0.5.17"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             [lein-localrepo "0.5.3"]
             [lein-doo "0.1.10"]
@@ -66,7 +66,7 @@
   :profiles {:dev
              {:dependencies [[cider/piggieback "0.3.6"]
                              [org.clojure/tools.nrepl "0.2.13"]
-                             [figwheel-sidecar        "0.5.16"]
+                             [figwheel-sidecar        "0.5.17"]
                              [binaryage/devtools      "0.9.10"]]
               }
 

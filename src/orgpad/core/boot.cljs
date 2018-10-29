@@ -33,10 +33,10 @@
                                   ;; from
                                   ;; (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack
                                   (str "https://cryptic-headland-94862.herokuapp.com/" from)]]))
-    ;; (when online-id
-    ;;   ((:parser-mutate context) [[:orgpad.net/connect-to-server ["ws://localhost:3000/com" online-id]]]))
     (when online-id
-      ((:parser-mutate context) [[:orgpad.net/connect-to-server ["ws://104.248.29.162:80/com" online-id]]]))
+      ((:parser-mutate context) [[:orgpad.net/connect-to-server ["ws://localhost:3000/com" online-id]]]))
+    ;; (when online-id
+    ;;   ((:parser-mutate context) [[:orgpad.net/connect-to-server ["ws://104.248.29.162:80/com" online-id]]]))
     (.log js/console "ORGPAD BOOT.")))
 
 (defn on-js-reload [])
@@ -45,6 +45,10 @@
                    'orgpad/DatomAtomStore store/datom-atom-store-from-reader})
 
 (doseq [[tag cb] data-readers] (cljs.reader/register-tag-parser! tag cb))
+
+(defn- cnz
+  [x]
+  (-> x sort str))
 
 (extend-type cljs.core.PersistentVector
   IComparable
@@ -55,11 +59,16 @@
         (compare (str x) (str y))
         (compare (count x) (count y))))))
 
-(defn- cnz
-  [x]
-  (-> x sort str))
-
 (extend-type cljs.core.PersistentArrayMap
+  IComparable
+  (-compare [x y]
+    (if (= x y)
+      0
+      (if (= (count x) (count y))
+        (compare (cnz x) (cnz y))
+        (compare (count x) (count y))))))
+
+(extend-type cljs.core.PersistentHashSet
   IComparable
   (-compare [x y]
     (if (= x y)

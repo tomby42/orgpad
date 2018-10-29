@@ -694,7 +694,8 @@
                                                              val)))
                                             v)
                     :orgpad/context-unit nv
-                    :orgpad/refs-order (update-refs-order o->n v)
+                    :orgpad/refs-order (cond->> (update-refs-order o->n v)
+                                         (-> v vector? not) (into []))
                     :orgpad/transform (if (map? v) (into [] v) (into {} v))
                     :orgpad/link-dash (to-array v)
                     v)))))
