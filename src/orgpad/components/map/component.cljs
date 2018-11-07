@@ -377,8 +377,9 @@
                                :zoom      zoom}]])))
 
 (defn- handle-double-click
-  [component unit-tree local-state ev]
-  (swap! local-state assoc :quick-edit true)
+  [component unit-tree app-state local-state ev]
+  (when (:quickedit-when-created? app-state)
+    (swap! local-state assoc :quick-edit true))
   (do-create-pair-unit component unit-tree {:center-x (mouse-node-x ev)
                                             :center-y (mouse-node-y ev)} ev))
 
@@ -426,7 +427,7 @@
             :onMouseMove   #(handle-mouse-move component unit-tree app-state %)
             :onBlur        #(handle-blur component unit-tree app-state %)
             :onMouseLeave  #(handle-blur component unit-tree app-state %)
-            :onDoubleClick #(handle-double-click component unit-tree local-state %)
+            :onDoubleClick #(handle-double-click component unit-tree app-state local-state %)
             :onWheel       (jev/make-block-propagation #(handle-wheel component unit-tree app-state %))}
       (munit/render-mapped-children-units component unit-tree app-state local-state)
       (when (= (:local-mode @local-state) :choose-selection)

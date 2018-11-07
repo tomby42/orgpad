@@ -28,7 +28,7 @@
                  ;; [org.clojure/data.avl        "0.0.17"] ;; we have own fixed copy
                  [io.replikativ/superv.async  "0.2.9"]
                  [com.cognitect/transit-cljs  "0.8.256"]
-                 [com.taoensso/sente          "1.12.0"]
+                 [com.taoensso/sente          "1.13.1"]
                  [com.taoensso/timbre         "4.10.0"]]
 
   :npm {:dependencies [;;["jupyter-js-services" "0.48.0"]
