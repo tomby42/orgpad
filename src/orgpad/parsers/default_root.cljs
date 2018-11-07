@@ -14,7 +14,8 @@
             [orgpad.tools.dom :as dom]
             [orgpad.components.registry :as registry]
             [orgpad.net.com :as net]
-            [orgpad.effects.net :as enet]))
+            [orgpad.effects.net :as enet]
+            [orgpad.config :as ocfg]))
 
 (defn- find-root-view-info
   [db]
@@ -345,7 +346,7 @@
   (if (and (not= net-update-ignore? :all)
            (net/is-online?))
     (let [changes (store/cumulative-changes state)
-          _ (js/console.log "changes: " changes)
+          _ (when ocfg/*online-debug* (js/console.log "changes: " changes))
           atom (-> state (store/query []) first)
           {:keys [datoms mapping new-indices]}
           (ot/datoms-uid->squuid (:datom changes) (:uid->squuid atom))
@@ -367,7 +368,7 @@
      :effect #(when (and (not= net-update-ignore? :all)
                          (net/is-online?))
                 (let [atom (second new-atom-qry)]
-                  (js/console.log "log:" state old-state)
+                  (when ocfg/*online-debug* (js/console.log "log:" state old-state))
                   (enet/update! (:orgpad-uuid atom)
                                 (cond-> {:atom nil :db (dt/write-transit-str [])}
                                   (not= net-update-ignore? :global) (assoc :db (dt/write-transit-str datoms))

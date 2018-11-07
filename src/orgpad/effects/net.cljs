@@ -6,7 +6,8 @@
    [datascript.transit :as dt]
    [cemerick.url :as url]
    [orgpad.core.store :as store]
-   [orgpad.tools.orgpad :as ot]))
+   [orgpad.tools.orgpad :as ot]
+   [orgpad.config :as ocfg]))
 
 (defonce ^:private in-chan (chan 100))
 
@@ -21,7 +22,7 @@
 (defn- transform-db
   [db]
   (let [{:keys [datoms mapping]} (ot/datoms-uid->squuid (seq db))
-        _ (js/console.log "transform-db" datoms)
+        _ (when ocfg/*online-debug* (js/console.log "transform-db" datoms))
         new-db (-> db
                    :schema
                    d/empty-db
@@ -41,10 +42,10 @@
   (let [{:keys [res-chan]} (net/start! url)]
     (go
       (let [_ (<! (discard-all-but res-chan #(-> % (get-in [:?data 1 :first-open?]) nil?)))
-            _ (js/console.log "Connected from effects")
+            _ (when ocfg/*online-debug* (js/console.log "Connected from effects"))
             _ (net/send-cmd {:action :orgpad.server/exist-orgpad? :params {:orgpad.server/uuid ouid}})
             res (<! (discard-all-but res-chan is-response?))
-            _ (js/console.log "exist-orgpad?" res)]
+            _ (when ocfg/*online-debug* (js/console.log "exist-orgpad?" res))]
         (if (get-in res [:?data 1 :result])
           (let [_ (net/send-cmd {:action :orgpad.server/connect-to-orgpad
                                  :params {:orgpad.server/uuid ouid}})
@@ -59,13 +60,13 @@
                       nil))
                   (recur)))))
           (let [{:keys [db]} (transform-db (-> state .-datom .-db))
-                _ (js/console.log "creating new orgpad on server" (-> state .-datom .-db) db)
+                _ (when ocfg/*online-debug* (js/console.log "creating new orgpad on server" (-> state .-datom .-db) db))
                 _ (net/send-cmd {:action :orgpad.server/create-orgpad
                                  :params {:atom (-> state .-atom (select-keys [:app-state]))
                                           :db (dt/write-transit-str db)}})
                 data (<! (discard-all-but res-chan is-response?))
                 u (url/url (aget js/window "location" "href"))]
-            (js/console.log "orgpad created" data)
+            (when ocfg/*online-debug* (js/console.log "orgpad created" data))
             (when (not= (get-in data [:?data 1 :result]) :orgpad.server/error)
               (aset js/window "location" "href"
                     (str (assoc-in u [:query "o"] (get-in data [:?data 1 :result :orgpad.server/uuid])))))))))))

@@ -6,6 +6,7 @@
    [taoensso.timbre :as timbre :refer-macros (tracef debugf infof warnf errorf)]
    [taoensso.sente  :as sente  :refer (cb-success?)]
    [cemerick.url :as url]
+   [orgpad.config :as ocfg]
 
    ;; Optional, for Transit encoding:
    [taoensso.sente.packers.transit :as sente-transit]))
@@ -27,11 +28,11 @@
 
 (defn send-cmd
   [cmd]
-  (js/console.log "send-cmd" cmd)
+  (when ocfg/*online-debug* (js/console.log "send-cmd" cmd))
   (let [chsk-send! (:send-fn @sente-client)]
     (chsk-send! [:orgpad.server/cmd cmd] 5000
                 (fn [cb-reply]
-                  (js/console.log "Update successfuly sent:" cb-reply)))))
+                  (when ocfg/*online-debug* (js/console.log "Update successfuly sent:" cb-reply))))))
 
 ;;;; Sente event handlers
 
@@ -50,31 +51,31 @@
 (defmethod -event-msg-handler
   :default ; Default/fallback case (no other matching handler)
   [{:as ev-msg :keys [event]}]
-  (js/console.log "Unhandled event:" event))
+  (when ocfg/*online-debug* (js/console.log "Unhandled event:" event)))
 
 (defmethod -event-msg-handler :chsk/state
   [{:as ev-msg :keys [?data]}]
   (let [[old-state-map new-state-map] (have vector? ?data)]
     (if (:first-open? new-state-map)
       (do
-        (js/console.log "Channel socket successfully established!:" new-state-map)
+        (when ocfg/*online-debug* (js/console.log "Channel socket successfully established!:" new-state-map))
         (swap! sente-client assoc :connected? true))
-      (js/console.log "Channel socket state change:" new-state-map))))
+      (when ocfg/*online-debug* (js/console.log "Channel socket state change:" new-state-map)))))
 
 (defmethod -event-msg-handler :chsk/recv
   [{:as ev-msg :keys [?data]}]
-  (js/console.log "Push event from server: %s" ?data)
+  (when ocfg/*online-debug* (js/console.log "Push event from server: %s" ?data))
   (let [[evt data] ?data]
     (-event-msg-handler {:id evt :?data data})))
 
 (defmethod -event-msg-handler :chsk/handshake
   [{:as ev-msg :keys [?data]}]
   (let [[?uid ?csrf-token ?handshake-data] ?data]
-    (js/console.log "Handshake: %s" (prn ?data))))
+    (when ocfg/*online-debug* (js/console.log "Handshake: %s" (prn ?data)))))
 
 (defmethod -event-msg-handler :orgpad.server/response
   [{:as ev-msg :keys [?data]}]
-  (js/console.log "Response event from server:" ev-msg))
+  (when ocfg/*online-debug* (js/console.log "Response event from server:" ev-msg)))
 
 ;;;; Sente event router (our `event-msg-handler` loop)
 

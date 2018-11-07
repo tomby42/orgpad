@@ -13,7 +13,8 @@
             [orgpad.tools.jcolls :as jscolls]
             [orgpad.tools.dom :as dom]
             [orgpad.components.registry :as registry]
-            [orgpad.effects.net :as enet]))
+            [orgpad.effects.net :as enet]
+            [orgpad.config :as ocfg]))
 
 (defmethod mutate :orgpad.net/connect-to-server
   [{:keys [transact! state]} _ [url ouid]]
@@ -25,7 +26,7 @@
         datom (dt/read-transit-str db)
         {:keys [datoms mapping last-index]}
         (ot/datoms-squuid->uid (seq datom))
-        _ (js/console.log "set-db" datom datoms atom last-index)
+        _ (when ocfg/*online-debug* (js/console.log "set-db" datom datoms atom last-index))
         new-state (store/new-datom-atom-store (-> atom
                                                   (assoc
                                                    :orgpad-uuid (get-in res [:?data 1 :params :orgpad.server/uuid])
@@ -38,7 +39,7 @@
                                                   (d/with datoms)
                                                   :db-after))
         qry (ot/update-vprops-from-propagated-qry new-state)
-        _ (js/console.log "vprop update:" qry)
+        _ (when ocfg/*online-debug* (js/console.log "vprop update:" qry))
         new-state1 (if (empty? qry) new-state (store/transact new-state qry {}))]
     {:state (store/transact state [[:net-update-ignore?] :all])
      :effect #(transact! [[:orgpad/loaded new-state1]])}))
@@ -58,7 +59,7 @@
                                  last-index
                                  (-> state (store/query [:squuid->uid]) first))
           datoms1 (ot/filter-vprop-when-not-active state datoms)
-          _ (js/console.log "filtering datoms" datoms datoms1)
+          _ (when ocfg/*online-debug* (js/console.log "filtering datoms" datoms datoms1))
           new-state (-> state
                         (store/transact datoms1)
                         (store/transact [[] (merge (-> state (store/query []) first)

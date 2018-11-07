@@ -1,13 +1,14 @@
 (ns ^{:doc "Initialization functionality"}
   orgpad.core.boot
   (:require [orgpad.components.registry :as registry]
+            [orgpad.config]
+            [orgpad.module-config]
             [orgpad.cycle.life :as lc]
             [orgpad.core.store :as store]
             [orgpad.core.orgpad :as orgpad]
             [orgpad.parsers.default-unit :as ps]
             [cemerick.url :as url]
-            [orgpad.net.com :as net]
-            [orgpad.config]))
+            [orgpad.net.com :as net]))
 
 (enable-console-print!)
 
