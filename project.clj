@@ -78,12 +78,11 @@
   {
    :builds [{:id "dev"
 
-             :source-paths ["src" "sandbox"]
+             :source-paths ["src" "env/dev"]
              :figwheel {:websocket-host "localhost"
                         :on-jsload "orgpad.core.boot/on-js-reload" }
 
              :compiler {:main orgpad.core.boot
-                        :preloads [orgpad.dev-config]
                         :asset-path "js/compiled/out"
                         :output-to "resources/public/js/compiled/orgpad.js"
                         :output-dir "resources/public/js/compiled/out"
@@ -119,7 +118,7 @@
                         }}
 
             {:id "prod"
-             :source-paths ["src"]
+             :source-paths ["src" "env/prod"]
              :compiler {:output-to "resources/public/js/compiled/orgpad.js"
                         :main orgpad.core.boot
                         :optimizations :advanced
@@ -128,6 +127,21 @@
                         :closure-warnings {:externs-validation :off :non-standard-jsdoc :off}
                         ;; :install-deps true
                         ;; :npm-deps {:bezier-js "2.2.5"}
+                        :externs ["node_modules/jupyter-js-services/dist/index.js" "dev-resources/js/bezier.js"]
+                        :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
+                                        :provides ["jupyter.services"]}
+                                       {:file "dev-resources/js/bezier.js"
+                                        :provides ["Bezier"]}]
+                        }}
+            {:id "online"
+             :source-paths ["src" "env/online"]
+             :compiler {:output-to "resources/public/js/compiled/online/orgpad.js"
+                        :output-dir "resources/public/js/compiled/online/out"
+                        :main orgpad.core.boot
+                        :optimizations :advanced
+                        :pretty-print false
+                        :language-in :ecmascript5
+                        :closure-warnings {:externs-validation :off :non-standard-jsdoc :off}
                         :externs ["node_modules/jupyter-js-services/dist/index.js" "dev-resources/js/bezier.js"]
                         :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
                                         :provides ["jupyter.services"]}

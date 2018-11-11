@@ -1,7 +1,7 @@
 (ns ^{:doc "Initialization functionality"}
   orgpad.core.boot
   (:require [orgpad.components.registry :as registry]
-            [orgpad.config]
+            [orgpad.config :as ocfg]
             [orgpad.module-config]
             [orgpad.cycle.life :as lc]
             [orgpad.core.store :as store]
@@ -11,6 +11,10 @@
             [orgpad.net.com :as net]))
 
 (enable-console-print!)
+
+(def ^:private *server-url* (if ocfg/*online-debug*
+                              "ws://localhost:3000/com"
+                              "ws://104.248.29.162:80/com"))
 
 (defn ^:export init [cfg]
   (let [global-cfg (into {} (map (fn [[k v]] [(keyword k) v])) (js->clj cfg))
@@ -32,12 +36,10 @@
     (when from
       ((:parser-mutate context) [[:orgpad/download-orgpad-from-url
                                   ;; from
-                                  ;; (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack
-                                  (str "https://cryptic-headland-94862.herokuapp.com/" from)]]))
-    (when online-id
-      ((:parser-mutate context) [[:orgpad.net/connect-to-server ["ws://localhost:3000/com" online-id]]]))
-    ;; (when online-id
-    ;;   ((:parser-mutate context) [[:orgpad.net/connect-to-server ["ws://104.248.29.162:80/com" online-id]]]))
+                                  (str "https://cors-anywhere.herokuapp.com/" from ) ; CORS hack
+                                  ]]))
+    (when (or online-id ocfg/*online-version*)
+      ((:parser-mutate context) [[:orgpad.net/connect-to-server [*server-url* (or online-id "")]]]))
     (.log js/console "ORGPAD BOOT.")))
 
 (defn on-js-reload [])
