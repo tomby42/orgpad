@@ -247,16 +247,16 @@
                                :icon "far fa-edit"
                                :title "Edit"
                                :on-click #(omt/open-unit (:component %1) (:unit-tree %1))}]]
-        toolbar-on-off [{:elem :btn
-                         :id "toolbar-on-off"
-                         :icon (str "far " (if (:full-toolbar @local-state) "fa-angle-left" "fa-angle-right"))
-                         :title (if (:full-toolbar @local-state) "Hide toolbar" "Show toolbar")
-                         :on-click #(swap! (:local-state %1) update :full-toolbar not)}]
+        ;toolbar-on-off [{:elem :btn
+        ;                 :id "toolbar-on-off"
+        ;                 :icon (str "far " (if (:full-toolbar @local-state) "fa-angle-left" "fa-angle-right"))
+        ;                 :title (if (:full-toolbar @local-state) "Hide toolbar" "Show toolbar")
+        ;                 :on-click #(swap! (:local-state %1) update :full-toolbar not)}]
         view-types-section [(tbar/gen-view-types-roll view :unit-tree "Current" "views" #(= (:mode %1) :read))]
         view-toolbar (gen-view-toolbar unit-tree view-type)
-        left-toolbar (if (:full-toolbar @local-state)
-                       (concat (conj common-left-toolbar view-types-section) view-toolbar [toolbar-on-off])
-                       (conj common-left-toolbar toolbar-on-off))
+        left-toolbar ;(if (:full-toolbar @local-state)
+                       (concat (conj common-left-toolbar view-types-section) view-toolbar); [toolbar-on-off])
+                     ;  (conj common-left-toolbar toolbar-on-off))
         right-toolbar [[{:elem :btn
                          :icon "far fa-trash-alt"
                          :title "Remove"
@@ -270,7 +270,7 @@
                 :mode         (:mode app-state)
                 :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
                 :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view)))}]
-    (tbar/toolbar (str "uedit-toolbar " (if (:full-toolbar @local-state) "full" "mini"))
+    (tbar/toolbar "uedit-toolbar full" ;(if (:full-toolbar @local-state) "full" "mini"))
                   params left-toolbar right-toolbar)))
 
 (defn- resize-handle
