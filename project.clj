@@ -24,6 +24,7 @@
                  [cljsjs/react-motion         "0.3.1-0"]  ;; *
                  [cljsjs/react-select         "1.0.0-rc.3"]
                  [cljsjs/latlon-geohash       "1.1.0-0"] ;; *
+                 [cljsjs/react-color          "2.13.8-0"]
                  [doo                         "0.1.10"]
                  ;; [org.clojure/data.avl        "0.0.17"] ;; we have own fixed copy
                  [io.replikativ/superv.async  "0.2.9"]
