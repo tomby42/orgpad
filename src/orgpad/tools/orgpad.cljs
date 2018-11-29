@@ -506,14 +506,29 @@
                    [root-id])
       (->> (into #{}))))
 
+(defn- sanitize-db
+  [db]
+  (let [eids (-> db
+                 (store/query
+                  '[:find ?e
+                    :in $
+                    :where
+                    [?e :orgpad/type]])
+                 (->> (into #{} (map first))))
+        qry (datom/sanitize-datoms-qry eids (-> db .-datom .-db .-eavt))]
+    (store/transact db qry {})))
+
 (defn merge-orgpads
   [db1 db2 pid translations]
-  (let [entities (-> db2 (store/query
-                          '[:find [(pull ?e [*]) ...]
-                            :in $
-                            :where
-                            [?e :orgpad/type]])
+  (let [entities (-> db2
+                     sanitize-db
+                     (store/query
+                      '[:find [(pull ?e [*]) ...]
+                        :in $
+                        :where
+                        [?e :orgpad/type]])
                      (->> (sort-by :db/id)))
+        _ (datom/asert-non-exising-ref (-> db2 .-datom .-db .-eavt))
         roots (get-roots db2 0 nil)
         roots-pos-props (get-pos-props db2 0)
         entities-prep-1 (into [] (comp (filter #(not (or (= 0 (:db/id %))
@@ -548,7 +563,6 @@
                         (update e :orgpad/style-name
                                 #(new-style-name [(:orgpad/view-type e) %]))
                         e)))
-
                (map (fn [e]
                       (if (and (:orgpad/unit-position e)
                                (contains? roots-pos-props (-> e :db/id -)))
@@ -561,6 +575,7 @@
                                             :mode :acc})
                   (store/transact (into entities-qry (make-roots-query pid roots))))
         temp->ids (store/tempids db1-1)
+        _ (datom/asert-non-exising-ref (-> db1-1 .-datom .-db .-eavt))
         path-info-update (update-path-info-qry entities-qry temp->ids 0 pid)
         ref-orders-qupdate (make-ref-orders-updates-qry entities-qry temp->ids -)
         context-unit-update (make-context-unit-update-qry entities-qry temp->ids 0 pid)

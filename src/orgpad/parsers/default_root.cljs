@@ -15,7 +15,8 @@
             [orgpad.components.registry :as registry]
             [orgpad.net.com :as net]
             [orgpad.effects.net :as enet]
-            [orgpad.config :as ocfg]))
+            [orgpad.config :as ocfg]
+            [orgpad.tools.datom :as da]))
 
 (defn- find-root-view-info
   [db]
@@ -346,10 +347,12 @@
   (if (and (not= net-update-ignore? :all)
            (net/is-online?))
     (let [changes (store/cumulative-changes state)
+          - (when ocfg/*online-debug* (da/asert-non-exising-ref (:datom changes)))
           _ (when ocfg/*online-debug* (js/console.log "changes: " changes))
           atom (-> state (store/query []) first)
           {:keys [datoms mapping new-indices]}
           (ot/datoms-uid->squuid (:datom changes) (:uid->squuid atom))
+          _ (when ocfg/*online-debug* (da/assert-refs-nil datoms))
           new-atom (assoc atom
                           :net-update-ignore? :none
                           :uid->squuid mapping

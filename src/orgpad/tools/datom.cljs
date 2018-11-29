@@ -47,3 +47,31 @@
   (let [o->n (update-old-uid->new-uid datom-seq old-uid->new-uid newid)]
     {:datoms (map (partial remap-datom o->n) datom-seq)
      :mapping o->n}))
+
+(defn assert-refs-nil
+  [datoms]
+  (let [nil-refs (->> datoms
+                      (filter #(= (.-a %) :orgpad/refs))
+                      (filter #(nil? (.-v %))))]
+    (when (seq nil-refs)
+      (js/console.log "assert-refs-nil" nil-refs)
+      (throw "assert-refs-nil"))))
+
+(defn asert-non-exising-ref
+  [datoms]
+  (let [eids (into #{} (map #(.-e %) datoms))
+        non-refs (->> datoms
+                      (filter #(= (.-a %) :orgpad/refs))
+                      (filter #(->> (.-v %) (contains? eids) not)))]
+    (when (seq non-refs)
+      (js/console.log "asert-non-exising-ref" non-refs)
+      (throw "asert-non-exising-ref"))))
+
+(defn sanitize-datoms-qry
+  [eids datoms]
+  (let [non-refs (->> datoms
+                      (filter #(= (.-a %) :orgpad/refs))
+                      (filter #(->> (.-v %) (contains? eids) not)))]
+    (into []  (mapcat (fn [d]
+                        [[:db.fn/retractEntity (.-e d)]
+                         [:db.fn/retractEntity (.-v d)]])) non-refs)))
