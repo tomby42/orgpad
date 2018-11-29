@@ -368,13 +368,14 @@
       (* -120 (.-detail evt)))))
 
 (defn- handle-wheel
-  [component {:keys [unit view] :as unit-tree} app-state ev]
-  (let [zoom (if (< (normalize-mouse-data ev) 0) 0.95 1.05)]
+  [component {:keys [unit view] :as unit-tree} app-state local-state ev]
+  (let [zoom (if (< (normalize-mouse-data ev) 0) 0.95 1.05)
+        transf (geom/zoom-transf (:orgpad/transform view) [(.-clientX ev) (.-clientY ev)] zoom)]
+    (swap! local-state assoc-in [:selected-unit 2 :orgpad/transform] transf) ;; ugly hack need to be redesigned
     (lc/transact! component [[:orgpad.units/map-view-canvas-zoom
                               {:view      view
                                :parent-id (:db/id unit)
-                               :pos       [(.-clientX ev) (.-clientY ev)]
-                               :zoom      zoom}]])))
+                               :transf transf}]])))
 
 (defn- handle-double-click
   [component unit-tree app-state local-state ev]
@@ -428,7 +429,7 @@
             :onBlur        #(handle-blur component unit-tree app-state %)
             :onMouseLeave  #(handle-blur component unit-tree app-state %)
             :onDoubleClick #(handle-double-click component unit-tree app-state local-state %)
-            :onWheel       (jev/make-block-propagation #(handle-wheel component unit-tree app-state %))}
+            :onWheel       (jev/make-block-propagation #(handle-wheel component unit-tree app-state local-state %))}
       (munit/render-mapped-children-units component unit-tree app-state local-state)
       (when (= (:local-mode @local-state) :choose-selection)
         (render-selection-box component unit-tree @local-state (:view unit-tree)))
@@ -454,7 +455,7 @@
             :onMouseMove  #(handle-mouse-move component unit-tree app-state %)
             :onBlur       #(handle-blur component unit-tree app-state %)
             :onMouseLeave #(handle-blur component unit-tree app-state %)
-            :onWheel      (jev/make-block-propagation #(handle-wheel component unit-tree app-state %))}
+            :onWheel      (jev/make-block-propagation #(handle-wheel component unit-tree app-state local-state %))}
       (munit/render-mapped-children-units component unit-tree app-state local-state)
       (when (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
         (munit/render-selected-children-units component unit-tree app-state local-state))])))

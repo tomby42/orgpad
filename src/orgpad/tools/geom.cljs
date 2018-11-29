@@ -131,3 +131,11 @@
 (defn ensure-width
   [size]
   (++ size [30 0]))
+
+(defn zoom-transf
+  [tr pos zoom]
+  (let [z (* (:scale tr) zoom)
+        z' (if (< z 0.3) 0.3 z)
+        p (screen->canvas tr pos)
+        translate (-- pos (*c p z'))]
+    {:translate translate :scale z'}))

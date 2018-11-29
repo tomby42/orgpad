@@ -905,20 +905,15 @@
                                              selection)))
 
 (defmethod mutate :orgpad.units/map-view-canvas-zoom
-  [{:keys [state global-cache]} _ {:keys [view parent-id pos zoom]}]
-  (let [z (* (-> view :orgpad/transform :scale) zoom)
-        z' (if (< z 0.3) 0.3 z)
-        p (screen->canvas (:orgpad/transform view) pos)
-        translate (-- pos (*c p z'))
-        transf {:translate translate :scale z'}]
-    {:state (if (:db/id view)
-              (store/transact state [[:db/add (:db/id view) :orgpad/transform transf]])
-              (store/transact state [(merge view
-                                            {:db/id -1
-                                             :orgpad/refs parent-id
-                                             :orgpad/transform transf
-                                             :orgpad/type :orgpad/unit-view})
-                                     [:db/add parent-id :orgpad/props-refs -1]]))}))
+  [{:keys [state global-cache]} _ {:keys [view transf parent-id]}]
+  {:state (if (:db/id view)
+            (store/transact state [[:db/add (:db/id view) :orgpad/transform transf]])
+            (store/transact state [(merge view
+                                          {:db/id -1
+                                           :orgpad/refs parent-id
+                                           :orgpad/transform transf
+                                           :orgpad/type :orgpad/unit-view})
+                                   [:db/add parent-id :orgpad/props-refs -1]]))})
 
 (defmethod mutate :orgpad.units/paste-to-map
   [{:keys [state global-cache]} _ {:keys [pid data position view-name transform]}]
