@@ -3,15 +3,15 @@
   :url "http://www.orgpad.org/"
 
   :dependencies [[org.clojure/clojure         "1.9.0"]
-                 [org.clojure/clojurescript   "1.10.339"]
+                 [org.clojure/clojurescript   "1.10.439"]
                  [org.clojure/tools.deps.alpha "0.5.442"]
-                 [org.clojure/core.async      "0.4.474"]
+                 [org.clojure/core.async      "0.4.490"]
                  [org.clojure/test.check      "0.9.0"]
-                 [datascript                  "0.16.6"]
+                 [datascript                  "0.16.9"]
                  [datascript-transit          "0.2.2"
                   :exclusions [com.cognitect/transit-clj
                                com.cognitect/transit-cljs]]
-                 [com.rpl/specter             "1.1.1"]
+                 [com.rpl/specter             "1.1.2"]
                  ;; [rum                         "0.9.1"] ;; local modified copy src/rum 0.10.8
                  [sablono                     "0.7.7"]
                  [com.cemerick/url            "0.1.1"]

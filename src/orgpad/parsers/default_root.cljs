@@ -314,8 +314,14 @@
                   (range old-finger new-finger (if (< old-finger new-finger) 1 -1)))})
 
 (defmethod mutate :orgpad.units/select
-  [{:keys [state]} _ {:keys [pid uid]}]
-  {:state (store/transact state [[:app-state :selections (keypath pid)] #{uid}])})
+  [{:keys [state]} _ {:keys [pid uid toggle?]}]
+  (let [selected (or (-> state (store/query [:app-state :selections (keypath pid)]) first) #{})
+        new-selected (if toggle?
+                       (if (contains? selected uid)
+                         (disj selected uid)
+                         (conj selected uid))
+                       #{uid})]
+    {:state (store/transact state [[:app-state :selections (keypath pid)] new-selected])}))
 
 (defmethod mutate :orgpad.units/deselect-all
   [{:keys [state]} _ {:keys [pid]}]

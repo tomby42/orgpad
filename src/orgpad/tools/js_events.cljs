@@ -12,7 +12,7 @@
   (doto ev
     .stopPropagation))
 
-(defn- touch-pos
+(defn touch-pos
   [ev]
   (if (.-clientX ev)
     ev

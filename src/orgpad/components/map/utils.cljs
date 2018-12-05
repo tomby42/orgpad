@@ -10,11 +10,11 @@
   (vreset! mouse-pos {:mouse-x (.-clientX ev)
                       :mouse-y (.-clientY ev)}))
 
-(defn- parent-id
+(defn parent-id
   [view]
   (-> view :orgpad/refs first :db/id))
 
-(defn- start-change-link-shape
+(defn start-change-link-shape
   [unit-tree prop component start-pos end-pos mid-pt t cyclic? start-size local-state ev]
   (.stopPropagation ev)
   (let [parent-view (aget component "parent-view")]
@@ -27,7 +27,7 @@
                               :mouse-y (if (.-clientY ev) (.-clientY ev) (aget ev "touches" 0 "clientY"))})
     (lc/transact! component [[:orgpad.units/deselect-all {:pid (parent-id parent-view)}]])))
 
-(defn- start-link
+(defn start-link
   [local-state ev]
   (swap! local-state merge {:local-mode :make-link
                             :link-start-x (.-clientX (jev/touch-pos ev))

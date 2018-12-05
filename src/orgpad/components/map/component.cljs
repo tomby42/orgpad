@@ -74,14 +74,17 @@
                               :mouse-y       (.-clientY ev)
                               :start-mouse-x (.-clientX ev)
                               :start-mouse-y (.-clientY ev)
-                              :selected-unit nil
-                              :selected-link nil
                               :local-mode    (if (= (app-state :mode) :write)
                                                (if (= (:canvas-mode @local-state) :canvas-paste)
                                                  :canvas-paste
                                                  :mouse-down)
                                                :canvas-move)
-                              :quick-edit    false})
+                              ;; :quick-edit    false
+                              }
+           (when (.-ctrlKey ev)
+             {:selected-unit nil
+              :selected-link nil}))
+
     (set-mouse-pos! ev)
     (if (and linfo (< (-> linfo (get 3) (aget "d")) 20))
       (let [[link-unit link-prop link-info link-dist-info] linfo]
@@ -89,7 +92,9 @@
                                  [(aget link-dist-info "x") (aget link-dist-info "y")] (aget link-dist-info "t")
                                  (:cyclic? link-info) (:start-size link-info)
                                  local-state ev))
-      (lc/transact! component [[:orgpad.units/deselect-all {:pid (ot/uid unit-tree)}]]))))
+
+      (when (.-ctrlKey ev)
+        (lc/transact! component [[:orgpad.units/deselect-all {:pid (ot/uid unit-tree)}]])))))
 
 (defn- make-link
   [component unit-tree local-state pos]
@@ -319,7 +324,9 @@
     (start-link local-state ev)
     (do
       (unit-move (:view unit-tree) local-state ev)
-      (swap! local-state assoc :local-mode :unit-move :pre-quick-edit 0))))
+      ;; (swap! local-state assoc :local-mode :unit-move :pre-quick-edit 0)
+      (swap! local-state assoc :local-mode :unit-move)
+      )))
 
 (defn- handle-mouse-move
   [component unit-tree app-state ev]
@@ -346,7 +353,8 @@
   [component unit-tree app-state ev]
   (let [local-state (trum/comp->local-state component)]
     (handle-mouse-up component unit-tree app-state ev)
-    (swap! local-state merge init-state)))
+    ;; (swap! local-state merge init-state)
+    ))
 
 (defn- render-selection-box
   [component unit-tree local-state view]
@@ -367,15 +375,20 @@
         (js* "evt.deltaX  || evt.deltaY || evt.deltaZ"))
       (* -120 (.-detail evt)))))
 
-(defn- handle-wheel
-  [component {:keys [unit view] :as unit-tree} app-state local-state ev]
-  (let [zoom (if (< (normalize-mouse-data ev) 0) 0.95 1.05)
-        transf (geom/zoom-transf (:orgpad/transform view) [(.-clientX ev) (.-clientY ev)] zoom)]
-    (swap! local-state assoc-in [:selected-unit 2 :orgpad/transform] transf) ;; ugly hack need to be redesigned
+(defn- do-zoom!
+  [component unit view local-state pos zoom]
+  (let [transf (geom/zoom-transf (:orgpad/transform view) pos zoom)]
+    (when (:selected-unit @local-state)
+      (swap! local-state assoc-in [:selected-unit 2 :orgpad/transform] transf)) ;; ugly hack need to be redesigned
     (lc/transact! component [[:orgpad.units/map-view-canvas-zoom
                               {:view      view
                                :parent-id (:db/id unit)
                                :transf transf}]])))
+
+(defn- handle-wheel
+  [component {:keys [unit view] :as unit-tree} app-state local-state ev]
+  (let [zoom (if (< (normalize-mouse-data ev) 0) 0.95 1.05)]
+    (do-zoom! component unit view local-state [(.-clientX ev) (.-clientY ev)] zoom)))
 
 (defn- handle-double-click
   [component unit-tree app-state local-state ev]
@@ -394,20 +407,22 @@
           "KeyC"        (omt/copy-units-to-clipboard component unit-tree app-state)
           "KeyV"        (omt/paste-units-from-clipboard component unit-tree app-state (get-rel-mouse-pos component unit-tree #js {:clientX (:mouse-x @mouse-pos)
                                                                                                                                   :clientY (:mouse-y @mouse-pos)}))
-          "ControlLeft" (swap! local-state assoc :canvas-mode :canvas-create-unit)
+          "ControlLeft" (swap! local-state assoc :ctrl-key true)
           nil))
-      (case (.-code ev)
-        "ShiftLeft" (swap! local-state assoc :canvas-mode :canvas-select)
-        nil))))
+      ;; (case (.-code ev)
+      ;;   "ShiftLeft" (swap! local-state assoc :canvas-mode :canvas-select)
+      ;;   nil)
+      )))
 
 (defn- handle-key-up
   [component unit-tree app-state local-state ev]
   (when (= (:mode app-state) :write)
     ;; (js/console.log "up" (.-code ev))
     (case (.-code ev)
-      "ControlLeft" (swap! local-state assoc :canvas-mode :canvas-move)
-      "ShiftLeft"   (swap! local-state assoc :canvas-mode :canvas-move)
-      nil)))
+      "ControlLeft" (swap! local-state assoc :ctrl-key false)
+      ;; "ShiftLeft"   (swap! local-state assoc :canvas-mode :canvas-move)
+      nil)
+    ))
 
 (defn- render-write-mode
   [component unit-tree app-state]
@@ -648,22 +663,14 @@
      :id       "zoom-in"
      :icon     "far fa-search-plus"
      :title    "Zoom in"
-     :on-click #(lc/transact! (:component %1) [[:orgpad.units/map-view-canvas-zoom
-                                                {:view      (:view %1)
-                                                 :parent-id (:db/id (:unit %1))
-                                                 :pos       [(/ js/window.innerWidth 2)
-                                                             (/ js/window.innerHeight 2)]
-                                                 :zoom      1.1025}]])}
+     :on-click #(do-zoom! (:component %1) (:unit %1) (:view %1) (:node-state %1)
+                          [(/ js/window.innerWidth 2) (/ js/window.innerHeight 2)] 1.1025)}
     {:elem     :btn
      :id       "zoom-out"
      :icon     "far fa-search-minus"
      :title    "Zoom out"
-     :on-click #(lc/transact! (:component %1) [[:orgpad.units/map-view-canvas-zoom
-                                                {:view      (:view %1)
-                                                 :parent-id (:db/id (:unit %1))
-                                                 :pos       [(/ js/window.innerWidth 2)
-                                                             (/ js/window.innerHeight 2)]
-                                                 :zoom      0.9025}]])}]
+     :on-click #(do-zoom! (:component %1) (:unit %1) (:view %1) (:node-state %1)
+                          [(/ js/window.innerWidth 2) (/ js/window.innerHeight 2)] 0.9025)}]
    [{:elem     :btn
      :id       "unit-creation-mode"
      :icon     "far fa-plus-square"
