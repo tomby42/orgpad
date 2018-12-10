@@ -80,9 +80,10 @@
                               :mouse-x (.-clientX (jev/touch-pos ev))
                               :mouse-y (.-clientY (jev/touch-pos ev))})
     (set-mouse-pos! (jev/touch-pos ev))
-    (lc/transact! component [[:orgpad.units/select {:pid (parent-id parent-view)
-                                                    :toggle? (.-ctrlKey ev)
-                                                    :uid (ot/uid unit-tree)}]])))
+    (comment (lc/transact! component [[:orgpad.units/select {:pid (parent-id parent-view)
+                                                             :toggle? (.-ctrlKey ev)
+                                                             :uid (ot/uid unit-tree)}]]))
+    ))
 
 (defn- sheet-indicator
   [active? id]
@@ -135,6 +136,7 @@
             :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
             :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
             ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
+            :onMouseUp (partial uedit/try-deselect-unit component pid (:db/id unit) local-state)
             ;; :onDoubleClick (jev/make-block-propagation #(uedit/enable-quick-edit local-state))
             :onWheel jev/stop-propagation
             }

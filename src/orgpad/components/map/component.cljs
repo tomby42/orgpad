@@ -129,14 +129,15 @@
 (defn- stop-unit-move
   [component local-state new-pos]
   (let [[unit-tree prop parent-view] (@local-state :selected-unit)]
-    (lc/transact! component
+    (when (and unit-tree prop)
+        (lc/transact! component
                   [[:orgpad.units/map-view-unit-move
                     {:prop        prop
                      :parent-view parent-view
                      :unit-tree   unit-tree
                      :old-pos     [(@local-state :start-mouse-x)
                                    (@local-state :start-mouse-y)]
-                     :new-pos     new-pos}]])))
+                     :new-pos     new-pos}]]))))
 
 (defn- stop-units-move
   [component local-state new-pos]

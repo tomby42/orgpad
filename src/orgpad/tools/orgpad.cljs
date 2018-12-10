@@ -611,7 +611,8 @@
 (defn- mapped?
   [{:keys [orgpad/refs db/id]} view-name prop-name]
   (let [pred (partial props-pred-view-child id view-name prop-name)]
-    (filter (fn [u] (->> u :props (some pred))) refs)))
+    (into []
+          (filter (fn [u] (->> u :props (some pred)))) refs)))
 
 (defn mapped-children
   [unit-tree view-name]
