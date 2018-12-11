@@ -449,19 +449,20 @@
   (let [color (if (= action :orgpad.units/map-view-unit-border-color)
                 (prop :orgpad/unit-border-color)
                 (prop :orgpad/unit-bg-color))
-        on-change (if (nil? selection)
-                    (fn [c]
-                      (lc/transact! component [[action {:prop prop
-                                                        :parent-view parent-view
-                                                        :unit-tree unit
-                                                        :color c}]]))
-                    (fn [c]
-                      (lc/transact! component [[:orgpad.units/map-view-units-change-props
-                                                {:selection selection
-                                                 :action action
-                                                 :unit-tree unit
-                                                 :prop-name :color
-                                                 :prop-val c}]])))]
+        on-change (when color
+                    (if (nil? selection)
+                      (fn [c]
+                        (lc/transact! component [[action {:prop prop
+                                                          :parent-view parent-view
+                                                          :unit-tree unit
+                                                          :color c}]]))
+                      (fn [c]
+                        (lc/transact! component [[:orgpad.units/map-view-units-change-props
+                                                  {:selection selection
+                                                   :action action
+                                                   :unit-tree unit
+                                                   :prop-name :color
+                                                   :prop-val c}]]))))]
     (stedit/frame (if (= action :orgpad.units/map-view-unit-border-color)
                     "Border Color"
                     "Background Color") (cpicker/color-picker color {} on-change))))
@@ -571,17 +572,16 @@
 
 (defn- node-unit-editor-static
   [component {:keys [view] :as unit-tree} app-state local-state]
-  (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
-        [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id) (:orgpad/view-type old-prop))
+  (let [[unit prop parent-view selected?] (get-current-data unit-tree local-state)
         selection (get-in app-state [:selections (ot/uid unit-tree)])]
-    (when (and prop unit)
-      (if (not= (count selection) 1)
-        (let [params {:component component :unit unit-tree :prop prop
-                      :parent-view view :local-state local-state
-                      :selection selection}]
-          (render-props-menu1 params))
-        (let [params {:component component :unit unit :prop prop :parent-view view :local-state local-state}]
-          (render-props-menu1 params))))))
+    (if (> (count selection) 1)
+      (let [params {:component component :unit unit-tree :prop prop
+                    :parent-view view :local-state local-state
+                    :selection selection}]
+        (render-props-menu1 params))
+      (let [params {:component component :unit unit :prop prop :parent-view view :local-state local-state}]
+        [:div {:style {:display (if selected? "block" "none")}}
+         (render-props-menu1 params)]))))
 
 (defn- render-link-color-picker1
   [{:keys [component unit prop parent-view local-state]}]
@@ -716,6 +716,5 @@
     [:div {:onMouseDown jev/stop-propagation
            :onTouchStart jev/stop-propagation
            :onWheel jev/stop-propagation}
-     (if select-unit
-       (node-unit-editor-static component unit-tree app-state local-state)
-       (edge-unit-editor-static component unit-tree app-state local-state))]))
+     (node-unit-editor-static component unit-tree app-state local-state)
+     (edge-unit-editor-static component unit-tree app-state local-state)]))
