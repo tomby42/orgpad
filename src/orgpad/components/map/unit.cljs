@@ -42,7 +42,7 @@
 
 (def ^:private finc (fnil inc 0))
 
-(def ^:private dbl-click-timeout 250)
+;; (def ^:private dbl-click-timeout 250)
 
 ;; (defn- run-dbl-click-check
 ;;   [local-state]

@@ -326,37 +326,6 @@
                                                   :toggle? (.-ctrlKey ev)
                                                   :uid uid}]]))
 
-(defn- node-unit-editor-old
-  [component {:keys [view] :as unit-tree} app-state local-state]
-  (when (@local-state :selected-unit)
-    (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
-          [sel-unit-tree prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id) (:orgpad/view-type old-prop))]
-      (when (and prop sel-unit-tree)
-        (if (not= (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
-          (nodes-unit-editor component unit-tree app-state local-state parent-view prop)
-          (let [style (node-unit-editor-style prop (:quick-edit @local-state))
-                qedit? (:quick-edit @local-state)]
-            [:div {:key "node-unit-editor" :ref "unit-editor-node"}
-             [:div {:className "map-view-unit-selected"
-                    :style (merge style (when qedit? {:background-color "white"}))
-                    :key 0
-                    ;; :onDoubleClick (jev/make-block-propagation #(enable-quick-edit local-state))
-                    :onDoubleClick jev/block-propagation
-                    :onClick (partial try-deselect-unit component (ot/uid unit-tree) (ot/uid sel-unit-tree) local-state)
-                    :onMouseDown (if qedit?
-                                   jev/stop-propagation
-                                   (jev/make-block-propagation #(start-unit-move app-state local-state %)))
-                    :onTouchStart (if qedit?
-                                    jev/stop-propagation
-                                    (jev/make-block-propagation #(start-unit-move app-state local-state (aget % "touches" 0))))}
-              (if qedit?
-                (quick-editor sel-unit-tree (:height style))
-                (for [mode ["top-left" "top" "top-right" "right" "bottom-right" "bottom" "bottom-left" "left"]]
-                  (resize-handle mode local-state)))
-              (gen-toolbar sel-unit-tree unit-tree app-state local-state)]
-             (when (= (@local-state :local-mode) :make-link)
-               (draw-link-line component unit-tree parent-view local-state))]))))))
-
 (defn- get-current-data
   [unit-tree local-state]
   (if (@local-state :selected-unit)
@@ -376,7 +345,6 @@
                     (node-unit-editor-style prop (:quick-edit @local-state))
                     {})
             qedit? (:quick-edit @local-state)]
-        (js/console.log "node-unit-editor" selected?)
         [:div {:key "node-unit-editor"
                :ref "unit-editor-node"
                :style (if selected? {:display "block"} {:display "none"})}
