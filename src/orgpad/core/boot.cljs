@@ -12,9 +12,9 @@
 
 (enable-console-print!)
 
-(def ^:private *server-url* (if ocfg/*online-debug*
-                              "ws://localhost:3000/com"
-                              "wss://online.orgpad.org/com"))
+(def ^:private ^:dynamic *server-url* (if ocfg/*online-debug*
+                                        "ws://localhost:3000/com"
+                                        "wss://online.orgpad.org/com"))
 
 (defn ^:export init [cfg]
   (let [global-cfg (into {} (map (fn [[k v]] [(keyword k) v])) (js->clj cfg))

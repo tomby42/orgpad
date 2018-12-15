@@ -15,7 +15,8 @@
             [orgpad.components.registry :as registry]
             [orgpad.net.com :as net]
             [orgpad.effects.net :as enet]
-            [orgpad.config :as ocfg]))
+            [orgpad.config :as ocfg]
+            [orgpad.tools.datom :as da]))
 
 (defn- find-root-view-info
   [db]
@@ -313,8 +314,14 @@
                   (range old-finger new-finger (if (< old-finger new-finger) 1 -1)))})
 
 (defmethod mutate :orgpad.units/select
-  [{:keys [state]} _ {:keys [pid uid]}]
-  {:state (store/transact state [[:app-state :selections (keypath pid)] #{uid}])})
+  [{:keys [state]} _ {:keys [pid uid toggle?]}]
+  (let [selected (or (-> state (store/query [:app-state :selections (keypath pid)]) first) #{})
+        new-selected (if toggle?
+                       (if (contains? selected uid)
+                         (disj selected uid)
+                         (conj selected uid))
+                       #{uid})]
+    {:state (store/transact state [[:app-state :selections (keypath pid)] new-selected])}))
 
 (defmethod mutate :orgpad.units/deselect-all
   [{:keys [state]} _ {:keys [pid]}]
@@ -346,10 +353,12 @@
   (if (and (not= net-update-ignore? :all)
            (net/is-online?))
     (let [changes (store/cumulative-changes state)
+          - (when ocfg/*online-debug* (da/asert-non-exising-ref (:datom changes)))
           _ (when ocfg/*online-debug* (js/console.log "changes: " changes))
           atom (-> state (store/query []) first)
           {:keys [datoms mapping new-indices]}
           (ot/datoms-uid->squuid (:datom changes) (:uid->squuid atom))
+          _ (when ocfg/*online-debug* (da/assert-refs-nil datoms))
           new-atom (assoc atom
                           :net-update-ignore? :none
                           :uid->squuid mapping

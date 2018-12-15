@@ -32,7 +32,7 @@
                                              on-change (nth args 2)
                                              color (nth args 0)
                                              new-color (-> e .-target .getColorRgbaHex)]
-                                         (when (not= color new-color)
+                                         (when (and color (not= color new-color))
                                            (on-change new-color)))))]
       (-> state
           (assoc :palette pal)
@@ -40,9 +40,11 @@
 
 (defn- ->rgba
   [color]
-  (if (< (.-length color) 8)
-    (str color "ff")
-    color))
+  (if color
+    (if (< (.-length color) 8)
+      (str color "ff")
+      color)
+    "ffffffff"))
 
 (defn- update-color
   [state]

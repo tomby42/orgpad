@@ -18,7 +18,7 @@
   (let [border-width (comp-border-width style)
         [w h] (dims border-width pts)
         [l t] (left-top-corner pts)
-        border-width (comp-border-width style)
+        ;; border-width (comp-border-width style)
         css-style (merge (or (:css style) {}) (css/transform {:translate [l t]}))]
     [:svg {:className "graphics primitive"
            :width w

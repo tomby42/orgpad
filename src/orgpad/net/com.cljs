@@ -7,6 +7,7 @@
    [taoensso.sente  :as sente  :refer (cb-success?)]
    [cemerick.url :as url]
    [orgpad.config :as ocfg]
+   [orgpad.tools.time :as time]
 
    ;; Optional, for Transit encoding:
    [taoensso.sente.packers.transit :as sente-transit]))
@@ -28,8 +29,9 @@
 
 (defn send-cmd
   [cmd]
-  (when ocfg/*online-debug* (js/console.log "send-cmd" cmd))
-  (let [chsk-send! (:send-fn @sente-client)]
+  (let [chsk-send! (:send-fn @sente-client)
+        cmd (assoc cmd :timestamp (time/now))]
+    (when ocfg/*online-debug* (js/console.log "send-cmd" cmd))
     (chsk-send! [:orgpad.server/cmd cmd] 5000
                 (fn [cb-reply]
                   (when ocfg/*online-debug* (js/console.log "Update successfuly sent:" cb-reply))))))

@@ -6,7 +6,7 @@
 
 (defn comp-border-width
   [style]
-  (or (-> style :canvas :lineWidth) (-> style :svg :strokeWidth) 0))
+  (or (-> style :canvas :lineWidth) (-> style :svg :strokeWidth) (-> style :svg :stroke-width) 0))
 
 (defn comp-bb
   [border-width pts]

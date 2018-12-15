@@ -9,11 +9,13 @@
   [v1 v2]
   (= (:orgpad/view-name v1) (:orgpad/view-name v2)))
 
-(rum/defcc atom-editor < (trum/statical [= eq-names (constantly true) =]) lc/parser-type-mixin-context
-  [component unit-id view atom & [cfg-type]]
-  (let [cfg (if (= cfg-type :inline)
-              tinymce/default-config-simple-inline
+(rum/defcc atom-editor < (trum/statical [= eq-names (constantly true) = =]) lc/parser-type-mixin-context
+  [component unit-id view atom & [cfg-type height]]
+  (let [cfg (case cfg-type
+              :inline tinymce/default-config-simple-inline
+              :quick tinymce/default-config-quick
               tinymce/default-config-full)]
+    (when height (aset cfg "height" height))
     [:div {:key (str unit-id "-" (view :orgpad/view-name))}
      (tinymce/tinymce atom
                       (fn [e]

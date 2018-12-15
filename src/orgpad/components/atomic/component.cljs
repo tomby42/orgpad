@@ -45,6 +45,7 @@
 
 (defn- render-quick-write-mode
   [{:keys [unit view]} app-state]
+  (js/console.log "render-quick-write-mode")
   [:div {:onMouseDown jev/stop-propagation
          :onMouseUp jev/stop-propagation
          :onClick jev/stop-propagation
