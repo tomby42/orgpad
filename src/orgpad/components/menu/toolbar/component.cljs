@@ -193,10 +193,12 @@
   [component toolbar-class params left-data right-data]
   (let [local-state (trum/comp->local-state component)
         params (assoc params :component component)]
-    [:div {:className toolbar-class
-           :onMouseDown jev/block-propagation
-           :onTouchStart jev/block-propagation
-           :onDoubleClick jev/block-propagation}
+    [:div (merge {:className toolbar-class
+                  :onMouseDown jev/block-propagation
+                  :onTouchStart jev/block-propagation
+                  :onDoubleClick jev/block-propagation}
+                 (when (:left params)
+                   {:style {:left (:left params)}}))
      (gen-side local-state params (filter-side params left-data))
      [:span.fill]
      (gen-side local-state params (filter-side params right-data))]))

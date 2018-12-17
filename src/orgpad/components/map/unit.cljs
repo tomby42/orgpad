@@ -72,6 +72,7 @@
     ;;   (run-dbl-click-check local-state))
     (swap! local-state merge {:local-mode :try-unit-move
                               :selected-unit [unit-tree prop parent-view component]
+                              :selected-link nil
                               :selected-node new-node
                               :quick-edit false
                               ;; :pre-quick-edit (finc pre-quick-edit)

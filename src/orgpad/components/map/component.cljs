@@ -6,6 +6,7 @@
             [orgpad.components.registry :as registry]
             [orgpad.components.node :as node]
             [orgpad.components.map.unit :as munit]
+            [orgpad.components.map.unit-editor :as ued]
             [orgpad.tools.css :as css]
             [orgpad.tools.js-events :refer [mouse-node-x mouse-node-y mouse-node-rel-x mouse-node-rel-y] :as jev]
             [orgpad.tools.orgpad :as ot]
@@ -284,8 +285,16 @@
     (when el
       (let [raw-diff-x      (- (.-clientX ev) (@mouse-pos :mouse-x))
             raw-diff-y      (- (.-clientY ev) (@mouse-pos :mouse-y))
-            [diff-x diff-y] (compute-resize (:resize-mode @local-state) raw-diff-x raw-diff-y)]
-        (dom/update-size-translate-diff el diff-x diff-y (-> parent-view :orgpad/transform :scale))))))
+            [diff-x diff-y] (compute-resize (:resize-mode @local-state) raw-diff-x raw-diff-y)
+            [new-w _]       (dom/update-size-translate-diff el diff-x diff-y
+                                                            (-> parent-view :orgpad/transform :scale))
+            left            (str (ued/comp-unit-toorbar-left new-w) "px")
+            toolbar         (js/document.getElementById "uedit-toolbar")]
+        (aset toolbar "children" 0 "style" "left"
+              left)
+        (when (aget toolbar "children" 1)
+          (aset toolbar "children" 1 "style" "left"
+                left))))))
 
 (defn- update-link-shape
   [component local-state ev]

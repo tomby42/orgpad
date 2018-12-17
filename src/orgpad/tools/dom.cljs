@@ -49,13 +49,16 @@
         w (aget el "style" "width")
         h (aget el "style" "height")
         ww (-> w (.substring 0 (- (.-length w) 2)) js/parseFloat)
-        hh (-> h (.substring 0 (- (.-length h) 2)) js/parseFloat)]
-    (aset el "style" "width" (str (js/Math.round (+ ww (/ (* 2 diff-x) parent-scale))) "px"))
-    (aset el "style" "height" (str (js/Math.round (+ hh (/ (* 2 diff-y) parent-scale))) "px"))
+        hh (-> h (.substring 0 (- (.-length h) 2)) js/parseFloat)
+        new-w (js/Math.round (+ ww (/ (* 2 diff-x) parent-scale)))
+        new-h (js/Math.round (+ hh (/ (* 2 diff-y) parent-scale)))]
+    (aset el "style" "width" (str new-w "px"))
+    (aset el "style" "height" (str new-h "px"))
     (aset el "style" "transform" (str "translate("
                                       (- x (/ diff-x parent-scale)) "px, "
                                       (- y (/ diff-y parent-scale)) "px) "
-                                      (aget ts 1)))))
+                                      (aget ts 1)))
+    [new-w new-h]))
 
 (defn update-size-translate
   [el new-x new-y old-x old-y parent-scale]

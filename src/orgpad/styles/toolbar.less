@@ -17,7 +17,7 @@
     padding-bottom: 3px;
     display: inline-block;
     background-color: #fff;
-    white-space: nowrap; 
+    white-space: nowrap;
     &:hover, &.active:hover {
       background-color: #6df;
     }
@@ -29,25 +29,25 @@
       color: #666;
     }
   }
-  
+
   .btn-icon-label {
     text-align: left;
     padding-top: 3px;
     padding-right: 7px;
     padding-left: 3px;
   }
-  
+
   .btn-label {
     text-align: left;
     padding-top: 3px;
     padding-right: 7px;
     padding-left: 7px;
   }
- 
+
   .roll {
     position: relative;
     display: block;
-    z-index: 10;
+    z-index: 1;
   }
 
   .roll-items {
@@ -60,6 +60,7 @@
     border: 2px solid black;
     white-space: nowrap;
     background-color: #fff;
+    z-index: 2;
   }
 
   .roll-item {
@@ -78,7 +79,7 @@
       color: #666;
     }
   }
-  
+
   .text {
     font-size: 12pt;
     padding-left: 3px;
@@ -105,9 +106,8 @@
   position: absolute;
   display: flex;
   width: 100%;
-  height: 24px;
-  top: -28px;
-  left: -2px;
+  height: 52px;
+  top: -56px;
   background-color: #fff;
   border: 2px solid @unit-editor-color;
 
@@ -116,7 +116,12 @@
   }
 
   &.mini {
-      min-width: 100px;
+      min-width: 185px;
+  }
+
+  &.down {
+      top: -28px;
+      height: 24px;
   }
 
   .btn {
@@ -137,25 +142,29 @@
       color: #666;
     }
   }
-  
+
   .btn-icon-label {
     text-align: left;
     padding-top: 3px;
     padding-right: 7px;
     padding-left: 3px;
   }
-  
+
   .btn-label {
     text-align: left;
     padding-top: 3px;
     padding-right: 7px;
     padding-left: 7px;
   }
- 
+
   .roll {
     position: relative;
     display: block;
-    z-index: 10;
+    height: min-content;
+    z-index: 1;
+    &:hover {
+        z-index: 10;
+    }
   }
 
   .roll-items {
@@ -168,6 +177,9 @@
     border: 2px solid red;
     white-space: nowrap;
     background-color: #fff;
+    &:hover {
+        z-index: 10;
+    }
   }
 
   .roll-item {
@@ -186,7 +198,7 @@
       color: #666;
     }
   }
-  
+
   .text {
     font-size: 12pt;
     padding-left: 3px;
@@ -194,7 +206,6 @@
     padding-top: 5px;
     padding-bottom: 5px;
   }
-
 
   .sep {
     background-color: red;
@@ -207,6 +218,3 @@
     flex-grow: 1;
   }
 }
-
-
-

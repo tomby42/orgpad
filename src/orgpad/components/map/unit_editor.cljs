@@ -249,16 +249,20 @@
         (update-in view-toolbar [last-sec] conj ac-view-types-roll))
       view-toolbar)))
 
+(defn comp-unit-toorbar-left
+  [w]
+  (if (<= 185 w) -2 (- (/ w 2) 92)))
+
 (defn- gen-toolbar
-  [{:keys [unit view] :as unit-tree} parent-tree app-state local-state]
+  [{:keys [unit view] :as unit-tree} style parent-tree app-state local-state]
   (let [view-type (ot/view-type unit-tree)
         common-left-toolbar [[{:elem :btn
                                :id "link"
                                :icon "far fa-link"
                                :title "Link"
                                :on-mouse-down #(start-link (:local-state %1) %2)
-                               :on-touch-start #(start-link (:local-state %1) (aget %2 "touches" 0))}
-                              {:elem :btn
+                               :on-touch-start #(start-link (:local-state %1) (aget %2 "touches" 0))}]
+                             [{:elem :btn
                                :id "quick-edit"
                                :icon "far fa-pen-alt"
                                :title "Toggle Quick Edit"
@@ -271,31 +275,31 @@
                                :icon "far fa-edit"
                                :title "Edit"
                                :on-click #(omt/open-unit (:component %1) (:unit-tree %1))}]]
-        ;toolbar-on-off [{:elem :btn
-        ;                 :id "toolbar-on-off"
-        ;                 :icon (str "far " (if (:full-toolbar @local-state) "fa-angle-left" "fa-angle-right"))
-        ;                 :title (if (:full-toolbar @local-state) "Hide toolbar" "Show toolbar")
-        ;                 :on-click #(swap! (:local-state %1) update :full-toolbar not)}]
         view-types-section [(tbar/gen-view-types-roll view :unit-tree "Current" "views" #(= (:mode %1) :read))]
         view-toolbar (gen-view-toolbar unit-tree view-type)
-        left-toolbar ;(if (:full-toolbar @local-state)
-                       (concat (conj common-left-toolbar view-types-section) view-toolbar); [toolbar-on-off])
-                     ;  (conj common-left-toolbar toolbar-on-off))
+        left-toolbar (conj common-left-toolbar view-types-section)
         right-toolbar [[{:elem :btn
                          :icon "far fa-trash-alt"
                          :title "Remove"
                          :on-click #(omt/remove-unit (:component %1) {:id (-> %1 :unit-tree ot/uid)
                                                                       :view-name (ot/view-name parent-tree)
                                                                       :ctx-unit (ot/uid parent-tree)} (:local-state %1))}]]
+        w (:width style)
         params {:unit-tree    unit-tree
                 :unit         unit
                 :view         view
                 :local-state  local-state
+                :left         (comp-unit-toorbar-left w)
                 :mode         (:mode app-state)
                 :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
-                :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view)))}]
-    (tbar/toolbar "uedit-toolbar full" ;(if (:full-toolbar @local-state) "full" "mini"))
-                  params left-toolbar right-toolbar)))
+                :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view)))}
+        down-toolbar (tbar/toolbar "uedit-toolbar down mini"
+                                   params view-toolbar [])]
+    (js/console.log view-toolbar)
+    [:div {:id "uedit-toolbar"}
+     (tbar/toolbar (if view-toolbar "uedit-toolbar mini" "uedit-toolbar down mini")
+                   params left-toolbar right-toolbar)
+     (when view-toolbar down-toolbar)]))
 
 (defn- resize-handle
   "Add resize-handle.
@@ -367,7 +371,7 @@
             (quick-editor sel-unit-tree (:height style))
             (for [mode ["top-left" "top" "top-right" "right" "bottom-right" "bottom" "bottom-left" "left"]]
               (resize-handle mode local-state)))
-          (gen-toolbar sel-unit-tree unit-tree app-state local-state)]
+          (gen-toolbar sel-unit-tree style unit-tree app-state local-state)]
          (when (= (@local-state :local-mode) :make-link)
            (draw-link-line component unit-tree parent-view local-state))]))))
 
