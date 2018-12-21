@@ -286,15 +286,14 @@
       (let [raw-diff-x      (- (.-clientX ev) (@mouse-pos :mouse-x))
             raw-diff-y      (- (.-clientY ev) (@mouse-pos :mouse-y))
             [diff-x diff-y] (compute-resize (:resize-mode @local-state) raw-diff-x raw-diff-y)
-            [new-w _]       (dom/update-size-translate-diff el diff-x diff-y
+            [new-w new-h]   (dom/update-size-translate-diff el diff-x diff-y
                                                             (-> parent-view :orgpad/transform :scale))
             left            (str (ued/comp-unit-toorbar-left new-w) "px")
             toolbar         (js/document.getElementById "uedit-toolbar")]
-        (aset toolbar "children" 0 "style" "left"
-              left)
+        (aset toolbar "children" 0 "style" "left" left)
         (when (aget toolbar "children" 1)
-          (aset toolbar "children" 1 "style" "left"
-                left))))))
+          (aset toolbar "children" 1 "style" "left" left)
+          (aset toolbar "children" 1 "style" "top" (str new-h "px")))))))
 
 (defn- update-link-shape
   [component local-state ev]
@@ -631,15 +630,15 @@
                                     :orgpad/independent           true
                                     :orgpad/view-name             "*"
                                     :orgpad/style-name            "default"
-                                    :orgpad/unit-width            100
+                                    :orgpad/unit-width            190
                                     :orgpad/unit-height           50
                                     :orgpad/unit-max-width        1000
                                     :orgpad/unit-max-height       750
-                                    :orgpad/unit-border-color     "#009cffff"
-                                    :orgpad/unit-bg-color         "#ffffffff"
-                                    :orgpad/unit-border-width     2
-                                    :orgpad/unit-corner-x         5
-                                    :orgpad/unit-corner-y         5
+                                    :orgpad/unit-border-color     "#55cec2ff"
+                                    :orgpad/unit-bg-color         "#d4fffaff"
+                                    :orgpad/unit-border-width     4
+                                    :orgpad/unit-corner-x         6
+                                    :orgpad/unit-corner-y         6
                                     :orgpad/unit-border-style     "solid"
                                     :orgpad/unit-padding          10
                                     :orgpad/unit-autoresize?      true

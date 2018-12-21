@@ -129,8 +129,11 @@
         (when (contains? selections (:db/id unit))
           [:div {:className "map-view-child"
                  :style (-> style
-                            (update :borderWidth + 2)
-                            (assoc :borderColor "rgba(120,50,50,0.5)"))}])
+                            (update :width + (* 2 (:borderWidth style)))
+                            (update :height + (* 2 (:borderWidth style)))
+                            (assoc :top -2 :left -2 :borderWidth 2
+                                   :backgroundColor "black"
+                                   :borderColor "black"))}])
         [:div
          (if (= (app-state :mode) :write)
            {:style style :className "map-view-child" :key (unit :db/id)

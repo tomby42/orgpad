@@ -187,7 +187,7 @@
                 :local-state  local-state
                 :selection    selection
                 :mode         (:mode app-state)}]
-    (tbar/toolbar "uedit-toolbar mini" params left-toolbar right-toolbar)))
+    (tbar/toolbar "uedit-toolbar mini" params [] (concat left-toolbar right-toolbar))))
 
 (defn- draw-link-line
   [component unit-tree parent-view local-state]
@@ -229,8 +229,8 @@
 
 (defn- node-unit-editor-style
   [prop & [quick-edit]]
-  (let [width (max (prop :orgpad/unit-width) (if quick-edit 500 0))
-        height (max (prop :orgpad/unit-height) (if quick-edit 300 0))
+  (let [width (max (prop :orgpad/unit-width) (if quick-edit 420 0))
+        height (max (prop :orgpad/unit-height) (if quick-edit 200 0))
         bw (+ (prop :orgpad/unit-padding) (prop :orgpad/unit-border-width))
         w  (+ width (* 2 bw))
         h (+ height (* 2 bw))
@@ -294,11 +294,11 @@
                 :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
                 :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view)))}
         down-toolbar (tbar/toolbar "uedit-toolbar down mini"
-                                   params view-toolbar [])]
-    (js/console.log view-toolbar)
+                                   (assoc params :style {:top (:height style)}) view-toolbar [])]
+    ;; (js/console.log view-toolbar)
     [:div {:id "uedit-toolbar"}
      (tbar/toolbar (if view-toolbar "uedit-toolbar mini" "uedit-toolbar down mini")
-                   params left-toolbar right-toolbar)
+                   params [] (concat left-toolbar right-toolbar))
      (when view-toolbar down-toolbar)]))
 
 (defn- resize-handle
