@@ -114,7 +114,7 @@
                                      :orgpad/view-name "default"}
   :orgpad/class               map-tuple-component
   :orgpad/needs-children-info true
-  :orgpad/view-name           "Book View"
+  :orgpad/view-name           "Book"
   :orgpad/view-icon           "far fa-book"
 
   :orgpad/propagate-props-from-children? true

@@ -97,5 +97,5 @@
                                :orgpad/view-name "default"}
   :orgpad/class               jupyter-component
   :orgpad/needs-children-info false
-  :orgpad/view-name           "Jupyter View"
+  :orgpad/view-name           "Jupyter"
   :orgpad/view-icon           "far fa-server"})

@@ -147,6 +147,7 @@
            {:style style :className "map-view-child" :key (unit :db/id)
             :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
             :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+            :onMouseUp (partial uedit/try-deselect-unit component pid (:db/id unit) local-state)
             :onWheel jev/stop-propagation
             })
          (node/node unit-tree
@@ -172,8 +173,6 @@
             [:i.far.fa-sign-in-alt]])
          (when (= (ot/view-type unit-tree) :orgpad/map-tuple-view)
            (insert-sheet-indicators unit-tree border-color))
-         ;;(when (contains? selections (:db/id unit))
-         ;;  [:span.fa.fa-check-circle.fa-lg.select-check {:style {:right (+ (/ (prop :orgpad/unit-corner-y) 2) 8) }}])
 ]]))
     (catch :default e
       (js/console.log "Unit render error" e)
@@ -213,7 +212,7 @@
                                     :unit-tree unit-tree
                                     :style (lc/query component :orgpad/style
                                                      {:view-type :orgpad.map-view/vertex-props-style
-                                                      :style-name "default"} true)}]])) 0))))
+                                                      :style-name "default"} {:disable-cache? true})}]])) 0))))
 
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic? start-size]}
@@ -302,9 +301,9 @@
   [component {:keys [view unit props]} app-state local-state]
   (let [selection (get-in app-state [:selections (:db/id unit)])
         vertex-props (lc/query component :orgpad/selection-vertex-props
-                               {:id (:db/id unit) :view view :selection selection} true)
+                               {:id (:db/id unit) :view view :selection selection} {:disable-cache? true})
         text-props (lc/query component :orgpad/selection-text-props
-                             {:id (:db/id unit) :view view :selection selection} true)]
+                             {:id (:db/id unit) :view view :selection selection} {:disable-cache? true})]
     (map (comp (partial render-selected-unit component app-state view)
                (juxt identity vertex-props text-props))
          selection)))

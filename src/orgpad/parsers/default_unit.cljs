@@ -5,6 +5,7 @@
             [orgpad.tools.colls :as colls]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.geocache :as geocache]
+            [orgpad.parsers.utils :as u]
             [orgpad.components.registry :as registry]))
 
 ;;; Dispatch definitions
@@ -33,16 +34,6 @@
 
 ;;; default read method
 
-(defn- get-view-props
-  [unit {:keys [orgpad/view-type orgpad/view-name orgpad/type]}]
-  (ds/find-props-all unit (partial ot/props-pred-no-ctx view-name view-type type)))
-
-(defn- get-path-info
-  [unit view-path]
-  (ds/find-props unit (fn [u]
-                        (and (= (u :orgpad/view-path) view-path)
-                             (= (u :orgpad/type) :orgpad/unit-path-info)))))
-
 (defn- parse
   [query tree env unit-id view-unit view-info view-path view-contexts params uid old-node]
   (if (and old-node
@@ -55,50 +46,13 @@
       (aget old-node "value"))
     (query (merge env
                   {:unit-id    uid
+                   :recur-level (inc (:recur-level env))
                    :old-node   nil
                    :view-path  (-> view-path (conj unit-id) (conj (view-unit :orgpad/view-name)))
                    :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
                    :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
                    :view-contexts view-contexts})
            :orgpad/unit-view params)))
-
-(defn- build-unit
-  [unit view-unit old-node view-info parser' global-cache]
-  (let [eunit (ds/entity->map unit)]
-    (if (:orgpad/needs-children-info view-info)
-      (if (:orgpad/visible-children-picker view-info)
-        (update eunit :orgpad/refs
-                (fn [refs]
-                  (let [sort-refs (if (:orgpad/refs-order eunit)
-                                    (map second (:orgpad/refs-order eunit))
-                                    [])] ;; TODO: hack for links that are units too - need to get all siblings of current unit
-                    (mapv (fn [[u o]] (parser' u o))
-                          ((:orgpad/visible-children-picker view-info) unit view-unit
-                                                                       (if (and old-node (= (aget old-node "key") :orgpad/unit-view)) old-node nil)
-                                                                       global-cache sort-refs)))))
-        (let [old-children-nodes (and old-node (aget old-node "children"))
-              use-children-nodes? (and old-node
-                                       (= (aget old-node "key") :orgpad/unit-view)
-                                       (= (alength old-children-nodes) (count (unit :orgpad/refs))))]
-          (update eunit :orgpad/refs
-                  (fn [refs]
-                    (let [refs' (map :db/id refs)]
-                      ;; (println (eunit :orgpad/refs-order))
-                      (if (eunit :orgpad/refs-order)
-                        (let [children (if use-children-nodes?
-                                         (into {} (map (juxt identity parser')
-                                                       refs' old-children-nodes))
-                                         (into {} (map (juxt identity parser') refs')))]
-                          (mapv (comp children second) (eunit :orgpad/refs-order)))
-                        (if use-children-nodes?
-                          (into [] (map parser' refs' old-children-nodes))
-                          (mapv parser' refs'))))))))
-      (if (eunit :orgpad/refs-order)
-        (update eunit :orgpad/refs
-                (fn [refs]
-                  (let [children (into {} (map (juxt :db/id identity) refs))]
-                    (mapv (comp children second) (eunit :orgpad/refs-order)))))
-        eunit))))
 
 (defmethod read :orgpad/unit-view
   [{:keys [state query old-node tree unit-id view-name view-type view-path view-contexts global-cache] :as env} k params]
@@ -109,23 +63,16 @@
         unit
         (store/query db [:entity unit-id])
 
-        path-info
-        (get-path-info unit view-path)
-
         path-info'
-        (assoc (or path-info {:orgpad/view-name view-name
-                              :orgpad/view-type view-type
-                              :orgpad/view-path view-path})
-               :orgpad/type :orgpad/unit-view)
+        (u/get-o-create-path-info unit view-name view-type view-path)
 
         view-info
         (registry/get-component-info (path-info' :orgpad/view-type))
 
-        view-unit-local
-        (-> unit (get-view-props path-info') first)
-
         view-unit
-        (or view-unit-local (-> view-info :orgpad/default-view-info (assoc :orgpad/refs [{:db/id unit-id}])))
+        (or (-> unit (u/get-view-props path-info') first)
+            (-> view-info :orgpad/default-view-info
+                (assoc :orgpad/refs [{:db/id unit-id}])))
 
         props-info
         (when (:orgpad/child-props-types view-info)
@@ -147,11 +94,11 @@
 
         parser' (partial parse query tree env unit-id view-unit view-info view-path view-contexts' params)
 
-        unit' (build-unit unit view-unit old-node view-info parser' global-cache)
+        unit' (u/build-unit unit view-unit old-node view-info parser' global-cache env)
 
         props
         (when view-contexts
-          (into [] (mapcat #(get-view-props unit %)) view-contexts))]
+          (into [] (mapcat #(u/get-view-props unit %)) view-contexts))]
 
     ;; (js/console.log {:unit unit'
     ;;                  :path-info path-info'

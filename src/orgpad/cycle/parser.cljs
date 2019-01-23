@@ -5,7 +5,6 @@
 
 (defn- parse-query-
   [{:keys [tree read] :as env} k params]
-
   (let [tree' @tree]
     (vreset! tree #js [])
     (let [val   (read env k params)
@@ -19,7 +18,6 @@
 
 (defn parse-query
   [env k params]
-
   (let [tree (volatile! #js [])]
     (parse-query- (merge env
                          {:query parse-query-

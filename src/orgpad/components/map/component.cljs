@@ -19,6 +19,7 @@
             [orgpad.tools.dom :as dom]
             [orgpad.tools.time :as t]
             [orgpad.cycle.utils :as cu]
+            [orgpad.components.panel.index.component :as index-panel]
             [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-change-link-shape start-link]]))
 
 (def ^:private init-state
@@ -39,7 +40,7 @@
                    :transform (view :orgpad/transform)
                    :position  pos
                    :style     (lc/query component :orgpad/style {:view-type  :orgpad.map-view/vertex-props-style
-                                                                 :style-name "default"} true)}]]))
+                                                                 :style-name "default"} {:disable-cache? true})}]]))
 
 (defn- start-canvas-move
   [local-state-atom ev]
@@ -105,7 +106,7 @@
                              :position      pos
                              :style         (lc/query component :orgpad/style
                                                       {:view-type  :orgpad.map-view/link-props-style
-                                                       :style-name "default"} true)}]]))
+                                                       :style-name "default"} {:disable-cache? true})}]]))
 
 (defn- make-links
   [component unit-tree selection pos]
@@ -115,7 +116,7 @@
                               :position  pos
                               :style     (lc/query component :orgpad/style
                                                    {:view-type  :orgpad.map-view/link-props-style
-                                                    :style-name "default"} true)}]]))
+                                                    :style-name "default"} {:disable-cache? true})}]]))
 
 (defn- stop-canvas-move
   [component {:keys [unit view]} local-state new-pos]
@@ -455,6 +456,7 @@
             :onDoubleClick #(handle-double-click component unit-tree app-state local-state %)
             :onWheel       (jev/make-block-propagation #(handle-wheel component unit-tree app-state local-state %))}
       (munit/render-mapped-children-units component unit-tree app-state local-state)
+      (index-panel/index-panel unit-tree app-state)
       (when (= (:local-mode @local-state) :choose-selection)
         (render-selection-box component unit-tree @local-state (:view unit-tree)))
       (when (and (:enable-experimental-features? app-state)
@@ -663,7 +665,7 @@
                                     :orgpad/link-type      :directed
                                     :orgpad/link-arrow-pos 50}}
   :orgpad/needs-children-info     true
-  :orgpad/view-name               "Map View"
+  :orgpad/view-name               "Map"
   :orgpad/view-icon               "far fa-share-alt"
   :orgpad/visible-children-picker pick-visible-children
 

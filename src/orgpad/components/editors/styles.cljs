@@ -26,8 +26,8 @@
 
 (defn frame
   [label & body]
-  [:div.map-view-border-edit {}
-   [:div.center label]
+  [:div.map-view-border-edit {:key label}
+   [:div.center {:key (str "label-" label) } label]
    body])
 
 (defn- selection-option

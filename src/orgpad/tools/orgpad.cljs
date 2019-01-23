@@ -608,20 +608,28 @@
                                 [?vp2 :orgpad/unit-position ?pt2]])]
     links))
 
+(defn- is-prop?
+  [pred u]
+  (->> u :props (some pred)))
+
 (defn- mapped?
   [{:keys [orgpad/refs db/id]} view-name prop-name]
   (let [pred (partial props-pred-view-child id view-name prop-name)]
     (into []
-          (filter (fn [u] (->> u :props (some pred)))) refs)))
+          (filter (partial is-prop? pred)) refs)))
 
 (defn mapped-children
-  [unit-tree view-name]
-  (mapped? unit-tree view-name :orgpad.map-view/vertex-props))
+  [unit view-name]
+  (mapped? unit view-name :orgpad.map-view/vertex-props))
+
+(defn- id-unit-pair
+  [u]
+  [(uid u) u])
 
 (defn mapped-links
   [unit-tree view-name pid m-units]
   (let [links (mapped? unit-tree view-name :orgpad.map-view/link-props) ;; (filter #(>= (-> % :unit :orgpad/refs count) 0) (mapped? unit-tree view-name :orgpad.map-view/link-props))
-        mus   (into {} (map (fn [u] [(uid u) u])) m-units)]
+        mus   (into {} (map id-unit-pair) m-units)]
     (map (fn [l]
            (try
              (let [refs (-> l :unit :orgpad/refs)

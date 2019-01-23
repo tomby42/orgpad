@@ -45,13 +45,14 @@
                   (get-in [:stack [key params]])
                   (->> (map #(aget % "value")))))
 
-            (parser-read [key params disable-cache?]
+            (parser-read [key params {:keys [disable-cache?] :as opts}]
                          (let [pstate-cur (@parser-state [key params])]
                            (if (nil? pstate-cur)
-                             (let [pstate (parser/parse-query {:state @state
-                                                               :read read-fn
-                                                               :parser-stack-info parser-stack-info
-                                                               :global-cache global-cache} key params)]
+                             (let [pstate (parser/parse-query (merge {:state @state
+                                                                      :read read-fn
+                                                                      :parser-stack-info parser-stack-info
+                                                                      :global-cache global-cache}
+                                                                     opts) key params)]
                                (when (not disable-cache?)
                                  (vswap! parser-state assoc [key params] pstate))
                                (aget pstate "value"))
@@ -150,10 +151,10 @@
 (defn query
   "Returns value of query for given 'component', 'key' and
   'params'. optional 'disable-cache?' switches off cache of results."
-  [component key params & [disable-cache?]]
+  [component key params & [opts]]
   (let [parser-read (aget (.. component -context) "parser-read")]
     (assert (-> parser-read nil? not))
-    (parser-read key params disable-cache?)))
+    (parser-read key params opts)))
 
 (defn transact!
   "Updates state regarding to 'component' and 'key-params-tuple'"

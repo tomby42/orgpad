@@ -58,7 +58,7 @@
 
 (defn- render-history
   [component local-state]
-  (let [[h-finger h-cnt] (lc/query component :orgpad/history-info [] true)]
+  (let [[h-finger h-cnt] (lc/query component :orgpad/history-info [] {:disable-cache? true})]
     [:div.history-slider
      [:input {:type "range" :min -1 :max (dec h-cnt) :step 1 :value (or h-finger (dec h-cnt))
               :style {:width (* h-cnt 10)}

@@ -9,18 +9,19 @@
   being called for N milliseconds. If 'immediate' is passed, trigger
   the function on the leading edge, instead of the trailing."
 
-  [f bounce-timeout immediate?]
+  [f bounce-timeout immediate? & [parse-args]]
 
   (let [state (atom nil)]
     (fn [& args]
       (let [call-now?  (and
                         immediate?
                         (not @state))
+            args' (parse-args args)
             later-fn
             (fn []
               (reset! state nil)
-              (when (not call-now?) (apply f args)))]
+              (when (not call-now?) (apply f args')))]
 
         (js/clearTimeout @state)
         (reset! state (js/setTimeout later-fn bounce-timeout))
-        (when call-now? (apply f args))))))
+        (when call-now? (apply f args'))))))

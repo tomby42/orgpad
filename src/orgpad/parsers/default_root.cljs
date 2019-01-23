@@ -49,9 +49,10 @@
         view-stack (get-view-stack db)
 
         [_ cr-id v-name v-type v-path]
-        (if view-stack
-          (last view-stack)
-          [nil nil nil nil nil])
+        (or (:view-stack env)
+            (if view-stack
+              (last view-stack)
+              [nil nil nil nil nil]))
 
         view-name
         (or v-name
@@ -69,7 +70,9 @@
 
 ;;    (println "root parser" current-root-id view-name view-type view-path)
 
-    (query (merge env {:view-name view-name
+    (query (merge env {:recur-level 0
+                       :max-recur-level (or (:max-recur-level env) js/Number.MAX_SAFE_INTEGER)
+                       :view-name view-name
                        :unit-id current-root-id
                        :view-type view-type
                        :view-path view-path})

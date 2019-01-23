@@ -96,9 +96,10 @@
                    :icon "far fa-code-merge"
                    :label "Import"
                    :on-click #(lc/transact! (:component %1) [[:orgpad/import-orgpad %2]])}
-                  {:id "tohtml"
-                   :label "Export HTML"
-                   :on-click #(lc/transact! (:component %1) [[:orgpad/export-as-html ((lc/global-conf (:component %1)) :storage-el)]])}]}]
+                  ;; {:id "tohtml"
+                  ;;  :label "Export HTML"
+                  ;;  :on-click #(lc/transact! (:component %1) [[:orgpad/export-as-html ((lc/global-conf (:component %1)) :storage-el)]])}
+                  ]}]
    [{:elem :btn
      :id "styles-editor"
      :icon "far fa-paint-brush"
@@ -110,15 +111,15 @@
      :icon "far fa-clock"
      :title "History on/off"
      :on-click #(swap! (:local-state %1) update :history not)
-     :disabled #(not (or (lc/query (:component %1) :orgpad/undoable? [] true)
-                         (lc/query (:component %1) :orgpad/redoable? [] true)))
+     :disabled #(not (or (lc/query (:component %1) :orgpad/undoable? [] {:disable-cache? true})
+                         (lc/query (:component %1) :orgpad/redoable? [] {:disable-cache? true})))
      :hidden true}
     {:elem :btn
      :id "undo"
      :icon "far fa-undo-alt"
      :title "Undo"
      :on-click #(lc/transact! (:component %1) [[:orgpad/undo true]])
-     :disabled #(or (not (lc/query (:component %1) :orgpad/undoable? [] true))
+     :disabled #(or (not (lc/query (:component %1) :orgpad/undoable? [] {:disable-cache? true}))
                     (not= (-> %1 :view :orgpad/view-type) :orgpad/map-view))
      :hidden #(= (:mode %1) :read)}
     {:elem :btn
@@ -126,7 +127,7 @@
      :icon "far fa-redo-alt"
      :title "Redo"
      :on-click #(lc/transact! (:component %1) [[:orgpad/redo true]])
-     :disabled #(or (not (lc/query (:component %1) :orgpad/redoable? [] true))
+     :disabled #(or (not (lc/query (:component %1) :orgpad/redoable? [] {:disable-cache? true}))
                     (not= (-> %1 :view :orgpad/view-type) :orgpad/map-view))
      :hidden #(= (:mode %1) :read)}]]
 

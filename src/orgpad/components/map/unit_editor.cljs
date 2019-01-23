@@ -469,7 +469,7 @@
                                                    :prop-val c}]]))))]
     (stedit/frame (if (= action :orgpad.units/map-view-unit-border-color)
                     "Border Color"
-                    "Background Color") (cpicker/color-picker color {} on-change))))
+                    "Background Color") (cpicker/color-picker color {:key "colorpicker"} on-change))))
 
 (defn- render-width
   [{:keys [prop] :as params}]

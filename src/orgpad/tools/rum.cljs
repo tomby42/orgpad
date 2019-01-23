@@ -4,8 +4,12 @@
             [orgpad.tools.colls :as colls]))
 
 (defn comp->local-state
-  [component]
-  (-> component rum/state deref :rum/local))
+  ([component]
+   (-> component rum/state deref :rum/local))
+  ([component non-reactive?]
+   (if non-reactive?
+     (-> component rum/state deref :rum/no-reactive-local)
+     (-> component rum/state deref :rum/local))))
 
 (defn comp->args
   [component]
@@ -93,3 +97,11 @@
   [comp]
   (when (.isMounted comp)
     (.forceUpdate comp)))
+
+(defn no-reactive-local
+  ([initial] (no-reactive-local initial :rum/no-reactive-local))
+  ([initial key]
+   {:will-mount
+    (fn [state]
+      (let [local-state (volatile! initial)]
+        (assoc state key local-state)))}))

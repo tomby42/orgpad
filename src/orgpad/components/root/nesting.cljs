@@ -68,7 +68,7 @@
   "Nesting status bar component."
   [component {:keys [unit view path-info] :as unit-tree}]
   (let [unit-stack (concat
-                    (lc/query component :orgpad/root-view-stack-info [:orgpad/root-view []] true)
+                    (lc/query component :orgpad/root-view-stack-info [:orgpad/root-view []] {:disable-cache? true})
                     [unit-tree])
         level (dec (count unit-stack))
         jumps-up (range level -1 -1)]

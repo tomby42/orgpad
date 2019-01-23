@@ -11,6 +11,8 @@
     [:div {:className "sidebar-button"
            :key "sidebar-button"
            :onMouseDown jev/stop-propagation
+           ;; :onMouseUp jev/stop-propagation
+           :onWheel jev/stop-propagation
            :onClick
            (fn [ev]
              (swap! local not)
@@ -18,6 +20,9 @@
      [:i {:className (if (not= @local (= position :left))
                        "fa fa-angle-right fa-lg"
                        "fa fa-angle-left fa-lg")}]]
-    [:div {:key "sidebar-childrens"}
+    [:div {:key "sidebar-childrens"
+           :onMouseDown jev/stop-propagation
+           ;; :onMouseUp jev/stop-propagation
+           :onWheel jev/stop-propagation}
      (when (and @local children)
        (html/shtml children))]]])

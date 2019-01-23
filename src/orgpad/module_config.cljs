@@ -13,4 +13,5 @@
             orgpad.parsers.jupyter.parser
             orgpad.parsers.ci.parser
             orgpad.parsers.net.parser
-            orgpad.parsers.styles.parser))
+            orgpad.parsers.styles.parser
+            orgpad.parsers.index-panel.parser))

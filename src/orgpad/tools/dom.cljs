@@ -184,3 +184,22 @@
                             (max (:height optimal-size)
                                  (:min-height DEFAULT-OPTIMAL-SIZE-PARAMS)))]
     [optimal-width optimal-height]))
+
+(defn consecutive-visible-nodes
+  [ref-bb start node]
+  (loop [idx start
+         visible-start -1
+         visible-end -1]
+    (if (or (not= visible-end -1)
+            (>= idx (-> node .-childNodes .-length)))
+      [(if (= visible-start -1) 0 visible-start) (if (= visible-end -1) idx visible-end)]
+      (let [bb (.getBoundingClientRect (aget node "childNodes" idx))]
+        (recur (inc idx)
+               (if (and (= visible-start -1)
+                        (>= (.-bottom bb) (.-top ref-bb)))
+                 idx
+                 visible-start)
+               (if (and (= visible-end -1)
+                        (>= (.-top bb) (.-bottom ref-bb)))
+                 idx
+                 visible-end))))))

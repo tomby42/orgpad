@@ -20,7 +20,7 @@
     >div {
         position:relative;
         z-index:2;
-        top:0;
+        top:0px;
         width:@sidebar-width;
         height:100%;
         .border-box;
@@ -47,6 +47,8 @@
         >div {
             height:100%;
             background:@sidebar-color;
+            top:-18px;
+            position: relative;
         }
 
         >.sidebar-button {
@@ -66,6 +68,5 @@
         &.right > .sidebar-button {
             left: -10px;
         }
-
     }
 }

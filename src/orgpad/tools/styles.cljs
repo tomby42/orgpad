@@ -7,7 +7,7 @@
   [component style-type]
   (sort
    #(compare (:orgpad/style-name %1) (:orgpad/style-name %2))
-   (lc/query component :orgpad/styles {:view-type style-type} true)))
+   (lc/query component :orgpad/styles {:view-type style-type} {:disable-cache? true})))
 
 (defn prop->css
   [prop]

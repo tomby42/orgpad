@@ -7,7 +7,7 @@
                  [org.clojure/tools.deps.alpha "0.5.442"]
                  [org.clojure/core.async      "0.4.490"]
                  [org.clojure/test.check      "0.9.0"]
-                 [datascript                  "0.16.9"]
+                 [datascript                  "0.17.1"]
                  [datascript-transit          "0.2.2"
                   :exclusions [com.cognitect/transit-clj
                                com.cognitect/transit-cljs]]
@@ -36,10 +36,11 @@
                        ["babel-polyfill" "6.23.0"]
                        ;; ["mathjax" "2.7.2"]
                        ["bezier-js" "2.2.5"]
+                       ["react-treebeard" "2.1.0"]
                        ]}
 
   :plugins [[lein-cljsbuild "1.1.7"]
-            [lein-figwheel "0.5.17"] ;; needs update to lein 2.5.3 at least
+            [lein-figwheel "0.5.18"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             [lein-localrepo "0.5.3"]
             [lein-doo "0.1.10"]
@@ -66,7 +67,7 @@
   :profiles {:dev
              {:dependencies [[cider/piggieback "0.3.6"]
                              [org.clojure/tools.nrepl "0.2.13"]
-                             [figwheel-sidecar        "0.5.17"]
+                             [figwheel-sidecar        "0.5.18"]
                              [binaryage/devtools      "0.9.10"]]
               }
 
@@ -89,12 +90,18 @@
                         :source-map-timestamp true
                         :language-in :ecmascript5
                         ;; :install-deps true
-                        ;; :npm-deps {:bezier-js "2.2.5"}
-                        :externs ["node_modules/jupyter-js-services/dist/index.js" "dev-resources/js/bezier.js"]
+                        ;; :npm-deps {:bezier-js "2.2.5"
+                        ;;            :jupyter-js-services "0.21.1"
+                        ;;            :react-treebeard "3.1.0"}
+                        :externs ["node_modules/jupyter-js-services/dist/index.js"
+                                  "dev-resources/js/bezier.js"
+                                  "dev-resources/js/react-treebeard.js"]
                         :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
                                         :provides ["jupyter.services"]}
                                        {:file "dev-resources/js/bezier.js"
-                                        :provides ["Bezier"]}]
+                                        :provides ["Bezier"]}
+                                       {:file "dev-resources/js/react-treebeard.js"
+                                        :provides ["treebeard"]}]
                         }}
 
             {:id "test"
@@ -108,13 +115,18 @@
                         :language-in :ecmascript5
                         ;; :install-deps true
                         ;; :npm-deps {:bezier-js "2.2.5"}
-                        :externs ["node_modules/babel-polyfill/dist/polyfill.js", "node_modules/jupyter-js-services/dist/index.js" "dev-resources/js/bezier.js"]
+                        :externs ["node_modules/babel-polyfill/dist/polyfill.js"
+                                  "node_modules/jupyter-js-services/dist/index.js"
+                                  "dev-resources/js/bezier.js"
+                                  "dev-resources/js/react-treebeard.js"]
                         :foreign-libs [{:file "node_modules/babel-polyfill/dist/polyfill.js"
                                         :provides ["babel.polyfill"]},
                                        {:file "node_modules/jupyter-js-services/dist/index.js"
                                         :provides ["jupyter.services"]}
                                        {:file "dev-resources/js/bezier.js"
-                                        :provides ["Bezier"]}]
+                                        :provides ["Bezier"]}
+                                       {:file "dev-resources/js/react-treebeard.js"
+                                        :provides ["treebeard"]}]
                         }}
 
             {:id "prod"
@@ -127,11 +139,15 @@
                         :closure-warnings {:externs-validation :off :non-standard-jsdoc :off}
                         ;; :install-deps true
                         ;; :npm-deps {:bezier-js "2.2.5"}
-                        :externs ["node_modules/jupyter-js-services/dist/index.js" "dev-resources/js/bezier.js"]
+                        :externs ["node_modules/jupyter-js-services/dist/index.js"
+                                  "dev-resources/js/bezier.js"
+                                  "dev-resources/js/react-treebeard.js"]
                         :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
                                         :provides ["jupyter.services"]}
                                        {:file "dev-resources/js/bezier.js"
-                                        :provides ["Bezier"]}]
+                                        :provides ["Bezier"]}
+                                       {:file "dev-resources/js/react-treebeard.js"
+                                        :provides ["treebeard"]}]
                         }}
             {:id "online"
              :source-paths ["src" "env/online"]
@@ -142,11 +158,15 @@
                         :pretty-print false
                         :language-in :ecmascript5
                         :closure-warnings {:externs-validation :off :non-standard-jsdoc :off}
-                        :externs ["node_modules/jupyter-js-services/dist/index.js" "dev-resources/js/bezier.js"]
+                        :externs ["node_modules/jupyter-js-services/dist/index.js"
+                                  "dev-resources/js/bezier.js"
+                                  "dev-resources/js/react-treebeard.js"]
                         :foreign-libs [{:file "node_modules/jupyter-js-services/dist/index.js"
                                         :provides ["jupyter.services"]}
                                        {:file "dev-resources/js/bezier.js"
-                                        :provides ["Bezier"]}]
+                                        :provides ["Bezier"]}
+                                       {:file "dev-resources/js/react-treebeard.js"
+                                        :provides ["treebeard"]}]
                         }}]
 
    :test-commands {"test" ["phantomjs"
