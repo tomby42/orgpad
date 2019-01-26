@@ -103,5 +103,7 @@
   ([initial key]
    {:will-mount
     (fn [state]
-      (let [local-state (volatile! initial)]
+      (let [local-state (volatile! (if (fn? initial)
+                                     (initial)
+                                     initial))]
         (assoc state key local-state)))}))

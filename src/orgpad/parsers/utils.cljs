@@ -88,8 +88,7 @@
         [expanded rs iterated]
         (if (= max-idx -1)
           [nil nil 0]
-          (expand-units pred parser' from start' max-idx num cache
-                        (subvec refs' start')))
+          (expand-units pred parser' from start' max-idx num cache refs'))
 
         end (min (+ start' iterated) (inc max-idx))]
     (if (= max-idx -1)

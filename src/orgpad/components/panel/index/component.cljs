@@ -46,7 +46,13 @@
         name (or (:orgpad/desc view)
                  (str (:orgpad/view-name info)))
         children-old (aget data "children")
-        vrefs (filter (comp not :filtered?)(:orgpad/refs unit))
+        vrefs (into []
+                    (if range
+                      (comp
+                       (filter (comp not :filtered?))
+                       (take (+ (range 1) 10)))
+                      (filter (comp not :filtered?)))
+                    (:orgpad/refs unit))
         refs-len (count vrefs)
         old-unit-tree (aget data "unit_tree")
         children (if (and children-old
@@ -67,15 +73,10 @@
     (when (not= refs-len 0)
         (aset data "children" children))
     (when (aget data "toggled")
-        ;; (and (aget data "toggled")
-        ;;        (or (nil? range)
-        ;;            (and (<= (get range 0) idx)
-        ;;                 (<= idx (get range 1)))))
-      (loop [idx 0
-             refs vrefs]
+      (loop [idx 0]
         (if (= idx refs-len)
           data
-          (let [child-unit-tree (first refs)
+          (let [child-unit-tree (get vrefs idx)
                 id (ot/uid child-unit-tree)
                 old-data-idx (if children-old
                                (.findIndex children-old
@@ -85,9 +86,8 @@
                            (aget children-old old-data-idx)
                            nil)]
             (aset children idx (prepare-data component child-unit-tree
-                                             old-data (inc idx)
-                                             (and (nil? idx) range)))
-            (recur (inc idx) (rest refs))))))
+                                             old-data (inc idx)))
+            (recur (inc idx))))))
     data))
 
 (defn- toggl
@@ -121,13 +121,14 @@
   ;; (js/console.log "has-vprop?" u)
   (some is-vprop? (:props u)))
 
-(def position-cache (volatile! nil))
+;; (def position-cache (volatile! nil))
 
 (defn- expand-range
   [last-state eunit view-unit recur-level]
   ;; (js/console.log "expand-range" view-unit recur-level)
   (if (= recur-level 0)
     (let [[s e] (:visible-range @last-state)
+          position-cache (:position-cache @last-state)
           cnt (- e s)
           from (max 0 (int (- s (/ cnt 2))))
           start (or
@@ -164,7 +165,11 @@
             #(determine-visible-nodes component 0
                                       ;; (-> % first (- 20) (max 0))
                                       ))
-    ;; (js/console.log "update-scroll" @last-state @position-cache)
+    ;; (js/console.log "update-scroll"
+    ;;                 (:visible-range @last-state)
+    ;;                 (:range-updated @last-state)
+    ;;                 (-> @last-state :old-js-data (aget "children") .-length)
+    ;;                 (-> @last-state :position-cache deref))
     (when (or (<= (get-in @last-state [:visible-range 0])
                   (get-in @last-state [:range-updated 0]))
               (>= (get-in @last-state [:visible-range 1])
@@ -180,7 +185,8 @@
 
 (rum/defcc index-list
   < lc/parser-type-mixin-context (rum/local {:last-scroll 0})
-  (trum/no-reactive-local last-state-init)
+  (trum/no-reactive-local #(merge last-state-init
+                                  {:position-cache (volatile! nil)}))
   [component unit-tree status toggl-changed?]
   (let [local-state (trum/comp->local-state component)
         last-state (trum/comp->local-state component true)
@@ -197,13 +203,13 @@
                          (= old-scroll (:last-scroll @local-state))
                          (= old-unit-tree unit-tree))
                   old-js-data
-                  (prepare-data component data (or old-js-data root-data)))]
+                  (prepare-data component data (or old-js-data root-data)
+                                nil (:range-updated @last-state)))]
     ;; (js/console.log "index-list" data js-data old-js-data)
     (vreset! last-state (merge @last-state
                                {:old-js-data js-data
                                 :old-data data
                                 :old-unit-tree unit-tree
-                                :old-scroll (:last-scroll @local-state)
                                 :old-status status}))
     [:div.index-panel {:onScroll (partial update-scroll component local-state)
                        :ref "index-panel-node"}
