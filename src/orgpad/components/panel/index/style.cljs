@@ -48,7 +48,20 @@
                                        :top "0px",
                                        :left "-21px"},
                            :title {:lineHeight "24px",
-                                   :verticalAlign "middle"}},
+                                   :verticalAlign "middle"}
+                           :icon {:marginRight "3px"}
+                           :number {:backgroundColor "black"
+                                    :color "white"
+                                    :marginLeft "3px"
+                                    :padding "2px"
+                                    :fontSize "8px"
+                                    :width "15px"
+                                    :height "15px"
+                                    :borderRadius "10px"
+                                    :top "-5px"
+                                    :position "relative"
+                                    :textAlign "center"}
+                           :numberPos {}},
                   :subtree {:listStyle "none",
                             :paddingLeft "19px"},
                   :loading {:color "#E2C089"}}}}))

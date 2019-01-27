@@ -13750,11 +13750,21 @@ var Header = function Header(_ref3) {
         _react2.default.createElement(
             'div',
             { style: style.title },
+            _react2.default.createElement('span', { className: node.icon, style: style.icon }),
             _react2.default.createElement(
                 'span',
                 { style: node.active ? style.active : null },
                 node.name
-            )
+            ),
+            node.children ? _react2.default.createElement(
+                'span',
+                { style: style.number },
+                _react2.default.createElement(
+                    'span',
+                    { style: style.numberPos },
+                    node.nofChildren ? node.nofChildren : node.children.length
+                )
+            ) : null
         )
     );
 };
