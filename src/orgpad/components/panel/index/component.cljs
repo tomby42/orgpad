@@ -90,6 +90,40 @@
             (recur (inc idx))))))
     data))
 
+(defn- find-parent
+  [parent node]
+  (if (-> parent (aget "children") not)
+    nil
+    (let [idx (.indexOf (aget parent "children") node)]
+      (if (= idx -1)
+        (loop [i 0
+               res nil]
+          (if (or res (= i (aget parent "children" "length")))
+            res
+            (recur (inc i) (find-parent (aget parent "children" i) node))))
+        parent))))
+
+(defn- show-unit
+  [component last-state node]
+  (when-let [parent (find-parent (:old-js-data @last-state) node)]
+    (let [view (-> parent (aget "unit_tree") :view)
+          unit-tree (aget node "unit_tree")]
+      (js/console.log "show-unit" parent view unit-tree)
+      (case (:orgpad/view-type view)
+      :orgpad/map-view
+      (let [vprop (-> unit-tree
+                      :props
+                      (ot/get-props-view-child (:orgpad/view-name view)
+                                               (-> parent (aget "unit_tree") ot/uid)
+                                               :orgpad.map-view/vertex-props))]
+        (lc/transact! component
+                      [[:orgpad.units/map-move-to-unit
+                        {:uid (ot/uid unit-tree)
+                         :parent-view view
+                         :vprop vprop}]]))
+      nil
+      ))))
+
 (defn- toggl
   [component toggl-changed? node toggled]
   (let [last-state (trum/comp->local-state component true)]
@@ -97,6 +131,7 @@
       (aset (:cursor @last-state) "active" false))
     (aset node "active" true)
     (vswap! last-state assoc :cursor node)
+    (show-unit component last-state node)
     (when (aget node "children")
       (aset node "toggled" toggled)
       (vswap! toggl-changed? not))))
@@ -126,25 +161,25 @@
 (defn- expand-range
   [last-state eunit view-unit recur-level]
   ;; (js/console.log "expand-range" view-unit recur-level)
-  (if (= recur-level 0)
-    (let [[s e] (:visible-range @last-state)
-          position-cache (:position-cache @last-state)
-          cnt (- e s)
-          from (max 0 (int (- s (/ cnt 2))))
-          start (or
-                 (when @position-cache
-                   (aget @position-cache from))
-                 0)
-          pred (if (= (:orgpad/view-type view-unit) :orgpad/map-view)
-                 has-vprop?
-                 (constantly true))
-          prefix (when (:old-data @last-state)
-                   (subvec (-> @last-state :old-data :unit :orgpad/refs)
-                           0 start))
-          res [pred prefix from start (* cnt 2) position-cache]]
-      (vswap! last-state assoc :range-updated [from (+ from (* 2 cnt))])
-      res)
-    [(constantly true) nil 0 0 js/Number.MAX_SAFE_INTEGER nil]))
+  (let [pred (if (= (:orgpad/view-type view-unit) :orgpad/map-view)
+               has-vprop?
+               (constantly true))]
+    (if (= recur-level 0)
+      (let [[s e] (:visible-range @last-state)
+            position-cache (:position-cache @last-state)
+            cnt (- e s)
+            from (max 0 (int (- s (/ cnt 2))))
+            start (or
+                   (when @position-cache
+                     (aget @position-cache from))
+                   0)
+            prefix (when (:old-data @last-state)
+                     (subvec (-> @last-state :old-data :unit :orgpad/refs)
+                             0 start))
+            res [pred prefix from start (* cnt 2) position-cache]]
+        (vswap! last-state assoc :range-updated [from (+ from (* 2 cnt))])
+        res)
+      [pred nil 0 0 js/Number.MAX_SAFE_INTEGER nil])))
 
 (defn- determine-visible-nodes
   [component start-idx]

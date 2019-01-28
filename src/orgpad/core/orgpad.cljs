@@ -92,7 +92,8 @@
 
 (defn empty-orgpad-db
   []
-  (-> (store/new-datom-atom-store {:app-state {:mode :write}} (d/empty-db orgpad-db-schema))
+  (-> (store/new-datom-atom-store {:app-state {:mode :write
+                                               :quickedit-when-created? true}} (d/empty-db orgpad-db-schema))
       (store/transact [{:db/id 0,
                         :orgpad/props-refs 1
                         :orgpad/type :orgpad/root-unit}
