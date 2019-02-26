@@ -12,4 +12,92 @@
   background-image: url("@{icon-path}/@{url}");
   .iconDefaults();
 }
-  
+
+.edit-icon(@url) {
+    width: @edit-icons-size;
+    height: @edit-icons-size;
+    margin: 1px;
+    .iu(@url);
+}
+
+.edit-link {
+    .edit-icon("edit-link.svg")
+}
+
+.edit-info {
+    .edit-icon("edit-info.svg")
+}
+
+.edit-focus-mode {
+    .edit-icon("edit-focus-mode.svg")
+}
+
+.edit-delete {
+    .edit-icon("edit-delete.svg")
+}
+
+.edit-ok {
+    height: 30px;
+    width: 70px;
+    .iu("ok.svg");
+}
+
+.edit-dots {
+    height: 10px;
+    width: 30px;
+    .iu("dots1.svg");
+}
+
+.edit-add-page {
+    width: @edit-icons-size - 4;
+    height: @edit-icons-size - 5;
+    margin: 1px;
+    .iu("add-page.svg");
+}
+
+.edit-del-page {
+    width: @edit-icons-size - 4;
+    height: @edit-icons-size - 5;
+    margin: 1px;
+    .iu("delete-page.svg");
+}
+
+.edit-enabled {
+    width: 20px;
+    height: 20px;
+    margin: 1px;
+    .iu("enabled.svg");
+}
+
+.edit-disbaled {
+    width: 20px;
+    height: 20px;
+    margin: 1px;
+    .iu("disabled.svg");
+}
+
+.edit-new-ok {
+    height: 20px;
+    width: 47px;
+    margin: 2px;
+    .iu("ok.svg");
+}
+
+.edit-new-cancel {
+    height: 20px;
+    width: 47px;
+    margin: 2px;
+    .iu("cancel.svg");
+}
+
+.edit-page-prev {
+    height: 20px;
+    width: 15px;
+    .iu("prev.svg");
+}
+
+.edit-page-next {
+    height: 20px;
+    width: 15px;
+    .iu("next.svg");
+}

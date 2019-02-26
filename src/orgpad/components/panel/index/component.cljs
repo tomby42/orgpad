@@ -92,16 +92,17 @@
 
 (defn- find-parent
   [parent node]
-  (if (-> parent (aget "children") not)
-    nil
-    (let [idx (.indexOf (aget parent "children") node)]
-      (if (= idx -1)
-        (loop [i 0
-               res nil]
-          (if (or res (= i (aget parent "children" "length")))
-            res
-            (recur (inc i) (find-parent (aget parent "children" i) node))))
-        parent))))
+  (when parent
+    (if (-> parent (aget "children") not)
+      nil
+      (let [idx (.indexOf (aget parent "children") node)]
+        (if (= idx -1)
+          (loop [i 0
+                 res nil]
+            (if (or res (= i (aget parent "children" "length")))
+              res
+              (recur (inc i) (find-parent (aget parent "children" i) node))))
+          parent)))))
 
 (defn- show-unit
   [component last-state node]

@@ -25,7 +25,10 @@
             [goog.string.format]
             [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-link]]
             [orgpad.components.input.slider :as slider]
-            [orgpad.components.editors.styles :as stedit]))
+            [orgpad.components.editors.styles :as stedit]
+
+            [orgpad.components.map.unit-editor-new :as ne]
+            ))
 
 (def ^:private edge-menu-conf
   {:always-open? false
@@ -434,11 +437,13 @@
       (swap! local-state assoc :unit-editor-node new-node))))
 
 (rum/defcc unit-editor < lc/parser-type-mixin-context (trum/gen-update-mixin update-ref)
+  (rum/local {:selected-view-type :orgpad/atomic-view
+              :page-nav-pos [200 0]})
   [component unit-tree app-state local-state]
   (let [select-unit (@local-state :selected-unit)]
     (if (= (:mode app-state) :write)
       [:div
-       (node-unit-editor component unit-tree app-state local-state)
+       (ne/node-unit-editor-new component unit-tree app-state local-state)
        (edge-unit-editor component unit-tree app-state local-state)]
       (when (and select-unit
                  (contains? #{:unit-move} (:local-mode @local-state)))

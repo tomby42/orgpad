@@ -1,5 +1,6 @@
 @import "config.less";
 @import "circle_button.less";
+@import "icons.less";
 
 .map-view {
   width: 100%;
@@ -73,13 +74,160 @@
     }
   }
 
+
+  .page-nav {
+      position: fixed;
+      z-index: 5;
+      width: 60px;
+      height: 60px;
+      border-radius: 30px;
+      bottom: -40px;
+      right: -30px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.5);
+      .iu("page-flipper-bg.svg");
+
+      .prev {
+          position: absolute;
+          top: 20px;
+          left: 4px;
+      }
+
+      .next {
+          position: absolute;
+          top: 20px;
+          right: 4px;
+      }
+
+      .nums {
+          position: absolute;
+          top: 20px;
+          width: 20px;
+          height: 20px;
+          left: 20px;
+          background-color: black;
+          color: white;
+          border-radius: 10px;
+          font-size: 10px;
+          text-align: center;
+          vertical-align: middle;
+
+          span {
+              position: relative;
+              top: 3px;
+          }
+      }
+  }
+
   .map-view-unit-selected {
-    position: absolute;
-    border-bottom: 2px solid @unit-editor-color;
-    border-left: 2px solid @unit-editor-color;
-    border-right: 2px solid @unit-editor-color;
-    margin-top: 2px;
-    z-index: 1;
+      position: absolute;
+      border: 2px solid @unit-editor-color;
+      border-radius: 6px 6px;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      top: 0px;
+
+    .tool-bar-top {
+        position: absolute;
+        top: -20px;
+        right: -15px;
+        z-index: 5;
+    }
+
+    .right {
+        float: right;
+    }
+
+    .hover {
+        &:hover {
+            -webkit-filter: invert(10%);
+            filter: invert(10%);
+        }
+    }
+
+    .hover1 {
+        &:hover {
+            -webkit-filter: brightness(220%);
+            filter: brightness(220%);
+        }
+    }
+
+    .left {
+        float: left;
+    }
+
+    .tool-bar-bottom {
+        position: absolute;
+        bottom: -24px;
+        left: 20px;
+        z-index: 5;
+        padding: 2px;
+        font-size: 12px;
+        background-color: white;
+        // width: 100px;
+        height: 18px;
+
+        span {
+            margin: 1px;
+        }
+
+        .num-pages {
+            margin-right: 3px;
+        }
+    }
+
+    .new-page-box {
+        position: absolute;
+        z-index: 5;
+        bottom: -37px;
+        left: 15px;
+        background-color: white;
+        border-radius: 5px;
+        padding: 10px;
+        border: 1px solid black;
+
+        .view-type {
+            height: 26px;
+
+            & > span {
+                margin: 2px;
+            }
+        }
+
+        .label {
+            margin-top: 5px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .buttons {
+            padding: 10px;
+        }
+
+    }
+
+    .quick-editor-wrapper {
+    }
+
+    .quick-editor-ok {
+        position: relative;
+        bottom: -7px;
+        left: 45%;
+
+        &:hover {
+            filter: brightness(120%);
+        }
+    }
+
+    .quick-editor-dots {
+        position: absolute;
+        top: 15px;
+        right: 10px;
+
+        &:hover {
+            filter: brightness(140%);
+        }
+    }
 
     &.simple {
         border-top: 2px solid @unit-editor-color;

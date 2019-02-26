@@ -3,7 +3,7 @@
   :url "http://www.orgpad.org/"
 
   :dependencies [[org.clojure/clojure         "1.9.0"]
-                 [org.clojure/clojurescript   "1.10.439"]
+                 [org.clojure/clojurescript   "1.10.520"]
                  [org.clojure/tools.deps.alpha "0.5.442"]
                  [org.clojure/core.async      "0.4.490"]
                  [org.clojure/test.check      "0.9.0"]
@@ -43,7 +43,7 @@
             [lein-figwheel "0.5.18"] ;; needs update to lein 2.5.3 at least
             [lein-less "1.7.5"]
             [lein-localrepo "0.5.3"]
-            [lein-doo "0.1.10"]
+            [lein-doo "0.1.11"]
             [lein-npm "0.6.2"]
             ;;[lein-tools-deps "0.4.1"]
             ;;[lein-git-deps "0.0.1-SNAPSHOT"]

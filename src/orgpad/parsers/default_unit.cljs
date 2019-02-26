@@ -48,7 +48,7 @@
                   {:unit-id    uid
                    :recur-level (inc (:recur-level env))
                    :old-node   nil
-                   :view-path  (-> view-path (conj unit-id) (conj (view-unit :orgpad/view-name)))
+                   :view-path  (conj view-path unit-id (:orgpad/view-name view-unit))
                    :view-name  (-> view-info :orgpad/child-default-view-info :orgpad/view-name)
                    :view-type  (-> view-info :orgpad/child-default-view-info :orgpad/view-type)
                    :view-contexts view-contexts})

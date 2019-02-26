@@ -24,7 +24,7 @@
                  searchreplace wordcount visualblocks visualchars fullscreen
                  insertdatetime media nonbreaking table contextmenu directionality
                  emoticons paste textcolor colorpicker textpattern imagetools toc"
-       :toolbar "bold italic underline strikethrough | alignleft aligncenter alignright alignjustify |  bullist numlist outdent indent"
+       :toolbar "bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent"
        :paste_data_images true})
 
 (def default-config-simple-inline

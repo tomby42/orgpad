@@ -130,16 +130,21 @@
 
 (defn- stop-unit-move
   [component local-state new-pos]
-  (let [[unit-tree prop parent-view] (@local-state :selected-unit)]
+  (let [[unit-tree prop parent-view] (@local-state :selected-unit)
+        old-pos [(@local-state :start-mouse-x)
+                 (@local-state :start-mouse-y)]]
     (when (and unit-tree prop)
+      (if (= (:unit-move-mode @local-state) :page-nav)
+        (swap! (:unit-editor-local-state @local-state)
+               update :page-nav-pos ++ (*c (-- new-pos old-pos)
+                                           (/ 1 (get-in parent-view [:orgpad/transform :scale]))))
         (lc/transact! component
-                  [[:orgpad.units/map-view-unit-move
-                    {:prop        prop
-                     :parent-view parent-view
-                     :unit-tree   unit-tree
-                     :old-pos     [(@local-state :start-mouse-x)
-                                   (@local-state :start-mouse-y)]
-                     :new-pos     new-pos}]]))))
+                      [[:orgpad.units/map-view-unit-move
+                        {:prop        prop
+                         :parent-view parent-view
+                         :unit-tree   unit-tree
+                         :old-pos     old-pos
+                         :new-pos     new-pos}]])))))
 
 (defn- stop-units-move
   [component local-state new-pos]
@@ -169,7 +174,8 @@
   (let [[unit-tree prop parent-view] (@local-state :selected-unit)
         old-x                       (@local-state :start-mouse-x)
         old-y                       (@local-state :start-mouse-y)
-        [diff-x diff-y]             (compute-resize (:resize-mode @local-state) (- new-x old-x) (- new-y old-y))]
+        [diff-x diff-y]             (compute-resize (:resize-mode @local-state)
+                                                    (- new-x old-x) (- new-y old-y))]
     (lc/transact! component
                   [[:orgpad.units/map-view-unit-resize
                     {:prop        prop
@@ -262,11 +268,17 @@
 
 (defn- unit-move
   [parent-view local-state ev]
-  (let [el     (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0)
-        width  (get-in @local-state [:selected-unit 1 :orgpad/unit-width])
-        height (get-in @local-state [:selected-unit 1 :orgpad/unit-height])
-        pos    (-- (get-in @local-state [:selected-unit 1 :orgpad/unit-position])
-                   [(/ width 2) (/ height 2)])]
+  (let [el     (if (= (:unit-move-mode @local-state) :page-nav)
+                 (jcolls/aget-safe (:unit-editor-node @local-state) "children" 1)
+                 (jcolls/aget-safe (:unit-editor-node @local-state) "children" 0))
+        prop   (get-in @local-state [:selected-unit 1])
+        width  (:orgpad/unit-width prop)
+        height (:orgpad/unit-height prop)
+        pos    (if (= (:unit-move-mode @local-state) :page-nav)
+                 (++ (:orgpad/unit-position prop) (-> @local-state :unit-editor-local-state
+                                                      deref :page-nav-pos))
+                 (-- (:orgpad/unit-position prop)
+                     [(/ width 2) (/ height 2)]))]
     (when el
       (dom/set-translate el (pos 0) (pos 1) (.-clientX ev) (.-clientY ev)
                          (@local-state :start-mouse-x) (@local-state :start-mouse-y)
@@ -286,20 +298,15 @@
     (when el
       (let [raw-diff-x      (- (.-clientX ev) (@mouse-pos :mouse-x))
             raw-diff-y      (- (.-clientY ev) (@mouse-pos :mouse-y))
-            [diff-x diff-y] (compute-resize (:resize-mode @local-state) raw-diff-x raw-diff-y)
-            [new-w new-h]   (dom/update-size-translate-diff el diff-x diff-y
-                                                            (-> parent-view :orgpad/transform :scale))
-            left            (str (ued/comp-unit-toorbar-left new-w) "px")
-            toolbar         (js/document.getElementById "uedit-toolbar")]
-        (aset toolbar "children" 0 "style" "left" left)
-        (when (aget toolbar "children" 1)
-          (aset toolbar "children" 1 "style" "left" left)
-          (aset toolbar "children" 1 "style" "top" (str new-h "px")))))))
+            [diff-x diff-y] (compute-resize (:resize-mode @local-state) raw-diff-x raw-diff-y)]
+        (dom/update-size-translate-diff el diff-x diff-y
+                                        (-> parent-view :orgpad/transform :scale))))))
 
 (defn- update-link-shape
   [component local-state ev]
-  (let [[unit-tree prop parent-view start-pos end-pos mid-pt t cyclic? start-size] (@local-state :selected-link)
-        bbox                                                                       (lc/get-global-cache component (-> parent-view :orgpad/refs first :db/id) "bbox")]
+  (let [[unit-tree prop parent-view start-pos
+         end-pos mid-pt t cyclic? start-size] (@local-state :selected-link)
+        bbox (lc/get-global-cache component (-> parent-view :orgpad/refs first :db/id) "bbox")]
     (swap! local-state assoc :link-menu-show :none)
     (lc/transact! component
                   [[:orgpad.units/map-view-link-shape

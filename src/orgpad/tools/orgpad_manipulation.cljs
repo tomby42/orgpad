@@ -25,6 +25,11 @@
   [component unit-tree]
   (lc/transact! component [[:orgpad.units/new-sheet unit-tree]]))
 
+(defn new-sheet-with-type
+  [component unit-tree view-type]
+  (lc/transact! component
+                [[:orgpad.units/new-sheet-with-type [unit-tree view-type]]]))
+
 (defn remove-active-sheet
   [component unit-tree]
   (lc/transact! component [[:orgpad.units/remove-active-sheet-unit unit-tree]]))

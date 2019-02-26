@@ -36,30 +36,57 @@
                        {:db/id (vswap! indexer dec)
                         :orgpad/type :orgpad/unit-view-child-propagated
                         :orgpad/refs -1}))))]
-    (into [] props-units-transducer props-from-children)))
+    (with-meta
+      (into [] props-units-transducer props-from-children)
+      {:last-prop @indexer})))
 
-(defmethod mutate :orgpad.units/new-sheet
-  [{:keys [state]} _ {:keys [unit view params]}]
-  (let [unit-id (unit :db/id)
-        info (registry/get-component-info (view :orgpad/view-type))
+(defn- new-sheet-qry
+  [state {:keys [unit view]}]
+  (let [unit-id (:db/id unit)
+        info (registry/get-component-info (:orgpad/view-type view))
         propagated-refs (prepare-propagated-props
                          state unit-id
-                         (info :orgpad/propagated-props-from-children))
-        t (colls/minto
-           [{:db/id -1
-             :orgpad/type :orgpad/unit
-             :orgpad/props-refs (into [] (map :db/id) propagated-refs)}
-            (if (-> :db/id view nil?)
-              (merge view
-                     {:db/id -2
-                      :orgpad/type :orgpad/unit-view
-                      :orgpad/refs unit-id
-                      :orgpad/active-unit (count (unit :orgpad/refs))})
-              [:db/add (view :db/id) :orgpad/active-unit (count (unit :orgpad/refs))])
-            [:db/add unit-id :orgpad/refs -1]]
-           propagated-refs
-           (if (-> :db/id view nil?) [[:db/add unit-id :orgpad/props-refs -2]] []))]
-    {:state (store/transact state t)}))
+                         (:orgpad/propagated-props-from-children info))]
+    (with-meta
+      (colls/minto
+       [{:db/id -1
+         :orgpad/type :orgpad/unit
+         :orgpad/props-refs (into [] (map :db/id) propagated-refs)}
+        (if (-> :db/id view nil?)
+          (merge view
+                 {:db/id -2
+                  :orgpad/type :orgpad/unit-view
+                  :orgpad/refs unit-id
+                  :orgpad/active-unit (count (:orgpad/refs unit))})
+          [:db/add (:db/id view) :orgpad/active-unit (count (:orgpad/refs unit))])
+        [:db/add unit-id :orgpad/refs -1]]
+       propagated-refs
+       (if (-> :db/id view nil?) [[:db/add unit-id :orgpad/props-refs -2]] []))
+      (meta propagated-refs))))
+
+(defmethod mutate :orgpad.units/new-sheet
+  [{:keys [state]} _ unit-tree]
+  (let [qry (new-sheet-qry state unit-tree)]
+    {:state (store/transact state qry)}))
+
+(defmethod mutate :orgpad.units/new-sheet-with-type
+  [{:keys [state]} _ [unit-tree view-type]]
+  (let [{:keys [path-info view unit]} unit-tree
+        qry (new-sheet-qry state unit-tree)
+        view-name (:orgpad/view-name view)
+        new-id (-> qry meta :last-prop dec)
+        info (registry/get-component-info (:orgpad/view-type view))
+        full-qry (if (= view-type (-> info :orgpad/child-default-view-info :orgpad/view-type))
+                   qry
+                   (into qry
+                         [{:db/id new-id
+                           :orgpad/refs -1
+                           :orgpad/type :orgpad/unit-path-info
+                           :orgpad/view-name view-name
+                           :orgpad/view-type view-type
+                           :orgpad/view-path (-> path-info :orgpad/view-path (conj (:db/id unit) view-name))}
+                          [:db/add -1 :orgpad/props-refs new-id]]))]
+    {:state (store/transact state full-qry)}))
 
 (defmethod mutate :orgpad.units/new-pair-unit
   [{:keys [state global-cache]} _ {:keys [parent position transform view-name style]}]

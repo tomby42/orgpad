@@ -16,7 +16,7 @@
       (let [call-now?  (and
                         immediate?
                         (not @state))
-            args' (parse-args args)
+            args' (if parse-args (parse-args args) args)
             later-fn
             (fn []
               (reset! state nil)
