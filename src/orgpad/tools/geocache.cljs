@@ -2,6 +2,7 @@
   orgpad.tools.geocache
   (:require [clojure.data.avl :as avl]
             [orgpad.core.store :as store]
+            [orgpad.core.orgpad :as oc]
             [orgpad.tools.geohash :as geohash]
             [orgpad.tools.geom :as geom :refer [-- ++ *c]]
             [orgpad.tools.jcolls :as jcolls]
@@ -170,7 +171,7 @@
         edges (store/query db link-all-query [links-rules])
         vertices-map (into {} (map (fn [vinfo] [(subvec vinfo 0 3) vinfo])) vertices)
         parent-views (into #{} (map (fn [vinfo] [(nth vinfo 0) (nth vinfo 2)])) vertices)]
-    (create! global-cache 0 "default") ;; create default cache when nothing loaded
+    (create! global-cache oc/root-entity-id "default") ;; create default cache when nothing loaded
     (doseq [[pid view-name] parent-views]
       (create! global-cache pid view-name))
     (doseq [[pid uid view-name pos w h] vertices]

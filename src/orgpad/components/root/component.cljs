@@ -4,7 +4,7 @@
             [sablono.core :as html :refer-macros [html]]
             [orgpad.tools.rum :as trum]
             [orgpad.cycle.life :as lc]
-            [cemerick.url :as url]
+            [orgpad.core.orgpad-def :as od]
             [orgpad.components.registry :as registry]
             [orgpad.components.node :as node]
             [orgpad.components.sidebar.sidebar :as sidebar]
@@ -141,7 +141,7 @@
                                                                                :orgpad/view-name ((:view %1) :orgpad/view-name)
                                                                                :orgpad/view-type ((:view %1) :orgpad/view-type)
                                                                                :orgpad/view-path ((:path-info %1) :orgpad/view-path)}]])
-                           :hidden #(= (:id %1) 0)}]
+                           :hidden #(= (:id %1) od/root-entity-id)}]
                          [{:elem :btn
                            :id "edit-mode"
                            :icon "far fa-pencil"

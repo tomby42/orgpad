@@ -20,7 +20,7 @@
 
 (defn- find-root-view-info
   [db]
-  (let [root-unit (store/query db [:entity 0])]
+  (let [root-unit (store/query db [:entity orgpad/root-entity-id])]
     (ds/find-props root-unit (fn [u] (= (u :orgpad/type) :orgpad/root-unit-view)))))
 
 (defn- get-view-stack
@@ -148,7 +148,7 @@
 (defn- sequent?
   [db stack]
   (let [uid (-> stack last second)
-        parent (if (= (count stack) 1) 0 (-> stack pop last second))]
+        parent (if (= (count stack) 1) orgpad/root-entity-id (-> stack pop last second))]
     (not-empty (store/query db '[:find ?x
                                  :in $ ?p ?u
                                  :where

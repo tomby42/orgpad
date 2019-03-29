@@ -1,6 +1,7 @@
 (ns ^{:doc "Definition of default unit parser"}
   orgpad.parsers.default-unit
   (:require [orgpad.core.store :as store]
+            [orgpad.core.orgpad :as oc]
             [orgpad.tools.dscript :as ds]
             [orgpad.tools.colls :as colls]
             [orgpad.tools.orgpad :as ot]
@@ -179,7 +180,7 @@
 
 (defmethod mutate :orgpad.units/clone-view
   [{:keys [state global-cache]} _ [unit-tree new-view-name]]
-  (let [indexer (volatile! 0)
+  (let [indexer (volatile! oc/root-entity-id)
         info (registry/get-component-info (-> unit-tree :view :orgpad/view-type))
         cloned-view (clone-view unit-tree new-view-name indexer)
         cloned-child-props (clone-child-props state info unit-tree new-view-name indexer)

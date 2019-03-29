@@ -443,7 +443,9 @@
   (let [select-unit (@local-state :selected-unit)]
     (if (= (:mode app-state) :write)
       [:div
-       (ne/node-unit-editor-new component unit-tree app-state local-state)
+       (if (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
+         (ne/nodes-unit-editor-new component unit-tree app-state local-state)
+         (ne/node-unit-editor-new component unit-tree app-state local-state))
        (edge-unit-editor component unit-tree app-state local-state)]
       (when (and select-unit
                  (contains? #{:unit-move} (:local-mode @local-state)))

@@ -2,6 +2,7 @@
   orgpad.tools.orgpad
   (:require [datascript.core :as ds]
             [orgpad.core.store :as store]
+            [orgpad.core.orgpad-def :as co]
             [orgpad.tools.dscript :as dscript]
             [orgpad.tools.datom :as datom]
             [orgpad.tools.colls :as colls]
@@ -529,10 +530,10 @@
                         [?e :orgpad/type]])
                      (->> (sort-by :db/id)))
         _ (datom/asert-non-exising-ref (-> db2 .-datom .-db .-eavt))
-        roots (get-roots db2 0 nil)
-        roots-pos-props (get-pos-props db2 0)
-        entities-prep-1 (into [] (comp (filter #(not (or (= 0 (:db/id %))
-                                                         (= 1 (:db/id %)))))
+        roots (get-roots db2 co/root-entity-id nil)
+        roots-pos-props (get-pos-props db2 co/root-entity-id)
+        entities-prep-1 (into [] (comp (filter #(not (or (= co/root-entity-id (:db/id %))
+                                                         (= (inc co/root-entity-id) (:db/id %)))))
                                        (map #(update % :db/id -))
                                        (map #(update % :orgpad/refs
                                                      (fn [refs]
@@ -576,9 +577,9 @@
                   (store/transact (into entities-qry (make-roots-query pid roots))))
         temp->ids (store/tempids db1-1)
         _ (datom/asert-non-exising-ref (-> db1-1 .-datom .-db .-eavt))
-        path-info-update (update-path-info-qry entities-qry temp->ids 0 pid)
+        path-info-update (update-path-info-qry entities-qry temp->ids co/root-entity-id pid)
         ref-orders-qupdate (make-ref-orders-updates-qry entities-qry temp->ids -)
-        context-unit-update (make-context-unit-update-qry entities-qry temp->ids 0 pid)
+        context-unit-update (make-context-unit-update-qry entities-qry temp->ids co/root-entity-id pid)
         update-qry (colls/minto path-info-update ref-orders-qupdate context-unit-update)]
     (->
      (if (empty? update-qry)
@@ -701,8 +702,8 @@
                    [rules pid did])
       not-empty))
 
-(defn- remap-datom
-  [o->n datom]
+(defn remap-datom
+  [o->n datom & opts]
   (let [a (.-a datom)
         v (.-v datom)
         nv (o->n v)]
@@ -720,7 +721,12 @@
                     :orgpad/context-unit nv
                     :orgpad/refs-order (cond->> (update-refs-order o->n v)
                                          (-> v vector? not) (into []))
-                    :orgpad/transform (if (map? v) (into [] v) (into {} v))
+                    :orgpad/transform (if (or (and (nil? opts) (map? v))
+                                              (and opts
+                                                   (map? v)
+                                                   (:update-transform? opts)))
+                                        (into [] v)
+                                        (into {} v))
                     :orgpad/link-dash (to-array v)
                     v)))))
 
@@ -746,7 +752,7 @@
   [datom-seq]
   (let [root (->> datom-seq (filter #(= (.-v %) :orgpad/root-unit)) first)
         root-view (->> datom-seq (filter #(= (.-v %) :orgpad/root-unit-view)) first)]
-    (assoc {} (.-e root) 0 (.-e root-view) 1)))
+    (assoc {} (.-e root) co/root-entity-id (.-e root-view) (inc co/root-entity-id))))
 
 (defn datoms-squuid->uid
   [datom-seq & [first-id o2n]]

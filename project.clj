@@ -7,8 +7,8 @@
                  [org.clojure/tools.deps.alpha "0.5.442"]
                  [org.clojure/core.async      "0.4.490"]
                  [org.clojure/test.check      "0.9.0"]
-                 [datascript                  "0.17.1"]
-                 [datascript-transit          "0.2.2"
+                 [datascript                  "0.18.2"]
+                 [datascript-transit          "0.3.0"
                   :exclusions [com.cognitect/transit-clj
                                com.cognitect/transit-cljs]]
                  [com.rpl/specter             "1.1.2"]

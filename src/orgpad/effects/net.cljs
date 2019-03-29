@@ -7,7 +7,8 @@
    [cemerick.url :as url]
    [orgpad.core.store :as store]
    [orgpad.tools.orgpad :as ot]
-   [orgpad.config :as ocfg]))
+   [orgpad.config :as ocfg]
+   [orgpad.tools.dscript :as ds]))
 
 (defonce ^:private in-chan (chan 100))
 
@@ -23,11 +24,7 @@
   [db]
   (let [{:keys [datoms mapping]} (ot/datoms-uid->squuid (seq db))
         _ (when ocfg/*online-debug* (js/console.log "transform-db" datoms))
-        new-db (-> db
-                   :schema
-                   d/empty-db
-                   (d/with datoms)
-                   :db-after)]
+        new-db (ds/new-db-with-same-schema db datoms)]
     {:mapping mapping
      :db new-db}))
 

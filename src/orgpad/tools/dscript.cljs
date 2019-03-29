@@ -27,3 +27,11 @@
 (defn props->maps
   [u]
   (mapv entity->map (:orgpad/props-refs u)))
+
+(defn new-db-with-same-schema
+  [db datoms]
+  (-> db
+      :schema
+      ds/empty-db
+      (ds/with datoms)
+      :db-after))

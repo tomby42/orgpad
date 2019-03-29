@@ -4,57 +4,17 @@
    [cljs.reader :as reader]
    [datascript.core   :as d]
    [orgpad.core.store :as store]
+   [orgpad.core.orgpad-def :as od :refer [orgpad-db-schema]]
    [orgpad.tools.colls :as colls]
    [orgpad.tools.orgpad :as ot]
+   [orgpad.tools.datom :as datom]
+   [orgpad.tools.dscript :as ds]
    [orgpad.components.registry :as cregistry]
    [ajax.core :as ajax]
    [goog.string :as gstring]
    [goog.string.format]))
 
-(def orgpad-db-schema
-  {:orgpad/type        {}
-   :orgpad/atom        {}
-   :orgpad/tags        {:db/cardinality :db.cardinality/many}
-   :orgpad/desc        {}
-   :orgpad/refs        {:db/valueType :db.type/ref
-                        :db/cardinality :db.cardinality/many}
-   :orgpad/props-refs  {:db/valueType :db.type/ref
-                        :db/cardinality :db.cardinality/many}
-   :orgpad/view-stack  {:db/cardinality :db.cardinality/many}
-   :orgpad/view-name   {}
-   :orgpad/view-type   {}
-   :orgpad/view-path   {}
-   :orgpad/transform   {}
-   :orgpad/active-unit {}
-   :orgpad/unit-position {}
-   :orgpad/unit-visibility {}
-   :orgpad/unit-width  {}
-   :orgpad/unit-height {}
-   :orgpad/unit-max-width {}
-   :orgpad/unit-max-height {}
-   :orgpad/unit-border-color {}
-   :orgpad/unit-bg-color {}
-   :orgpad/unit-border-width {}
-   :orgpad/unit-corner-x {}
-   :orgpad/unit-corner-y {}
-   :orgpad/unit-border-style {}
-   :orgpad/unit-padding {}
-   :orgpad/unit-autoresize? {}
-   :orgpad/unit-autoresize-ratio {}
-   :orgpad/link-color {}
-   :orgpad/link-width {}
-   :orgpad/link-dash {}
-   :orgpad/link-mid-pt {}
-   :orgpad/link-directed {}
-   :orgpad/link-arrow-pos {}
-   :orgpad/refs-order  {}
-   :orgpad/text        {}
-   :orgpad/response    {}
-   :orgpad/parameters  {}
-   :orgpad/independent {}
-   :orgpad/view-style {}
-   :orgpad/style-name {}
-   :orgpad/context-unit {}})
+(def root-entity-id od/root-entity-id)
 
 (defn default-styles-qry
   []
@@ -93,13 +53,14 @@
 (defn empty-orgpad-db
   []
   (-> (store/new-datom-atom-store {:app-state {:mode :write
-                                               :quickedit-when-created? false}} (d/empty-db orgpad-db-schema))
-      (store/transact [{:db/id 0,
-                        :orgpad/props-refs 1
+                                               :quickedit-when-created? false}}
+                                  (d/empty-db orgpad-db-schema))
+      (store/transact [{:db/id root-entity-id
+                        :orgpad/props-refs (inc root-entity-id)
                         :orgpad/type :orgpad/root-unit}
-                       {:db/id 1,
+                       {:db/id (inc root-entity-id)
                         :orgpad/type :orgpad/root-unit-view,
-                        :orgpad/refs 0}] {})
+                        :orgpad/refs root-entity-id}] {})
       insert-default-styles))
 
 (defn- update-refs-orders
@@ -162,6 +123,42 @@
       (-> qry empty? not) (store/transact qry {})
       (-> app-state-qry empty? not) (store/transact app-state-qry))))
 
+(defn- has-root-entity-id-zero?
+  [db]
+  (-> db
+      (store/query
+       '[:find ?t
+         :in $
+         :where
+         [0 :orgpad/type ?t]])
+      empty?
+      not))
+
+(defn- remap-datom
+  [o->n datom]
+  (ot/remap-datom o->n datom {}))
+
+(defn- remap-db-to-custom-root
+  [store root-entity-id]
+  (let [db (store/datom-atom-store-ds-db store)
+        new-indices (volatile! {})
+        index (volatile! (+ root-entity-id 2))
+        remap (datom/remap-datom-seq-eids (seq db)
+                                          {0 root-entity-id
+                                           1 (inc root-entity-id)}
+                                          #(let [new-idx (vswap! index inc)]
+                                             (vswap! new-indices assoc % new-idx)
+                                             new-idx)
+                                          remap-datom)]
+    (store/new-datom-atom-store (.-atom store)
+                                (ds/new-db-with-same-schema db (:datoms remap)))))
+
+(defn- remap-db
+  [store]
+  (if (has-root-entity-id-zero? store)
+    (remap-db-to-custom-root store root-entity-id)
+    store))
+
 (defn orgpad-db
   [data]
   (if (and data (-> data .-length (not= 0)))
@@ -170,7 +167,7 @@
           (if (.startsWith data "#orgpad/DatomAtomStore")
             data
             (d data))]
-      (update-db (cljs.reader/read-string raw-data)))
+      (update-db (-> raw-data cljs.reader/read-string remap-db)))
     (empty-orgpad-db)))
 
 (defn- compress-db
@@ -272,5 +269,5 @@
 (defn import-orgpad
   [state files]
   (let [file-state (load-orgpad state files)
-        trans (get-root-traslations state 0)]
-    (ot/merge-orgpads state file-state 0 trans)))
+        trans (get-root-traslations state root-entity-id)]
+    (ot/merge-orgpads state file-state root-entity-id trans)))
