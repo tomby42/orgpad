@@ -27,7 +27,8 @@
 
 (defn- select-unit
   [unit-tree prop pcomponent local-state component]
-  (swap! local-state merge {:selected-unit [unit-tree prop (aget pcomponent "parent-view") component]}))
+  (swap! local-state merge {:last-selected-unit (:selected-unit @local-state)
+                            :selected-unit [unit-tree prop (aget pcomponent "parent-view") component]}))
 
 (def mapped-children-mem
   (memoize mapped-children))

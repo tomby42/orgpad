@@ -132,6 +132,10 @@
   (let [sedit (jev/make-block-propagation
                #(start-edit component unit-tree local-state))]
     [:div.tool-bar-top
+     (gti {:on-mouse-down (jev/make-block-propagation (partial start-link local-state))
+           :on-touch-start (jev/make-block-propagation
+                            #(start-link local-state (aget % "touches" 0)))}
+          "edit-link" "Make a Link")
      (gti {:on-click #(omt/remove-unit component
                                        {:id (ot/uid unit-tree)
                                         :view-name (ot/view-name parent-tree)
@@ -141,11 +145,7 @@
            :on-touch-start sedit}
           "edit-focus-mode" "Edit Content")
      (gti {}
-          "edit-info" "Edit Info")
-     (gti {:on-mouse-down (jev/make-block-propagation (partial start-link local-state))
-           :on-touch-start (jev/make-block-propagation
-                            #(start-link local-state (aget % "touches" 0)))}
-          "edit-link" "Make a Link")]))
+          "edit-info" "Edit Info")]))
 
 (defn- gen-bottom-toolbar
   [component unit-tree parent-tree local-state]
@@ -261,7 +261,14 @@
         pos (:orgpad/unit-position prop)
         w (:orgpad/unit-width prop)
         h (:orgpad/unit-height prop)
-        page-style (css/transform {:translate (++ pos (:page-nav-pos @uedit-local-state))})]
+        rel-pos (if (= (:page-nav-current @uedit-local-state) (ot/uid unit-tree)) ;; ugly hack
+                  (:page-nav-pos @uedit-local-state)
+                  (let [rp [(+ (/ w 2) 80) 0]]
+                    (swap! uedit-local-state assoc
+                           :page-nav-current (ot/uid unit-tree)
+                           :page-nav-pos rp)
+                    rp))
+        page-style (css/transform {:translate (++ pos rel-pos)})]
     [:div.page-nav {:id "unit-editor-page-nav"
                     :on-mouse-down (jev/make-block-propagation
                                     #(start-page-nav-move local-state uedit-local-state %))
@@ -347,16 +354,16 @@
 
 (defn- gen-nodes-top-toolbar
   [component unit-tree local-state selection]
-    [:div.tool-bar-top
-     (gti {:on-click #(omt/remove-units component
-                                        {:pid (ot/uid unit-tree)
-                                         :view-name (ot/view-name unit-tree)}
-                                        selection)}
-          "edit-delete" "Delete")
-     (gti {:on-mouse-down (jev/make-block-propagation (partial start-links unit-tree selection local-state))
-           :on-touch-start (jev/make-block-propagation
-                            #(start-links unit-tree selection local-state (aget % "touches" 0)))}
-          "edit-link" "Make a Link")])
+  [:div.tool-bar-top
+   (gti {:on-mouse-down (jev/make-block-propagation (partial start-links unit-tree selection local-state))
+         :on-touch-start (jev/make-block-propagation
+                          #(start-links unit-tree selection local-state (aget % "touches" 0)))}
+        "edit-link" "Make a Link")
+   (gti {:on-click #(omt/remove-units component
+                                      {:pid (ot/uid unit-tree)
+                                       :view-name (ot/view-name unit-tree)}
+                                      selection)}
+        "edit-delete" "Delete")])
 
 (defn- gen-nodes-toolbar
   [component unit-tree  local-state selection]
