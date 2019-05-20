@@ -1,5 +1,52 @@
-.index-panel {
-    overflow: auto;
+.index-all {
+
+    overflow: hidden;
     height: 100%;
     width: 100%;
+
+.index-panel {
+    overflow: auto;
+    height: 90%;
+    width: 100%;
+}
+
+.index-search {
+    padding-top: 15px;
+
+    span {
+        margin: 5px;
+        margin-left: 10px;
+
+        input {
+            width: 70%;
+            outline: none;
+        }
+    }
+
+    .search {
+        filter: invert(50%);
+
+        &:hover {
+            filter: invert(0%);
+            cursor: pointer;
+        }
+    }
+
+    .cancel {
+        .search;
+
+        margin-left: 5px;
+    }
+
+
+    hr {
+        height: 1px;
+        border-style: none;
+        width: 70%;
+        margin-top: 15px;
+        margin-bottom: 15px;
+        margin-right: 63px;
+        background-color: #ccc;
+    }
+}
 }

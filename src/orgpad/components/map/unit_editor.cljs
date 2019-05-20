@@ -447,9 +447,8 @@
          (ne/nodes-unit-editor-new component unit-tree app-state local-state)
          (ne/node-unit-editor-new component unit-tree app-state local-state))
        (edge-unit-editor component unit-tree app-state local-state)]
-      (when (and select-unit
-                 (contains? #{:unit-move} (:local-mode @local-state)))
-        (simple-node-unit-editor component unit-tree app-state local-state)))))
+      (when select-unit
+        (ne/node-unit-manipulator component unit-tree app-state local-state)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Static editor on right

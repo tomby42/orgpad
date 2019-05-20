@@ -18,10 +18,11 @@
   (if state
     (swap! mathjax-render-state assoc (ot/uid unit-tree) true)
     (swap! mathjax-render-state dissoc (ot/uid unit-tree)))
-  (when component
-    (let [[_ app-state] (trum/comp->args component)]
-      (when (= (:mode app-state) :quick-write)
-        (rum/request-render component)))))
+  ;; (when component
+  ;;   (let [[_ app-state] (trum/comp->args component)]
+  ;;     (when (= (:mode app-state) :quick-write)
+  ;;       (rum/request-render component))))
+  )
 
 (defn- update-mathjax
   [state]
@@ -52,13 +53,23 @@
          :onWheel jev/stop-propagation}
    (atom-editor/atom-editor (unit :db/id) view (view :orgpad/atom) :inline)])
 
-(defn render-read-mode
-  [{:keys [view]} app-state & [no-ref?]]
-  [:div (-> {:className "atomic-view"} (as-> x (if no-ref? x (assoc x :ref "dom-node"))))
+(defn render-info
+  [view]
+  [:div.atom-info
    (when (and (view :orgpad/desc) (not= (view :orgpad/desc) ""))
      [:div {:key 0} (view :orgpad/desc)])
    (when (and (view :orgpad/tags) (not= (view :orgpad/tags) []))
-     [:div {:key 1} [:div {} (html (into [] (map-indexed (fn [idx tag] (html [:span {:key idx :className "react-tagsinput-tag"} tag])) (view :orgpad/tags))))]])
+     [:div {:key 1}
+      [:div {}
+       (html (into []
+                   (map-indexed (fn [idx tag]
+                                  (html [:span {:key idx :className "react-tagsinput-tag"} tag]))
+                                (view :orgpad/tags))))]])])
+
+(defn render-read-mode
+  [{:keys [view]} app-state & [no-ref?]]
+  [:div (-> {:className "atomic-view"} (as-> x (if no-ref? x (assoc x :ref "dom-node"))))
+   ;; (render-info view)
    (when (and (view :orgpad/atom) (not= (view :orgpad/atom) ""))
      [:div  {:dangerouslySetInnerHTML
              {:__html (view :orgpad/atom)}}])])

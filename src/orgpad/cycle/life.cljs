@@ -74,7 +74,8 @@
 
             (parser-mutate [key-params-tuple]
                            (let [env {:global-cache global-cache
-                                      :force-update! (partial parser/force-update! force-update-all force-update-part)
+                                      :force-update! (partial parser/force-update! force-update-all
+                                                              force-update-part)
                                       :parser-state-push! parser-state-push!
                                       :parser-state-pop! parser-state-pop!
                                       :parser-stack-info parser-stack-info

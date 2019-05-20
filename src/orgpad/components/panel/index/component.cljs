@@ -59,7 +59,6 @@
                           (= (.-length children-old) refs-len))
                    children-old
                    (make-array refs-len))]
-
     (if (:unit unit-tree)
       (doto data
         (aset "id"  (ot/uid unit-tree))
@@ -154,17 +153,19 @@
 
 (defn- has-vprop?
   [u]
-  ;; (js/console.log "has-vprop?" u)
   (some is-vprop? (:props u)))
 
 ;; (def position-cache (volatile! nil))
 
 (defn- expand-range
-  [last-state eunit view-unit recur-level]
-  ;; (js/console.log "expand-range" view-unit recur-level)
+  [selected last-state eunit view-unit recur-level]
   (let [pred (if (= (:orgpad/view-type view-unit) :orgpad/map-view)
                has-vprop?
-               (constantly true))]
+               (constantly true))
+        pred' #(and (or (not selected)
+                        (not= recur-level 0)
+                        (contains? selected (ot/uid %)))
+                    (pred %))]
     (if (= recur-level 0)
       (let [[s e] (:visible-range @last-state)
             position-cache (:position-cache @last-state)
@@ -177,10 +178,10 @@
             prefix (when (:old-data @last-state)
                      (subvec (-> @last-state :old-data :unit :orgpad/refs)
                              0 start))
-            res [pred prefix from start (* cnt 2) position-cache]]
+            res [pred' prefix from start (* cnt 2) position-cache]]
         (vswap! last-state assoc :range-updated [from (+ from (* 2 cnt))])
         res)
-      [pred nil 0 0 js/Number.MAX_SAFE_INTEGER nil])))
+      [pred' nil 0 0 js/Number.MAX_SAFE_INTEGER nil])))
 
 (defn- determine-visible-nodes
   [component start-idx]
@@ -223,50 +224,81 @@
   < lc/parser-type-mixin-context (rum/local {:last-scroll 0})
   (trum/no-reactive-local #(merge last-state-init
                                   {:position-cache (volatile! nil)}))
-  [component unit-tree status toggl-changed?]
+  [component unit-tree status toggl-changed? selected]
   (let [local-state (trum/comp->local-state component)
         last-state (trum/comp->local-state component true)
         {:keys [old-unit-tree old-js-data
-                old-data old-status old-scroll]} @last-state
+                old-data old-status old-scroll
+                old-selected]} @last-state
+        _ (when (not= old-selected selected)
+            (vswap! last-state assoc :position-cache (volatile! nil) :old-data nil))
         data (if (and (= old-unit-tree unit-tree)
-                      (= old-scroll (:last-scroll @local-state)))
+                      (= old-scroll (:last-scroll @local-state))
+                      (= old-selected selected))
                old-data
                (lc/query component :orgpad/index
-                         {:expand-range-fn (partial expand-range last-state)}
+                         {:expand-range-fn (partial expand-range selected last-state)}
                          {:disable-cache? true}))
         root-data #js {:id (ot/uid unit-tree) :toggled true}
         js-data (if (and (= old-status status)
                          (= old-scroll (:last-scroll @local-state))
-                         (= old-unit-tree unit-tree))
+                         (= old-unit-tree unit-tree)
+                         (= old-selected selected))
                   old-js-data
-                  (prepare-data component data (or old-js-data root-data)
+                  (prepare-data component data
+                                (or (and (= old-selected selected) old-js-data)
+                                    root-data)
                                 nil (:range-updated @last-state)))]
-    ;; (js/console.log "index-list" data js-data old-js-data)
     (vreset! last-state (merge @last-state
                                {:old-js-data js-data
                                 :old-data data
                                 :old-unit-tree unit-tree
-                                :old-status status}))
+                                :old-status status
+                                :old-selected selected}))
     [:div.index-panel {:onScroll (partial update-scroll component local-state)
                        :ref "index-panel-node"}
      (treebeard component js-data toggl-changed?)]))
 
-(defn render-index-panel
-  [unit-tree status toggl-changed?]
-  (index-list unit-tree status toggl-changed?))
+(defn- index-search
+  [component unit-tree]
+  [:div.index-search
+   [:span [:input {:id "index-search-input"
+                   :type "text"}]]
+   [:span.fal.fa-search.search
+    {:title "Find"
+     :onClick #(let [txt (aget (js/document.getElementById "index-search-input") "value")]
+                 (lc/transact! component
+                               [[:orgpad.units/filtered-by-pattern
+                                 {:unit-tree unit-tree
+                                  :params {:selection-text txt}}]]))}]
+   [:span.fal.fa-times.cancel
+    {:title "Cancel"
+     :onClick #(lc/transact! component
+                             [[:orgpad.units/clear-filtered-pattern
+                               {:unit-tree unit-tree}]])}]
+   [:hr]
+   ]
+  )
 
-(def ^:private index-eq-fns [identical? = identical?])
+(defn render-index-panel
+  [component unit-tree status toggl-changed? selected]
+  [:div.index-all
+   (index-search component unit-tree)
+   (index-list unit-tree status toggl-changed? selected)])
+
+(def ^:private index-eq-fns [identical? identical? = identical? =])
 (def ^:private render-index-panel-
   (func/memoize' render-index-panel {:key-fn #(-> % first ot/uid)
                                      :eq-fns index-eq-fns}))
 
-(rum/defcc index-panel < (trum/no-reactive-local false)
+(rum/defcc index-panel < (trum/no-reactive-local false) lc/parser-type-mixin-context
   [component unit-tree app-state]
-  (let [toggl-changed? (trum/comp->local-state component true)]
+  (let [toggl-changed? (trum/comp->local-state component true)
+        selected (get-in app-state [:filtered (ot/uid unit-tree)])]
     (sidebar/sidebar-component
      :left
      #(let [time-start (js/Date.)
-            res (render-index-panel- unit-tree @toggl-changed? toggl-changed?)
+            res (render-index-panel- component unit-tree @toggl-changed? toggl-changed? selected)
             time-end (js/Date.)]
-        (js/console.log "index-panel render time" (- time-end time-start))
+        (js/console.log "index-panel render time" (- time-end time-start) selected)
         res))))

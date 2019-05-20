@@ -232,6 +232,8 @@
       :make-links       (make-links component unit-tree (-> @local-state :selected-units second)
                                     [(mouse-node-rel-x bbox ev) (mouse-node-rel-y bbox ev)])
       :canvas-paste     (omt/paste-units-from-clipboard component unit-tree app-state (get-rel-mouse-pos component unit-tree ev))
+      :dnd-new-unit     (create-pair-unit component unit-tree {:center-x (mouse-node-rel-x bbox ev)
+                                                               :center-y (mouse-node-rel-y bbox ev)})
       nil)
     (swap! local-state merge {:local-mode :none})
     (js/setTimeout
@@ -359,6 +361,7 @@
       :mouse-down       (try-start-selection local-state (jev/stop-propagation ev))
       :choose-selection (update-mouse-position local-state (jev/stop-propagation ev))
       :make-links       (update-mouse-position local-state (jev/stop-propagation ev))
+      :dnd-new-unit     (update-mouse-position local-state (jev/stop-propagation ev))
       nil)
 
     (set-mouse-pos! ev)
@@ -382,6 +385,13 @@
     [:div.selection-box {:style (merge {:width  width
                                         :height height}
                                        (css/transform {:translate (-- pos [(.-left bbox) (.-top bbox)])}))}]))
+
+(defn- render-dnd-new-unit
+  [component unit-tree local-state view]
+  (let [pos [(:mouse-x local-state) (:mouse-y local-state)]
+        bbox           (lc/get-global-cache component (ot/uid unit-tree) "bbox")]
+    [:div.dnd-new-unit {:style (css/transform {:translate (-- pos [(.-left bbox) (.-top bbox)])})}
+     [:span.far.fa-plus-square]]))
 
 (defn normalize-mouse-data
   [ev]
@@ -466,9 +476,12 @@
       (index-panel/index-panel unit-tree app-state)
       (when (= (:local-mode @local-state) :choose-selection)
         (render-selection-box component unit-tree @local-state (:view unit-tree)))
-      (when (and (:enable-experimental-features? app-state)
-                 (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1))
-        (munit/render-selected-children-units component unit-tree app-state local-state))])))
+      (when (= (:local-mode @local-state) :dnd-new-unit)
+        (render-dnd-new-unit component unit-tree @local-state (:view unit-tree)))
+      ;; (when (and (:enable-experimental-features? app-state)
+      ;;            (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1))
+      ;;   (munit/render-selected-children-units component unit-tree app-state local-state))
+      ])))
 
 (defn- render-read-mode
   [component unit-tree app-state]
@@ -490,8 +503,9 @@
             :onMouseLeave #(handle-blur component unit-tree app-state %)
             :onWheel      (jev/make-block-propagation #(handle-wheel component unit-tree app-state local-state %))}
       (munit/render-mapped-children-units component unit-tree app-state local-state)
-      (when (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
-        (munit/render-selected-children-units component unit-tree app-state local-state))])))
+      ;; (when (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
+      ;;   (munit/render-selected-children-units component unit-tree app-state local-state))
+      ])))
 
 (defn- prevent-default
   [ev]
@@ -692,9 +706,11 @@
    [{:elem     :btn
      :id       "unit-creation-mode"
      :icon     "far fa-plus-square"
-     :title    "Creation mode"
-     :on-click #(swap! (:node-state %1) assoc :canvas-mode :canvas-create-unit)
-     :active   #(active-toolbar-btn? (:node-state %1) :canvas-create-unit)
+     :title    "Create new unit (drag and drop)"
+     :on-mouse-down #(swap! (:node-state %1) assoc :local-mode :dnd-new-unit)
+     ;; :title    "Creation mode"
+     ;; :on-click #(swap! (:node-state %1) assoc :canvas-mode :canvas-create-unit)
+     ;; :active   #(active-toolbar-btn? (:node-state %1) :canvas-create-unit)
      :hidden   #(= (:mode %1) :read)}
     {:elem     :btn
      :id       "moving-mode"

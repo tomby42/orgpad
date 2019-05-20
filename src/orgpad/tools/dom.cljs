@@ -82,7 +82,7 @@
     (js/document.body.appendChild el)
     el))
 
-(defonce root-tmp-el (create-tmp-div "root-tmp-el" "root-tmp"))
+(defonce root-tmp-el (when js/document.body (create-tmp-div "root-tmp-el" "root-tmp")))
 
 (defn dom-bb-size
   [bb]

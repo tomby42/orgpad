@@ -12,7 +12,9 @@
                  insertdatetime media nonbreaking save table contextmenu directionality
                  emoticons template paste textcolor colorpicker textpattern imagetools codesample toc"
        :toolbar "undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify |  bullist numlist outdent indent | formatselect fontselect fontsizeselect | forecolor backcolor | codesample"
+       :autoresize_max_height 600
        :paste_data_images true})
+
 
 (def default-config-quick
   #js {:inline false

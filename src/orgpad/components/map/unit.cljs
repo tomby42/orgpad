@@ -72,6 +72,7 @@
     ;;                (not pre-quick-edit)))
     ;;   (run-dbl-click-check local-state))
     (swap! local-state merge {:local-mode :try-unit-move
+                              :unit-move-mode :unit
                               :selected-unit [unit-tree prop parent-view component]
                               :selected-link nil
                               :selected-node new-node
@@ -166,12 +167,13 @@
                        :width (prop :orgpad/unit-width)
                        :height (prop :orgpad/unit-height)}
                :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)}])
-           [:div.map-view-child.leader-control
-            {:style {:left (/ (prop :orgpad/unit-corner-x) 2)}
-             :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-             :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-             :onMouseUp #(open-unit pcomponent unit-tree local-state)}
-            [:i.far.fa-sign-in-alt]])
+           ;; [:div.map-view-child.leader-control
+           ;;  {:style {:left (/ (prop :orgpad/unit-corner-x) 2)}
+           ;;   :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+           ;;   :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
+           ;;   :onMouseUp #(open-unit pcomponent unit-tree local-state)}
+           ;;  [:i.far.fa-sign-in-alt]]
+           nil)
          (when (= (ot/view-type unit-tree) :orgpad/map-tuple-view)
            (insert-sheet-indicators unit-tree border-color))
 ]]))

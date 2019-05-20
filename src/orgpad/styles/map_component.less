@@ -74,6 +74,53 @@
     }
   }
 
+  .left {
+      float: left;
+  }
+
+  .right {
+      float: right;
+  }
+
+  .new-page-box {
+      position: absolute;
+      z-index: 5;
+
+      background-color: white;
+      border-radius: 5px;
+      padding: 10px;
+      border: 1px solid black;
+      min-width: 125px;
+
+      &.one-page {
+          bottom: -15px;
+          left: 33%;
+      }
+
+      &.multi-page {
+          bottom: -6px;
+          left: -10px;
+      }
+
+      .view-type {
+          height: 26px;
+
+          & > span {
+              margin: 2px;
+          }
+      }
+
+      .label {
+          margin-top: 5px;
+          margin-bottom: 10px;
+          font-weight: 600;
+      }
+
+      .buttons {
+          padding: 10px;
+      }
+
+  }
 
   .page-nav {
       position: fixed;
@@ -85,6 +132,26 @@
       right: -30px;
       box-shadow: 0px 0px 10px rgba(0,0,0,0.5);
       .iu("page-flipper-bg.svg");
+
+      &.read {
+          width: 70px;
+          height: 70px;
+
+          .prev {
+              top: 25px;
+              left: 4px;
+          }
+
+          .next {
+              top: 25px;
+              right: 4px;
+          }
+
+          .nums {
+              top: 25px;
+              left: 19px;
+          }
+      }
 
       .prev {
           position: absolute;
@@ -128,6 +195,15 @@
       }
   }
 
+  .manipulator-toolbar {
+      position: absolute;
+      z-index: 5;
+      width: 65px;
+      left: -32px;
+      top: 0px;
+
+  }
+
   .hover {
       &:hover {
           -webkit-filter: invert(10%);
@@ -155,10 +231,6 @@
         z-index: 5;
     }
 
-    .right {
-        float: right;
-    }
-
     .hover1 {
         &:hover {
             -webkit-filter: brightness(220%);
@@ -166,14 +238,10 @@
         }
     }
 
-    .left {
-        float: left;
-    }
-
     .tool-bar-bottom {
         position: absolute;
         bottom: 0px;
-        right: 10px;
+        left: 49%;
         z-index: 5;
         padding: 2px;
         font-size: 12px;
@@ -190,61 +258,63 @@
         }
     }
 
-    .new-page-box {
-        position: absolute;
-        z-index: 5;
-        bottom: -37px;
-        left: 15px;
-        background-color: white;
-        border-radius: 5px;
-        padding: 10px;
-        border: 1px solid black;
-
-        .view-type {
-            height: 26px;
-
-            & > span {
-                margin: 2px;
-            }
-        }
-
-        .label {
-            margin-top: 5px;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .buttons {
-            padding: 10px;
-        }
-
-    }
-
     .quick-editor-wrapper {
+        padding: 3px;
+        // padding-bottom: 10px;
     }
 
     .quick-editor-ok {
         position: relative;
-        bottom: -7px;
+        bottom: 1px;
         left: 45%;
+        background-color: #ccc;
+        border-radius: 15px;
+        width: 50px;
+        text-align: center;
+        padding: 2px;
+        font-weight: 900;
+        font-size: 14px;
+        font-family: inherit;
 
         &:hover {
-            filter: brightness(120%);
+            filter: brightness(110%);
+            cursor: pointer;
         }
     }
 
     .quick-editor-dots {
         position: absolute;
-        top: 15px;
+        top: 18px;
         right: 10px;
+        padding: 2px;
 
         &:hover {
-            filter: brightness(140%);
+            cursor: pointer;
+        }
+    }
+
+    .info-editor {
+        position: relative;
+        left: 2px;
+        min-width: 100px;
+        height: 70px;
+        padding: 5px;
+        border-radius: 5px 5px 0px 0px;
+        background-color: white;
+        box-shadow: 0px 0px 5px #bbb;
+
+        .cancel {
+            float: right;
+            filter: invert(50%);
+            &:hover {
+                filter: invert(0%);
+                cursor: pointer;
+            }
         }
     }
 
     &.simple {
-        border-top: 2px solid @unit-editor-color;
+        z-index: -1;
     }
 
     .resize-handle-top-left {
@@ -252,8 +322,8 @@
       top: 0px;
       left: 0px;
       cursor: nwse-resize;
-      width: 20px;
-      height: 20px;
+      width: 10px;
+      height: 10px;
       z-index: 3;
     }
 
@@ -263,7 +333,7 @@
        left: 0px;
        cursor: row-resize;
        width: 100%;
-       height: 20px;
+       height: 10px;
        z-index: 2;
     }
 
@@ -272,8 +342,8 @@
       top: 0px;
       right: 0px;
       cursor: nesw-resize;
-      width: 20px;
-      height: 20px;
+      width: 10px;
+      height: 10px;
       z-index: 3;
     }
 
@@ -283,7 +353,7 @@
        right: 0px;
        cursor: col-resize;
        height: 100%;
-       width: 20px;
+       width: 10px;
        z-index: 2;
     }
 
@@ -292,8 +362,8 @@
       bottom: 0px;
       right: 0px;
       cursor: nwse-resize;
-      width: 20px;
-      height: 20px;
+      width: 10px;
+      height: 10px;
       z-index: 3;
     }
 
@@ -303,7 +373,7 @@
        left: 0px;
        cursor: row-resize;
        width: 100%;
-       height: 20px;
+       height: 10px;
        z-index: 2;
     }
 
@@ -312,8 +382,8 @@
       bottom: 0px;
       left: 0px;
       cursor: nesw-resize;
-      width: 20px;
-      height: 20px;
+      width: 10px;
+      height: 10px;
       z-index: 3;
     }
 
@@ -323,7 +393,7 @@
        left: 0px;
        cursor: col-resize;
        height: 100%;
-       width: 20px;
+       width: 10px;
        z-index: 2;
     }
   }
@@ -365,6 +435,10 @@
   .selection-box {
     border: 2px solid #cccccc;
     position: absolute;
+  }
+
+  .dnd-new-unit {
+      position: absolute;
   }
 }
 

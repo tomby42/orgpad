@@ -341,6 +341,20 @@
      :response (str "Selected " cnt
                     (if (< cnt 2) " unit." " units."))}))
 
+;; TODO: merge with :orgpad.units/select-by-pattern
+(defmethod mutate :orgpad.units/filtered-by-pattern
+  [{:keys [state]} _ {:keys [params unit-tree]}]
+  (let [pid (ot/uid unit-tree)
+        selected-units (ot/search-child-by-descendant-txt-pattern state pid
+                                                                  (:selection-text params))]
+    (println "filtered: " pid selected-units (set (map first selected-units)))
+    {:state (store/transact state [[:app-state :filtered (keypath pid)] (set (map first selected-units))])}))
+
+(defmethod mutate :orgpad.units/clear-filtered-pattern
+  [{:keys [state]} _ {:keys [unit-tree]}]
+  (let [pid (ot/uid unit-tree)]
+    {:state (store/transact state [[:app-state :filtered (keypath pid)] nil])}))
+
 (defmethod mutate :orgpad.units/copy
   [{:keys [state]} _ {:keys [pid selection]}]
   (let [data (ot/copy-descendants-from-db state pid [] selection)]

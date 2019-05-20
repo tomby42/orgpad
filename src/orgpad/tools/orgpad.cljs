@@ -100,15 +100,26 @@
              :orgpad/type :orgpad/unit-view})
      [:db/add unit-id :orgpad/props-refs -1]]))
 
-(def ^:private rules
+(def ^:private search-rules
   '[[(eq [?e3 ?e4])
      [(= ?e3 ?e4)]]
-    [(atom ?e1 ?e2 ?a)
+
+    [(info-prop ?e ?v)
+     [?e :orgpad/atom ?v]]
+    [(info-prop ?e ?v)
+     [?e :orgpad/tags ?v]]
+    [(info-prop ?e ?v)
+     [?e :orgpad/desc ?v]]
+
+    [(info ?e1 ?e2 ?a ?e)
      [?e2 :orgpad/props-refs ?prop]
-     [?prop :orgpad/atom ?a]]
-    [(atom ?e1 ?e2 ?a)
+     (info-prop ?prop ?a)
+     [?e :orgpad/props-refs ?prop]]
+    [(info ?e1 ?e2 ?a ?e)
      [?e1 :orgpad/props-refs ?prop]
-     [?prop :orgpad/atom ?a]]
+     (info-prop ?prop ?a)
+     [?e :orgpad/props-refs ?prop]]
+
     [(descendant ?e1 ?e2)
      (eq ?e1 ?e2)]
     [(descendant ?e1 ?e2)
@@ -124,14 +135,15 @@
 (defn search-child-by-descendant-txt-pattern
   [store uid pattern]
   (store/query store
-               '[:find  ?u1 ?u2
+               '[:find  ?u1 ?u
                  :in    $ % ?p ?contains-text
                  :where
                  [?p :orgpad/refs ?u1]
                  (descendant ?u1 ?u2)
-                 (atom ?u1 ?u2 ?a)
+                 (info ?u1 ?u2 ?a ?u)
                  [(?contains-text ?a)]]
-               [rules uid (partial contains-pattern? pattern)]))
+               [search-rules
+                uid (partial contains-pattern? pattern)]))
 
 (defn props-pred-no-ctx
   [view-name view-type type v]
@@ -279,7 +291,7 @@
   [db pid props-constraints & [selection]]
   (let [children-props (store/query db
                                     (get-descendant-props-qry props-constraints)
-                                    [(into rules prop-rules) pid
+                                    [(into search-rules prop-rules) pid
                                      (if (nil? selection)
                                        (constantly true)
                                        selection)])]
@@ -699,7 +711,7 @@
                      (descendant ?pid ?u)
                      [(= ?u ?did)]
                      [?u :orgpad/type ?t]]
-                   [rules pid did])
+                   [search-rules pid did])
       not-empty))
 
 (defn remap-datom

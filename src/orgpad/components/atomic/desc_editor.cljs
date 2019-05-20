@@ -6,7 +6,8 @@
 (rum/defcc desc-editor < rum/static lc/parser-type-mixin-context
   [component id view desc]
   [:div {:className "react-tagsinput desc-editor"}
-   [:input {:value desc
+   [:input {:value (or desc "")
+            :type "text"
             :placeholder "Write a description"
             :onChange (fn [e]
                         (lc/transact!

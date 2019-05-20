@@ -57,9 +57,10 @@
                           (omt/switch-active-sheet component unit-tree (comp-dir e))))}
      (when child-tree
        [:div.map-tuple-child {:key "child"} (node/node child-tree app-state)])
-     (when (= (:mode app-state) :read)
-       [[:div.map-tuple-clicker-left {:key "left"} [:i.fa.fa-2x.fa-angle-left]]
-        [:div.map-tuple-clicker-right {:key "right"} [:i.fa.fa-2x.fa-angle-right]]])]))
+     ;; (when (= (:mode app-state) :read)
+     ;;   [[:div.map-tuple-clicker-left {:key "left"} [:i.fa.fa-2x.fa-angle-left]]
+     ;;    [:div.map-tuple-clicker-right {:key "right"} [:i.fa.fa-2x.fa-angle-right]]])
+     ]))
 
 (rum/defcc map-tuple-component < trum/istatic lc/parser-type-mixin-context
   (rum/local {:unroll false :time-stamp 0})

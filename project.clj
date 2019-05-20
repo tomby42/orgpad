@@ -24,7 +24,7 @@
                  [cljsjs/react-motion         "0.3.1-0"]  ;; *
                  [cljsjs/react-select         "1.0.0-rc.3"]
                  [cljsjs/latlon-geohash       "1.1.0-0"] ;; *
-                 [doo                         "0.1.10"]
+                 [doo                         "0.1.11"]
                  ;; [org.clojure/data.avl        "0.0.17"] ;; we have own fixed copy
                  [io.replikativ/superv.async  "0.2.9"]
                  [com.cognitect/transit-cljs  "0.8.256"]
@@ -105,7 +105,7 @@
                         }}
 
             {:id "test"
-             :source-paths ["src" "test"]
+             :source-paths ["src" "test" "env/dev"]
              :compiler {:main orgpad.test
                         :output-to "resources/test/js/compiled/orgpad.js"
                         :output-dir "resources/test/js/compiled/out"
