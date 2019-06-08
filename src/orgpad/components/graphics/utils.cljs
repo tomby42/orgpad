@@ -6,7 +6,9 @@
 
 (defn comp-border-width
   [style]
-  (or (-> style :canvas :lineWidth) (-> style :svg :strokeWidth) (-> style :svg :stroke-width) 0))
+  (+ 1
+   (or (-> style :canvas :lineWidth) (-> style :canvas :line-width)
+       (-> style :svg :strokeWidth) (-> style :svg :stroke-width) 0)))
 
 (defn comp-bb
   [border-width pts]
@@ -41,13 +43,13 @@
 
 (defn comp-quad-arrow-pts
   [start-pos end-pos ctl-pt prop]
-  (let [arrow-pos (* (prop :orgpad/link-arrow-pos) 0.01)
+  (let [arrow-pos (* (:orgpad/link-arrow-pos prop) 0.01)
         p1 (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos arrow-pos)
         dir (-> p1 (-- (bez/get-point-on-quadratic-bezier start-pos ctl-pt end-pos (- arrow-pos 0.01))) normalize)
-        ptmp (++ p1 (*c dir -10))
-        n (-> dir geom/normal)
-        p2 (++ ptmp (*c n 10))
-        p3 (++ ptmp (*c (-- n) 10))]
+        ptmp (++ p1 (*c dir -15))
+        n (geom/normal dir)
+        p2 (++ ptmp (*c n 8))
+        p3 (++ ptmp (*c (-- n) 8))]
     [p2 p1 p3]))
 
 (defn comp-arc-arrow-pts
@@ -55,6 +57,6 @@
   (let [dir (normalize (-- s e))
         n (geom/normal dir)
         s' (++ (*c n -10) s)
-        p1 (++ (*c dir 10) s')
-        p2 (++ (*c dir -10) s')]
+        p1 (++ (*c dir 8) s')
+        p2 (++ (*c dir -8) s')]
     [p1 s p2]))

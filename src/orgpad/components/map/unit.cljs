@@ -201,22 +201,6 @@
                           (if cyclic? (ot/left-top pos start-size) pos) size old-pos old-size
                           #js[id1 id2])))
 
-(defn- mk-lnk-vtx-prop
-  [component {:keys [props unit path-info] :as unit-tree} view-name pid mid-pt]
-  (let [prop (ot/get-props-view-child props view-name pid
-                                      :orgpad.map-view/vertex-props)]
-    (when (nil? prop)
-      (js/setTimeout
-       (fn []
-         (lc/transact! component [[:orgpad.units/make-lnk-vtx-prop
-                                   {:pos mid-pt
-                                    :context-unit pid
-                                    :view-name view-name
-                                    :unit-tree unit-tree
-                                    :style (lc/query component :orgpad/style
-                                                     {:view-type :orgpad.map-view/vertex-props-style
-                                                      :style-name "default"} {:disable-cache? true})}]])) 0))))
-
 (rum/defcc map-link < (trum/statical link-eq-fns) lc/parser-type-mixin-context
   [component {:keys [props unit] :as unit-tree} {:keys [start-pos end-pos cyclic? start-size]}
    app-state pcomponent view-name pid local-state]
@@ -241,8 +225,6 @@
       (update-geocache-for-link-changes pcomponent pid view-name (unit :db/id)
                                         start-pos end-pos (prop :orgpad/link-mid-pt)
                                         (unit :orgpad/refs) cyclic? start-size)
-      (when (ot/get-props-no-ctx (:orgpad/props-refs unit) view-name :orgpad/atomic-view :orgpad/unit-view)
-        (mk-lnk-vtx-prop component unit-tree view-name pid mid-pt))
       (html
        [:div {}
         (if cyclic?

@@ -35,5 +35,6 @@
   {:stroke (css/format-color (prop :orgpad/link-color))
    :strokeWidth (prop :orgpad/link-width)
    :strokeLinecap "round"
+   :strokeLinejoin "round"
    :fill "none"
    :strokeDasharray (-> prop :orgpad/link-dash (.join " "))})

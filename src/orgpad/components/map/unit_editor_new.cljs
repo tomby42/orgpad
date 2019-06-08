@@ -19,7 +19,8 @@
             [orgpad.components.atomic.tags-editor :as teditor]
             [goog.string :as gstring]
             [goog.string.format]
-            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-link]]))
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-link]]
+            [orgpad.tools.time :refer [now]]))
 
 ;; TODO put into some config
 (def ^:private quick-editor-width 420)
@@ -93,6 +94,11 @@
         [{} {} {} false]))
     [{} {} {} false]))
 
+(defn- toggle-quick-edit
+  [component local-state]
+  (swap! local-state update :quick-edit not)
+  (.forceUpdate component))
+
 (defn try-deselect-unit
   [component pid uid local-state ev]
   (when (and uid (.-ctrlKey ev))
@@ -109,11 +115,6 @@
                   :className icon})]])
 
 (def gti (partial gti-raw "right hover"))
-
-(defn- toggle-quick-edit
-  [component local-state]
-  (swap! local-state update :quick-edit not)
-  (.forceUpdate component))
 
 (defn- edit-text?
   [{:keys [unit view]}]
@@ -140,15 +141,15 @@
            :on-touch-start (jev/make-block-propagation
                             #(start-link local-state (aget % "touches" 0)))}
           "edit-link" "Make a Link")
-     (gti {:on-click #(omt/remove-unit component
-                                       {:id (ot/uid unit-tree)
-                                        :view-name (ot/view-name parent-tree)
-                                        :ctx-unit (ot/uid parent-tree)} local-state)}
+     (gti {:on-click (jev/make-block-propagation
+                      #(omt/remove-unit component
+                                        {:id (ot/uid unit-tree)
+                                         :view-name (ot/view-name parent-tree)
+                                         :ctx-unit (ot/uid parent-tree)} local-state))}
           "edit-delete" "Delete")
-     (gti {:on-mouse-down sedit
-           :on-touch-start sedit}
+     (gti {:on-click sedit}
           "edit-focus-mode" "Edit Content")
-     (gti {:on-click #(swap! uedit-local-state assoc :show-info? true)}
+     (gti {:on-click (jev/make-block-propagation #(swap! uedit-local-state assoc :show-info? true))}
           "edit-info" "Edit Info")]))
 
 (defn- gen-bottom-toolbar
@@ -156,7 +157,7 @@
   (let []
     [:div
      [:div.tool-bar-bottom
-      (gti {:onClick #(swap! local-state assoc :show-new-page-box true)}
+      (gti {:onClick (jev/make-block-propagation #(swap! local-state assoc :show-new-page-box true))}
            "edit-add-page-full" "Add Page")]]))
 
 (defn- gen-view-type
@@ -167,7 +168,8 @@
    [:span.right [:span {:className (if (= view-type (:selected-view-type @local-state))
                                      "edit-enabled"
                                      "edit-disbaled")
-                        :onClick #(swap! local-state assoc :selected-view-type view-type)}]]])
+                        :onClick (jev/make-block-propagation
+                                  #(swap! local-state assoc :selected-view-type view-type))}]]])
 
 (defn- gen-view-types
   [local-state]
@@ -181,9 +183,10 @@
    (gen-view-types local-state)
    [:div.buttons
     [:span.edit-new-ok.left.hover
-     {:onClick #(do
-                  (swap! local-state assoc :show-new-page-box false)
-                  (omt/new-sheet-with-type component unit-tree (:selected-view-type @local-state)))}]
+     {:onClick (jev/make-block-propagation
+                #(do
+                   (swap! local-state assoc :show-new-page-box false)
+                   (omt/new-sheet-with-type component unit-tree (:selected-view-type @local-state))))}]
     [:span.edit-new-cancel.right.hover {:onClick #(swap! local-state assoc :show-new-page-box false)}]]])
 
 (defn- gen-toolbar
@@ -197,6 +200,10 @@
                        (gen-new-page-box component unit-tree parent-tree uedit-local-state "one-page"))]
     [:div top-bar bottom-bar new-page-box]))
 
+(defn- simple-editor
+  [{:keys [view unit] :as unit-tree} height]
+  (aeditor/atom-editor (:db/id unit) view (:orgpad/atom view) :quick (- height 70)))
+
 (defn- quick-editor
   [component {:keys [view unit] :as unit-tree} height local-state]
   (let [pos (or (:orgpad/active-unit view) 0)]
@@ -204,20 +211,19 @@
      [:div {:key (str "quick-editor-" (:db/id unit) "-" pos)
             :className "atomic-view"}
      (case (:orgpad/view-type view)
-       :orgpad/atomic-view (aeditor/atom-editor (:db/id unit) view (:orgpad/atom view) :quick (- height 70))
-       :orgpad/map-tuple-view (quick-editor component (ot/get-sorted-ref unit pos) height local-state)
+       :orgpad/atomic-view (simple-editor unit-tree height)
+       :orgpad/map-tuple-view (simple-editor (ot/get-sorted-ref unit pos) height)
        nil)]
-     (when (= (:orgpad/view-type view) :orgpad/map-tuple-view)
-       [:div.quick-editor-dots {:title "Expand"
+     [:div.quick-editor-dots {:title "Expand"
                                 :onClick #(omt/open-unit component unit-tree)}
-        [:span.edit-dots]])
-     (when (= (:orgpad/view-type view) :orgpad/map-tuple-view)
-       [:div.quick-editor-ok {:onClick #(toggle-quick-edit component local-state)}
-        "OK"])]))
+      [:span.edit-dots]]
+     [:div.quick-editor-ok {:onClick #(toggle-quick-edit component local-state)}
+        "OK"]]))
 
 (defn- start-unit-move
-  [app-state local-state ev]
+  [app-state local-state uedit-local-state ev]
   (set-mouse-pos! (jev/touch-pos ev))
+  (swap! uedit-local-state assoc :last-click-ts (now))
   (if (and (= (:mode app-state) :write)
            (= (:canvas-mode @local-state) :canvas-create-unit))
     (start-link local-state ev)
@@ -336,17 +342,21 @@
             :style (merge style (when qedit? {:background-color "white"}))
             :key 0
             :onDoubleClick jev/block-propagation
+            :onClick #(when (< (- (now) (:last-click-ts @uedit-local-state)) 250)
+                        (start-edit component sel-unit-tree local-state))
             :onMouseUp (when selected?
                          (partial try-deselect-unit component (ot/uid unit-tree)
                                   (ot/uid sel-unit-tree) local-state))
             :onMouseDown (when selected?
                            (if qedit?
                              jev/stop-propagation
-                             (jev/make-block-propagation #(start-unit-move app-state local-state %))))
+                             (jev/make-block-propagation #(start-unit-move app-state local-state
+                                                                           uedit-local-state %))))
             :onTouchStart (when selected?
                             (if qedit?
                               jev/stop-propagation
                               (jev/make-block-propagation #(start-unit-move app-state local-state
+                                                                            uedit-local-state
                                                                             (aget % "touches" 0)))))}
       (if qedit?
         (quick-editor component sel-unit-tree (:height style) local-state)
@@ -361,7 +371,9 @@
      (when (= (@local-state :local-mode) :make-link)
        (draw-link-line component unit-tree parent-view local-state))]))
 
-;; Read mode unit manipulator
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Read mode unit manipulator ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn gen-manipulator-toolbar
   [component sel-unit-tree unit-tree prop local-state uedit-local-state]
@@ -393,7 +405,9 @@
      (when (and selected? (> (ot/refs-count sel-unit-tree) 1))
        (page-nav component sel-unit-tree prop style :read local-state))]))
 
-;; Multiselection editor
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Multiselection editor ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn compute-bb
   [component unit-tree selection]

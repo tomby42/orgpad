@@ -70,14 +70,18 @@
                                   (str s " L " (pp p))))
                               (str "M " (pp s)) (rest pts))})]))
 
+(defn- draw-polyline-closed
+  [style l t border-width pts]
+  (update-in (draw-polyline style l t border-width pts) [1 :d] str " Z"))
+
 (rum/defc poly-line < rum/static
-  [pts style]
-  (apply render-curve draw-polyline style pts))
+  [pts style & [closed?]]
+  (apply render-curve (if closed? draw-polyline-closed draw-polyline) style pts))
 
 (defn make-arrow-quad
   [start-pos end-pos ctl-pt prop style]
   (let [pts (comp-quad-arrow-pts start-pos end-pos ctl-pt prop)]
-    (poly-line pts (update style :svg dissoc :strokeDasharray))))
+    (poly-line pts (-> style (update :svg dissoc :strokeDasharray) (update :svg assoc :fill (-> style :svg :stroke))) true)))
 
 (defn- draw-arc-curve
   [{:keys [center radius]} style l t border-width pts]
@@ -95,4 +99,4 @@
 (defn make-arrow-arc
   [s e prop style]
   (let [pts (comp-arc-arrow-pts s e prop)]
-    (poly-line pts (update style :svg dissoc :strokeDasharray))))
+    (poly-line pts (-> style (update :svg dissoc :strokeDasharray) (update :svg assoc :fill (-> style :svg :stroke))) true)))

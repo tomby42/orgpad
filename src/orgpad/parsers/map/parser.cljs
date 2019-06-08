@@ -664,7 +664,7 @@
 
 (defn- update-geocache-after-remove
   [global-cache parents id other]
-  (let [ids (apply array (conj other id))]
+  (let [ids (apply array (if id (conj other id) other))]
     (doseq [uid ids]
       (js-delete global-cache uid))
     (doseq [pid parents]
@@ -695,33 +695,55 @@
                     [?a :orgpad/type :orgpad/unit-view]
                     [?a :orgpad/view-name ?view-name]] [id view-name]))
 
+(defn- retract-entities
+  [entities]
+  (map (fn [eid] [:db.fn/retractEntity eid]) entities))
+
+(defn- remove-incident-edges-qry
+  [state id]
+  (let [edges (mapcat #(find-relative state % edge-check-query) (find-relative state id edge-query))
+        edges-to-remove (into [] (comp (filter (fn [[_ ro]] (= (count ro) 2))) (map first)) edges)
+        edges-props-to-remove (mapcat (fn [eid] (find-props state eid)) edges-to-remove)]
+    [edges-to-remove
+     (retract-entities (concat edges-to-remove edges-props-to-remove))]))
+
+(defn- remove-edge-label-qry
+  [state params id elabel]
+  (let [a (atomic-view state params)]
+    ;; (force-update!)
+    [[:db/retract id :orgpad/props-refs (:db/id elabel)]
+     [:db/retract id :orgpad/props-refs (:db/id a)]
+     [:db.fn/retractEntity (:db/id elabel)]
+     [:db.fn/retractEntity (:db/id a)]]))
+
+(defn- remove-proper-unit-qry
+  [state parents id]
+  (let [units-to-remove (find-children-deep state [id])]
+    (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents)
+    (concat
+     (retract-entities units-to-remove)
+     (remove-from-refs-orders-qry state id))))
+
+;; TODO recursively remove all edges connected to edges as vertex
 (defn- remove-unit
   [{:keys [state global-cache force-update!]} {:keys [id ctx-unit view-name] :as params}]
-  (let [v (edge-label state params)]
-    (if v
-      (let [a (atomic-view state params)]
-        ;; (force-update!)
-        [[:db/retract id :orgpad/props-refs (:db/id v)]
-         [:db/retract id :orgpad/props-refs (:db/id a)]
-         [:db.fn/retractEntity (:db/id v)]
-         [:db.fn/retractEntity (:db/id a)]])
-      (let [units-to-remove (find-children-deep state [id])
-            parents (find-parents state id)
-            edges (mapcat #(find-relative state % edge-check-query) (find-relative state id edge-query))
-            edges-to-remove (into [] (comp (filter (fn [[_ ro]] (= (count ro) 2))) (map first)) edges)
-            edges-props-to-remove (mapcat (fn [eid] (find-props state eid)) edges-to-remove)
-            final-qry (colls/minto []
-                                   (map (fn [pid] [:db/retract pid :orgpad/refs id]) parents)
-                                   (remove-from-refs-orders-qry state id)
-                                   (map (fn [eid] [:db.fn/retractEntity eid])
-                                        (concat units-to-remove edges-to-remove edges-props-to-remove)))]
-        (update-geocache-after-remove global-cache parents id edges-to-remove)
-        final-qry))))
+  (let [elabel (edge-label state params)
+        parents (find-parents state id)
+        units-remove-qry (if elabel
+                           (remove-edge-label-qry state params id elabel)
+                           (remove-proper-unit-qry state parents id))
+        [edges-to-remove edges-remove-qry] (remove-incident-edges-qry state id)
+        final-qry (colls/minto []
+                               units-remove-qry
+                               edges-remove-qry)]
+    (update-geocache-after-remove global-cache parents (when-not elabel id) edges-to-remove)
+    final-qry))
 
 (defmethod mutate :orgpad.units/remove-unit
   [env _ params]
   (let [final-qry (remove-unit env params)
         new-state (store/transact (:state env) final-qry)]
+    (js/console.log ":orgpad.units/remove-unit query:"  final-qry)
     {:state  new-state}))
 
 (defn- update-link-props

@@ -411,7 +411,7 @@
         styles-list (styles/get-sorted-style-list component active-type)
         active-style (or (-> app-state :styles active-type :active-style)
                          (-> styles-list first :orgpad/style-name))]
-    ;; (js/console.log styles-list)
+    (js/console.log styles-list active-style active-type)
     [:div.styles-editor
      [:div.header
       [:div.label "Styles"]

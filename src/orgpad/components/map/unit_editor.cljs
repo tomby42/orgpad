@@ -407,6 +407,18 @@
   [component unit-tree _]
   (lc/transact! component [[:orgpad.units/map-view-link-swap-dir (:unit unit-tree)]]))
 
+(defn- make-label
+  [component {:keys [props unit path-info] :as unit-tree} view-name pid mid-pt ev]
+  (lc/transact! component [[:orgpad.units/make-lnk-vtx-prop
+                            {:pos mid-pt
+                             :context-unit pid
+                             :view-name view-name
+                             :unit-tree unit-tree
+                             :style (lc/query component :orgpad/style
+                                              {:view-type :orgpad.map-view/vertex-props-style
+                                               :style-name "default"} {:disable-cache? true})}]])
+  (omt/open-unit component (assoc-in unit-tree [:view :orgpad/view-type] :orgpad/atomic-view)))
+
 (defn- edge-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [select-link (@local-state :selected-link)]
@@ -423,8 +435,8 @@
 })
             [:i.far.fa-cogs.fa-lg {:title "Properties" :onMouseDown #(close-link-menu local-state)}]
             [:i.far.fa-file-edit.fa-lg
-             {:title "Edit"
-              :onMouseUp #(omt/open-unit component (assoc-in unit [:view :orgpad/view-type] :orgpad/atomic-view))}]
+             {:title "Label"
+              :onMouseUp (partial make-label component unit (:orgpad/view-name view) (ot/uid unit-tree) mid-pt)}]
             [:i.far.fa-exchange.fa-lg {:title "Flip direction" :onMouseDown (partial swap-link-direction component unit)}]
             [:i.far.fa-times.fa-lg {:title "Remove" :onMouseDown #(remove-link component unit local-state)}])])))))
 
