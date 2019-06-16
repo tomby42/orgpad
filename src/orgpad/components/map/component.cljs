@@ -8,7 +8,7 @@
             [orgpad.components.map.unit :as munit]
             [orgpad.components.map.unit-editor :as ued]
             [orgpad.tools.css :as css]
-            [orgpad.tools.js-events :refer [mouse-node-x mouse-node-y mouse-node-rel-x mouse-node-rel-y] :as jev]
+            [orgpad.tools.js-events :refer [mouse-node-rel-x mouse-node-rel-y] :as jev]
             [orgpad.tools.orgpad :as ot]
             [orgpad.tools.orgpad-manipulation :as omt]
             [orgpad.tools.rum :as trum]
@@ -231,7 +231,8 @@
       :choose-selection (select-units-by-bb component unit-tree local-state)
       :make-links       (make-links component unit-tree (-> @local-state :selected-units second)
                                     [(mouse-node-rel-x bbox ev) (mouse-node-rel-y bbox ev)])
-      :canvas-paste     (omt/paste-units-from-clipboard component unit-tree app-state (get-rel-mouse-pos component unit-tree ev))
+      :canvas-paste     (omt/paste-units-from-clipboard component unit-tree app-state
+                                                        (get-rel-mouse-pos component unit-tree ev))
       :dnd-new-unit     (create-pair-unit component unit-tree {:center-x (mouse-node-rel-x bbox ev)
                                                                :center-y (mouse-node-rel-y bbox ev)})
       nil)
@@ -419,10 +420,11 @@
 
 (defn- handle-double-click
   [component unit-tree app-state local-state ev]
-  (when (:quickedit-when-created? app-state)
-    (swap! local-state assoc :quick-edit true))
-  (do-create-pair-unit component unit-tree {:center-x (mouse-node-x ev)
-                                            :center-y (mouse-node-y ev)} ev))
+  (let [pos (get-rel-mouse-pos component unit-tree ev)]
+    (when (:quickedit-when-created? app-state)
+      (swap! local-state assoc :quick-edit true))
+    (do-create-pair-unit component unit-tree {:center-x (get pos 0)
+                                              :center-y (get pos 1)} ev)))
 
 (defn- handle-key-down
   [component unit-tree app-state local-state ev]
@@ -432,8 +434,10 @@
       (let [data (get-in app-state [:clipboards (ot/uid unit-tree)])]
         (case (.-code ev)
           "KeyC"        (omt/copy-units-to-clipboard component unit-tree app-state)
-          "KeyV"        (omt/paste-units-from-clipboard component unit-tree app-state (get-rel-mouse-pos component unit-tree #js {:clientX (:mouse-x @mouse-pos)
-                                                                                                                                  :clientY (:mouse-y @mouse-pos)}))
+          "KeyV"        (omt/paste-units-from-clipboard component unit-tree app-state
+                                                        (get-rel-mouse-pos component unit-tree
+                                                                           #js {:clientX (:mouse-x @mouse-pos)
+                                                                                :clientY (:mouse-y @mouse-pos)}))
           "ControlLeft" (swap! local-state assoc :ctrl-key true)
           nil))
       ;; (case (.-code ev)

@@ -13,6 +13,7 @@
                   :link {:cursor "pointer",
                          :position "relative",
                          :padding "0px 5px",
+                         :whiteSpace "nowrap",
                          :display "block"},
                   :activeLink {
                                ;; :background "black"
