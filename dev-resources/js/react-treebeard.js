@@ -13714,7 +13714,8 @@ Loading.propTypes = {
 };
 
 var Toggle = function Toggle(_ref2) {
-    var style = _ref2.style;
+    var style = _ref2.style,
+        onEventHandler = _ref2.onEventHandler;
     var height = style.height,
         width = style.width;
 
@@ -13723,7 +13724,9 @@ var Toggle = function Toggle(_ref2) {
 
     return _react2.default.createElement(
         'div',
-        { style: style.base },
+        { style: style.base, onClick: function onClick() {
+                return onEventHandler('onToggleClick');
+            } },
         _react2.default.createElement(
             'div',
             { style: style.wrapper },
@@ -13737,16 +13740,24 @@ var Toggle = function Toggle(_ref2) {
     );
 };
 Toggle.propTypes = {
-    style: _propTypes2.default.object
+    style: _propTypes2.default.object,
+    onEventHandler: _propTypes2.default.func.isRequired
 };
 
 var Header = function Header(_ref3) {
     var node = _ref3.node,
-        style = _ref3.style;
+        style = _ref3.style,
+        onEventHandler = _ref3.onEventHandler;
 
     return _react2.default.createElement(
         'div',
-        { style: style.base },
+        { style: style.base,
+            onClick: function onClick() {
+                return onEventHandler('onHeaderClick');
+            },
+            onMouseEnter: function onMouseEnter() {
+                return onEventHandler('onHeaderOver');
+            } },
         _react2.default.createElement(
             'div',
             { style: style.title },
@@ -13770,7 +13781,8 @@ var Header = function Header(_ref3) {
 };
 Header.propTypes = {
     style: _propTypes2.default.object,
-    node: _propTypes2.default.object.isRequired
+    node: _propTypes2.default.object.isRequired,
+    onEventHandler: _propTypes2.default.func.isRequired
 };
 
 var Container = (0, _radium2.default)(_class = function (_React$Component) {
@@ -13791,18 +13803,22 @@ var Container = (0, _radium2.default)(_class = function (_React$Component) {
                 decorators = _props.decorators,
                 terminal = _props.terminal,
                 onClick = _props.onClick,
+                onEventHandler = _props.onEventHandler,
                 node = _props.node;
 
 
             return _react2.default.createElement(
                 'div',
-                { onClick: onClick,
+                { onClick: function onClick() {
+                        return onEventHandler('onContainerClick');
+                    },
                     ref: function ref(_ref4) {
                         return _this2.clickableRef = _ref4;
                     },
                     style: style.container },
                 !terminal ? this.renderToggle() : null,
                 _react2.default.createElement(decorators.Header, { node: node,
+                    onEventHandler: onEventHandler,
                     style: style.header })
             );
         }
@@ -13833,10 +13849,11 @@ var Container = (0, _radium2.default)(_class = function (_React$Component) {
         value: function renderToggleDecorator() {
             var _props2 = this.props,
                 style = _props2.style,
-                decorators = _props2.decorators;
+                decorators = _props2.decorators,
+                onEventHandler = _props2.onEventHandler;
 
 
-            return _react2.default.createElement(decorators.Toggle, { style: style.toggle });
+            return _react2.default.createElement(decorators.Toggle, { style: style.toggle, onEventHandler: onEventHandler });
         }
     }]);
     return Container;
@@ -13847,6 +13864,7 @@ Container.propTypes = {
     decorators: _propTypes2.default.object.isRequired,
     terminal: _propTypes2.default.bool.isRequired,
     onClick: _propTypes2.default.func.isRequired,
+    onEventHandler: _propTypes2.default.func.isRequired,
     animations: _propTypes2.default.oneOfType([_propTypes2.default.object, _propTypes2.default.bool]).isRequired,
     node: _propTypes2.default.object.isRequired
 };
@@ -14988,6 +15006,7 @@ var TreeBeard = function (_React$Component) {
                 decorators = _props.decorators,
                 propsData = _props.data,
                 onToggle = _props.onToggle,
+                onEvent = _props.onEvent,
                 style = _props.style;
 
             var data = propsData;
@@ -15008,6 +15027,7 @@ var TreeBeard = function (_React$Component) {
                         key: node.id || index,
                         node: node,
                         onToggle: onToggle,
+                        onEvent: onEvent,
                         style: style.tree.node });
                 })
             );
@@ -15021,6 +15041,7 @@ TreeBeard.propTypes = {
     data: _propTypes2.default.oneOfType([_propTypes2.default.object, _propTypes2.default.array]).isRequired,
     animations: _propTypes2.default.oneOfType([_propTypes2.default.object, _propTypes2.default.bool]),
     onToggle: _propTypes2.default.func,
+    onEvent: _propTypes2.default.object,
     decorators: _propTypes2.default.object
 };
 
@@ -17949,6 +17970,7 @@ var TreeNode = function (_React$Component) {
         var _this = (0, _possibleConstructorReturn3.default)(this, (TreeNode.__proto__ || (0, _getPrototypeOf2.default)(TreeNode)).call(this));
 
         _this.onClick = _this.onClick.bind(_this);
+        _this.onEventHandler = _this.onEventHandler.bind(_this);
         return _this;
     }
 
@@ -17966,11 +17988,26 @@ var TreeNode = function (_React$Component) {
             }
         }
     }, {
+        key: 'onEventHandler',
+        value: function onEventHandler(type) {
+            var _props2 = this.props,
+                node = _props2.node,
+                onEvent = _props2.onEvent;
+            var toggled = node.toggled;
+
+
+            console.log('onEventHandler', type, onEvent);
+
+            if (onEvent && onEvent[type]) {
+                onEvent[type](node, !toggled);
+            }
+        }
+    }, {
         key: 'animations',
         value: function animations() {
-            var _props2 = this.props,
-                animations = _props2.animations,
-                node = _props2.node;
+            var _props3 = this.props,
+                animations = _props3.animations,
+                node = _props3.node;
 
 
             if (animations === false) {
@@ -17987,9 +18024,9 @@ var TreeNode = function (_React$Component) {
         key: 'decorators',
         value: function decorators() {
             // Merge Any Node Based Decorators Into The Pack
-            var _props3 = this.props,
-                decorators = _props3.decorators,
-                node = _props3.node;
+            var _props4 = this.props,
+                decorators = _props4.decorators,
+                node = _props4.node;
 
             var nodeDecorators = node.decorators || {};
 
@@ -18046,15 +18083,16 @@ var TreeNode = function (_React$Component) {
     }, {
         key: 'renderHeader',
         value: function renderHeader(decorators, animations) {
-            var _props4 = this.props,
-                node = _props4.node,
-                style = _props4.style;
+            var _props5 = this.props,
+                node = _props5.node,
+                style = _props5.style;
 
 
             return _react2.default.createElement(_header2.default, { animations: animations,
                 decorators: decorators,
                 node: (0, _assign2.default)({}, node),
                 onClick: this.onClick,
+                onEventHandler: this.onEventHandler,
                 style: style });
         }
     }, {
@@ -18062,11 +18100,11 @@ var TreeNode = function (_React$Component) {
         value: function renderChildren(decorators) {
             var _this4 = this;
 
-            var _props5 = this.props,
-                animations = _props5.animations,
-                propDecorators = _props5.decorators,
-                node = _props5.node,
-                style = _props5.style;
+            var _props6 = this.props,
+                animations = _props6.animations,
+                propDecorators = _props6.decorators,
+                node = _props6.node,
+                style = _props6.style;
 
 
             if (node.loading) {
@@ -18113,11 +18151,14 @@ var TreeNode = function (_React$Component) {
     }, {
         key: '_eventBubbles',
         value: function _eventBubbles() {
-            var onToggle = this.props.onToggle;
+            var _props7 = this.props,
+                onToggle = _props7.onToggle,
+                onEvent = _props7.onEvent;
 
 
             return {
-                onToggle: onToggle
+                onToggle: onToggle,
+                onEvent: onEvent
             };
         }
     }]);
@@ -18129,7 +18170,8 @@ TreeNode.propTypes = {
     node: _propTypes2.default.object.isRequired,
     decorators: _propTypes2.default.object.isRequired,
     animations: _propTypes2.default.oneOfType([_propTypes2.default.object, _propTypes2.default.bool]).isRequired,
-    onToggle: _propTypes2.default.func
+    onToggle: _propTypes2.default.func,
+    onEvent: _propTypes2.default.object
 };
 
 exports.default = TreeNode;
@@ -38744,6 +38786,7 @@ var NodeHeader = function (_React$Component) {
                 decorators = _props.decorators,
                 node = _props.node,
                 onClick = _props.onClick,
+                onEventHandler = _props.onEventHandler,
                 style = _props.style;
             var active = node.active,
                 children = node.children;
@@ -38756,6 +38799,7 @@ var NodeHeader = function (_React$Component) {
                 decorators: decorators,
                 node: node,
                 onClick: onClick,
+                onEventHandler: onEventHandler,
                 style: headerStyles,
                 terminal: terminal });
         }
@@ -38768,7 +38812,8 @@ NodeHeader.propTypes = {
     decorators: _propTypes2.default.object.isRequired,
     animations: _propTypes2.default.oneOfType([_propTypes2.default.object, _propTypes2.default.bool]).isRequired,
     node: _propTypes2.default.object.isRequired,
-    onClick: _propTypes2.default.func
+    onClick: _propTypes2.default.func,
+    onEventHandler: _propTypes2.default.func
 };
 
 exports.default = NodeHeader;

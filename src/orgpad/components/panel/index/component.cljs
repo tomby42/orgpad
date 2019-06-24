@@ -124,14 +124,18 @@
       nil
       ))))
 
-(defn- toggl
-  [component toggl-changed? node toggled]
+(defn- show
+  [component node toggled]
   (let [last-state (trum/comp->local-state component true)]
     (when (:cursor @last-state)
       (aset (:cursor @last-state) "active" false))
     (aset node "active" true)
     (vswap! last-state assoc :cursor node)
-    (show-unit component last-state node)
+    (show-unit component last-state node)))
+
+(defn- toggl
+  [component toggl-changed? node toggled]
+  (let [last-state (trum/comp->local-state component true)]
     (when (aget node "children")
       (aset node "toggled" toggled)
       (vswap! toggl-changed? not))))
@@ -140,7 +144,8 @@
   [component data toggl-changed?]
   (TreeBeard #js {:data data
                   :style style/style
-                  :onToggle (partial toggl component toggl-changed?)} nil))
+                  :onEvent #js {:onHeaderClick (partial show component)
+                                :onToggleClick (partial toggl component toggl-changed?)}} nil))
 
 (defn assoc-when-not-exists!
   [a k v]
