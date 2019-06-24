@@ -1,4 +1,4 @@
-(ns ^{:doc "Map unit component"}
+(ns ^{:doc "Map unit editor component"}
   orgpad.components.map.unit-editor
   (:require-macros [orgpad.tools.colls :refer [>-]])
   (:require [rum.core :as rum]
@@ -23,69 +23,40 @@
             [orgpad.components.atomic.atom-editor :as aeditor]
             [goog.string :as gstring]
             [goog.string.format]
-            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-link]]
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-link get-current-data
+                                                 selected-unit-prop swap-link-direction]]
             [orgpad.components.input.slider :as slider]
             [orgpad.components.editors.styles :as stedit]
 
-            [orgpad.components.map.unit-editor-new :as ne]
+            [orgpad.components.map.node-unit-editor :as ne]
+            [orgpad.components.map.link-editor :refer [edge-unit-editor]]
             ))
 
-(def ^:private edge-menu-conf
-  {:always-open? false
-   :init-state true
-   :init-rotate -135
-   :init-scale 0.5
-   :main-spring-config #js [500 30]
-   :fly-out-radius 50
-   :base-angle 30
-   :separation-angle 50
-   :child-diam 35
-   :child-init-scale 0.2
-   :child-init-rotation -180
-   :main-diam 40
-   :offset 0.4
-   :child-class "circle-menu-child"
-   :final-child-pos-fn mc/final-child-delta-pos-rot
-   :child-spring-config #js [400 28]})
+(defn- update-ref
+  [state]
+  (let [local-state (-> state :rum/args last)
+        new-node (trum/ref-node state "unit-editor-node")]
+    (when (and new-node
+               (not= (:unit-editor-node @local-state) new-node))
+      (swap! local-state assoc :unit-editor-node new-node))))
 
-;; (defn enable-quick-edit
-;;   [local-state]
-;;   (let [react-component (-> @local-state :selected-unit (nth 3) rum/state deref :rum/react-component)]
-;;     (swap! local-state assoc :quick-edit true)
-;;     (trum/force-update react-component)
-;;     )
-;;   )
+(rum/defcc unit-editor < lc/parser-type-mixin-context (trum/gen-update-mixin update-ref)
+  (rum/local {:selected-view-type :orgpad/atomic-view
+              :page-nav-pos [200 0]})
+  [component unit-tree app-state local-state]
+  (let [select-unit (@local-state :selected-unit)]
+    (if (= (:mode app-state) :write)
+      [:div
+       (if (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
+         (ne/nodes-unit-editor component unit-tree app-state local-state)
+         (ne/node-unit-editor component unit-tree app-state local-state))
+       (edge-unit-editor component unit-tree app-state local-state)]
+      (when select-unit
+        (ne/node-unit-manipulator component unit-tree app-state local-state)))))
 
-(defn- toggle-quick-edit
-  [local-state]
-  (swap! local-state update :quick-edit not))
-
-(defn- selected-unit-prop
-  [{:keys [unit] :as unit-tree} unit-id prop-id prop-view-type]
-  (let [sel-unit
-        (->> unit
-             :orgpad/refs
-             (filter (fn [{:keys [unit]}] (= (unit :db/id) unit-id)))
-             first)
-        sel-prop
-        (->> sel-unit
-             :props
-             (filter (fn [prop] (and prop (= (prop :db/id) prop-id))))
-             first)
-        style-type
-        (if (= prop-view-type :orgpad.map-view/vertex-props)
-          :orgpad.map-view/vertex-props-style
-          :orgpad.map-view/link-props-style)
-        sel-style
-        (->> sel-unit
-             :props
-             (filter (fn [prop] (and prop
-                                     (= (:orgpad/style-name prop) (:orgpad/view-style sel-prop))
-                                     (= (:orgpad/view-type prop)
-                                        style-type))))
-             first)
-        default-style (-> :orgpad/map-view registry/get-component-info :orgpad/child-props-default style-type)]
-    [sel-unit (merge default-style sel-style sel-prop)]))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Static editor on right
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- render-slider
   [{:keys [component unit prop parent-view local-state max min prop-name action selection]}]
@@ -105,366 +76,6 @@
                                        :prop-name prop-name
                                        :prop-val v}]])))]
     (slider/render-slider {:max max :min min :value (prop prop-name) :on-change on-change})))
-
-(defn- start-unit-move
-  [app-state local-state ev]
-  (set-mouse-pos! (jev/touch-pos ev))
-;;   (js/console.log "start-unit-move" (and (= (:mode app-state) :write)
-;;                                          (= (:canvas-mode @local-state) :canvas-create-unit)) app-state @local-state)
-  (if (and (= (:mode app-state) :write)
-           (= (:canvas-mode @local-state) :canvas-create-unit))
-    (start-link local-state ev)
-    (swap! local-state merge {:local-mode :unit-move
-                              :quick-edit false
-                              ;; :pre-quick-edit 0
-                              :start-mouse-x (.-clientX (jev/touch-pos ev))
-                              :start-mouse-y (.-clientY (jev/touch-pos ev))
-                              :mouse-x (.-clientX (jev/touch-pos ev))
-                              :mouse-y (.-clientY (jev/touch-pos ev))})))
-
-(defn- start-units-move
-  [unit-tree selection local-state ev]
-  (set-mouse-pos! (jev/touch-pos ev))
-  (swap! local-state merge {:local-mode :units-move
-                            :quick-edit false
-                            ;; :pre-quick-edit (if (:pre-quick-edit @local-state)
-                            ;;                   (inc (:pre-quick-edit @local-state))
-                            ;;                   0)
-                            :selected-units [unit-tree selection]
-                            :start-mouse-x (.-clientX (jev/touch-pos ev))
-                            :start-mouse-y (.-clientY (jev/touch-pos ev))
-                            :mouse-x (.-clientX (jev/touch-pos ev))
-                            :mouse-y (.-clientY (jev/touch-pos ev))}))
-
-(defn- start-unit-resize
-  [local-state mode ev]
-  (set-mouse-pos! (jev/touch-pos ev))
-  (swap! local-state merge {:local-mode :unit-resize
-                            :start-mouse-x (.-clientX (jev/touch-pos ev))
-                            :start-mouse-y (.-clientY (jev/touch-pos ev))
-                            :mouse-x (.-clientX (jev/touch-pos ev))
-                            :mouse-y (.-clientY (jev/touch-pos ev))
-                            :resize-mode mode}))
-
-(defn- start-links
-  [unit-tree selection local-state ev]
-  (set-mouse-pos! (jev/touch-pos ev))
-  (start-link local-state ev)
-  (swap! local-state merge {:local-mode :make-links
-                            :selected-units [unit-tree selection]}))
-
-(def ^:private bb-border [300 300])
-
-(defn compute-bb
-  [component unit-tree selection]
-  (let [id (ot/uid unit-tree)
-        global-cache (lc/get-global-cache component)
-        screen-bbox (dom/dom-bb->bb (aget global-cache id "bbox"))
-        bbs (map :bb (ot/child-bbs unit-tree selection))
-        bb (geom/bbs-bbox bbs)
-        transf (-> unit-tree :view :orgpad/transform)
-        bb-screen-coord (mapv (partial canvas->screen transf) bb)
-        inside? (every? (partial geom/insideBB bb-screen-coord) screen-bbox)]
-    (if inside?
-      (mapv (partial screen->canvas transf) [(++ (screen-bbox 0) bb-border)
-                                             (-- (screen-bbox 1) bb-border)])
-      bb)))
-
-(defn- gen-nodes-toolbar
-  [{:keys [unit view] :as unit-tree} app-state local-state selection]
-  (let [left-toolbar [[{:elem :btn
-                        :id "link"
-                        :icon "far fa-link"
-                        :title "Link"
-                        :on-mouse-down #(start-links (:unit-tree %1) (:selection %1) (:local-state %1) %2)
-                        :on-touch-start #(start-links (:unit-tree %1) (:selection %1) (:local-state %1) (aget %2 "touches" 0))}]]
-        right-toolbar [[{:elem :btn
-                         :icon "far fa-trash-alt"
-                         :title "Remove"
-                         :on-click #(omt/remove-units (:component %1) {:pid (-> %1 :unit-tree ot/uid)
-                                                                       :view-name (:orgpad/view-name view)}
-                                                      (:selection %1))}]]
-        params {:unit-tree    unit-tree
-                :unit         unit
-                :view         view
-                :local-state  local-state
-                :selection    selection
-                :mode         (:mode app-state)}]
-    (tbar/toolbar "uedit-toolbar mini" params [] (concat left-toolbar right-toolbar))))
-
-(defn- draw-link-line
-  [component unit-tree parent-view local-state]
-  (let [tr (parent-view :orgpad/transform)
-        bbox (lc/get-global-cache component (ot/uid unit-tree) "bbox")
-        ox (.-left bbox)
-        oy (.-top bbox)]
-    (sg/line (screen->canvas tr [(- (@local-state :link-start-x) ox)
-                                 (- (@local-state :link-start-y) oy)])
-             (screen->canvas tr [(- (@local-state :mouse-x) ox)
-                                 (- (@local-state :mouse-y) oy)])
-             {:css {:zIndex 2} :svg {:stroke "rgba(128, 128, 128, 0.5)"
-                                     :stroke-linecap "round"
-                                     ;; :stroke-dasharray "4 3"
-                                     :stroke-width 3} :key 1})))
-
-(defn- nodes-unit-editor
-  [component {:keys [view] :as unit-tree} app-state local-state parent-view prop]
-  (let [selection (get-in app-state [:selections (ot/uid unit-tree)])
-        bb (compute-bb component unit-tree selection)
-        pos (bb 0)
-        [width height] (-- (bb 1) (bb 0))
-        style (merge {:width width
-                      :height height
-                      :zIndex (if (:ctrl-key @local-state) -1 1)}
-                     (css/transform {:translate [(- (pos 0) 2) (- (pos 1) 2)]}))]
-    [:div {:key "node-unit-editor" :ref "unit-editor-node"}
-     [:div {:className "map-view-unit-selected"
-            :style style
-            :key 0
-            :onMouseDown (jev/make-block-propagation #(start-units-move unit-tree selection local-state %))
-            :onTouchStart (jev/make-block-propagation #(start-units-move unit-tree selection local-state
-                                                                         (aget % "touches" 0)))
-            ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
-            }
-      (gen-nodes-toolbar unit-tree app-state local-state selection)]
-     (when (= (@local-state :local-mode) :make-links)
-       (draw-link-line component unit-tree parent-view local-state))]))
-
-(defn- node-unit-editor-style
-  [prop & [quick-edit]]
-  (let [width (max (prop :orgpad/unit-width) (if quick-edit 420 0))
-        height (max (prop :orgpad/unit-height) (if quick-edit 200 0))
-        bw (+ (prop :orgpad/unit-padding) (prop :orgpad/unit-border-width))
-        w  (+ width (* 2 bw))
-        h (+ height (* 2 bw))
-        pos (-- (prop :orgpad/unit-position) [(/ width 2) (/ height 2)])]
-    (merge {:width w
-            :height h}
-           (css/transform {:translate [(- (pos 0) 2) (- (pos 1) 2)]}))))
-
-(defn- gen-view-toolbar
-  [{:keys [unit view] :as unit-tree} view-type]
-  (let [view-toolbar (-> view :orgpad/view-type registry/get-component-info :orgpad/uedit-toolbar)]
-    (if (and (= view-type :orgpad/map-tuple-view) (not (ot/no-sheets? unit-tree)))
-      (let [ac-unit-tree (ot/active-child-tree unit view)
-            ac-view-types-roll (tbar/gen-view-types-roll (:view ac-unit-tree) :ac-unit-tree "Current page" "page-views" #(= (:mode %1) :read))
-            last-sec (- (count view-toolbar) 1)]
-        (update-in view-toolbar [last-sec] conj ac-view-types-roll))
-      view-toolbar)))
-
-(defn comp-unit-toorbar-left
-  [w]
-  (if (<= 185 w) -2 (- (/ w 2) 92)))
-
-(defn- gen-toolbar
-  [{:keys [unit view] :as unit-tree} style parent-tree app-state local-state]
-  (let [view-type (ot/view-type unit-tree)
-        common-left-toolbar [[{:elem :btn
-                               :id "link"
-                               :icon "far fa-link"
-                               :title "Link"
-                               :on-mouse-down #(start-link (:local-state %1) %2)
-                               :on-touch-start #(start-link (:local-state %1) (aget %2 "touches" 0))}]
-                             [{:elem :btn
-                               :id "quick-edit"
-                               :icon "far fa-pen-alt"
-                               :title "Toggle Quick Edit"
-                               :on-mouse-down #(toggle-quick-edit (:local-state %1))
-                               :on-touch-start #(toggle-quick-edit (:local-state %1))
-                               :active #(-> %1 :local-state deref :quick-edit )
-                               }
-                              {:elem :btn
-                               :id "edit"
-                               :icon "far fa-edit"
-                               :title "Edit"
-                               :on-click #(omt/open-unit (:component %1) (:unit-tree %1))}]]
-        view-types-section [(tbar/gen-view-types-roll view :unit-tree "Current" "views" #(= (:mode %1) :read))]
-        view-toolbar (gen-view-toolbar unit-tree view-type)
-        left-toolbar (conj common-left-toolbar view-types-section)
-        right-toolbar [[{:elem :btn
-                         :icon "far fa-trash-alt"
-                         :title "Remove"
-                         :on-click #(omt/remove-unit (:component %1) {:id (-> %1 :unit-tree ot/uid)
-                                                                      :view-name (ot/view-name parent-tree)
-                                                                      :ctx-unit (ot/uid parent-tree)} (:local-state %1))}]]
-        w (:width style)
-        params {:unit-tree    unit-tree
-                :unit         unit
-                :view         view
-                :local-state  local-state
-                :left         (comp-unit-toorbar-left w)
-                :mode         (:mode app-state)
-                :ac-unit-tree (when (= view-type :orgpad/map-tuple-view) (ot/active-child-tree unit view))
-                :ac-view-type (when (= view-type :orgpad/map-tuple-view) (ot/view-type (ot/active-child-tree unit view)))}
-        down-toolbar (tbar/toolbar "uedit-toolbar down mini"
-                                   (assoc params :style {:top (:height style)}) view-toolbar [])]
-    ;; (js/console.log view-toolbar)
-    [:div {:id "uedit-toolbar"}
-     (tbar/toolbar (if view-toolbar "uedit-toolbar mini" "uedit-toolbar down mini")
-                   params [] (concat left-toolbar right-toolbar))
-     (when view-toolbar down-toolbar)]))
-
-(defn- resize-handle
-  "Add resize-handle.
-  Class suffixes are top-left, top, top-right, right, bottom-right, bottom, bottom-left, and left."
-  [mode local-state]
-  (let [class-name (str "resize-handle-" mode)]
-    [:span
-     {:class class-name :id class-name
-      :onMouseDown (jev/make-block-propagation #(start-unit-resize local-state (keyword mode) %))
-      :onTouchStart (jev/make-block-propagation #(start-unit-resize local-state (keyword mode)
-                                                                    (aget % "touches" 0)))}]))
-
-(defn- quick-editor
-  [{:keys [view unit] :as unit-tree} height]
-  (let [pos (or (:orgpad/active-unit view) 0)]
-    [:div {:key (str "quick-editor-" (:db/id unit) "-" pos)
-           :className "atomic-view"}
-     (case (:orgpad/view-type view)
-       :orgpad/atomic-view (aeditor/atom-editor (:db/id unit) view (:orgpad/atom view) :quick (- height 70))
-       :orgpad/map-tuple-view (quick-editor (nth (:orgpad/refs unit) pos) height)
-       nil)]))
-
-(defn try-deselect-unit
-  [component pid uid local-state ev]
-  (when (and uid (.-ctrlKey ev))
-    (swap! local-state assoc :selected-unit nil))
-  (lc/transact! component [[:orgpad.units/select {:pid pid
-                                                  :toggle? (.-ctrlKey ev)
-                                                  :uid uid}]]))
-
-(defn- get-current-data
-  [unit-tree local-state]
-  (if (@local-state :selected-unit)
-    (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
-          [sel-unit-tree prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id) (:orgpad/view-type old-prop))]
-      (if (and prop sel-unit-tree)
-        [sel-unit-tree prop parent-view true]
-        [{} {} {} false]))
-    [{} {} {} false]))
-
-(defn- node-unit-editor
-  [component {:keys [view] :as unit-tree} app-state local-state]
-  (let [[sel-unit-tree prop parent-view selected?] (get-current-data unit-tree local-state)]
-    (if (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
-      (nodes-unit-editor component unit-tree app-state local-state parent-view prop)
-      (let [style (if selected?
-                    (node-unit-editor-style prop (:quick-edit @local-state))
-                    {})
-            qedit? (:quick-edit @local-state)]
-        [:div {:key "node-unit-editor"
-               :ref "unit-editor-node"
-               :style (if selected? {:display "block"} {:display "none"})}
-         [:div {:className "map-view-unit-selected"
-                :style (merge style (when qedit? {:background-color "white"}))
-                :key 0
-                ;; :onDoubleClick (jev/make-block-propagation #(enable-quick-edit local-state))
-                :onDoubleClick jev/block-propagation
-                :onMouseUp (when selected?
-                             (partial try-deselect-unit component (ot/uid unit-tree) (ot/uid sel-unit-tree) local-state))
-                :onMouseDown (when selected?
-                               (if qedit?
-                                 jev/stop-propagation
-                                 (jev/make-block-propagation #(start-unit-move app-state local-state %))))
-                :onTouchStart (when selected?
-                                (if qedit?
-                                  jev/stop-propagation
-                                  (jev/make-block-propagation #(start-unit-move app-state local-state (aget % "touches" 0)))))}
-          (if qedit?
-            (quick-editor sel-unit-tree (:height style))
-            (for [mode ["top-left" "top" "top-right" "right" "bottom-right" "bottom" "bottom-left" "left"]]
-              (resize-handle mode local-state)))
-          (gen-toolbar sel-unit-tree style unit-tree app-state local-state)]
-         (when (= (@local-state :local-mode) :make-link)
-           (draw-link-line component unit-tree parent-view local-state))]))))
-
-(defn- simple-node-unit-editor
-  [component {:keys [view] :as unit-tree} app-state local-state]
-  (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
-        [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id) (:orgpad/view-type old-prop))]
-    (when (and prop unit)
-      (let [style (node-unit-editor-style prop)]
-        [:div {:key "node-unit-editor" :ref "unit-editor-node"}
-         [:div {:className "map-view-unit-selected simple"
-                :style style
-                :key 0
-                ;; :onDoubleClick (jev/make-block-propagation #(enable-quick-edit local-state))
-                :onMouseDown (jev/make-block-propagation #(start-unit-move app-state local-state %))
-                :onTouchStart (jev/make-block-propagation #(start-unit-move app-state local-state (aget % "touches" 0)))}]]))))
-
-(defn- close-link-menu
-  [local-state]
-  ;; (js/console.log "close link menu")
-  (js/setTimeout
-   #(swap! local-state merge {:link-menu-show :none}) 200))
-
-(defn- remove-link
-  [component unit local-state]
-  (swap! local-state assoc :selected-link nil)
-  (lc/transact! component [[:orgpad.units/map-view-link-remove (ot/uid unit)]]))
-
-(defn- swap-link-direction
-  [component unit-tree _]
-  (lc/transact! component [[:orgpad.units/map-view-link-swap-dir (:unit unit-tree)]]))
-
-(defn- make-label
-  [component {:keys [props unit path-info] :as unit-tree} view-name pid mid-pt ev]
-  (lc/transact! component [[:orgpad.units/make-lnk-vtx-prop
-                            {:pos mid-pt
-                             :context-unit pid
-                             :view-name view-name
-                             :unit-tree unit-tree
-                             :style (lc/query component :orgpad/style
-                                              {:view-type :orgpad.map-view/vertex-props-style
-                                               :style-name "default"} {:disable-cache? true})}]])
-  (omt/open-unit component (assoc-in unit-tree [:view :orgpad/view-type] :orgpad/atomic-view)))
-
-(defn- edge-unit-editor
-  [component {:keys [view] :as unit-tree} app-state local-state]
-  (let [select-link (@local-state :selected-link)]
-    (when (and select-link (= (@local-state :link-menu-show) :yes))
-      (let [[old-unit old-prop _ _ _ mid-pt] select-link
-            [unit prop] (selected-unit-prop unit-tree (ot/uid old-unit) (old-prop :db/id) (:orgpad/view-type old-prop))]
-        (when (and prop unit)
-          [:div {}
-           (mc/circle-menu
-            (merge edge-menu-conf {:center-x (mid-pt 0)
-                                   :center-y (mid-pt 1)
-                                   :onMouseDown jev/block-propagation
-                                     ;; :onMouseUp jev/block-propagation
-})
-            [:i.far.fa-cogs.fa-lg {:title "Properties" :onMouseDown #(close-link-menu local-state)}]
-            [:i.far.fa-file-edit.fa-lg
-             {:title "Label"
-              :onMouseUp (partial make-label component unit (:orgpad/view-name view) (ot/uid unit-tree) mid-pt)}]
-            [:i.far.fa-exchange.fa-lg {:title "Flip direction" :onMouseDown (partial swap-link-direction component unit)}]
-            [:i.far.fa-times.fa-lg {:title "Remove" :onMouseDown #(remove-link component unit local-state)}])])))))
-
-(defn- update-ref
-  [state]
-  (let [local-state (-> state :rum/args last)
-        new-node (trum/ref-node state "unit-editor-node")]
-    (when (and new-node
-               (not= (:unit-editor-node @local-state) new-node))
-      (swap! local-state assoc :unit-editor-node new-node))))
-
-(rum/defcc unit-editor < lc/parser-type-mixin-context (trum/gen-update-mixin update-ref)
-  (rum/local {:selected-view-type :orgpad/atomic-view
-              :page-nav-pos [200 0]})
-  [component unit-tree app-state local-state]
-  (let [select-unit (@local-state :selected-unit)]
-    (if (= (:mode app-state) :write)
-      [:div
-       (if (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
-         (ne/nodes-unit-editor-new component unit-tree app-state local-state)
-         (ne/node-unit-editor-new component unit-tree app-state local-state))
-       (edge-unit-editor component unit-tree app-state local-state)]
-      (when select-unit
-        (ne/node-unit-manipulator component unit-tree app-state local-state)))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Static editor on right
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- render-color-picker1
   [{:keys [component unit prop parent-view local-state selection action]}]

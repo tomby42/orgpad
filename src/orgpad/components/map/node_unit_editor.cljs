@@ -1,4 +1,4 @@
-(ns orgpad.components.map.unit-editor-new
+(ns orgpad.components.map.node-unit-editor
   (:require-macros [orgpad.tools.colls :refer [>-]])
   (:require [rum.core :as rum]
             [orgpad.tools.rum :as trum]
@@ -19,40 +19,12 @@
             [orgpad.components.atomic.tags-editor :as teditor]
             [goog.string :as gstring]
             [goog.string.format]
-            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-link]]
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-link get-current-data]]
             [orgpad.tools.time :refer [now]]))
 
 ;; TODO put into some config
 (def ^:private quick-editor-width 420)
 (def ^:private quick-editor-height 200)
-
-(defn- selected-unit-prop
-  [{:keys [unit] :as unit-tree} unit-id prop-id prop-view-type]
-  (let [sel-unit
-        (->> unit
-             :orgpad/refs
-             (filter (fn [{:keys [unit]}] (= (unit :db/id) unit-id)))
-             first)
-        sel-prop
-        (->> sel-unit
-             :props
-             (filter (fn [prop] (and prop (= (prop :db/id) prop-id))))
-             first)
-        style-type
-        (if (= prop-view-type :orgpad.map-view/vertex-props)
-          :orgpad.map-view/vertex-props-style
-          :orgpad.map-view/link-props-style)
-        sel-style
-        (->> sel-unit
-             :props
-             (filter (fn [prop] (and prop
-                                     (= (:orgpad/style-name prop) (:orgpad/view-style sel-prop))
-                                     (= (:orgpad/view-type prop)
-                                        style-type))))
-             first)
-        default-style (-> :orgpad/map-view registry/get-component-info
-                          :orgpad/child-props-default style-type)]
-    [sel-unit (merge default-style sel-style sel-prop)]))
 
 (defn- node-unit-editor-style
   [prop & [quick-edit]]
@@ -82,17 +54,6 @@
                                      :stroke-linecap "round"
                                      ;; :stroke-dasharray "4 3"
                                      :stroke-width 3} :key 1})))
-
-(defn- get-current-data
-  [unit-tree local-state]
-  (if (@local-state :selected-unit)
-    (let [[old-unit old-prop parent-view] (@local-state :selected-unit)
-          [sel-unit-tree prop] (selected-unit-prop unit-tree (ot/uid old-unit)
-                                                   (old-prop :db/id) (:orgpad/view-type old-prop))]
-      (if (and prop sel-unit-tree)
-        [sel-unit-tree prop parent-view true]
-        [{} {} {} false]))
-    [{} {} {} false]))
 
 (defn- toggle-quick-edit
   [component local-state]
@@ -326,12 +287,10 @@
       (when (= mode :read)
         (acomp/render-info view))]]))
 
-(defn node-unit-editor-new
+(defn node-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[sel-unit-tree prop parent-view selected?] (get-current-data unit-tree local-state)
-        style (if selected?
-                (node-unit-editor-style prop (:quick-edit @local-state))
-                {})
+        style (if selected? (node-unit-editor-style prop (:quick-edit @local-state)) {})
         qedit? (:quick-edit @local-state)
         uedit-local-state (trum/comp->local-state component)
         show-info? (:show-info? @uedit-local-state)]
@@ -340,7 +299,6 @@
            :style (if selected? {:display "block"} {:display "none"})}
      [:div {:className "map-view-unit-selected"
             :style (merge style (when qedit? {:background-color "white"}))
-            :key 0
             :onDoubleClick jev/block-propagation
             :onClick #(when (< (- (now) (:last-click-ts @uedit-local-state)) 250)
                         (start-edit component sel-unit-tree local-state))
@@ -456,7 +414,7 @@
 
 (def ^:private bb-border [5 5])
 
-(defn nodes-unit-editor-new
+(defn nodes-unit-editor
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[sel-unit-tree prop parent-view _] (get-current-data unit-tree local-state)
         selection (get-in app-state [:selections (ot/uid unit-tree)])

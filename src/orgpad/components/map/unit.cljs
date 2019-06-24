@@ -6,6 +6,7 @@
             [orgpad.cycle.life :as lc]
             [orgpad.components.registry :as registry]
             [orgpad.components.node :as node]
+            [orgpad.components.map.node-unit-editor :as nedit]
             [orgpad.components.map.unit-editor :as uedit]
             [orgpad.components.sidebar.sidebar :as sidebar]
             [orgpad.components.atomic.component :as catomic]
@@ -43,41 +44,22 @@
 
 (def ^:private finc (fnil inc 0))
 
-;; (def ^:private dbl-click-timeout 250)
-
-;; (defn- run-dbl-click-check
-;;   [local-state]
-;;   (js/setTimeout (fn []
-;;                    (when (> (:pre-quick-edit @local-state) 1)
-;;                      (uedit/enable-quick-edit local-state))
-;;                    (swap! local-state assoc :pre-quick-edit 0))
-;;                  dbl-click-timeout))
-
 (defn- try-move-unit
   [component unit-tree app-state prop pcomponent local-state ev]
   (jev/block-propagation ev)
   (let [old-node (:selected-node @local-state)
         new-node (-> component rum/state deref (trum/ref-node "unit-node"))
-        parent-view (aget pcomponent "parent-view")
-        ;; pre-quick-edit (:pre-quick-edit @local-state)
-        ]
+        parent-view (aget pcomponent "parent-view")]
     (when old-node
       (aset old-node "style" "z-index" "0"))
     (when new-node
       (aset new-node "style" "z-index" "1"))
-    ;; (when new-node
-    ;;   (aset new-node "style" "z-index" (if (:quick-edit @local-state) "2" "1")))
-    ;; (when (and (= (:mode app-state) :write)
-    ;;            (or (=  pre-quick-edit 0)
-    ;;                (not pre-quick-edit)))
-    ;;   (run-dbl-click-check local-state))
     (swap! local-state merge {:local-mode :try-unit-move
                               :unit-move-mode :unit
                               :selected-unit [unit-tree prop parent-view component]
                               :selected-link nil
                               :selected-node new-node
                               :quick-edit false
-                              ;; :pre-quick-edit (finc pre-quick-edit)
                               :start-mouse-x (.-clientX (jev/touch-pos ev))
                               :start-mouse-y (.-clientY (jev/touch-pos ev))
                               :mouse-x (.-clientX (jev/touch-pos ev))
@@ -112,15 +94,11 @@
                   [(/ (prop :orgpad/unit-width) 2) (/ (prop :orgpad/unit-height) 2)])
           selections (get-in app-state [:selections pid])
           selected? (= (:db/id unit) (first selections))
-          ;; selected? (= (unit :db/id) (-> @local-state :selected-unit first ot/uid))
           border-color (-> prop :orgpad/unit-border-color css/format-color)
           style-pos (css/transform {:translate pos})
           style (merge (styles/prop->css prop)
                        (when selected?
-                         ;; {:zIndex (if (:quick-edit @local-state) 2 1)}
-                         {:zIndex 1}
-                         ))]
-      ;;(js/window.console.log "rendering " (unit :db/id) (and selected? (:quick-edit @local-state)))
+                         {:zIndex 1}))]
       (when selected?
         (select-unit unit-tree prop pcomponent local-state component))
       (html
@@ -141,25 +119,17 @@
            {:style style :className "map-view-child" :key (unit :db/id)
             :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
             :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-            ;; :onMouseUp (jev/make-block-propagation #(swap! local-state merge { :local-mode :none }))
-            :onMouseUp (partial uedit/try-deselect-unit component pid (:db/id unit) local-state)
-            ;; :onDoubleClick (jev/make-block-propagation #(uedit/enable-quick-edit local-state))
-            :onWheel jev/stop-propagation
-            }
+            :onMouseUp (partial nedit/try-deselect-unit component pid (:db/id unit) local-state)
+            :onWheel jev/stop-propagation}
            {:style style :className "map-view-child" :key (unit :db/id)
             :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
             :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-            :onMouseUp (partial uedit/try-deselect-unit component pid (:db/id unit) local-state)
-            :onWheel jev/stop-propagation
-            })
+            :onMouseUp (partial nedit/try-deselect-unit component pid (:db/id unit) local-state)
+            :onWheel jev/stop-propagation})
          (node/node unit-tree
                     (assoc app-state
                            :mode
-                           ;; (if (and selected? (:quick-edit @local-state))
-                           ;;   :quick-write
-                           ;;   :read)
-                           :read
-                           ))
+                           :read))
          (if (= (app-state :mode) :write)
            (when-not (and selected? (:quick-edit @local-state))
              [:div.map-view-child.hat
@@ -167,12 +137,6 @@
                        :width (prop :orgpad/unit-width)
                        :height (prop :orgpad/unit-height)}
                :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)}])
-           ;; [:div.map-view-child.leader-control
-           ;;  {:style {:left (/ (prop :orgpad/unit-corner-x) 2)}
-           ;;   :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-           ;;   :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-           ;;   :onMouseUp #(open-unit pcomponent unit-tree local-state)}
-           ;;  [:i.far.fa-sign-in-alt]]
            nil)
          (when (= (ot/view-type unit-tree) :orgpad/map-tuple-view)
            (insert-sheet-indicators unit-tree border-color))
@@ -209,8 +173,6 @@
                                                :orgpad.map-view/link-props :orgpad.map-view/link-props-style
                                                :orgpad/map-view)
           mid-pt (geom/link-middle-point start-pos end-pos (prop :orgpad/link-mid-pt))
-          ;; style {:css {:zIndex -1}
-          ;;        :canvas (styles/gen-link-canvas prop)}
           style-svg {:css {:zIndex -1}
                      :svg (styles/gen-svg-link-canvas prop)}
           ctl-style (css/transform {:translate (-- (++ mid-pt [(-> prop :orgpad/link-width)

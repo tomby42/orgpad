@@ -278,9 +278,11 @@
                                   :params {:selection-text txt}}]]))}]
    [:span.fal.fa-times.cancel
     {:title "Cancel"
-     :onClick #(lc/transact! component
-                             [[:orgpad.units/clear-filtered-pattern
-                               {:unit-tree unit-tree}]])}]
+     :onClick #(do
+                 (aset (js/document.getElementById "index-search-input") "value" "")
+                 (lc/transact! component
+                               [[:orgpad.units/clear-filtered-pattern
+                                 {:unit-tree unit-tree}]]))}]
    [:hr]
    ]
   )
