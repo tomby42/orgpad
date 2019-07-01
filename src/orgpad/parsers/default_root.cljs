@@ -399,3 +399,8 @@
                                 (cond-> {:atom nil :db (dt/write-transit-str [])}
                                   (not= net-update-ignore? :global) (assoc :db (dt/write-transit-str datoms))
                                   (not= net-update-ignore? :local) (assoc :atom (select-keys atom [:app-state]))))))}))
+
+(defmethod mutate :orgpad.units/interest
+  [{:keys [state]} _ {:keys [unit-tree pid vprop]}]
+  (let [new-interest #{[unit-tree vprop]}]
+    {:state (store/transact state [[:app-state :interests (keypath pid)] new-interest])}))

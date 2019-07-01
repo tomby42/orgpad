@@ -79,3 +79,11 @@
 (defn swap-link-direction
   [component unit-tree _]
   (lc/transact! component [[:orgpad.units/map-view-link-swap-dir (:unit unit-tree)]]))
+
+(defn try-deselect-unit
+  [component pid uid local-state ev]
+  (when (and uid (.-ctrlKey ev))
+    (swap! local-state assoc :selected-unit nil))
+  (lc/transact! component [[:orgpad.units/select {:pid pid
+                                                  :toggle? (.-ctrlKey ev)
+                                                  :uid uid}]]))

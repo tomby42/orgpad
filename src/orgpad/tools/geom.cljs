@@ -139,3 +139,7 @@
         p (screen->canvas tr pos)
         translate (-- pos (*c p z'))]
     {:translate translate :scale z'}))
+
+(defn screen-bb->canvas-bb
+  [tr [mi ma]]
+  [(screen->canvas tr mi) (screen->canvas tr ma)])

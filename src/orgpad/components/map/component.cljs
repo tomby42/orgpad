@@ -39,8 +39,9 @@
                    :view-name (view :orgpad/view-name)
                    :transform (view :orgpad/transform)
                    :position  pos
-                   :style     (lc/query component :orgpad/style {:view-type  :orgpad.map-view/vertex-props-style
-                                                                 :style-name "default"} {:disable-cache? true})}]]))
+                   :style     (lc/query component :orgpad/style
+                                        {:view-type  :orgpad.map-view/vertex-props-style
+                                         :style-name "default"} {:disable-cache? true})}]]))
 
 (defn- start-canvas-move
   [local-state-atom ev]
@@ -481,11 +482,7 @@
       (when (= (:local-mode @local-state) :choose-selection)
         (render-selection-box component unit-tree @local-state (:view unit-tree)))
       (when (= (:local-mode @local-state) :dnd-new-unit)
-        (render-dnd-new-unit component unit-tree @local-state (:view unit-tree)))
-      ;; (when (and (:enable-experimental-features? app-state)
-      ;;            (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1))
-      ;;   (munit/render-selected-children-units component unit-tree app-state local-state))
-      ])))
+        (render-dnd-new-unit component unit-tree @local-state (:view unit-tree)))])))
 
 (defn- render-read-mode
   [component unit-tree app-state]

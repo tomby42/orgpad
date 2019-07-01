@@ -45,14 +45,17 @@
               :page-nav-pos [200 0]})
   [component unit-tree app-state local-state]
   (let [select-unit (@local-state :selected-unit)]
-    (if (= (:mode app-state) :write)
-      [:div
-       (if (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
-         (ne/nodes-unit-editor component unit-tree app-state local-state)
-         (ne/node-unit-editor component unit-tree app-state local-state))
-       (edge-unit-editor component unit-tree app-state local-state)]
-      (when select-unit
-        (ne/node-unit-manipulator component unit-tree app-state local-state)))))
+    [:div
+     (if (= (:mode app-state) :write)
+       [:div
+        (if (> (count (get-in app-state [:selections (ot/uid unit-tree)])) 1)
+          (ne/nodes-unit-editor component unit-tree app-state local-state)
+          (ne/node-unit-editor component unit-tree app-state local-state))
+        (edge-unit-editor component unit-tree app-state local-state)]
+       (when select-unit
+         (ne/node-unit-manipulator component unit-tree app-state local-state)))
+     (when (get-in app-state [:interests (ot/uid unit-tree)])
+       (ne/node-unit-interest component unit-tree app-state local-state))]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Static editor on right

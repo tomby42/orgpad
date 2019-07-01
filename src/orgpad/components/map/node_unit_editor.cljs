@@ -19,26 +19,29 @@
             [orgpad.components.atomic.tags-editor :as teditor]
             [goog.string :as gstring]
             [goog.string.format]
-            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-link get-current-data]]
-            [orgpad.tools.time :refer [now]]))
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-link
+                                                 get-current-data try-deselect-unit]]
+            [orgpad.tools.time :refer [now]]
+            [orgpad.components.map.node :as mnode]))
 
 ;; TODO put into some config
 (def ^:private quick-editor-width 420)
 (def ^:private quick-editor-height 200)
 
 (defn- node-unit-editor-style
-  [prop & [quick-edit]]
+  [prop & [quick-edit sub]]
   (let [width (max (:orgpad/unit-width prop) (if quick-edit quick-editor-width 0))
         height (max (:orgpad/unit-height prop) (if quick-edit quick-editor-height 0))
         bw (+ (:orgpad/unit-padding prop) (:orgpad/unit-border-width prop))
         w  (+ width (* 2 bw))
         h (+ height (* 2 bw))
-        pos (-- (:orgpad/unit-position prop) [(/ width 2) (/ height 2)])]
+        pos (-- (:orgpad/unit-position prop) [(/ width 2) (/ height 2)])
+        sub (or sub 2)]
     (merge {:width w
             :height h
             :borderRadius (str (:orgpad/unit-corner-x prop) "px "
                                (:orgpad/unit-corner-y prop) "px")}
-           (css/transform {:translate [(- (pos 0) 2) (- (pos 1) 2)]}))))
+           (css/transform {:translate [(- (pos 0) sub) (- (pos 1) sub)]}))))
 
 (defn- draw-link-line
   [component unit-tree parent-view local-state]
@@ -59,14 +62,6 @@
   [component local-state]
   (swap! local-state update :quick-edit not)
   (.forceUpdate component))
-
-(defn try-deselect-unit
-  [component pid uid local-state ev]
-  (when (and uid (.-ctrlKey ev))
-    (swap! local-state assoc :selected-unit nil))
-  (lc/transact! component [[:orgpad.units/select {:pid pid
-                                                  :toggle? (.-ctrlKey ev)
-                                                  :uid uid}]]))
 
 (defn- gti-raw
   [top-class prop icon title]
@@ -348,7 +343,7 @@
   [component {:keys [view] :as unit-tree} app-state local-state]
   (let [[sel-unit-tree prop parent-view selected?] (get-current-data unit-tree local-state)
         style (if selected?
-                (node-unit-editor-style prop (:quick-edit @local-state))
+                (node-unit-editor-style prop false)
                 {})
         uedit-local-state (trum/comp->local-state component)]
     [:div {:key "node-unit-editor"
@@ -362,6 +357,67 @@
      (gen-manipulator-toolbar component sel-unit-tree unit-tree prop local-state uedit-local-state)
      (when (and selected? (> (ot/refs-count sel-unit-tree) 1))
        (page-nav component sel-unit-tree prop style :read local-state))]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Unit interest highlight ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def right-border [280 0]) ;; right sidebar - TODO: determine its size in more generic way
+
+(defn- get-coord
+  [prop cidx delta bb-min bb-max]
+  (-> prop :orgpad/unit-position (get cidx) (max (+ (bb-min cidx) delta)) (min (- (bb-max cidx) delta))))
+
+(defn- determine-position
+  [{:as prop :keys [orgpad/unit-width orgpad/unit-height]} [bb-min bb-max]]
+  (let [bw (* 2 (ot/unit-border-width prop))
+        x (get-coord prop 0 (+ (/ unit-width 2) bw) bb-min bb-max)
+        y (get-coord prop 1 (+ (/ unit-height 2) bw) bb-min bb-max)]
+    [x y]))
+
+(defn- start-at-origin
+  [[mi ma]]
+  [[0 0] (-- ma mi right-border)])
+
+(defn- change-prop
+  [props prop]
+  (-> not
+      (comp
+       (partial ot/props-pred-no-ctx (:orgpad/view-name prop)
+                (:orgpad/view-type prop) (:orgpad/type prop)))
+      (filter props)
+      (conj prop)))
+
+(defn node-interest
+  [component {:keys [view] :as unit-tree} app-state local-state [child-unit-tree prop]]
+  (let [global-cache (lc/get-global-cache component)
+        screen-bbox (-> (aget global-cache (ot/uid unit-tree) "bbox")
+                        dom/dom-bb->bb start-at-origin
+                        (->> (geom/screen-bb->canvas-bb (:orgpad/transform view))))
+        bb (->> child-unit-tree ot/uid (ot/unit-bb-by-vprop prop))
+        visible? (geom/bbs-intersect? screen-bbox (:bb bb))
+        hpos (determine-position prop screen-bbox)
+        prop' (assoc prop :orgpad/unit-position hpos)
+        style (if visible?
+                (node-unit-editor-style prop false 0)
+                (node-unit-editor-style prop' false 0))]
+    (js/console.log "node-interest" screen-bbox (:bb bb) visible?)
+    [:div
+     (when-not visible?
+       (mnode/map-unit (update child-unit-tree :props change-prop prop')
+                       (assoc app-state :mode :read :selections nil)
+                       component (:orgpad/view-name view) (ot/uid unit-tree) local-state))
+     [:div {:className "map-view-unit-interested"
+            :style style
+            :key (str "interest-" (ot/uid child-unit-tree))}
+
+      ]]))
+
+(defn node-unit-interest
+  [component unit-tree app-state local-state]
+  [:div
+   (mapv (partial node-interest component unit-tree app-state local-state)
+         (get-in app-state [:interests (ot/uid unit-tree)]))])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Multiselection editor ;;;

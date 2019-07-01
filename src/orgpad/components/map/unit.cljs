@@ -6,10 +6,7 @@
             [orgpad.cycle.life :as lc]
             [orgpad.components.registry :as registry]
             [orgpad.components.node :as node]
-            [orgpad.components.map.node-unit-editor :as nedit]
             [orgpad.components.map.unit-editor :as uedit]
-            [orgpad.components.sidebar.sidebar :as sidebar]
-            [orgpad.components.atomic.component :as catomic]
             [orgpad.tools.css :as css]
             [orgpad.tools.colls :as colls]
             [orgpad.tools.rum :as trum]
@@ -24,126 +21,15 @@
             [orgpad.tools.func :as func]
             [orgpad.components.graphics.primitives :as g]
             [orgpad.components.graphics.primitives-svg :as sg]
-            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-change-link-shape parent-id]]))
-
-(defn- select-unit
-  [unit-tree prop pcomponent local-state component]
-  (swap! local-state merge {:last-selected-unit (:selected-unit @local-state)
-                            :selected-unit [unit-tree prop (aget pcomponent "parent-view") component]}))
+            [orgpad.components.map.utils :refer [mouse-pos set-mouse-pos! start-change-link-shape parent-id
+                                                 try-deselect-unit]]
+            [orgpad.components.map.node :refer [map-unit]]))
 
 (def mapped-children-mem
   (memoize mapped-children))
 
 (def mapped-links-mem
   (memoize mapped-links))
-
-(defn- open-unit
-  [component unit-tree local-state]
-  (when (= (@local-state :local-mode) :try-unit-move)
-    (omt/open-unit component unit-tree)))
-
-(def ^:private finc (fnil inc 0))
-
-(defn- try-move-unit
-  [component unit-tree app-state prop pcomponent local-state ev]
-  (jev/block-propagation ev)
-  (let [old-node (:selected-node @local-state)
-        new-node (-> component rum/state deref (trum/ref-node "unit-node"))
-        parent-view (aget pcomponent "parent-view")]
-    (when old-node
-      (aset old-node "style" "z-index" "0"))
-    (when new-node
-      (aset new-node "style" "z-index" "1"))
-    (swap! local-state merge {:local-mode :try-unit-move
-                              :unit-move-mode :unit
-                              :selected-unit [unit-tree prop parent-view component]
-                              :selected-link nil
-                              :selected-node new-node
-                              :quick-edit false
-                              :start-mouse-x (.-clientX (jev/touch-pos ev))
-                              :start-mouse-y (.-clientY (jev/touch-pos ev))
-                              :mouse-x (.-clientX (jev/touch-pos ev))
-                              :mouse-y (.-clientY (jev/touch-pos ev))})
-    (set-mouse-pos! (jev/touch-pos ev))
-    (comment (lc/transact! component [[:orgpad.units/select {:pid (parent-id parent-view)
-                                                             :toggle? (.-ctrlKey ev)
-                                                             :uid (ot/uid unit-tree)}]]))
-    ))
-
-(defn- sheet-indicator
-  [active? id]
-  [:i {:className (str (if active? "fa" "far") " fa-circle") :id id}])
-
-(defn- insert-sheet-indicators
-  [unit-tree color]
-  (let [[active-sheet total-sheets] (ot/get-sheet-number unit-tree)]
-    (when (> total-sheets 1)
-      [:div.tuple-page-indicator {:style {:color color}}
-       (map
-        #(sheet-indicator (= % (dec active-sheet)) (str "circle-" %))
-        (range total-sheets))])))
-
-(rum/defcc map-unit < trum/istatic lc/parser-type-mixin-context
-  [component {:keys [props unit] :as unit-tree} app-state pcomponent view-name pid local-state]
-  (try
-    (let [prop (ot/get-props-view-child-styled props view-name pid
-                                               :orgpad.map-view/vertex-props
-                                               :orgpad.map-view/vertex-props-style
-                                               :orgpad/map-view)
-          pos (-- (prop :orgpad/unit-position)
-                  [(/ (prop :orgpad/unit-width) 2) (/ (prop :orgpad/unit-height) 2)])
-          selections (get-in app-state [:selections pid])
-          selected? (= (:db/id unit) (first selections))
-          border-color (-> prop :orgpad/unit-border-color css/format-color)
-          style-pos (css/transform {:translate pos})
-          style (merge (styles/prop->css prop)
-                       (when selected?
-                         {:zIndex 1}))]
-      (when selected?
-        (select-unit unit-tree prop pcomponent local-state component))
-      (html
-       [:div {:id (str "unit-" pid "-" (:db/id unit))
-              :className "map-view-child-container"
-              :style style-pos
-              :ref "unit-node"}
-        (when (contains? selections (:db/id unit))
-          [:div {:className "map-view-child"
-                 :style (-> style
-                            (update :width + (* 2 (:borderWidth style)))
-                            (update :height + (* 2 (:borderWidth style)))
-                            (assoc :top -2 :left -2 :borderWidth 2
-                                   :backgroundColor "black"
-                                   :borderColor "black"))}])
-        [:div
-         (if (= (app-state :mode) :write)
-           {:style style :className "map-view-child" :key (unit :db/id)
-            :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-            :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-            :onMouseUp (partial nedit/try-deselect-unit component pid (:db/id unit) local-state)
-            :onWheel jev/stop-propagation}
-           {:style style :className "map-view-child" :key (unit :db/id)
-            :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-            :onTouchStart #(try-move-unit component unit-tree app-state prop pcomponent local-state %)
-            :onMouseUp (partial nedit/try-deselect-unit component pid (:db/id unit) local-state)
-            :onWheel jev/stop-propagation})
-         (node/node unit-tree
-                    (assoc app-state
-                           :mode
-                           :read))
-         (if (= (app-state :mode) :write)
-           (when-not (and selected? (:quick-edit @local-state))
-             [:div.map-view-child.hat
-              {:style {:top 0
-                       :width (prop :orgpad/unit-width)
-                       :height (prop :orgpad/unit-height)}
-               :onMouseDown #(try-move-unit component unit-tree app-state prop pcomponent local-state %)}])
-           nil)
-         (when (= (ot/view-type unit-tree) :orgpad/map-tuple-view)
-           (insert-sheet-indicators unit-tree border-color))
-]]))
-    (catch :default e
-      (js/console.log "Unit render error" e)
-      nil)))
 
 (def map-unit-mem
   (func/memoize' map-unit {:key-fn #(-> % first ot/uid)
@@ -212,7 +98,7 @@
   [component {:keys [unit view props] :as unit-tree} app-state local-state]
   (let [style (merge (css/transform (:orgpad/transform view))
                      {})
-        view-name (view :orgpad/view-name)
+        view-name (:orgpad/view-name view)
         pid (:db/id unit) ;;(parent-id view)
         m-units (mapped-children-mem unit view-name)
         m-links (mapped-links-mem unit view-name pid m-units)]
@@ -227,40 +113,3 @@
        (uedit/unit-editor unit-tree app-state local-state))
       (when (= (app-state :mode) :write)
         (uedit/unit-editor-static unit-tree app-state local-state))])))
-
-(defn- do-move-to-unit
-  [component params ev]
-  (.stopPropagation ev)
-  (lc/transact! component [[:orgpad.units/map-move-to-unit params]]))
-
-(defn- render-selected-unit
-  [component app-state parent-view [uid vprop tprops]]
-  [:div.map-selected-unit {:key uid
-                           :onMouseDown jev/stop-propagation
-                           :onClick (partial do-move-to-unit component {:uid uid
-                                                                        :vprop (get-in vprop [0 1])
-                                                                        :parent-view parent-view})}
-   (map (fn [prop]
-          [:div {:key (-> prop second :db/id)}
-           (catomic/render-read-mode {:view (prop 1)} app-state true)]) tprops)])
-
-(defn- render-selection-
-  [component {:keys [view unit props]} app-state local-state]
-  (let [selection (get-in app-state [:selections (:db/id unit)])
-        vertex-props (lc/query component :orgpad/selection-vertex-props
-                               {:id (:db/id unit) :view view :selection selection} {:disable-cache? true})
-        text-props (lc/query component :orgpad/selection-text-props
-                             {:id (:db/id unit) :view view :selection selection} {:disable-cache? true})]
-    (map (comp (partial render-selected-unit component app-state view)
-               (juxt identity vertex-props text-props))
-         selection)))
-
-(def ^:private selection-eq-fns [identical? = identical? identical?])
-(def ^:private render-selection
-  (func/memoize' render-selection- {:key-fn #(-> % second ot/uid)
-                                    :eq-fns selection-eq-fns}))
-
-(defn render-selected-children-units
-  [component unit-tree app-state local-state]
-  (sidebar/sidebar-component :left
-                             #(render-selection- component unit-tree app-state local-state)))

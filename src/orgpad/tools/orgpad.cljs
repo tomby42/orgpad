@@ -216,19 +216,25 @@
                    (filter #(contains? selection (uid %)) (refs unit-tree))
                    (refs unit-tree))))))
 
+(defn unit-border-width
+  [prop]
+  (+ (:orgpad/unit-padding prop)
+     (:orgpad/unit-border-width prop)))
+
+(defn unit-bb-by-vprop
+  [prop id]
+  (when prop
+    (let [bw (* 2 (unit-border-width prop))
+          d [(-> prop :orgpad/unit-width (/ 2)) (-> prop :orgpad/unit-height (/ 2))]]
+      {:bb [(-- (:orgpad/unit-position prop) d)
+            (++ (:orgpad/unit-position prop)
+                d
+                [bw bw])]
+       :id id})))
+
 (defn child-bbs
   [unit-tree & [selection]]
-  (child-vertex-props (fn [prop id]
-                        (when prop
-                          (let [bw (* 2 (+ (:orgpad/unit-padding prop)
-                                           (:orgpad/unit-border-width prop)))
-                                d [(-> prop :orgpad/unit-width (/ 2)) (-> prop :orgpad/unit-height (/ 2))]]
-                            {:bb [(-- (:orgpad/unit-position prop) d)
-                                  (++ (:orgpad/unit-position prop)
-                                      d
-                                      [bw bw])]
-                             :id id})))
-                      unit-tree selection))
+  (child-vertex-props unit-bb-by-vprop unit-tree selection))
 
 (defn get-ref-by-uid
   [unit-tree id]

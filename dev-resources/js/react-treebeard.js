@@ -17996,8 +17996,6 @@ var TreeNode = function (_React$Component) {
             var toggled = node.toggled;
 
 
-            console.log('onEventHandler', type, onEvent);
-
             if (onEvent && onEvent[type]) {
                 onEvent[type](node, !toggled);
             }
