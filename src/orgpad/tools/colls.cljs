@@ -46,3 +46,7 @@
 (defn first-<
   [c1 c2]
   (< (first c1) (first c2)))
+
+(defn map-vals
+  [f m]
+  (zipmap (keys m) (map f (vals m))))

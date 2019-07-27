@@ -28,6 +28,12 @@
 (def ^:private quick-editor-width 420)
 (def ^:private quick-editor-height 200)
 
+(defn- get-dom-pos
+  [{:keys [orgpad/unit-width orgpad/unit-height orgpad/unit-position]} & [sub]]
+  (let [sub (or sub 2)]
+    (-> (-- unit-position [(/ unit-width 2) (/ unit-height 2)])
+        (-- [sub sub]))))
+
 (defn- node-unit-editor-style
   [prop & [quick-edit sub]]
   (let [width (max (:orgpad/unit-width prop) (if quick-edit quick-editor-width 0))
@@ -171,7 +177,7 @@
        :orgpad/map-tuple-view (simple-editor (ot/get-sorted-ref unit pos) height)
        nil)]
      [:div.quick-editor-dots {:title "Expand"
-                                :onClick #(omt/open-unit component unit-tree)}
+                              :onClick #(omt/open-unit component unit-tree)}
       [:span.edit-dots]]
      [:div.quick-editor-ok {:onClick #(toggle-quick-edit component local-state)}
         "OK"]]))
@@ -362,7 +368,7 @@
 ;;; Unit interest highlight ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def right-border [280 0]) ;; right sidebar - TODO: determine its size in more generic way
+(def right-border [280 20]) ;; right sidebar - TODO: determine its size in more generic way
 
 (defn- get-coord
   [prop cidx delta bb-min bb-max]
@@ -375,7 +381,7 @@
         y (get-coord prop 1 (+ (/ unit-height 2) bw) bb-min bb-max)]
     [x y]))
 
-(defn- start-at-origin
+(defn- bb-start-at-origin
   [[mi ma]]
   [[0 0] (-- ma mi right-border)])
 
@@ -388,11 +394,55 @@
       (filter props)
       (conj prop)))
 
+(defn- check?
+  [cmp unit-position idx bb dx]
+  (cmp (get unit-position idx) (+ (bb idx) dx)))
+
+;; 0101 | 0100 | 0110
+;; _____|______|_____
+;;      |      |
+;; 0001 | 0000 | 0010
+;; _____|______|_____
+;;      |      |
+;; 1001 | 1000 | 1010
+
+(defn- determine-quadrand
+  [{:as prop :keys [orgpad/unit-width orgpad/unit-height orgpad/unit-position]} [bb-min bb-max]]
+  (let [bw (* 2 (ot/unit-border-width prop))
+        dx (+ (/ unit-width 2) bw)
+        dy (+ (/ unit-height 2) bw)]
+    (cond-> 0
+      (check? < unit-position 0 bb-min dx) (+ 1)
+      (check? > unit-position 0 bb-max (- dx)) (+ 2)
+      (check? < unit-position 1 bb-min dx) (+ 4)
+      (check? > unit-position 1 bb-max (- dx)) (+ 8))))
+
+(defn- draw-arrow
+  [prop {:keys [width height]} quadrant]
+  (let [pos (get-dom-pos prop)
+        pts (case quadrant
+              1 [[0 0] [0 height] [-20 (/ height 2)]]
+              2 [[width 0] [width height] [(+ width 20) (/ height 2)]]
+              4 [[0 0] [width 0] [(/ width 2) -20]]
+              5 [[50 0] [0 50] [-20 -20]]
+              6 [[(- width 50) 0] [width 50] [(+ width 20) -20]]
+              8 [[0 height] [width height] [(/ width 2) (+ height 20)]]
+              9 [[50 height] [0 (- height 50)] [-20 (+ height 20)]]
+              10 [[(- width 50) height] [width (- height 50)] [(+ width 20) (+ height 20)]]
+              nil)]
+    (sg/poly-line (map (partial ++ pos) pts)
+                  {:svg {:stroke "rgba(128, 128, 128, 0.0)"
+                         :fill "rgba(128, 128, 128, 0.5)"
+                         :stroke-linecap "round"
+                         }
+                   :css {:zIndex -1}}
+                  true)))
+
 (defn node-interest
   [component {:keys [view] :as unit-tree} app-state local-state [child-unit-tree prop]]
   (let [global-cache (lc/get-global-cache component)
         screen-bbox (-> (aget global-cache (ot/uid unit-tree) "bbox")
-                        dom/dom-bb->bb start-at-origin
+                        dom/dom-bb->bb bb-start-at-origin
                         (->> (geom/screen-bb->canvas-bb (:orgpad/transform view))))
         bb (->> child-unit-tree ot/uid (ot/unit-bb-by-vprop prop))
         visible? (geom/bbs-intersect? screen-bbox (:bb bb))
@@ -401,17 +451,17 @@
         style (if visible?
                 (node-unit-editor-style prop false 0)
                 (node-unit-editor-style prop' false 0))]
-    (js/console.log "node-interest" screen-bbox (:bb bb) visible?)
+    (js/console.log "node-interest" screen-bbox (:bb bb) visible? (determine-quadrand prop screen-bbox))
     [:div
      (when-not visible?
        (mnode/map-unit (update child-unit-tree :props change-prop prop')
                        (assoc app-state :mode :read :selections nil)
                        component (:orgpad/view-name view) (ot/uid unit-tree) local-state))
+     (when-not visible?
+       [:div (draw-arrow prop' style (determine-quadrand prop screen-bbox))])
      [:div {:className "map-view-unit-interested"
             :style style
-            :key (str "interest-" (ot/uid child-unit-tree))}
-
-      ]]))
+            :key (str "interest-" (ot/uid child-unit-tree))}]]))
 
 (defn node-unit-interest
   [component unit-tree app-state local-state]

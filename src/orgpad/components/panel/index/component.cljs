@@ -90,39 +90,44 @@
     data))
 
 (defn- find-parent
-  [parent node]
+  [parent node & [select-fn data]]
   (when parent
-    (if (-> parent (aget "children") not)
-      nil
-      (let [idx (.indexOf (aget parent "children") node)]
-        (if (= idx -1)
-          (loop [i 0
-                 res nil]
-            (if (or res (= i (aget parent "children" "length")))
-              res
-              (recur (inc i) (find-parent (aget parent "children" i) node))))
-          parent)))))
+    (let [new-data (and select-fn (or (select-fn parent data) data))]
+      (if (-> parent (aget "children") not)
+        nil
+        (let [idx (.indexOf (aget parent "children") node)]
+          (if (= idx -1)
+            (loop [i 0
+                   res nil]
+              (if (or res (= i (aget parent "children" "length")))
+                res
+                (recur (inc i) (find-parent (aget parent "children" i) node select-fn new-data))))
+            [parent new-data]))))))
 
 (defn- get-parent-unit-tree-vprop-pview
   [component last-state node]
-  (when-let [parent (find-parent (:old-js-data @last-state) node)]
+  (when-let [[parent data] (find-parent (:old-js-data @last-state) node )]
     (let [view (-> parent (aget "unit_tree") :view)
           unit-tree (aget node "unit_tree")
-          vprop (-> unit-tree
-                    :props
-                    (ot/get-props-view-child (:orgpad/view-name view)
-                                             (-> parent (aget "unit_tree") ot/uid)
-                                             :orgpad.map-view/vertex-props))
-          vprop-style (-> unit-tree
-                          :props
-                          (ot/get-style (:orgpad/view-style vprop)
-                                        :orgpad.map-view/vertex-props-style))]
+          vprop (or
+                 (-> unit-tree
+                     :props
+                     (ot/get-props-view-child (:orgpad/view-name view)
+                                              (-> parent (aget "unit_tree") ot/uid)
+                                              :orgpad.map-view/vertex-props))
+                 (:vprop data))
+          vprop-style (or
+                       (-> unit-tree
+                           :props
+                           (ot/get-style (:orgpad/view-style vprop)
+                                         :orgpad.map-view/vertex-props-style))
+                       (:vprop-style data))]
       [parent unit-tree (merge vprop-style vprop) view])))
 
 (defn- show-unit
   [component last-state node]
   (when-let [info (get-parent-unit-tree-vprop-pview component last-state node)]
-    (let [[_ unit-tree vprop view] info]
+    (let [[parent unit-tree vprop view] info]
       (js/console.log "show-unit" view unit-tree)
       (case (:orgpad/view-type view)
         :orgpad/map-view
@@ -130,23 +135,30 @@
                       [[:orgpad.units/map-move-to-unit
                         {:uid (ot/uid unit-tree)
                          :parent-view view
-                         :vprop vprop}]])
+                         :vprop vprop}]
+                       [:orgpad.units/select
+                        {:uid (ot/uid unit-tree)
+                         :pid (-> parent (aget "unit_tree") ot/uid)}]])
         nil))))
 
 (defn- highlight-unit
-  [component node toggled]
+  [component enabled? node toggled]
   (let [last-state (trum/comp->local-state component true)]
     (when-let [info (get-parent-unit-tree-vprop-pview component last-state node)]
       (let [[parent unit-tree vprop view] info]
-        (js/console.log "highlight-unit" parent view unit-tree)
-        (case (:orgpad/view-type view)
-          :orgpad/map-view
+        (js/console.log "highlight-unit" parent view unit-tree vprop enabled?)
+        (if enabled?
+          (case (:orgpad/view-type view)
+            :orgpad/map-view
+            (lc/transact! component
+                          [[:orgpad.units/interest
+                            {:unit-tree unit-tree
+                             :pid (-> parent (aget "unit_tree") ot/uid)
+                             :vprop vprop}]])
+            nil)
           (lc/transact! component
-                        [[:orgpad.units/interest
-                          {:unit-tree unit-tree
-                           :pid (-> parent (aget "unit_tree") ot/uid)
-                           :vprop vprop}]])
-          nil)))))
+                        [[:orgpad.units/clear-interest
+                          {:pid (-> parent (aget "unit_tree") ot/uid)}]]))))))
 
 (defn- show
   [component node toggled]
@@ -169,7 +181,8 @@
   (TreeBeard #js {:data data
                   :style style/style
                   :onEvent #js {:onHeaderClick (partial show component)
-                                :onHeaderOver (partial highlight-unit component)
+                                :onHeaderEnter (partial highlight-unit component true)
+                                :onHeaderLeave (partial highlight-unit component false)
                                 :onToggleClick (partial toggl component toggl-changed?)}} nil))
 
 (defn assoc-when-not-exists!

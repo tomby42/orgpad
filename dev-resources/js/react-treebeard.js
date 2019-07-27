@@ -13755,8 +13755,11 @@ var Header = function Header(_ref3) {
             onClick: function onClick() {
                 return onEventHandler('onHeaderClick');
             },
+            onMouseLeave: function onMouseLeave() {
+                return onEventHandler('onHeaderLeave');
+            },
             onMouseEnter: function onMouseEnter() {
-                return onEventHandler('onHeaderOver');
+                return onEventHandler('onHeaderEnter');
             } },
         _react2.default.createElement(
             'div',

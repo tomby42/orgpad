@@ -346,9 +346,13 @@
   [{:keys [state]} _ {:keys [params unit-tree]}]
   (let [pid (ot/uid unit-tree)
         selected-units (ot/search-child-by-descendant-txt-pattern state pid
-                                                                  (:selection-text params))]
-    (println "filtered: " pid selected-units (set (map first selected-units)))
-    {:state (store/transact state [[:app-state :filtered (keypath pid)] (set (map first selected-units))])}))
+                                                                  (:selection-text params))
+        selected (->> selected-units
+                      (group-by first)
+                      (colls/map-vals (partial map second)))]
+    (println "filtered: " pid selected-units selected)
+    {:state  (store/transact state [[:app-state :filtered (keypath pid)]
+                                    selected])}))
 
 (defmethod mutate :orgpad.units/clear-filtered-pattern
   [{:keys [state]} _ {:keys [unit-tree]}]
@@ -404,3 +408,7 @@
   [{:keys [state]} _ {:keys [unit-tree pid vprop]}]
   (let [new-interest #{[unit-tree vprop]}]
     {:state (store/transact state [[:app-state :interests (keypath pid)] new-interest])}))
+
+(defmethod mutate :orgpad.units/clear-interest
+  [{:keys [state]} _ {:keys [pid]}]
+  {:state (store/transact state [[:app-state :interests (keypath pid)] nil])})
