@@ -412,3 +412,7 @@
 (defmethod mutate :orgpad.units/clear-interest
   [{:keys [state]} _ {:keys [pid]}]
   {:state (store/transact state [[:app-state :interests (keypath pid)] nil])})
+
+(defmethod read :orgpad/entity
+  [{:keys [state]} _ id]
+  (store/query state [:entity id]))

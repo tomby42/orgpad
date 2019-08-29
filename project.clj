@@ -146,7 +146,7 @@
                                         :provides ["jupyter.services"]}
                                        {:file "dev-resources/js/bezier.js"
                                         :provides ["Bezier"]}
-                                       {:file "dev-resources/js/react-treebeard.js"
+                                       {:file "dev-resources/js/react-treebeard.min.js"
                                         :provides ["treebeard"]}]
                         }}
             {:id "online"
@@ -165,7 +165,7 @@
                                         :provides ["jupyter.services"]}
                                        {:file "dev-resources/js/bezier.js"
                                         :provides ["Bezier"]}
-                                       {:file "dev-resources/js/react-treebeard.js"
+                                       {:file "dev-resources/js/react-treebeard.min.js"
                                         :provides ["treebeard"]}]
                         }}]
 

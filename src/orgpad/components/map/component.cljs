@@ -31,6 +31,12 @@
    :link-start-x 0
    :link-start-y 0})
 
+;; ugly hack need to be redesigned
+(defn- update-selected-transf!
+  [local-state transf]
+  (when (:selected-unit @local-state)
+    (swap! local-state assoc-in [:selected-unit 2 :orgpad/transform] transf)))
+
 (defn- create-pair-unit
   [component {:keys [unit view] :as unit-tree} pos]
   (lc/transact! component
@@ -121,13 +127,16 @@
 
 (defn- stop-canvas-move
   [component {:keys [unit view]} local-state new-pos]
-  (lc/transact! component
+  (let [transf (volatile! nil)]
+    (lc/transact! component
                 [[:orgpad.units/map-view-canvas-move
                   {:view    view
+                   :update-transf! transf
                    :unit-id (unit :db/id)
                    :old-pos [(@local-state :start-mouse-x)
                              (@local-state :start-mouse-y)]
-                   :new-pos new-pos}]]))
+                   :new-pos new-pos}]])
+    (update-selected-transf! local-state @transf)))
 
 (defn- stop-unit-move
   [component local-state new-pos]
@@ -407,8 +416,7 @@
 (defn- do-zoom!
   [component unit view local-state pos zoom]
   (let [transf (geom/zoom-transf (:orgpad/transform view) pos zoom)]
-    (when (:selected-unit @local-state)
-      (swap! local-state assoc-in [:selected-unit 2 :orgpad/transform] transf)) ;; ugly hack need to be redesigned
+    (update-selected-transf! local-state transf)
     (lc/transact! component [[:orgpad.units/map-view-canvas-zoom
                               {:view      view
                                :parent-id (:db/id unit)

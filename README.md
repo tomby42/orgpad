@@ -28,7 +28,7 @@ Universal tool for thoughts managing and co-sharing.
 
 * Building production version
   * run `lein clean`
-  * run `lein cljsbuild prod`
+  * run `lein cljsbuild once prod`
 
 * File structure
   * `arxiv` - materials related to orgpad development

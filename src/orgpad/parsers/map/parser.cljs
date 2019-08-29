@@ -149,14 +149,15 @@
      (+ (translate 1) (/ (* m (- (new-pos 1) (old-pos 1))) scale))]))
 
 (defmethod mutate :orgpad.units/map-view-canvas-move
-  [{:keys [state]} _ {:keys [view unit-id old-pos new-pos]}]
-  (let [id (view :db/id)
+  [{:keys [state]} _ {:keys [view unit-id old-pos new-pos update-transf!]}]
+  (let [id (:db/id view)
         view' (if id (store/query state [:entity id]) view)
-        transform (view' :orgpad/transform)
-        new-translate (compute-translate (transform :translate)
-                                         1 ;; (transform :scale)
+        transform (:orgpad/transform view')
+        new-translate (compute-translate (:translate transform)
+                                         1 ;; (:scale transform)
                                          new-pos old-pos)
         new-transformation (merge transform {:translate new-translate})]
+    (when update-transf! (vreset! update-transf! new-transformation))
     {:state (if (nil? id)
               (store/transact state [(merge view {:db/id -1
                                                   :orgpad/refs unit-id
